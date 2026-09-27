@@ -231,36 +231,6 @@ export function PolicyContentManager({
   const [editorInstance, setEditorInstance] = useState<TipTapEditor | null>(null);
   const [chatErrorMessage, setChatErrorMessage] = useState<string | null>(null);
 
-  // Stable callback refs so the extension doesn't need to be recreated
-  // when suggestion handlers change
-  const suggestionCallbacksRef = useRef<{
-    onAccept: (id: string) => void;
-    onReject: (id: string) => void;
-    onEditClick: (id: string) => void;
-    onFeedbackSubmit: (id: string, feedback: string) => void;
-    onFeedbackCancel: () => void;
-  }>({
-    onAccept: () => {},
-    onReject: () => {},
-    onEditClick: () => {},
-    onFeedbackSubmit: () => {},
-    onFeedbackCancel: () => {},
-  });
-
-  const suggestionsExtension = useMemo(
-    () =>
-      SuggestionsExtension.configure({
-        onAccept: (id: string) => suggestionCallbacksRef.current.onAccept(id),
-        onReject: (id: string) => suggestionCallbacksRef.current.onReject(id),
-        onEditClick: (id: string) => suggestionCallbacksRef.current.onEditClick(id),
-        onFeedbackSubmit: (id: string, feedback: string) =>
-          suggestionCallbacksRef.current.onFeedbackSubmit(id, feedback),
-        onFeedbackCancel: () => suggestionCallbacksRef.current.onFeedbackCancel(),
-        markdownToJSON: markdownToTipTapJSON,
-      }),
-    [],
-  );
-
   const [isPublishDialogOpen, setIsPublishDialogOpen] = useState(false);
   const [localHasChanges, setLocalHasChanges] = useState(hasUnpublishedChanges);
 
@@ -285,16 +255,15 @@ export function PolicyContentManager({
   // Track pending version to switch to (set when creating new version, before data is refetched)
   const [pendingVersionSwitch, setPendingVersionSwitch] = useState<string | null>(null);
   // Track previous initialVersionId to detect actual changes (not just data refreshes)
-  const prevInitialVersionIdRef = useRef<string | undefined>(initialVersionId);
+  const [prevInitialVersionId, setPrevInitialVersionId] = useState<string | undefined>(
+    initialVersionId,
+  );
 
   // Sync viewingVersion when initialVersionId changes (e.g., navigating from Versions tab)
-  // Only runs when initialVersionId actually changes, not on versions data refresh
-  useEffect(() => {
-    // Skip if initialVersionId hasn't actually changed
-    if (prevInitialVersionIdRef.current === initialVersionId) {
-      return;
-    }
-    prevInitialVersionIdRef.current = initialVersionId;
+  // Only runs when initialVersionId actually changes, not on versions data refresh.
+  // Adjust-during-render instead of an effect to avoid setState-in-effect.
+  if (prevInitialVersionId !== initialVersionId) {
+    setPrevInitialVersionId(initialVersionId);
 
     if (initialVersionId && versions.some((v) => v.id === initialVersionId)) {
       setViewingVersion(initialVersionId);
@@ -306,28 +275,25 @@ export function PolicyContentManager({
         setEditorKey((prev) => prev + 1);
       }
     }
-  }, [initialVersionId, versions]);
+  }
 
-  // Switch to pending version when it becomes available in versions array
-  useEffect(() => {
-    if (pendingVersionSwitch) {
-      const pendingVersion = versions.find((v) => v.id === pendingVersionSwitch);
-      if (pendingVersion) {
-        setViewingVersion(pendingVersionSwitch);
-        const versionContent = pendingVersion.content as JSONContent[];
-        const content = Array.isArray(versionContent) ? versionContent : [versionContent];
-        setCurrentContent(content);
-        setEditorKey((prev) => prev + 1);
-        setPendingVersionSwitch(null);
-      }
+  // Switch to pending version when it becomes available in versions array.
+  // Adjust-during-render instead of an effect.
+  if (pendingVersionSwitch) {
+    const pendingVersion = versions.find((v) => v.id === pendingVersionSwitch);
+    if (pendingVersion) {
+      setViewingVersion(pendingVersionSwitch);
+      const versionContent = pendingVersion.content as JSONContent[];
+      const content = Array.isArray(versionContent) ? versionContent : [versionContent];
+      setCurrentContent(content);
+      setEditorKey((prev) => prev + 1);
+      setPendingVersionSwitch(null);
     }
-  }, [versions, pendingVersionSwitch]);
+  }
 
-  // Sync viewingVersion when versions change (e.g., after regeneration)
-  useEffect(() => {
-    // Don't reset if we're waiting for a pending version switch
-    if (pendingVersionSwitch) return;
-
+  // Sync viewingVersion when versions change (e.g., after regeneration).
+  // Adjust-during-render instead of an effect.
+  if (!pendingVersionSwitch) {
     // If the currently viewed version no longer exists, switch to current version
     const viewedVersionExists = versions.some((v) => v.id === viewingVersion);
     if (!viewedVersionExists) {
@@ -344,7 +310,7 @@ export function PolicyContentManager({
         }
       }
     }
-  }, [versions, currentVersionId, viewingVersion, pendingVersionSwitch]);
+  }
 
   // Version list state
   const [versionPage, setVersionPage] = useState(0);
@@ -573,6 +539,27 @@ export function PolicyContentManager({
     proposedMarkdown: proposedPolicyMarkdown,
   });
 
+  // Extension wired directly to the stable suggestion handlers (declared after
+  // `suggestions` so no ref indirection is needed during render).
+  const suggestionsExtension = useMemo(
+    () =>
+      SuggestionsExtension.configure({
+        onAccept: suggestions.accept,
+        onReject: suggestions.reject,
+        onEditClick: suggestions.startEditing,
+        onFeedbackSubmit: suggestions.giveFeedback,
+        onFeedbackCancel: suggestions.cancelEditing,
+        markdownToJSON: markdownToTipTapJSON,
+      }),
+    [
+      suggestions.accept,
+      suggestions.reject,
+      suggestions.startEditing,
+      suggestions.giveFeedback,
+      suggestions.cancelEditing,
+    ],
+  );
+
   // Auto-dismiss proposal when ranges transition from active → inactive
   const wasActiveRef = useRef(false);
   useEffect(() => {
@@ -591,15 +578,6 @@ export function PolicyContentManager({
       suggestions.resetLoading();
     }
   }, [status, suggestions.resetLoading]);
-
-  // Wire suggestion callbacks via refs (avoids recreating the extension)
-  suggestionCallbacksRef.current = {
-    onAccept: suggestions.accept,
-    onReject: suggestions.reject,
-    onEditClick: suggestions.startEditing,
-    onFeedbackSubmit: suggestions.giveFeedback,
-    onFeedbackCancel: suggestions.cancelEditing,
-  };
 
   // Filter out per-hunk feedback messages (and their AI responses) from chat display
   // Track local changes made in editor (after save)

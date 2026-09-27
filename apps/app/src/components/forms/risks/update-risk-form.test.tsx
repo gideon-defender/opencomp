@@ -1,3 +1,4 @@
+import { mockNextIntl } from '@/test-utils/mocks/next-intl';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -16,6 +17,8 @@ vi.mock('sonner', () => ({
     error: vi.fn(),
   },
 }));
+
+mockNextIntl();
 
 import { toast } from 'sonner';
 import { UpdateRiskForm } from './update-risk-form';
@@ -73,7 +76,7 @@ describe('UpdateRiskForm', () => {
     });
 
     await waitFor(() => {
-      expect(toast.success).toHaveBeenCalledWith('Risk updated successfully');
+      expect(toast.success).toHaveBeenCalledWith('riskUpdated');
       expect(onSuccess).toHaveBeenCalled();
     });
   });
@@ -91,7 +94,7 @@ describe('UpdateRiskForm', () => {
     fireEvent.submit(form);
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith('Failed to update risk');
+      expect(toast.error).toHaveBeenCalledWith('riskUpdateFailed');
     });
   });
 });

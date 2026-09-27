@@ -77,15 +77,17 @@ export function AutoLinkSuggestions({
   const [applying, setApplying] = useState(false);
 
   // Keep linked/empty state in sync with parent task list. Don't override
-  // mid-flow loading/suggestions/failed states.
-  useEffect(() => {
+  // mid-flow loading/suggestions/failed states. Adjusted during render.
+  const [prevTasksLength, setPrevTasksLength] = useState(tasks.length);
+  if (prevTasksLength !== tasks.length) {
+    setPrevTasksLength(tasks.length);
     setState((prev) => {
       if (prev.kind === 'linked' || prev.kind === 'empty') {
         return tasks.length > 0 ? { kind: 'linked' } : { kind: 'empty' };
       }
       return prev;
     });
-  }, [tasks.length]);
+  }
 
   // On mount, if a run is already in flight (or completed-but-unreviewed) on
   // the server, jump straight to the loading state and re-subscribe. Mode is

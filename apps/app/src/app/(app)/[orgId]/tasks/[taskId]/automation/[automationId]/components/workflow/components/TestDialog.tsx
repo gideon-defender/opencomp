@@ -23,31 +23,46 @@ export function TestDialog({ open, isExecuting, result, onClose, onLetAIFix }: P
   const [displayResult, setDisplayResult] = useState<TestResult | null>(null);
   const [displayIsExecuting, setDisplayIsExecuting] = useState(false);
 
-  // Update display states only when dialog is open
-  useEffect(() => {
+  // Sync display state while open / reset transient UI when closed (adjust-during-render).
+  const [prevDialogOpen, setPrevDialogOpen] = useState(open);
+  const [prevDialogResult, setPrevDialogResult] = useState(result);
+  const [prevDialogIsExecuting, setPrevDialogIsExecuting] = useState(isExecuting);
+  if (
+    prevDialogOpen !== open ||
+    prevDialogResult !== result ||
+    prevDialogIsExecuting !== isExecuting
+  ) {
+    setPrevDialogOpen(open);
+    setPrevDialogResult(result);
+    setPrevDialogIsExecuting(isExecuting);
     if (open) {
       setDisplayResult(result);
       setDisplayIsExecuting(isExecuting);
     }
-  }, [open, result, isExecuting]);
-
-  useEffect(() => {
-    if (displayResult?.status === 'success') {
-      setAnimateSuccess(true);
-      // Wait for bounce animation to complete (bounce animation is typically 1s)
-      const timer = setTimeout(() => setAnimateSuccess(false), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [displayResult?.status]);
-
-  // Reset states when dialog closes
-  useEffect(() => {
     if (!open) {
       setShowLogs(false);
       setShowOutput(false);
       setAnimateSuccess(false);
     }
-  }, [open]);
+  }
+
+  // Trigger the success animation when a new success arrives (adjust-during-render).
+  const [prevDisplayStatus, setPrevDisplayStatus] = useState(displayResult?.status);
+  if (prevDisplayStatus !== displayResult?.status) {
+    setPrevDisplayStatus(displayResult?.status);
+    if (displayResult?.status === 'success') {
+      setAnimateSuccess(true);
+    }
+  }
+
+  // Clear the success animation after it plays (async callback only).
+  useEffect(() => {
+    if (displayResult?.status === 'success') {
+      const timer = setTimeout(() => setAnimateSuccess(false), 2000);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [displayResult?.status]);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>

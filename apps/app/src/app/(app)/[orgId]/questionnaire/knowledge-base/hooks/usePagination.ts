@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 interface UsePaginationProps<T> {
   items: T[];
@@ -23,10 +23,13 @@ export function usePagination<T>({ items, itemsPerPage = 10 }: UsePaginationProp
     setCurrentPage(page);
   };
 
-  // Reset to page 1 when items change
-  useEffect(() => {
+  // Reset to page 1 when items change. Adjust-during-render instead of an
+  // effect to avoid setState-in-effect.
+  const [prevItemsLength, setPrevItemsLength] = useState(items.length);
+  if (prevItemsLength !== items.length) {
+    setPrevItemsLength(items.length);
     setCurrentPage(1);
-  }, [items.length]);
+  }
 
   return {
     currentPage,

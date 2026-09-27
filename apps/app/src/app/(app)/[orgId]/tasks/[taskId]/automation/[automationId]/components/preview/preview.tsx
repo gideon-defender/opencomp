@@ -3,7 +3,7 @@
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@radix-ui/react-scroll-area';
 import { CompassIcon, RefreshCwIcon } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { BarLoader } from 'react-spinners';
 import { Panel, PanelHeader } from '../../components/panels/panels';
 
@@ -40,10 +40,13 @@ export function Preview({ className, disabled, url }: Props) {
   // Sanitized view of currentUrl used for every DOM sink (iframe src, anchor href).
   const safeUrl = toSafeUrl(currentUrl);
 
-  useEffect(() => {
+  // Sync local state when the url prop changes (adjust-during-render).
+  const [prevUrl, setPrevUrl] = useState(url);
+  if (prevUrl !== url) {
+    setPrevUrl(url);
     setCurrentUrl(url);
     setInputValue(url || '');
-  }, [url]);
+  }
 
   const refreshIframe = () => {
     if (iframeRef.current && safeUrl) {

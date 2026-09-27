@@ -819,9 +819,14 @@ function SoftwareVendorInput({
   });
 
   // Reset highlighted index when search results change
-  useEffect(() => {
+  const [prevHighlightKey, setPrevHighlightKey] = useState(
+    `${filteredSearchResults.length}|${customValue}`,
+  );
+  const highlightKey = `${filteredSearchResults.length}|${customValue}`;
+  if (prevHighlightKey !== highlightKey) {
+    setPrevHighlightKey(highlightKey);
     setHighlightedIndex(-1);
-  }, [filteredSearchResults.length, customValue]);
+  }
 
   // All selected values for display in the tag input
   const allSelectedValues = [

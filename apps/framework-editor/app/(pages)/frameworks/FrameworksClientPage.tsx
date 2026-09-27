@@ -5,6 +5,7 @@ import type { FrameworkEditorFramework, FrameworkEditorFrameworkFamilyStatus } f
 import { Button } from '@gideon-defender/ui/button';
 import { Input } from '@gideon-defender/ui/input';
 import { FolderPlus, MoveRight, Plus, Upload } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useCallback, useMemo, useState } from 'react';
 import { CreateFrameworkDialog } from './components/CreateFrameworkDialog';
 import { DeleteFrameworkFamilyDialog } from './components/DeleteFrameworkFamilyDialog';
@@ -55,6 +56,7 @@ export function FrameworksClientPage({
   const [expanded, setExpanded] = useState<Set<string>>(
     () => new Set(initialFamilies.map((f) => f.id)),
   );
+  const t = useTranslations('frameworks');
 
   const toggle = useCallback((familyId: string) => {
     setExpanded((prev) => {
@@ -100,11 +102,11 @@ export function FrameworksClientPage({
   );
 
   return (
-    <PageLayout breadcrumbs={[{ label: 'Frameworks', href: '/frameworks' }]}>
+    <PageLayout breadcrumbs={[{ label: t('title'), href: '/frameworks' }]}>
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <Input
-            placeholder="Search frameworks..."
+            placeholder={t('searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-xs"
@@ -112,19 +114,19 @@ export function FrameworksClientPage({
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" onClick={() => setIsImportOpen(true)}>
               <Upload className="mr-2 h-4 w-4" />
-              Import
+              {t('import')}
             </Button>
             <Button variant="outline" onClick={() => setIsMoveOpen(true)}>
               <MoveRight className="mr-2 h-4 w-4" />
-              Move Framework
+              {t('moveFramework')}
             </Button>
             <Button variant="outline" onClick={() => setFamilyDialog({ open: true, family: null })}>
               <FolderPlus className="mr-2 h-4 w-4" />
-              Create New Framework Family
+              {t('createFamily')}
             </Button>
             <Button onClick={() => setIsCreateFrameworkOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
-              Create New Framework
+              {t('createFramework')}
             </Button>
           </div>
         </div>

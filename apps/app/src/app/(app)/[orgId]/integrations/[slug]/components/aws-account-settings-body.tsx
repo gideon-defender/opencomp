@@ -16,7 +16,7 @@ import { Badge } from '@gideon-defender/ui/badge';
 import { Button } from '@trycompai/design-system';
 import { AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import {
   AccountSettingsFieldGroup,
@@ -69,28 +69,41 @@ export function AwsAccountSettingsBody({
         : !option.value.startsWith('us-gov-'),
     ) ?? [];
 
-  useEffect(() => {
-    if (!connection) return;
-    const nextAwsType = typeof metadata.awsType === 'string' ? metadata.awsType : 'aws';
-    setRoleArn((metadata.roleArn as string) ?? '');
-    setRemediationRoleArn((metadata.remediationRoleArn as string) ?? '');
-    setRegions(
-      Array.isArray(metadata.regions)
-        ? (metadata.regions as string[]).filter((region) =>
-            nextAwsType === 'aws-us-gov'
-              ? region.startsWith('us-gov-')
-              : !region.startsWith('us-gov-'),
-          )
-        : [],
-    );
-    setAwsType(nextAwsType);
-  }, [
-    connection,
-    metadata.roleArn,
+  const [prevAwsConnection, setPrevAwsConnection] = useState(connection);
+  const [prevAwsRoleArn, setPrevAwsRoleArn] = useState(metadata.roleArn);
+  const [prevAwsRemediationRoleArn, setPrevAwsRemediationRoleArn] = useState(
     metadata.remediationRoleArn,
-    metadata.regions,
-    metadata.awsType,
-  ]);
+  );
+  const [prevAwsRegions, setPrevAwsRegions] = useState(metadata.regions);
+  const [prevAwsTypeMeta, setPrevAwsTypeMeta] = useState(metadata.awsType);
+  if (
+    prevAwsConnection !== connection ||
+    prevAwsRoleArn !== metadata.roleArn ||
+    prevAwsRemediationRoleArn !== metadata.remediationRoleArn ||
+    prevAwsRegions !== metadata.regions ||
+    prevAwsTypeMeta !== metadata.awsType
+  ) {
+    setPrevAwsConnection(connection);
+    setPrevAwsRoleArn(metadata.roleArn);
+    setPrevAwsRemediationRoleArn(metadata.remediationRoleArn);
+    setPrevAwsRegions(metadata.regions);
+    setPrevAwsTypeMeta(metadata.awsType);
+    if (connection) {
+      const nextAwsType = typeof metadata.awsType === 'string' ? metadata.awsType : 'aws';
+      setRoleArn((metadata.roleArn as string) ?? '');
+      setRemediationRoleArn((metadata.remediationRoleArn as string) ?? '');
+      setRegions(
+        Array.isArray(metadata.regions)
+          ? (metadata.regions as string[]).filter((region) =>
+              nextAwsType === 'aws-us-gov'
+                ? region.startsWith('us-gov-')
+                : !region.startsWith('us-gov-'),
+            )
+          : [],
+      );
+      setAwsType(nextAwsType);
+    }
+  }
 
   const saveField = useCallback(
     async (

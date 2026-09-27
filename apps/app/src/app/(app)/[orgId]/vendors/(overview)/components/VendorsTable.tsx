@@ -51,7 +51,7 @@ import { OverflowMenuVertical, Search, TrashCan } from '@trycompai/design-system
 import { ArrowDown, ArrowUp, ArrowUpDown, Loader2, UserIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useOnboardingStatus } from '../hooks/use-onboarding-status';
 import { VendorOnboardingProvider, useVendorOnboardingStatus } from './vendor-onboarding-context';
@@ -366,11 +366,6 @@ export function VendorsTable({
     return [...vendorsWithStatus, ...pendingVendors, ...tempVendors];
   }, [vendors, itemsInfo, itemStatuses, orgId, isActive, onboardingRunId]);
 
-  // Reset to page 1 when search changes
-  useEffect(() => {
-    setPage(1);
-  }, [searchQuery]);
-
   // Client-side filtering and sorting
   const filteredAndSortedVendors = useMemo(() => {
     let result = [...mergedVendors];
@@ -426,11 +421,9 @@ export function VendorsTable({
   const paginatedVendors = filteredAndSortedVendors.slice(startIndex, startIndex + perPage);
 
   // Keep page in bounds when pageCount changes
-  useEffect(() => {
-    if (page > filteredPageCount) {
-      setPage(filteredPageCount);
-    }
-  }, [page, filteredPageCount]);
+  if (page > filteredPageCount) {
+    setPage(filteredPageCount);
+  }
 
   // Calculate assessment progress
   const assessmentProgress = useMemo(() => {
@@ -534,7 +527,10 @@ export function VendorsTable({
             <InputGroupInput
               placeholder={t('list.searchPlaceholder')}
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setPage(1);
+              }}
             />
           </InputGroup>
         </div>

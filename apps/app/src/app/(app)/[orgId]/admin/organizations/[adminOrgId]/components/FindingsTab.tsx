@@ -45,8 +45,17 @@ export function FindingsTab({ orgId }: { orgId: string }) {
   }, [orgId]);
 
   useEffect(() => {
-    void fetchFindings();
-  }, [fetchFindings]);
+    let cancelled = false;
+    (async () => {
+      const res = await api.get<AdminFinding[]>(`/v1/admin/organizations/${orgId}/findings`);
+      if (cancelled) return;
+      if (res.data) setFindings(res.data);
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [orgId]);
 
   const handleStatusChange = async (findingId: string, newStatus: string) => {
     setUpdatingId(findingId);

@@ -1,0 +1,11 @@
+{
+  "nameRequired": "Name is required.",
+  "descriptionRequired": "Description is required.",
+  "versionRequired": "Version is required.",
+  "requirementNameRequired": "Requirement name is required.",
+  "identifierRequired": "Identifier is required.",
+  "invalidEmail": "Enter a valid email address.",
+  "invalidUrl": "Enter a valid URL.",
+  "minLength": "Must be at least {min} characters.",
+  "maxLength": "Must be at most {max} characters."
+}

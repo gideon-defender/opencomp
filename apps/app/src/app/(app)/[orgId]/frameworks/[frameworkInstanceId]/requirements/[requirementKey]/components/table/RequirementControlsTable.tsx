@@ -24,7 +24,7 @@ import { Launch, Search } from '@trycompai/design-system/icons';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
@@ -91,9 +91,7 @@ export function RequirementControlsTable({
   );
 
   // Snap back to page 1 when filtering or page-size changes shrink the result set.
-  useEffect(() => {
-    if (page > pageCount) setPage(1);
-  }, [page, pageCount]);
+  if (page > pageCount) setPage(1);
 
   const getControlHref = (controlId: string) =>
     `/${orgId}/frameworks/${frameworkInstanceId}/controls/${controlId}`;

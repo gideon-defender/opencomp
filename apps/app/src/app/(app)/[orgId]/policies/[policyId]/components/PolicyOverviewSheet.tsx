@@ -15,7 +15,7 @@ import {
   SheetTitle,
 } from '@trycompai/design-system';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 export function PolicyOverviewSheet({ policy }: { policy: Policy }) {
   const isDesktop = useMediaQuery('(min-width: 768px)');
@@ -24,11 +24,15 @@ export function PolicyOverviewSheet({ policy }: { policy: Policy }) {
   const searchParams = useSearchParams();
   const [isOpen, setIsOpen] = useState(false);
 
-  // Sync from URL param on mount and when URL changes
-  useEffect(() => {
-    const urlOpen = searchParams.get('policy-overview-sheet') === 'true';
-    setIsOpen(urlOpen);
-  }, [searchParams]);
+  // Sync from URL param when the URL changes (including mount).
+  // Adjust-during-render keyed on the searchParams identity instead of an
+  // effect, so local open/close toggles that haven't updated the URL yet are
+  // not overridden mid-interaction.
+  const [prevSearchParams, setPrevSearchParams] = useState<typeof searchParams | null>(null);
+  if (prevSearchParams !== searchParams) {
+    setPrevSearchParams(searchParams);
+    setIsOpen(searchParams.get('policy-overview-sheet') === 'true');
+  }
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);

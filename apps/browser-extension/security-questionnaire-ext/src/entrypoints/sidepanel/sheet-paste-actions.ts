@@ -1,5 +1,6 @@
 import { browser } from 'wxt/browser';
 import { extensionConfig } from '../../lib/config';
+import { t } from '../../lib/i18n';
 import {
   getResponseError,
   isConfirmationResponse,
@@ -113,7 +114,7 @@ async function confirmBatchInsert(state: PanelState): Promise<boolean> {
     renderInsertDialog({
       count: approved.length,
       host: state.queue.host,
-      organizationName: org?.name ?? 'selected organization',
+      organizationName: org?.name ?? t('sidepanelSelectedOrg'),
       operation: 'Insert',
       lowConfidenceCount: state.queue.items.filter(
         (item) => item.confidence === 'low' && item.status !== 'approved',
@@ -134,7 +135,7 @@ async function prepareSheetPaste(params: {
   if (!isConfirmationResponse(response)) return response;
 
   const confirmed = await confirmDomain(response.confirmation);
-  if (!confirmed) return { ok: false, error: 'Paste cancelled.' };
+  if (!confirmed) return { ok: false, error: t('sheetPasteCancelled') };
   await browser.runtime.sendMessage({
     type: 'comp:confirm-domain',
     host: response.confirmation.host,
@@ -155,7 +156,7 @@ async function insertSheetWithApi(params: {
   if (!isConfirmationResponse(response)) return response;
 
   const confirmed = await confirmDomain(response.confirmation);
-  if (!confirmed) return { ok: false, error: 'Insert cancelled.' };
+  if (!confirmed) return { ok: false, error: t('sheetInsertCancelled') };
   await browser.runtime.sendMessage({
     type: 'comp:confirm-domain',
     host: response.confirmation.host,

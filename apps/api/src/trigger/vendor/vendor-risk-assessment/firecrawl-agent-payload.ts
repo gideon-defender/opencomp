@@ -49,7 +49,7 @@ export function countPopulatedAgentFields(parsed: unknown): number {
     if (
       typeof value === 'object' &&
       !Array.isArray(value) &&
-      Object.keys(value as Record<string, unknown>).length === 0
+      Object.keys(value).length === 0
     )
       continue;
     count += 1;

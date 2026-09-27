@@ -60,7 +60,12 @@ export function DepartmentSelect({
       ),
   );
 
-  useEffect(() => {
+  // Accumulates every custom value seen so removed/added customs stay
+  // re-selectable. Synced during render when the incoming values change.
+  const incomingKey = JSON.stringify([value, customDepartments ?? []]);
+  const [prevIncomingKey, setPrevIncomingKey] = useState(incomingKey);
+  if (prevIncomingKey !== incomingKey) {
+    setPrevIncomingKey(incomingKey);
     setSeen((prev) => {
       let next: Set<string> | null = null;
       for (const v of [value, ...(customDepartments ?? [])]) {
@@ -71,7 +76,7 @@ export function DepartmentSelect({
       }
       return next ?? prev;
     });
-  }, [value, customDepartments]);
+  }
 
   const options = useMemo(() => {
     const map = new Map<string, string>();

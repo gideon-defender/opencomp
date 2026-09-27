@@ -1,5 +1,6 @@
 import { browser } from 'wxt/browser';
 import { buildAnswersClipboardText } from '../../lib/answers-clipboard';
+import { t } from '../../lib/i18n';
 import {
   getResponseError,
   isConfirmationResponse,
@@ -48,7 +49,7 @@ async function refreshFromPage(): Promise<void> {
   const tab = await getActiveTab();
   activeTabId = tab.id ?? null;
   if (!activeTabId) {
-    renderMessage('No active tab found.');
+    renderMessage(t('sidepanelNoActiveTab'));
     return;
   }
   statusMessage = await collectQuestions(activeTabId);
@@ -73,7 +74,7 @@ async function refreshState(url?: string): Promise<void> {
 
 function render(message = statusMessage): void {
   if (!state) {
-    renderMessage('Loading questionnaire queue...');
+    renderMessage(t('sidepanelLoading'));
     return;
   }
   const scrollTop = getListScrollTop();
@@ -104,15 +105,15 @@ async function handleAction(target: HTMLElement): Promise<void> {
   if (action === 'sign-in') await browser.runtime.sendMessage({ type: 'comp:open-sign-in' });
   if (action === 'refresh') {
     isRefreshing = true;
-    render('Refreshing page scan...');
+    render(t('sidepanelRefreshingScan'));
     try {
       await refreshFromPage();
     } catch (error) {
-      statusMessage = error instanceof Error ? error.message : 'Unable to refresh scan.';
+      statusMessage = error instanceof Error ? error.message : t('sidepanelUnableRefresh');
     } finally {
       isRefreshing = false;
     }
-    render(statusMessage || `Scan refreshed · ${state?.queue.items.length ?? 0} found.`);
+    render(statusMessage || t('sidepanelScanRefreshed', String(state?.queue.items.length ?? 0)));
   }
   if (action === 'close') await closePanel();
   if (action === 'generate-all') await runQueueAction({ type: 'comp:generate-all' });
@@ -198,7 +199,7 @@ async function handleInsertApproved(): Promise<void> {
     renderInsertDialog({
       count: approved.length,
       host: currentState.queue.host,
-      organizationName: org?.name ?? 'selected organization',
+      organizationName: org?.name ?? t('sidepanelSelectedOrg'),
       operation: 'Insert',
       lowConfidenceCount: currentState.queue.items.filter(
         (item) => item.confidence === 'low' && item.status !== 'approved',
@@ -265,14 +266,14 @@ async function handleCopyAnswers(): Promise<void> {
   await refreshState();
   const text = buildAnswersClipboardText(state?.queue.items ?? []);
   if (!text) {
-    setStatus('Generate answers before copying.');
+    setStatus(t('sidepanelGenerateBeforeCopy'));
     return;
   }
   try {
     await navigator.clipboard.writeText(text);
-    setStatus('Answers copied. Paste them into the document.');
+    setStatus(t('sidepanelAnswersCopied'));
   } catch {
-    setStatus('Unable to copy answers to the clipboard.');
+    setStatus(t('sidepanelUnableCopy'));
   }
 }
 

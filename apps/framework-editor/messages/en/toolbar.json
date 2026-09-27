@@ -1,0 +1,13 @@
+{
+  "searchPlaceholder": "Search...",
+  "sortBy": "Sort by...",
+  "sortNone": "None",
+  "sortDirection": "Sort direction: {direction}",
+  "ascending": "Ascending",
+  "descending": "Descending",
+  "noChanges": "No Changes",
+  "commitChanges": "Commit Changes",
+  "commitWithDetail": "Commit {detail}",
+  "discardChanges": "Discard Changes",
+  "cancel": "Cancel"
+}

@@ -15,7 +15,7 @@ import {
 import { Link as LinkIcon } from '@trycompai/design-system/icons';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useControlOptions } from './useControlOptions';
 
@@ -39,9 +39,11 @@ export function LinkPolicySheet({
   const linked = useMemo(() => new Set(alreadyLinkedPolicyIds), [alreadyLinkedPolicyIds]);
   const options = useMemo(() => policies.filter((p) => !linked.has(p.id)), [policies, linked]);
 
-  useEffect(() => {
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (prevIsOpen !== isOpen) {
+    setPrevIsOpen(isOpen);
     if (!isOpen) setSelected(new Set());
-  }, [isOpen]);
+  }
 
   if (!hasPermission('control', 'update')) return null;
 

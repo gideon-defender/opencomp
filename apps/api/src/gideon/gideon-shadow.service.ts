@@ -3,8 +3,8 @@ import { db } from '@db';
 
 export interface PlatformOperationsComparison {
   tenantId: string;
-  gideon: unknown | null;
-  opencomp: unknown | null;
+  gideon: unknown;
+  opencomp: unknown;
   mismatched: boolean;
   details?: string;
 }
@@ -73,7 +73,7 @@ export class GideonShadowService {
 
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 3000);
-      let gideonData: unknown | null = null;
+      let gideonData: unknown = null;
       try {
         const res = await fetch(url, {
           headers,
@@ -133,7 +133,7 @@ export class GideonShadowService {
 
       if (mismatched) {
         this.logger.warn(
-          `[GideonShadow] tenant operations mismatch tid=${tenantId} gideonName=${String(gideonTenantName ?? 'n/a')} opencompName=${String(opencompData?.name ?? 'n/a')} hasMembers=${String(opencompData?.hasMembers ?? false)}`,
+          `[GideonShadow] tenant operations mismatch tid=${tenantId} gideonName=${gideonTenantName == null ? 'n/a' : typeof gideonTenantName === 'string' ? gideonTenantName : JSON.stringify(gideonTenantName)} opencompName=${String(opencompData?.name ?? 'n/a')} hasMembers=${String(opencompData?.hasMembers ?? false)}`,
         );
       } else {
         this.logger.debug(

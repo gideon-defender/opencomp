@@ -8,6 +8,7 @@ import {
 } from '@gideon-defender/billing';
 import { Badge, Button, Stack, Text } from '@trycompai/design-system';
 import { Launch } from '@trycompai/design-system/icons';
+import { useLocale } from 'next-intl';
 import { useState } from 'react';
 import { ConfirmPlanChangeDialog } from './BillingPlanChangeDialog';
 import type { BackgroundCheckBillingStatus } from './types';
@@ -41,6 +42,7 @@ export function BillingSubscriptionPlans({
   loadingSkuKey,
   onSubscribe,
 }: BillingSubscriptionPlansProps) {
+  const locale = useLocale();
   const [confirmingSkuKey, setConfirmingSkuKey] = useState<BillingSkuKey | null>(null);
 
   return (
@@ -96,7 +98,7 @@ export function BillingSubscriptionPlans({
               </Stack>
               <div className="min-h-[72px]">
                 <Text size="lg" weight="semibold">
-                  {formatAmount(sku.unitAmount)}
+                  {formatAmount(sku.unitAmount, locale)}
                   <span className="text-sm font-normal text-muted-foreground"> / mo</span>
                 </Text>
                 {included && (
@@ -168,8 +170,8 @@ export function BillingSubscriptionPlans({
   );
 }
 
-function formatAmount(amount: number) {
-  return new Intl.NumberFormat('en-US', {
+function formatAmount(amount: number, locale = 'en-US') {
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: 'USD',
     maximumFractionDigits: 0,

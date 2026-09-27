@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { usePermissions } from '@/hooks/use-permissions';
 import { Member, Task, User } from '@db';
@@ -55,17 +55,17 @@ export function ModernSingleStatusTaskList({
   const [openBulkDelete, setOpenBulkDelete] = useState(false);
   const StatusIcon = config.icon;
 
-  useEffect(() => {
-    if (!selectable) {
-      setSelectedTaskIds([]);
-    }
-  }, [selectable]);
+  if (!selectable && selectedTaskIds.length > 0) {
+    setSelectedTaskIds([]);
+  }
 
   // Remove stale selections when the visible task list changes
-  useEffect(() => {
+  const [prevTasks, setPrevTasks] = useState(tasks);
+  if (prevTasks !== tasks) {
+    setPrevTasks(tasks);
     const visibleIds = new Set(tasks.map((task) => task.id));
     setSelectedTaskIds((prev) => prev.filter((id) => visibleIds.has(id)));
-  }, [tasks]);
+  }
 
   const visibleIds = useMemo(() => new Set(tasks.map((task) => task.id)), [tasks]);
   const visibleSelectedCount = selectedTaskIds.filter((id) => visibleIds.has(id)).length;

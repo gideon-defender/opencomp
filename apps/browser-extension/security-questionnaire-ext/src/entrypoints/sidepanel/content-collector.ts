@@ -1,4 +1,5 @@
 import { browser } from 'wxt/browser';
+import { t } from '../../lib/i18n';
 import { isRecord, parseDetectedQuestion } from '../../lib/message-utils';
 import { getResponseError, isCountResponse } from '../../lib/response-guards';
 import { formatScanDebug, getScanDebug } from '../../lib/scan-debug';
@@ -18,7 +19,7 @@ export async function collectQuestions(tabId: number): Promise<string> {
 
   const injected = await injectContentScript(tabId);
   if (!injected) {
-    return 'Unable to attach the page scanner. Reload this tab and press Refresh.';
+    return t('collectorAttachFail');
   }
   const retry = await sendCollectMessage(tabId);
   if (!isCountResponse(retry)) return getResponseError(retry);
@@ -31,7 +32,7 @@ async function sendCollectMessage(tabId: number): Promise<unknown> {
     .sendMessage(tabId, { type: 'comp:collect-questions' })
     .catch((error: unknown) => ({
       ok: false,
-      error: error instanceof Error ? error.message : 'Unable to scan this page.',
+      error: error instanceof Error ? error.message : t('collectorUnableScan'),
     }));
 }
 
@@ -51,7 +52,7 @@ async function collectSheetQuestionsFromBackground(tabId: number): Promise<{
     })
     .catch((error: unknown) => ({
       ok: false,
-      error: error instanceof Error ? error.message : 'Background sheet scan failed.',
+      error: error instanceof Error ? error.message : t('collectorBgScanFail'),
     }));
   const debug = getScanDebug(response);
   const questions = getDetectedQuestions(response);

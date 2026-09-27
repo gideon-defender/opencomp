@@ -2,7 +2,7 @@
 
 import { Button } from '@trycompai/design-system';
 import { Checkmark, Close, Locked } from '@trycompai/design-system/icons';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { LiveActivityBorder } from './LiveActivityBorder';
 import { StepList, type SignInStep } from './StepList';
 
@@ -108,7 +108,11 @@ export function ConnectLiveSignin({
 }: ConnectLiveSigninProps) {
   // Gate the ring on the iframe's load so it appears with the page, not before.
   const [loaded, setLoaded] = useState(false);
-  useEffect(() => setLoaded(false), [liveViewUrl]);
+  const [prevLiveViewUrl, setPrevLiveViewUrl] = useState(liveViewUrl);
+  if (prevLiveViewUrl !== liveViewUrl) {
+    setPrevLiveViewUrl(liveViewUrl);
+    setLoaded(false);
+  }
 
   // Tailor the take-over instructions to what the page is actually asking for.
   const guidance = twoFactorCopy(twoFactorMethod);

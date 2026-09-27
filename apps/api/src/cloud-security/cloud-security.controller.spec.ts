@@ -96,15 +96,9 @@ describe('CloudSecurityController — API-key mutation support', () => {
       .compile();
 
     controller = module.get(CloudSecurityController);
-    exceptionService = module.get(
-      CloudExceptionService,
-    ) as jest.Mocked<CloudExceptionService>;
-    scanModeService = module.get(
-      CloudAwsScanModeService,
-    ) as jest.Mocked<CloudAwsScanModeService>;
-    actingUser = module.get(
-      ActingUserResolver,
-    ) as jest.Mocked<ActingUserResolver>;
+    exceptionService = module.get(CloudExceptionService);
+    scanModeService = module.get(CloudAwsScanModeService);
+    actingUser = module.get(ActingUserResolver);
 
     jest.clearAllMocks();
   });

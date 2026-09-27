@@ -4,7 +4,7 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
-import { db, Prisma, EvidenceFormType } from '@db';
+import { db, Prisma } from '@db';
 import type { ImportFrameworkDto } from './dto/import-framework.dto';
 import { normalizeTipTapDoc } from './normalize-tiptap-doc';
 
@@ -277,7 +277,7 @@ export class FrameworkExportService {
           (ct.documentTypes ?? []).map((formType) => ({
             frameworkId: framework.id,
             controlTemplateId: createdControls[controlIndex].id,
-            formType: formType as EvidenceFormType,
+            formType: formType,
           })),
       );
 

@@ -12,6 +12,7 @@ import {
 } from '@react-email/components';
 import { Footer } from '../components/footer';
 import { Logo } from '../components/logo';
+import { formatDateForLocale, type EmailLocale } from '../locale';
 
 interface Props {
   toName: string;
@@ -23,7 +24,44 @@ interface Props {
    * domain is on the trust portal allow list). NDA-specific copy is omitted.
    */
   ndaBypassed?: boolean;
+  locale?: EmailLocale;
 }
+
+const copy = {
+  en: {
+    preview: "Access Granted",
+    heading: "Access Granted ✓",
+    hello: "Hello",
+    activeBypassedPrefix: "Your access to",
+    activeBypassedSuffix: "'s policy documentation is now active.",
+    activeNdaPrefix: "Your NDA has been signed and your access to",
+    activeNdaSuffix: "'s policy documentation is now active.",
+    expiresOn: "Your access will expire on:",
+    viewDocuments: "View Documents",
+    downloadNda:
+      "You can download your signed NDA for your records from the confirmation page or by accessing the portal above.",
+    lostLink: "Lost your access link?",
+    lostLinkBody:
+      'Visit the trust portal and click "Already have access?" to receive a new access link via email.',
+  },
+  es: {
+    preview: "Acceso concedido",
+    heading: "Acceso concedido ✓",
+    hello: "Hola",
+    activeBypassedPrefix: "Tu acceso a la documentación de políticas de",
+    activeBypassedSuffix: " ya está activo.",
+    activeNdaPrefix:
+      "Tu NDA ha sido firmado y tu acceso a la documentación de políticas de",
+    activeNdaSuffix: " ya está activo.",
+    expiresOn: "Tu acceso vencerá el:",
+    viewDocuments: "Ver documentos",
+    downloadNda:
+      "Puedes descargar tu NDA firmado para tus registros desde la página de confirmación o accediendo al portal anterior.",
+    lostLink: "¿Perdiste tu enlace de acceso?",
+    lostLinkBody:
+      "Visita el portal de confianza y haz clic en «¿Ya tienes acceso?» para recibir un nuevo enlace de acceso por correo electrónico.",
+  },
+};
 
 export const AccessGrantedEmail = ({
   toName,
@@ -31,9 +69,12 @@ export const AccessGrantedEmail = ({
   expiresAt,
   portalUrl,
   ndaBypassed = false,
+  locale = 'en',
 }: Props) => {
+  const t = copy[locale];
+
   return (
-    <Html>
+    <Html lang={locale}>
       <Tailwind>
         <head>
           <Font
@@ -49,7 +90,7 @@ export const AccessGrantedEmail = ({
             fontStyle="normal"
           />
         </head>
-        <Preview>Access Granted - {organizationName}</Preview>
+        <Preview>{t.preview} - {organizationName}</Preview>
 
         <Body className="mx-auto my-auto bg-[#fff] font-sans">
           <Container
@@ -58,32 +99,29 @@ export const AccessGrantedEmail = ({
           >
             <Logo />
             <Heading className="mx-0 my-[30px] p-0 text-center text-[24px] font-normal text-[#121212]">
-              Access Granted ✓
+              {t.heading}
             </Heading>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              Hello {toName},
+              {t.hello} {toName},
             </Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
               {ndaBypassed ? (
                 <>
-                  Your access to <strong>{organizationName}</strong>'s policy
-                  documentation is now active.
+                  {t.activeBypassedPrefix} <strong>{organizationName}</strong>{t.activeBypassedSuffix}
                 </>
               ) : (
                 <>
-                  Your NDA has been signed and your access to{' '}
-                  <strong>{organizationName}</strong>'s policy documentation is
-                  now active.
+                  {t.activeNdaPrefix} <strong>{organizationName}</strong>{t.activeNdaSuffix}
                 </>
               )}
             </Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              Your access will expire on:{' '}
+              {t.expiresOn}{' '}
               <strong>
-                {expiresAt.toLocaleDateString('en-US', {
+                {formatDateForLocale(expiresAt, locale, {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric',
@@ -96,14 +134,13 @@ export const AccessGrantedEmail = ({
                 className="rounded-[3px] bg-[#121212] px-[20px] py-[12px] text-center text-[14px] font-semibold text-white no-underline"
                 href={portalUrl}
               >
-                View Documents
+                {t.viewDocuments}
               </Button>
             </Section>
 
             {!ndaBypassed && (
               <Text className="text-[14px] leading-[24px] text-[#121212]">
-                You can download your signed NDA for your records from the
-                confirmation page or by accessing the portal above.
+                {t.downloadNda}
               </Text>
             )}
 
@@ -112,16 +149,15 @@ export const AccessGrantedEmail = ({
               style={{ backgroundColor: '#f8f9fa', borderColor: '#121212' }}
             >
               <Text className="m-0 text-[14px] leading-[24px] text-[#121212]">
-                <strong>Lost your access link?</strong>
+                <strong>{t.lostLink}</strong>
                 <br />
-                Visit the trust portal and click "Already have access?" to
-                receive a new access link via email.
+                {t.lostLinkBody}
               </Text>
             </Section>
 
             <br />
 
-            <Footer />
+            <Footer locale={locale} />
           </Container>
         </Body>
       </Tailwind>

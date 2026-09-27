@@ -4,7 +4,9 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@gideon-defender/ui/badge';
 import { Button } from '@gideon-defender/ui/button';
 import { formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { ChevronDown } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import type { StoredCheckRun } from '../hooks/useIntegrationChecks';
 import { groupRunsByConnection } from './check-run-grouping';
@@ -50,6 +52,7 @@ export function AccountRunGroups({
   organizationName: string;
   exceptionActions?: RunExceptionActions;
 }) {
+  const t = useTranslations('tasks');
   const groups = useMemo(() => groupRunsByConnection(runs), [runs]);
 
   if (groups.length <= 1) {
@@ -79,8 +82,10 @@ export function AccountRunGroups({
               <span className="text-xs font-semibold text-foreground">{group.label}</span>
               {latest && (
                 <span className="text-[11px] text-muted-foreground">
-                  {latest.passedCount} passed
-                  {latest.failedCount > 0 ? `, ${latest.failedCount} issues` : ''}
+                  {t('integrationChecks.passedCount', { count: latest.passedCount })}
+                  {latest.failedCount > 0
+                    ? `, ${t('integrationChecks.failedCount', { count: latest.failedCount })}`
+                    : ''}
                 </span>
               )}
             </div>
@@ -110,6 +115,8 @@ function GroupedCheckRuns({
   exceptionActions?: RunExceptionActions;
 }) {
   const [showAll, setShowAll] = useState(false);
+  const t = useTranslations('tasks');
+  const locale = useLocale();
 
   // Get the runs to display (limited or all)
   const displayRuns = showAll ? runs : runs.slice(0, maxRuns);
@@ -120,7 +127,7 @@ function GroupedCheckRuns({
     const groups: Record<string, StoredCheckRun[]> = {};
 
     displayRuns.forEach((run) => {
-      const date = new Date(run.createdAt).toLocaleDateString('en-US', {
+      const date = new Date(run.createdAt).toLocaleDateString(locale, {
         month: 'short',
         day: 'numeric',
         year: 'numeric',
@@ -132,10 +139,10 @@ function GroupedCheckRuns({
     });
 
     return groups;
-  }, [displayRuns]);
+  }, [displayRuns, locale]);
 
   if (runs.length === 0) {
-    return <p className="text-xs text-muted-foreground text-center py-2">No runs yet</p>;
+    return <p className="text-xs text-muted-foreground text-center py-2">{t('runHistory.noRunsYet')}</p>;
   }
 
   let runIndex = 0;
@@ -170,7 +177,9 @@ function GroupedCheckRuns({
           onClick={() => setShowAll(!showAll)}
           className="w-full text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
         >
-          {showAll ? 'Show less' : `Show ${runs.length - maxRuns} more runs`}
+          {showAll
+            ? t('runHistory.showLess')
+            : t('runHistory.showMoreRuns', { count: runs.length - maxRuns })}
         </button>
       )}
     </div>
@@ -192,13 +201,18 @@ export function CheckRunItem({
   const [expanded, setExpanded] = useState(isLatest);
   const [showAllFindings, setShowAllFindings] = useState(false);
   const [showAllExcepted, setShowAllExcepted] = useState(false);
+  const t = useTranslations('tasks');
+  const locale = useLocale();
 
   // Scope actions only make sense on the LATEST run — older runs may list
   // resources that no longer exist. Marking/revoking still applies to the
   // (connection, check, resource) key, not to a specific run.
   const showExceptionActions = isLatest && !!exceptionActions?.canManage;
 
-  const timeAgo = formatDistanceToNow(new Date(run.createdAt), { addSuffix: true });
+  const timeAgo = formatDistanceToNow(new Date(run.createdAt), {
+    addSuffix: true,
+    locale: locale === 'es' ? es : undefined,
+  });
   const hasFailed = run.status === 'failed' || run.failedCount > 0;
   const hasError = run.status === 'failed' && run.errorMessage;
 
@@ -228,7 +242,7 @@ export function CheckRunItem({
 
   const statusColor = hasError ? 'text-destructive' : hasFailed ? 'text-warning' : 'text-primary';
 
-  const statusText = hasError ? 'Error' : hasFailed ? 'Issues Found' : 'Passed';
+  const statusText = hasError ? t('runItem.error') : hasFailed ? t('runItem.issuesFound') : t('runItem.passed');
 
   return (
     <div
@@ -256,13 +270,17 @@ export function CheckRunItem({
             {run.failedCount > 0 && (
               <>
                 <span className="text-muted-foreground">•</span>
-                <span className="text-destructive">{run.failedCount} failed</span>
+                <span className="text-destructive">
+                  {t('runItem.failedCount', { count: run.failedCount })}
+                </span>
               </>
             )}
             {run.passedCount > 0 && (
               <>
                 <span className="text-muted-foreground">•</span>
-                <span className="text-primary">{run.passedCount} passed</span>
+                <span className="text-primary">
+                  {t('integrationChecks.passedCount', { count: run.passedCount })}
+                </span>
               </>
             )}
           </div>
@@ -318,7 +336,7 @@ export function CheckRunItem({
                             size="sm"
                             variant="ghost"
                             className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
-                            title="Accept this resource as an intentional exception — it will no longer fail this evidence item"
+                            title={t('runItem.markOutOfScopeTitle')}
                             onClick={() =>
                               exceptionActions?.onMarkOutOfScope({
                                 findingId: finding.id,
@@ -329,7 +347,7 @@ export function CheckRunItem({
                               })
                             }
                           >
-                            Mark out of scope
+                            {t('runItem.markOutOfScope')}
                           </Button>
                         )}
                       </div>
@@ -337,7 +355,7 @@ export function CheckRunItem({
                     {finding.evidence && Object.keys(finding.evidence).length > 0 && (
                       <details className="text-xs">
                         <summary className="text-muted-foreground cursor-pointer">
-                          View Evidence
+                          {t('runItem.viewEvidence')}
                         </summary>
                         <EvidenceJsonView
                           evidence={finding.evidence}
@@ -354,11 +372,13 @@ export function CheckRunItem({
                     onClick={() => setShowAllFindings(true)}
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    Show {collapsedFindings} more issue{collapsedFindings > 1 ? 's' : ''}
+                    {t('runItem.showMoreIssues', { count: collapsedFindings })}
                   </button>
                 )}
                 {moreFindings > 0 && (
-                  <p className="text-sm text-muted-foreground">+{moreFindings} more issues</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t('runItem.moreIssues', { count: moreFindings })}
+                  </p>
                 )}
               </div>
             )}
@@ -374,7 +394,7 @@ export function CheckRunItem({
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-sm font-medium text-muted-foreground">{finding.title}</p>
                         <Badge variant="outline" className="text-xs">
-                          Out of scope
+                          {t('runItem.outOfScope')}
                         </Badge>
                       </div>
                       {finding.exceptionReason && (
@@ -391,7 +411,7 @@ export function CheckRunItem({
                             size="sm"
                             variant="ghost"
                             className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
-                            title="Remove the exception — this resource will count against the evidence item again"
+                            title={t('runItem.removeExceptionTitle')}
                             onClick={() =>
                               exceptionActions?.onRevoke({
                                 findingId: finding.id,
@@ -403,7 +423,7 @@ export function CheckRunItem({
                               })
                             }
                           >
-                            Move back in scope
+                            {t('runItem.moveBackInScope')}
                           </Button>
                         )}
                       </div>
@@ -416,11 +436,13 @@ export function CheckRunItem({
                     onClick={() => setShowAllExcepted(true)}
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    Show {collapsedExcepted} more out of scope
+                    {t('runItem.showMoreOutOfScope', { count: collapsedExcepted })}
                   </button>
                 )}
                 {moreExcepted > 0 && (
-                  <p className="text-sm text-muted-foreground">+{moreExcepted} more out of scope</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t('runItem.moreOutOfScope', { count: moreExcepted })}
+                  </p>
                 )}
               </div>
             )}
@@ -429,7 +451,9 @@ export function CheckRunItem({
             {shownPassing.length > 0 && (
               <details className="text-xs" open={run.failedCount === 0}>
                 <summary className="text-sm font-medium text-primary cursor-pointer flex items-center gap-2">
-                  <span>✓ {run.passedCount} passed</span>
+                  <span>
+                    ✓ {t('integrationChecks.passedCount', { count: run.passedCount })}
+                  </span>
                 </summary>
                 <div className="mt-2 space-y-2 pl-4 border-l-2 border-primary/20">
                   {shownPassing.map((result) => (
@@ -446,7 +470,7 @@ export function CheckRunItem({
                       {result.evidence && Object.keys(result.evidence).length > 0 && (
                         <details className="text-xs">
                           <summary className="text-muted-foreground cursor-pointer">
-                            View Evidence
+                            {t('runItem.viewEvidence')}
                           </summary>
                           <EvidenceJsonView
                             evidence={result.evidence}
@@ -458,7 +482,9 @@ export function CheckRunItem({
                     </div>
                   ))}
                   {morePassing > 0 && (
-                    <p className="text-sm text-muted-foreground">+{morePassing} more passed</p>
+                    <p className="text-sm text-muted-foreground">
+                      {t('runItem.morePassed', { count: morePassing })}
+                    </p>
                   )}
                 </div>
               </details>
@@ -467,7 +493,9 @@ export function CheckRunItem({
             {/* Logs */}
             {run.logs && run.logs.length > 0 && (
               <details className="text-xs">
-                <summary className="text-muted-foreground cursor-pointer">Logs</summary>
+                <summary className="text-muted-foreground cursor-pointer">
+                  {t('runItem.logs')}
+                </summary>
                 <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-auto">
                   {run.logs.map((log, i) => (
                     <div
@@ -478,7 +506,7 @@ export function CheckRunItem({
                       )}
                     >
                       <span className="opacity-50">
-                        [{new Date(log.timestamp).toLocaleTimeString()}]
+                        [{new Date(log.timestamp).toLocaleTimeString(locale)}]
                       </span>{' '}
                       {log.message}
                     </div>

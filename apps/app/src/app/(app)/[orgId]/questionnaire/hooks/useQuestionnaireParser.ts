@@ -146,62 +146,71 @@ export function useQuestionnaireParser() {
       clearTimeout(statusTimeoutRef.current);
     }
 
-    // If no status and not loading, reset
-    if (!rawParseStatus && !isLoading) {
-      setParseStatus(null);
-      lastStatusRef.current = null;
-      return;
-    }
+    let cancelled = false;
+    // Async IIFE so every setState below runs after an await, not
+    // synchronously in the effect body.
+    (async () => {
+      await Promise.resolve();
+      if (cancelled) return;
 
-    // If loading but no raw status yet, keep showing last status or default
-    if (isLoading && !rawParseStatus && parseStatus) {
-      // Keep current status visible during loading
-      return;
-    }
+      // If no status and not loading, reset
+      if (!rawParseStatus && !isLoading) {
+        setParseStatus(null);
+        lastStatusRef.current = null;
+        return;
+      }
 
-    // If loading but no status at all, show default
-    if (isLoading && !rawParseStatus && !parseStatus) {
-      setParseStatus('starting');
-      lastStatusRef.current = 'starting';
-      return;
-    }
+      // If loading but no raw status yet, keep showing last status or default
+      if (isLoading && !rawParseStatus && parseStatus) {
+        // Keep current status visible during loading
+        return;
+      }
 
-    // If status changed, update after delay for smooth transition
-    if (rawParseStatus && rawParseStatus !== lastStatusRef.current) {
-      // If this is the first status, show immediately
-      if (!lastStatusRef.current) {
-        setParseStatus(rawParseStatus);
-        lastStatusRef.current = rawParseStatus;
-        statusStartTimeRef.current = Date.now();
-      } else {
-        // Check if current status has been visible for minimum duration
-        const isEarlyStage =
-          lastStatusRef.current === 'uploading' ||
-          lastStatusRef.current === 'starting' ||
-          lastStatusRef.current === 'queued';
-        const minDisplayTime = isEarlyStage ? 3000 : 1500; // 3s minimum for early stages, 1.5s for later
+      // If loading but no status at all, show default
+      if (isLoading && !rawParseStatus && !parseStatus) {
+        setParseStatus('starting');
+        lastStatusRef.current = 'starting';
+        return;
+      }
 
-        const timeSinceStatusStart = statusStartTimeRef.current
-          ? Date.now() - statusStartTimeRef.current
-          : 0;
-        const remainingTime = Math.max(0, minDisplayTime - timeSinceStatusStart);
-
-        statusTimeoutRef.current = setTimeout(() => {
+      // If status changed, update after delay for smooth transition
+      if (rawParseStatus && rawParseStatus !== lastStatusRef.current) {
+        // If this is the first status, show immediately
+        if (!lastStatusRef.current) {
           setParseStatus(rawParseStatus);
           lastStatusRef.current = rawParseStatus;
           statusStartTimeRef.current = Date.now();
-        }, remainingTime);
+        } else {
+          // Check if current status has been visible for minimum duration
+          const isEarlyStage =
+            lastStatusRef.current === 'uploading' ||
+            lastStatusRef.current === 'starting' ||
+            lastStatusRef.current === 'queued';
+          const minDisplayTime = isEarlyStage ? 3000 : 1500; // 3s minimum for early stages, 1.5s for later
+
+          const timeSinceStatusStart = statusStartTimeRef.current
+            ? Date.now() - statusStartTimeRef.current
+            : 0;
+          const remainingTime = Math.max(0, minDisplayTime - timeSinceStatusStart);
+
+          statusTimeoutRef.current = setTimeout(() => {
+            setParseStatus(rawParseStatus);
+            lastStatusRef.current = rawParseStatus;
+            statusStartTimeRef.current = Date.now();
+          }, remainingTime);
+        }
+      } else if (rawParseStatus && rawParseStatus === lastStatusRef.current) {
+        // Keep current status if it hasn't changed
+        setParseStatus(rawParseStatus);
+        // Update start time if it wasn't set
+        if (!statusStartTimeRef.current) {
+          statusStartTimeRef.current = Date.now();
+        }
       }
-    } else if (rawParseStatus && rawParseStatus === lastStatusRef.current) {
-      // Keep current status if it hasn't changed
-      setParseStatus(rawParseStatus);
-      // Update start time if it wasn't set
-      if (!statusStartTimeRef.current) {
-        statusStartTimeRef.current = Date.now();
-      }
-    }
+    })();
 
     return () => {
+      cancelled = true;
       if (statusTimeoutRef.current) {
         clearTimeout(statusTimeoutRef.current);
       }

@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   formatQuickActionStatus,
   getQuickActionProgressWidth,
@@ -63,11 +63,11 @@ export function ToDoOverview({
   } = useApiSWR<PendingOffboardingResponse>('/v1/offboarding-checklist/pending');
   const pendingOffboardings = pendingData?.data?.members ?? [];
 
-  useEffect(() => {
-    if (!isPendingLoading && pendingOffboardings.length > 0) {
-      setActiveTab('offboarding');
-    }
-  }, [isPendingLoading, pendingOffboardings.length]);
+  // Default to the offboarding tab once pending offboardings finish loading.
+  // Adjust-during-render instead of an effect to avoid setState-in-effect.
+  if (!isPendingLoading && pendingOffboardings.length > 0 && activeTab !== 'offboarding') {
+    setActiveTab('offboarding');
+  }
 
   const isOnboardingInProgress = !!onboardingTriggerJobId;
 

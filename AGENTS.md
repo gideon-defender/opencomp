@@ -147,13 +147,13 @@ Every customer-facing API endpoint MUST have:
 
 ## Design System
 
-- **Always prefer `@trycompai/design-system`** over `@gideon-defender/ui`. Check DS exports first.
-- `@gideon-defender/ui` is the legacy library being phased out — only use as last resort.
-- **Icons**: `@trycompai/design-system/icons` (Carbon icons), NOT `lucide-react`
+- **Always prefer `@gideon-defender/ui`** over `@trycompai/design-system`. Check UI exports first.
+- `@trycompai/design-system` is being phased out — only use as last resort for existing imports. Do NOT add new imports from it.
+- **Icons**: `lucide-react` is supported. `@trycompai/design-system/icons` (Carbon icons) is being retired — do NOT add new imports from it, and remove existing ones when touching a file. The goal is to eliminate trycomp resources completely, eventually.
 - **DS components that do NOT accept `className`**: `Text`, `Stack`, `HStack`, `Badge`, `Button` — wrap in `<div>` for custom styling
 - **Layout**: Use `PageLayout`, `PageHeader`, `Stack`, `HStack`, `Section`, `SettingGroup`
 - **Patterns**: Sheet (`Sheet > SheetContent > SheetHeader + SheetBody`), Drawer, Collapsible
-- **After editing any frontend component**: Run the `audit-design-system` skill to catch `@gideon-defender/ui` or `lucide-react` imports that should be migrated
+- **After editing any frontend component**: Run the `audit-design-system` skill to catch `@trycompai/design-system` imports that should be migrated
 
 ## Data Fetching
 

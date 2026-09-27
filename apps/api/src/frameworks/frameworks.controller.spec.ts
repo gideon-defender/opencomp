@@ -31,7 +31,6 @@ jest.mock('@gideon-defender/auth', () => ({
   ownerAc: {},
 }));
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { FrameworksController } from './frameworks.controller';

@@ -13,6 +13,7 @@ import {
 } from '@trycompai/design-system';
 import { Add, TrashCan } from '@trycompai/design-system/icons';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { FleetPolicy } from '../../types';
 
@@ -34,6 +35,8 @@ export function PolicyImageUploadModal({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<Array<{ file: File; previewUrl: string }>>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const t = useTranslations('modals');
+  const tToasts = useTranslations('toasts');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(e.target.files ?? []);
@@ -66,7 +69,7 @@ export function PolicyImageUploadModal({
   const handleSubmit = async () => {
     if (files.length === 0 || isLoading) return;
     if (!organizationId) {
-      toast.error('Missing organization ID from URL');
+      toast.error(tToasts('missingOrg'));
       return;
     }
 
@@ -90,14 +93,14 @@ export function PolicyImageUploadModal({
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || 'Failed to upload policy images');
+        throw new Error(data.error || tToasts('imagesUploadFailed'));
       }
 
-      toast.success('Policy images uploaded successfully');
+      toast.success(tToasts('imagesUploaded'));
       handleClose(false);
       onRefresh();
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to upload policy images';
+      const message = error instanceof Error ? error.message : tToasts('imagesUploadFailed');
       toast.error(message);
     } finally {
       setIsLoading(false);
@@ -108,7 +111,7 @@ export function PolicyImageUploadModal({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Upload Policy Images</DialogTitle>
+          <DialogTitle>{t('uploadTitle')}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -179,7 +182,7 @@ export function PolicyImageUploadModal({
             <>
               <div className="flex items-center gap-2 mr-auto">
                 <span className="text-sm text-muted-foreground">
-                  {files.length} file{files.length === 1 ? '' : 's'}
+                  {files.length === 1 ? t('fileCount', { count: files.length }) : t('fileCountPlural', { count: files.length })}
                 </span>
               </div>
               <Button
@@ -188,7 +191,7 @@ export function PolicyImageUploadModal({
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isLoading}
               >
-                Upload +
+                {t('uploadMore')}
               </Button>
             </>
           )}
@@ -198,10 +201,10 @@ export function PolicyImageUploadModal({
             onClick={() => handleClose(false)}
             disabled={isLoading}
           >
-            Cancel
+            {t('cancel')}
           </Button>
           <Button type="button" onClick={handleSubmit} disabled={files.length === 0 || isLoading}>
-            {isLoading ? <Spinner size="sm" /> : 'Submit'}
+            {isLoading ? <Spinner size="sm" /> : t('submit')}
           </Button>
         </DialogFooter>
       </DialogContent>

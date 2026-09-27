@@ -79,7 +79,7 @@ export class ChecksController {
   @Get('providers/:providerSlug')
   @ApiOperation({ summary: 'List check definitions for a provider' })
   @RequirePermission('integration', 'read')
-  async listProviderChecks(@Param('providerSlug') providerSlug: string) {
+  listProviderChecks(@Param('providerSlug') providerSlug: string) {
     const manifest = getManifest(providerSlug);
     if (!manifest) {
       throw new HttpException(
@@ -405,7 +405,7 @@ export class ChecksController {
             ...(errorStack ? { data: { stack: errorStack } } : {}),
             timestamp: new Date().toISOString(),
           },
-        ] as unknown as Prisma.InputJsonValue,
+        ],
       });
 
       this.logger.error(`Check execution failed: ${error}`);

@@ -164,8 +164,8 @@ export class BrowserMfaInstructionsService {
     // Bound the cache: evict the oldest entry (Map preserves insertion order)
     // before inserting a new host once we're at capacity.
     if (this.cache.size >= MAX_CACHE_ENTRIES) {
-      const oldest = this.cache.keys().next().value;
-      if (oldest !== undefined) this.cache.delete(oldest);
+      const oldest: unknown = this.cache.keys().next().value;
+      if (typeof oldest === 'string') this.cache.delete(oldest);
     }
     this.cache.set(hostname, { value, expiresAt: Date.now() + CACHE_TTL_MS });
     return value;

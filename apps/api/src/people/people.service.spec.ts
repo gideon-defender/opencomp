@@ -94,6 +94,7 @@ jest.mock('@gideon-defender/auth', () => ({
 jest.mock('@gideon-defender/email', () => ({
   isUserUnsubscribed: jest.fn().mockResolvedValue(false),
   sendUnassignedItemsNotificationEmail: jest.fn().mockResolvedValue(undefined),
+  resolveLocale: (input: unknown) => (input === 'es' ? 'es' : 'en'),
 }));
 
 jest.mock('./utils/member-validator');
@@ -228,7 +229,7 @@ describe('PeopleService', () => {
         createdMember,
       );
 
-      const result = await service.create('org_123', createData as any);
+      const result = await service.create('org_123', createData);
 
       expect(result).toEqual(createdMember);
       expect(MemberQueries.createMember).toHaveBeenCalledWith(
@@ -303,7 +304,7 @@ describe('PeopleService', () => {
       const result = await service.updateById(
         'mem_1',
         'org_123',
-        updateData as any,
+        updateData,
         'usr_caller',
       );
 
@@ -482,12 +483,7 @@ describe('PeopleService', () => {
       );
       setupCallerMember('usr_caller', 'org_123', 'admin');
 
-      await service.updateById(
-        'mem_1',
-        'org_123',
-        updateData as any,
-        'usr_caller',
-      );
+      await service.updateById('mem_1', 'org_123', updateData, 'usr_caller');
 
       expect(MemberValidator.validateUser).toHaveBeenCalledWith('usr_new');
       expect(MemberValidator.validateUserNotMember).toHaveBeenCalledWith(

@@ -1,4 +1,5 @@
 import { browser } from 'wxt/browser';
+import { t } from '../../lib/i18n';
 import { getResponseError, isOkResponse } from '../../lib/response-guards';
 import {
   createDefaultSheetMapping,
@@ -18,7 +19,7 @@ export async function handleSheetMappingChange(params: {
 
   const identity = parseSheetIdentityFromUrl(params.state.queue.url);
   if (!identity) {
-    params.setStatus('Open a Google Sheet and refresh before setting mapping.');
+    params.setStatus(t('sheetMapOpenSheetFirst'));
     return;
   }
 

@@ -251,8 +251,35 @@ export function TrustPortalSwitch({
     ccpa: ccpaFileName ?? null,
   });
 
-  useEffect(() => {
-    setCertificateFiles({
+  const [prevCertificateFiles, setPrevCertificateFiles] = useState({
+    iso27001: iso27001FileName ?? null,
+    iso42001: iso42001FileName ?? null,
+    gdpr: gdprFileName ?? null,
+    hipaa: hipaaFileName ?? null,
+    soc2type1: soc2type1FileName ?? null,
+    soc2type2: soc2type2FileName ?? null,
+    soc3: soc3FileName ?? null,
+    pcidss: pcidssFileName ?? null,
+    nen7510: nen7510FileName ?? null,
+    iso9001: iso9001FileName ?? null,
+    pipeda: pipedaFileName ?? null,
+    ccpa: ccpaFileName ?? null,
+  });
+  if (
+    prevCertificateFiles.iso27001 !== (iso27001FileName ?? null) ||
+    prevCertificateFiles.iso42001 !== (iso42001FileName ?? null) ||
+    prevCertificateFiles.gdpr !== (gdprFileName ?? null) ||
+    prevCertificateFiles.hipaa !== (hipaaFileName ?? null) ||
+    prevCertificateFiles.soc2type1 !== (soc2type1FileName ?? null) ||
+    prevCertificateFiles.soc2type2 !== (soc2type2FileName ?? null) ||
+    prevCertificateFiles.soc3 !== (soc3FileName ?? null) ||
+    prevCertificateFiles.pcidss !== (pcidssFileName ?? null) ||
+    prevCertificateFiles.nen7510 !== (nen7510FileName ?? null) ||
+    prevCertificateFiles.iso9001 !== (iso9001FileName ?? null) ||
+    prevCertificateFiles.pipeda !== (pipedaFileName ?? null) ||
+    prevCertificateFiles.ccpa !== (ccpaFileName ?? null)
+  ) {
+    const nextCertificateFiles = {
       iso27001: iso27001FileName ?? null,
       iso42001: iso42001FileName ?? null,
       gdpr: gdprFileName ?? null,
@@ -265,21 +292,10 @@ export function TrustPortalSwitch({
       iso9001: iso9001FileName ?? null,
       pipeda: pipedaFileName ?? null,
       ccpa: ccpaFileName ?? null,
-    });
-  }, [
-    iso27001FileName,
-    iso42001FileName,
-    gdprFileName,
-    hipaaFileName,
-    soc2type1FileName,
-    soc2type2FileName,
-    soc3FileName,
-    pcidssFileName,
-    nen7510FileName,
-    iso9001FileName,
-    pipedaFileName,
-    ccpaFileName,
-  ]);
+    };
+    setPrevCertificateFiles(nextCertificateFiles);
+    setCertificateFiles(nextCertificateFiles);
+  }
 
   const convertFileToBase64 = async (file: File): Promise<string> => {
     const buffer = await file.arrayBuffer();

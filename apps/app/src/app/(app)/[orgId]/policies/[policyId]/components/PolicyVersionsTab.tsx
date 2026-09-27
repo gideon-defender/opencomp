@@ -39,7 +39,7 @@ import { ChevronLeft, ChevronRight } from '@trycompai/design-system/icons';
 import { format } from 'date-fns';
 import { Edit, FileText, MoreVertical, Plus, Trash2, Upload } from 'lucide-react';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { usePolicyVersions } from '../hooks/usePolicyVersions';
 import { PublishVersionDialog } from './PublishVersionDialog';
@@ -117,12 +117,11 @@ export function PolicyVersionsTab({
     return sortedVersions.slice(startIndex, endIndex);
   }, [sortedVersions, currentPage]);
 
-  // Reset to page 1 when versions change and current page is out of bounds
-  useEffect(() => {
-    if (currentPage > totalPages && totalPages > 0) {
-      setCurrentPage(1);
-    }
-  }, [totalPages, currentPage]);
+  // Reset to page 1 when versions change and current page is out of bounds.
+  // Derived during render instead of an effect to avoid setState-in-effect.
+  if (currentPage > totalPages && totalPages > 0) {
+    setCurrentPage(1);
+  }
 
   const handleRequestSetActive = (version: PolicyVersionWithPublisher) => {
     setPendingSetActiveVersion(version);

@@ -2,6 +2,7 @@ import { db } from '@db';
 import { Injectable, Logger } from '@nestjs/common';
 import { isUserUnsubscribed } from '@gideon-defender/email';
 import { triggerEmail } from '../email/trigger-email';
+import { resolveEmailLocale, type EmailLocale } from '../email/locale';
 import { EvidenceAccessRequestSubmittedEmail } from '../email/templates/evidence-access-request-submitted';
 
 interface Recipient {
@@ -33,6 +34,7 @@ export class EvidenceFormsNotifierService {
     submitterName: string;
     submissionId: string;
     data: Record<string, unknown>;
+    locale?: EmailLocale;
   }): Promise<void> {
     const {
       organizationId,
@@ -41,6 +43,7 @@ export class EvidenceFormsNotifierService {
       submissionId,
       data,
     } = params;
+    const emailLocale = resolveEmailLocale(params.locale);
 
     const recipients = await this.getOwnersAndAdmins(
       organizationId,
@@ -64,6 +67,7 @@ export class EvidenceFormsNotifierService {
       recipients.map((recipient) =>
         this.sendToRecipient({
           recipient,
+          locale: emailLocale,
           organizationName,
           submitterName,
           reviewUrl,
@@ -83,8 +87,10 @@ export class EvidenceFormsNotifierService {
     accountsNeeded: string;
     permissionsNeeded: string;
     reasonForRequest: string;
+    locale?: EmailLocale;
   }): Promise<void> {
     const { recipient, submitterName, organizationName, reviewUrl } = params;
+    const emailLocale = resolveEmailLocale(params.locale);
 
     try {
       const isUnsubscribed = await isUserUnsubscribed(db, recipient.email);
@@ -97,8 +103,12 @@ export class EvidenceFormsNotifierService {
 
       await triggerEmail({
         to: recipient.email,
-        subject: `New access request from ${submitterName}`,
+        subject:
+          emailLocale === 'es'
+            ? `Nueva solicitud de acceso de ${submitterName}`
+            : `New access request from ${submitterName}`,
         react: EvidenceAccessRequestSubmittedEmail({
+          locale: emailLocale,
           toName: recipient.name,
           toEmail: recipient.email,
           organizationName,

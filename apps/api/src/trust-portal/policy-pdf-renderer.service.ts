@@ -3,7 +3,7 @@ import { jsPDF } from 'jspdf';
 
 interface JSONContent {
   type: string;
-  attrs?: Record<string, any>;
+  attrs?: Record<string, unknown>;
   content?: JSONContent[];
   text?: string;
   marks?: Array<{ type: string }>;
@@ -22,7 +22,23 @@ interface PDFConfig {
 
 interface PolicyForPDF {
   name: string;
-  content: any;
+  content: unknown;
+}
+
+/**
+ * `splitTextToSize` is typed `any` by jspdf; narrow its result to `string[]`
+ * (its documented runtime shape) so wrapped lines are never `any`.
+ */
+function toTextLines(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map((line: unknown) => String(line));
+  if (typeof value === 'string') return [value];
+  return [String(value)];
+}
+
+/** TipTap `colspan` is always numeric when present; default to 1 otherwise. */
+function colspanOf(node: JSONContent): number {
+  const colspan: unknown = node.attrs?.colspan;
+  return typeof colspan === 'number' ? colspan : 1;
 }
 
 // Keep-together: minimum number of body lines that must fit on the same page
@@ -98,9 +114,11 @@ export class PolicyPdfRendererService {
       .replace(/[\u2060-\u206F]/g, '')
       .replace(/\uFEFF/g, '')
       .replace(/\uFFFD/g, '')
-      // Strip emoji characters — standard PDF fonts cannot render them
+      // Strip emoji characters — standard PDF fonts cannot render them.
+      // The variation selector / joiner / keycap marks are matched as
+      // alternatives (not class members) per no-misleading-character-class.
       .replace(
-        /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{231A}-\u{231B}\u{23E9}-\u{23F3}\u{23F8}-\u{23FA}\u{25AA}-\u{25AB}\u{25B6}\u{25C0}\u{25FB}-\u{25FE}\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu,
+        /(?:[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{231A}-\u{231B}\u{23E9}-\u{23F3}\u{23F8}-\u{23FA}\u{25AA}-\u{25AB}\u{25B6}\u{25C0}\u{25FB}-\u{25FE}\u{E0020}-\u{E007F}]|\u{FE0F}|\u{200D}|\u{20E3})/gu,
         '',
       );
 
@@ -133,7 +151,7 @@ export class PolicyPdfRendererService {
       cleanedText = cleanedText.replace(new RegExp(unicode, 'g'), replacement);
     }
 
-    return cleanedText.replace(/[^\x00-\x7F]/g, (char) => {
+    return cleanedText.replace(/[\u0080-\uFFFF]/g, (char) => {
       const safeChars =
         /[àáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞß]/;
       if (safeChars.test(char)) {
@@ -202,7 +220,7 @@ export class PolicyPdfRendererService {
     });
   }
 
-  private convertToInternalFormat(content: any[]): JSONContent[] {
+  private convertToInternalFormat(content: unknown): JSONContent[] {
     // Imported / non-TipTap policy content (e.g. Drata migrations) can have a
     // `content` field that is a string or object instead of a JSONContent[]
     // array. Guard so .map never runs on a non-array and throws
@@ -211,15 +229,35 @@ export class PolicyPdfRendererService {
     if (!Array.isArray(content)) {
       return [];
     }
-    return content.map((item) => ({
-      type: item.type || 'paragraph',
-      attrs: item.attrs,
-      content: item.content
-        ? this.convertToInternalFormat(item.content)
-        : undefined,
-      text: item.text,
-      marks: item.marks,
-    }));
+    return content.map((item: unknown) => {
+      if (typeof item !== 'object' || item === null) {
+        return { type: 'paragraph' };
+      }
+      const record = item as Record<string, unknown>;
+      const rawType: unknown = record.type;
+      const rawAttrs: unknown = record.attrs;
+      const rawContent: unknown = record.content;
+      const rawText: unknown = record.text;
+      const rawMarks: unknown = record.marks;
+      return {
+        type: (typeof rawType === 'string' && rawType) || 'paragraph',
+        attrs:
+          typeof rawAttrs === 'object' && rawAttrs !== null
+            ? (rawAttrs as Record<string, unknown>)
+            : undefined,
+        content: rawContent
+          ? this.convertToInternalFormat(rawContent)
+          : undefined,
+        text: typeof rawText === 'string' ? rawText : undefined,
+        marks: Array.isArray(rawMarks)
+          ? rawMarks.filter((mark: unknown): mark is { type: string } => {
+              if (typeof mark !== 'object' || mark === null) return false;
+              const markType: unknown = (mark as Record<string, unknown>).type;
+              return typeof markType === 'string';
+            })
+          : undefined,
+      };
+    });
   }
 
   private extractTextFromContent(content: JSONContent[]): string {
@@ -248,7 +286,7 @@ export class PolicyPdfRendererService {
 
     let columnCount = 0;
     for (const cell of firstRow.content) {
-      columnCount += cell.attrs?.colspan ?? 1;
+      columnCount += colspanOf(cell);
     }
     if (columnCount === 0) return 0;
 
@@ -257,7 +295,7 @@ export class PolicyPdfRendererService {
     let rowHeight = config.lineHeight + cellPadding * 2;
     for (const cell of firstRow.content) {
       if (cell.type !== 'tableCell' && cell.type !== 'tableHeader') continue;
-      const width = colWidth * (cell.attrs?.colspan ?? 1);
+      const width = colWidth * colspanOf(cell);
       const text = this.cleanTextForPDF(
         this.extractCellText(cell.content ?? []),
       );
@@ -336,7 +374,9 @@ export class PolicyPdfRendererService {
     else if (isItalic) fontStyle = 'italic';
 
     config.doc.setFont('helvetica', fontStyle);
-    const lines = config.doc.splitTextToSize(cleanText, config.contentWidth);
+    const lines = toTextLines(
+      config.doc.splitTextToSize(cleanText, config.contentWidth),
+    );
 
     for (const line of lines) {
       this.checkPageBreak(config);
@@ -351,7 +391,8 @@ export class PolicyPdfRendererService {
     for (const [nodeIndex, node] of content.entries()) {
       switch (node.type) {
         case 'heading': {
-          const level = node.attrs?.level || 1;
+          const rawLevel: unknown = node.attrs?.level;
+          const level = typeof rawLevel === 'number' ? rawLevel : 1;
           const headingSizes: { [key: number]: number } = {
             1: 16,
             2: 14,
@@ -436,9 +477,11 @@ export class PolicyPdfRendererService {
                 const itemText = this.cleanTextForPDF(
                   this.extractTextFromContent(item.content),
                 );
-                const lines = config.doc.splitTextToSize(
-                  itemText,
-                  config.contentWidth - 10,
+                const lines = toTextLines(
+                  config.doc.splitTextToSize(
+                    itemText,
+                    config.contentWidth - 10,
+                  ),
                 );
 
                 config.doc.text(bullet, config.margin, config.yPosition);
@@ -478,9 +521,8 @@ export class PolicyPdfRendererService {
             const codeText = this.cleanTextForPDF(
               this.extractTextFromContent(node.content),
             );
-            const lines = config.doc.splitTextToSize(
-              codeText,
-              config.contentWidth - 10,
+            const lines = toTextLines(
+              config.doc.splitTextToSize(codeText, config.contentWidth - 10),
             );
 
             for (const line of lines) {
@@ -505,9 +547,11 @@ export class PolicyPdfRendererService {
                 const quoteText = this.cleanTextForPDF(
                   this.extractTextFromContent(quoteNode.content),
                 );
-                const lines = config.doc.splitTextToSize(
-                  quoteText,
-                  config.contentWidth - 15,
+                const lines = toTextLines(
+                  config.doc.splitTextToSize(
+                    quoteText,
+                    config.contentWidth - 15,
+                  ),
                 );
 
                 for (const line of lines) {
@@ -549,7 +593,7 @@ export class PolicyPdfRendererService {
     // Count columns (including colspans) from the first row
     let columnCount = 0;
     for (const cell of firstRow.content) {
-      columnCount += cell.attrs?.colspan ?? 1;
+      columnCount += colspanOf(cell);
     }
     if (columnCount === 0) return;
 
@@ -572,7 +616,7 @@ export class PolicyPdfRendererService {
       for (const cell of row.content) {
         if (cell.type !== 'tableCell' && cell.type !== 'tableHeader') continue;
         const isHeader = cell.type === 'tableHeader';
-        const colspan = cell.attrs?.colspan ?? 1;
+        const colspan = colspanOf(cell);
         const width = colWidth * colspan;
         const rawText = this.extractCellText(cell.content ?? []);
         const cleanText = this.cleanTextForPDF(rawText);
@@ -803,9 +847,12 @@ export class PolicyPdfRendererService {
           policyContent = this.convertToInternalFormat(policy.content);
         } else if (
           typeof policy.content === 'object' &&
-          policy.content.content
+          policy.content !== null &&
+          'content' in policy.content
         ) {
-          policyContent = this.convertToInternalFormat(policy.content.content);
+          policyContent = this.convertToInternalFormat(
+            (policy.content as { content?: unknown }).content,
+          );
         } else {
           policyContent = [];
         }

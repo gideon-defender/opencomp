@@ -1,0 +1,13 @@
+{
+  "appTitle": "Editor de marcos",
+  "signOut": "Cerrar sesión",
+  "loading": "Cargando...",
+  "language": "Idioma",
+  "english": "English",
+  "spanish": "Español",
+  "frameworks": "Marcos",
+  "toggleTheme": "Cambiar tema",
+  "switchToLightMode": "Cambiar al modo claro",
+  "switchToDarkMode": "Cambiar al modo oscuro",
+  "userMenu": "Menú de usuario"
+}

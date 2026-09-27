@@ -30,41 +30,39 @@ class InMemoryRedis implements ApiRedisClient {
     }
   }
 
-  async get<T = unknown>(key: string): Promise<T | null> {
+  get<T = unknown>(key: string): Promise<T | null> {
     this.purge(key);
     const record = this.storage.get(key);
-    if (!record) return null;
-    return record.value as T;
+    if (!record) return Promise.resolve(null);
+    return Promise.resolve(record.value as T);
   }
 
-  async set<T>(
-    key: string,
-    value: T,
-    options?: { ex?: number },
-  ): Promise<'OK'> {
+  set<T>(key: string, value: T, options?: { ex?: number }): Promise<'OK'> {
     const expiresAt = options?.ex ? Date.now() + options.ex * 1000 : undefined;
     this.storage.set(key, { value, expiresAt });
-    return 'OK';
+    return Promise.resolve('OK' as const);
   }
 
-  async del(...keys: string[]): Promise<number> {
+  del(...keys: string[]): Promise<number> {
     let removed = 0;
     for (const key of keys) {
       if (this.storage.delete(key)) removed += 1;
     }
-    return removed;
+    return Promise.resolve(removed);
   }
 
-  async getdel<T = unknown>(key: string): Promise<T | null> {
+  getdel<T = unknown>(key: string): Promise<T | null> {
     this.purge(key);
     const record = this.storage.get(key);
-    if (!record) return null;
+    if (!record) return Promise.resolve(null);
     this.storage.delete(key);
-    return record.value as T;
+    return Promise.resolve(record.value as T);
   }
 
-  async eval(): Promise<unknown> {
-    throw new Error('EVAL is not supported by the in-memory Redis backend');
+  eval(): Promise<unknown> {
+    return Promise.reject(
+      new Error('EVAL is not supported by the in-memory Redis backend'),
+    );
   }
 }
 

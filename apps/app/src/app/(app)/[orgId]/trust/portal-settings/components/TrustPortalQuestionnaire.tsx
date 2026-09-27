@@ -3,7 +3,7 @@
 import { usePermissions } from '@/hooks/use-permissions';
 import { useTrustPortalSettings } from '@/hooks/use-trust-portal-settings';
 import { View, ViewOff } from '@trycompai/design-system/icons';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 interface TrustPortalQuestionnaireProps {
@@ -20,9 +20,11 @@ export function TrustPortalQuestionnaire({ initialEnabled, orgId }: TrustPortalQ
 
   // Resync when the server-provided value changes (e.g. parent refetch), so the
   // toggle never reflects stale visibility.
-  useEffect(() => {
+  const [prevInitialEnabled, setPrevInitialEnabled] = useState(initialEnabled);
+  if (prevInitialEnabled !== initialEnabled) {
+    setPrevInitialEnabled(initialEnabled);
     setEnabled(initialEnabled);
-  }, [initialEnabled]);
+  }
 
   const handleToggleChange = async (checked: boolean) => {
     if (!canUpdate || checked === enabled || isSaving) return;

@@ -40,8 +40,9 @@ export class GcpRemediationService {
         this.planCache.delete(key);
     }
     while (this.planCache.size > this.PLAN_CACHE_MAX) {
-      const firstKey = this.planCache.keys().next().value;
-      if (firstKey) this.planCache.delete(firstKey);
+      const firstKey: unknown = this.planCache.keys().next().value;
+      if (typeof firstKey === 'string' && firstKey)
+        this.planCache.delete(firstKey);
       else break;
     }
   }
@@ -539,7 +540,7 @@ export class GcpRemediationService {
               missingPermissions: permissionError.missingActions,
               suggestedFix: permissionError.fixScript,
             }),
-          } as unknown as Prisma.InputJsonValue,
+          },
         },
       });
 

@@ -1,12 +1,19 @@
 import { Hr, Link, Section, Text } from '@react-email/components';
+import type { Locale } from '../lib/locale';
 
-export function Footer() {
+const copy: Record<Locale, { tagline: string }> = {
+  en: { tagline: 'AI that handles compliance for you' },
+  es: { tagline: 'IA que gestiona el cumplimiento por ti' },
+};
+
+export function Footer({ locale = 'en' }: { locale?: Locale }) {
+  const t = copy[locale];
   return (
     <Section className="w-full">
       <Hr />
 
       <Text className="font-regular text-[14px]">
-        AI that handles compliance for you -{' '}
+        {t.tagline} -{' '}
         <Link href="https://gideondefender.com?utm_source=email&utm_medium=footer">OpenComp</Link>.
       </Text>
 

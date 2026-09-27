@@ -73,12 +73,24 @@ function composeRefs<T>(...refs: PossibleRef<T>[]): React.RefCallback<T> {
 }
 
 /**
- * A custom hook that composes multiple refs.
- * Accepts callback refs and RefObject(s).
+ * Composes up to two refs. Fixed params (not variadic) so the dep list stays
+ * an array literal. Both callers pass exactly two refs.
  */
-function useComposedRefs<T>(...refs: PossibleRef<T>[]): React.RefCallback<T> {
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  return React.useCallback(composeRefs(...refs), refs);
+function useComposedRefs<T>(ref1: PossibleRef<T>, ref2?: PossibleRef<T>): React.RefCallback<T> {
+  return React.useCallback(
+    (value: T | null) => {
+      const cleanups = [setRef(ref1, value as T), setRef(ref2, value as T)];
+      if (value === null || !cleanups.some((cleanup) => typeof cleanup === 'function')) {
+        return undefined;
+      }
+      return () => {
+        for (const cleanup of cleanups) {
+          if (typeof cleanup === 'function') cleanup();
+        }
+      };
+    },
+    [ref1, ref2],
+  );
 }
 
 export { composeEventHandlers, composeRefs, useComposedRefs };

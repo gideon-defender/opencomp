@@ -38,12 +38,11 @@ export function UnifiedWorkflowCard({
   evaluationCriteria,
   automationId,
 }: Props) {
-  const { automationIdRef } = useSharedChatContext();
+  const { resolvedAutomationId } = useSharedChatContext();
   const [isAnimationComplete, setIsAnimationComplete] = useState(false);
 
-  // Use the real automation ID from ref (not "new")
-  const realAutomationId =
-    automationIdRef.current !== 'new' ? automationIdRef.current : automationId;
+  // Use the real automation ID (prop first, shared state fallback) without reading refs.
+  const realAutomationId = automationId ?? resolvedAutomationId;
 
   // Fetch automation data with the correct ID
   const { automation } = useTaskAutomation(realAutomationId);

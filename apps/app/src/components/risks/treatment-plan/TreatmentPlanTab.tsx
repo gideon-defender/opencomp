@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils';
 import { Impact, Likelihood, RiskTreatmentType, TaskStatus } from '@db';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { AutoLinkSuggestions } from './AutoLinkSuggestions';
 import { DescriptionEditor } from './DescriptionEditor';
 import { LinkedWork } from './LinkedWork';
@@ -99,9 +99,12 @@ export function TreatmentPlanTab({
 }: TreatmentPlanTabProps) {
   const [strategy, setStrategy] = useState(entity.treatmentStrategy);
 
-  useEffect(() => {
+  // Re-sync local edits when the persisted strategy changes (adjusted during render).
+  const [prevTreatmentStrategy, setPrevTreatmentStrategy] = useState(entity.treatmentStrategy);
+  if (prevTreatmentStrategy !== entity.treatmentStrategy) {
+    setPrevTreatmentStrategy(entity.treatmentStrategy);
     setStrategy(entity.treatmentStrategy);
-  }, [entity.treatmentStrategy]);
+  }
 
   const handleStrategyChange = async (next: RiskTreatmentType) => {
     setStrategy(next);
@@ -132,9 +135,10 @@ export function TreatmentPlanTab({
   // or escapes to the editor via "Start from scratch" / "Edit plan manually".
   // The editor only appears once linked work exists OR the user dismissed.
   const [emptyDismissed, setEmptyDismissed] = useState(false);
-  useEffect(() => {
-    if (hasLinkedWork) setEmptyDismissed(false);
-  }, [hasLinkedWork]);
+  // Re-show the kickoff once linked work appears again (adjusted during render).
+  if (hasLinkedWork && emptyDismissed) {
+    setEmptyDismissed(false);
+  }
 
   const showKickoff = isMitigate && !hasLinkedWork && !emptyDismissed;
   const kickoffVariant: 'kickoff' | 'kickoff-with-plan' = hasPlan ? 'kickoff-with-plan' : 'kickoff';

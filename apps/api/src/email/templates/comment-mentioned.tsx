@@ -14,6 +14,7 @@ import {
 } from '@react-email/components';
 import { Footer } from '../components/footer';
 import { Logo } from '../components/logo';
+import type { EmailLocale } from '../locale';
 import { getUnsubscribeUrl } from '@gideon-defender/email';
 
 interface Props {
@@ -26,7 +27,33 @@ interface Props {
   entityId: string;
   organizationId: string;
   commentUrl: string;
+  locale?: EmailLocale;
 }
+
+const copy = {
+  en: {
+    previewMentioned: "mentioned you in a comment",
+    heading: "You were mentioned in a comment",
+    hello: "Hello",
+    bodyMentioned: "mentioned you in a comment on",
+    viewComment: "View Comment",
+    copyPaste: "or copy and paste this URL into your browser:",
+    unsubscribeQuestion:
+      "Don't want to receive comment mention notifications?",
+    managePrefs: "Manage your email preferences",
+  },
+  es: {
+    previewMentioned: "te mencionó en un comentario",
+    heading: "Te mencionaron en un comentario",
+    hello: "Hola",
+    bodyMentioned: "te mencionó en un comentario en",
+    viewComment: "Ver comentario",
+    copyPaste: "o copia y pega esta URL en tu navegador:",
+    unsubscribeQuestion:
+      "¿No quieres recibir notificaciones de menciones en comentarios?",
+    managePrefs: "Gestionar tus preferencias de correo electrónico",
+  },
+};
 
 export const CommentMentionedEmail = ({
   toName,
@@ -38,7 +65,10 @@ export const CommentMentionedEmail = ({
   entityId,
   organizationId,
   commentUrl,
+  locale = 'en',
 }: Props) => {
+  const t = copy[locale];
+
   const unsubscribeUrl = getUnsubscribeUrl(toEmail);
 
   // Extract plain text from TipTap JSON if needed
@@ -71,7 +101,7 @@ export const CommentMentionedEmail = ({
       : plainTextContent;
 
   return (
-    <Html>
+    <Html lang={locale}>
       <Tailwind>
         <head>
           <Font
@@ -87,7 +117,7 @@ export const CommentMentionedEmail = ({
             fontStyle="normal"
           />
         </head>
-        <Preview>{mentionedByName} mentioned you in a comment</Preview>
+        <Preview>{mentionedByName} {t.previewMentioned}</Preview>
 
         <Body className="mx-auto my-auto bg-[#fff] font-sans">
           <Container
@@ -96,16 +126,15 @@ export const CommentMentionedEmail = ({
           >
             <Logo />
             <Heading className="mx-0 my-[30px] p-0 text-center text-[24px] font-normal text-[#121212]">
-              You were mentioned in a comment
+              {t.heading}
             </Heading>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              Hello {toName},
+              {t.hello} {toName},
             </Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              <strong>{mentionedByName}</strong> mentioned you in a comment on{' '}
-              <strong>{entityName}</strong>.
+              <strong>{mentionedByName}</strong> {t.bodyMentioned} <strong>{entityName}</strong>.
             </Text>
 
             <Section className="mt-[24px] mb-[24px] rounded-[4px] bg-[#F5F5F5] p-[16px]">
@@ -119,12 +148,12 @@ export const CommentMentionedEmail = ({
                 className="rounded-[3px] bg-[#121212] px-[20px] py-[12px] text-center text-[14px] font-semibold text-white no-underline"
                 href={commentUrl}
               >
-                View Comment
+                {t.viewComment}
               </Button>
             </Section>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              or copy and paste this URL into your browser:{' '}
+              {t.copyPaste}{' '}
               <a href={commentUrl} className="text-[#121212] underline">
                 {commentUrl}
               </a>
@@ -132,12 +161,12 @@ export const CommentMentionedEmail = ({
 
             <Section className="mt-[30px] mb-[20px]">
               <Text className="text-[12px] leading-[20px] text-[#666666]">
-                Don't want to receive comment mention notifications?{' '}
+                {t.unsubscribeQuestion}{' '}
                 <Link
                   href={unsubscribeUrl}
                   className="text-[#121212] underline"
                 >
-                  Manage your email preferences
+                  {t.managePrefs}
                 </Link>
                 .
               </Text>
@@ -145,7 +174,7 @@ export const CommentMentionedEmail = ({
 
             <br />
 
-            <Footer />
+            <Footer locale={locale} />
           </Container>
         </Body>
       </Tailwind>

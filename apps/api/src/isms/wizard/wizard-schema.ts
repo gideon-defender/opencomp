@@ -72,8 +72,6 @@ export const wizardAnswersSchema = z.object({
   intendedOutcomes: z.array(z.string()),
 });
 
-type WizardAnswers = z.infer<typeof wizardAnswersSchema>;
-
 /**
  * Deeply-partial variant for incremental saves. Nested objects/arrays are all
  * optional so the client can PATCH a single step's answers.

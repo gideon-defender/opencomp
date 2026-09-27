@@ -4,7 +4,7 @@ import type { Member, Task, User } from '@db';
 import { format } from 'date-fns';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import { TaskStatusSelector } from './TaskStatusSelector';
 
@@ -123,12 +123,10 @@ export function TaskCard({
     collect: (monitor) => ({ isOver: monitor.isOver({ shallow: true }) }), // Use shallow: true
   });
 
-  // Effect to clear the indicator if the drag moves off this card.
-  useEffect(() => {
-    if (!isOver) {
-      setIndicator(null);
-    }
-  }, [isOver]);
+  // Clear the indicator if the drag moves off this card.
+  if (!isOver && indicator !== null) {
+    setIndicator(null);
+  }
 
   // Callback ref to assign both drag and drop refs to the same DOM node.
   const setRefs = useCallback(

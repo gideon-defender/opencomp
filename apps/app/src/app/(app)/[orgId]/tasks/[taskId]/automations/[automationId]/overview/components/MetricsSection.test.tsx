@@ -1,6 +1,7 @@
 import { mockNextIntl } from '@/test-utils/mocks/next-intl';
 import { render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { renderToString } from 'react-dom/server';
 
 mockNextIntl();
 
@@ -23,7 +24,6 @@ describe('MetricsSection (SALE-49)', () => {
   });
 
   it('uses an SSR-safe placeholder for schedule + next run (defers date formatting to post-mount)', () => {
-    const { renderToString } = require('react-dom/server') as typeof import('react-dom/server');
     vi.setSystemTime(new Date('2026-04-16T07:00:00Z'));
     const html = renderToString(
       <MetricsSection

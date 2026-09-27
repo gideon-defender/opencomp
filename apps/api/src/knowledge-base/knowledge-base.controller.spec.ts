@@ -79,7 +79,7 @@ describe('KnowledgeBaseController', () => {
         manualAnswerId: 'ma1',
       });
 
-      const result = await controller.saveManualAnswer('org_1', dto as any);
+      const result = await controller.saveManualAnswer('org_1', dto);
 
       expect(result).toEqual({ success: true, manualAnswerId: 'ma1' });
       expect(service.saveManualAnswer).toHaveBeenCalledWith({
@@ -103,7 +103,7 @@ describe('KnowledgeBaseController', () => {
         s3Key: 'key',
       });
 
-      const result = await controller.uploadDocument(dto as any);
+      const result = await controller.uploadDocument(dto);
 
       expect(result.id).toBe('d1');
       expect(service.uploadDocument).toHaveBeenCalledWith(dto);
@@ -118,7 +118,7 @@ describe('KnowledgeBaseController', () => {
         fileName: 'doc.pdf',
       });
 
-      const result = await controller.getDownloadUrl('d1', dto as any);
+      const result = await controller.getDownloadUrl('d1', dto);
 
       expect(result.signedUrl).toBe('https://example.com/signed');
       expect(service.getDownloadUrl).toHaveBeenCalledWith({
@@ -133,7 +133,7 @@ describe('KnowledgeBaseController', () => {
       const dto = { organizationId: 'org_1' };
       mockService.deleteDocument.mockResolvedValue({ success: true });
 
-      const result = await controller.deleteDocument('d1', dto as any);
+      const result = await controller.deleteDocument('d1', dto);
 
       expect(result).toEqual({ success: true });
       expect(service.deleteDocument).toHaveBeenCalledWith({
@@ -155,7 +155,7 @@ describe('KnowledgeBaseController', () => {
         message: 'Processing 2 documents in parallel...',
       });
 
-      const result = await controller.processDocuments(dto as any);
+      const result = await controller.processDocuments(dto);
 
       expect(result.success).toBe(true);
       expect(service.processDocuments).toHaveBeenCalledWith(dto);
@@ -186,7 +186,7 @@ describe('KnowledgeBaseController', () => {
       const dto = { organizationId: 'org_1' };
       mockService.deleteManualAnswer.mockResolvedValue({ success: true });
 
-      const result = await controller.deleteManualAnswer('ma1', dto as any);
+      const result = await controller.deleteManualAnswer('ma1', dto);
 
       expect(result).toEqual({ success: true });
       expect(service.deleteManualAnswer).toHaveBeenCalledWith({
@@ -201,7 +201,7 @@ describe('KnowledgeBaseController', () => {
       const dto = { organizationId: 'org_1' };
       mockService.deleteAllManualAnswers.mockResolvedValue({ success: true });
 
-      const result = await controller.deleteAllManualAnswers(dto as any);
+      const result = await controller.deleteAllManualAnswers(dto);
 
       expect(result).toEqual({ success: true });
       expect(service.deleteAllManualAnswers).toHaveBeenCalledWith(dto);

@@ -66,9 +66,17 @@ async function fetchControlIds(
   const modelName = RESOURCE_CONTROL_MODELS[resource];
   if (!modelName) return [];
   try {
-    const model = (db as unknown as Record<string, { findUnique?: Function }>)[
-      modelName
-    ];
+    const model = (
+      db as unknown as Record<
+        string,
+        {
+          findUnique?: (args: {
+            where: { id: string };
+            select: Record<string, unknown>;
+          }) => Promise<unknown>;
+        }
+      >
+    )[modelName];
     if (!model?.findUnique) return [];
     const record = await model.findUnique({
       where: { id: parentId },
@@ -164,9 +172,17 @@ export async function fetchCurrentValues(
   const modelName = RESOURCE_TO_PRISMA_MODEL[resource];
   if (!modelName) return null;
 
-  const model = (db as unknown as Record<string, { findUnique?: Function }>)[
-    modelName
-  ];
+  const model = (
+    db as unknown as Record<
+      string,
+      {
+        findUnique?: (args: {
+          where: { id: string };
+          select: Record<string, unknown>;
+        }) => Promise<unknown>;
+      }
+    >
+  )[modelName];
   if (!model?.findUnique) return null;
 
   const select: Record<string, boolean> = {};
@@ -175,7 +191,9 @@ export async function fetchCurrentValues(
   }
 
   try {
-    return await model.findUnique({ where: { id: entityId }, select });
+    const result = await model.findUnique({ where: { id: entityId }, select });
+    if (result === null || typeof result !== 'object') return null;
+    return result as Record<string, unknown>;
   } catch {
     return null;
   }

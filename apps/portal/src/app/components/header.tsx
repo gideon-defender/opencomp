@@ -1,19 +1,23 @@
+import { LanguageSwitcher } from '@/app/components/language-switcher';
 import { UserMenu } from '@/app/components/user-menu';
 import { Icons } from '@gideon-defender/ui/icons';
 import { Skeleton } from '@gideon-defender/ui/skeleton';
+import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { Suspense } from 'react';
 
 export async function Header() {
+  const t = await getTranslations('header');
   return (
     <header className="border-border bg-background/70 sticky top-0 z-10 w-full border-b backdrop-blur-xl">
       <div className="flex w-full items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-3">
           <Icons.Logo />
-          <span className="text-lg font-medium">OpenComp - Employee Portal</span>
+          <span className="text-lg font-medium">{t('title')}</span>
         </Link>
 
         <div className="flex items-center space-x-2">
+          <LanguageSwitcher />
           <Suspense fallback={<Skeleton className="h-8 w-8 rounded-full" />}>
             <UserMenu />
           </Suspense>

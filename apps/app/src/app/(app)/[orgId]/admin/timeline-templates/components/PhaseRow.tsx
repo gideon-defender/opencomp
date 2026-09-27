@@ -4,6 +4,7 @@ import { Input } from '@gideon-defender/ui/input';
 import { Label } from '@gideon-defender/ui/label';
 import { Button, Text } from '@trycompai/design-system';
 import { TrashCan } from '@trycompai/design-system/icons';
+import { useTranslations } from 'next-intl';
 import type { FieldErrors, UseFormRegister } from 'react-hook-form';
 import { COMPLETION_OPTIONS, type CompletionType } from './constants';
 
@@ -29,18 +30,20 @@ interface PhaseRowProps {
 }
 
 export function PhaseRow({ index, register, errors, onRemove }: PhaseRowProps) {
+  const t = useTranslations('admin');
   const phaseErrors = errors.phases?.[index];
 
   return (
     <div className="rounded-lg border p-3">
       <div className="flex items-center justify-between pb-2">
         <Text size="xs" variant="muted">
-          Phase {index + 1}
+          {t('timelineTemplates.editor.phaseLabel', { index: index + 1 })}
         </Text>
         <Button
           type="button"
           size="sm"
           variant="ghost"
+          aria-label={t('timelineTemplates.editor.removePhase')}
           iconLeft={<TrashCan size={14} />}
           onClick={onRemove}
         />
@@ -48,11 +51,13 @@ export function PhaseRow({ index, register, errors, onRemove }: PhaseRowProps) {
 
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2 flex flex-col gap-1">
-          <Label htmlFor={`phases.${index}.name`}>Name</Label>
+          <Label htmlFor={`phases.${index}.name`}>
+            {t('timelineTemplates.editor.nameLabel')}
+          </Label>
           <Input
             id={`phases.${index}.name`}
             {...register(`phases.${index}.name`)}
-            placeholder="Phase name"
+            placeholder={t('timelineTemplates.editor.phaseNamePlaceholder')}
           />
           {phaseErrors?.name && (
             <Text size="xs" variant="destructive">
@@ -62,7 +67,9 @@ export function PhaseRow({ index, register, errors, onRemove }: PhaseRowProps) {
         </div>
 
         <div className="flex flex-col gap-1">
-          <Label htmlFor={`phases.${index}.defaultDurationWeeks`}>Duration (weeks)</Label>
+          <Label htmlFor={`phases.${index}.defaultDurationWeeks`}>
+            {t('timelineTemplates.editor.durationLabel')}
+          </Label>
           <Input
             id={`phases.${index}.defaultDurationWeeks`}
             type="number"
@@ -79,7 +86,9 @@ export function PhaseRow({ index, register, errors, onRemove }: PhaseRowProps) {
         </div>
 
         <div className="flex flex-col gap-1">
-          <Label htmlFor={`phases.${index}.completionType`}>Completion</Label>
+          <Label htmlFor={`phases.${index}.completionType`}>
+            {t('timelineTemplates.editor.completionLabel')}
+          </Label>
           <select
             id={`phases.${index}.completionType`}
             {...register(`phases.${index}.completionType`)}
@@ -101,7 +110,7 @@ export function PhaseRow({ index, register, errors, onRemove }: PhaseRowProps) {
             {...register(`phases.${index}.locksTimelineOnComplete`)}
           />
           <Label htmlFor={`phases.${index}.locksTimelineOnComplete`}>
-            Lock timeline when this phase completes
+            {t('timelineTemplates.editor.lockTimelineLabel')}
           </Label>
         </div>
       </div>

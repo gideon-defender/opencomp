@@ -14,6 +14,7 @@ import {
 } from '@react-email/components';
 import { Footer } from '../components/footer';
 import { Logo } from '../components/logo';
+import type { EmailLocale } from '../locale';
 import { getUnsubscribeUrl } from '@gideon-defender/email';
 
 interface Props {
@@ -27,7 +28,35 @@ interface Props {
   findingContent: string;
   newStatus?: string;
   findingUrl: string;
+  locale?: EmailLocale;
 }
+
+const copy = {
+  en: {
+    hello: "Hello",
+    detailsTitle: "Finding Details",
+    orgLabel: "Organization:",
+    taskLabel: "Task:",
+    typeLabel: "Type:",
+    statusLabel: "Status:",
+    viewFinding: "View Finding",
+    copyPaste: "or copy and paste this URL into your browser:",
+    unsubscribeQuestion: "Don't want to receive finding notifications?",
+    managePrefs: "Manage your email preferences",
+  },
+  es: {
+    hello: "Hola",
+    detailsTitle: "Datos del hallazgo",
+    orgLabel: "Organización:",
+    taskLabel: "Tarea:",
+    typeLabel: "Tipo:",
+    statusLabel: "Estado:",
+    viewFinding: "Ver hallazgo",
+    copyPaste: "o copia y pega esta URL en tu navegador:",
+    unsubscribeQuestion: "¿No quieres recibir notificaciones de hallazgos?",
+    managePrefs: "Gestionar tus preferencias de correo electrónico",
+  },
+};
 
 export const FindingNotificationEmail = ({
   toName,
@@ -40,10 +69,13 @@ export const FindingNotificationEmail = ({
   findingContent,
   newStatus,
   findingUrl,
+  locale = 'en',
 }: Props) => {
+  const t = copy[locale];
+
   const unsubscribeUrl = getUnsubscribeUrl(toEmail);
   return (
-    <Html>
+    <Html lang={locale}>
       <Tailwind>
         <head>
           <Font
@@ -74,7 +106,7 @@ export const FindingNotificationEmail = ({
             </Heading>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              Hello {toName},
+              {t.hello} {toName},
             </Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
@@ -87,20 +119,20 @@ export const FindingNotificationEmail = ({
               style={{ border: '1px solid #e0e0e0' }}
             >
               <Text className="m-0 text-[12px] font-medium uppercase tracking-wide text-[#666666]">
-                Finding Details
+                {t.detailsTitle}
               </Text>
 
               <Text className="mt-[8px] mb-[4px] text-[14px] font-medium text-[#121212]">
-                Organization: {organizationName}
+                {t.orgLabel} {organizationName}
               </Text>
 
               <Text className="mt-[4px] mb-[4px] text-[14px] font-medium text-[#121212]">
-                Task: {taskTitle}
+                {t.taskLabel} {taskTitle}
               </Text>
 
               <Text className="mt-[4px] mb-[4px] text-[13px] text-[#666666]">
-                Type: {findingType}
-                {newStatus && <> | Status: {newStatus}</>}
+                {t.typeLabel} {findingType}
+                {newStatus && <> | {t.statusLabel} {newStatus}</>}
               </Text>
 
               <Text className="mt-[12px] mb-0 text-[13px] italic text-[#444444]">
@@ -113,12 +145,12 @@ export const FindingNotificationEmail = ({
                 className="rounded-[3px] bg-[#121212] px-[20px] py-[12px] text-center text-[14px] font-semibold text-white no-underline"
                 href={findingUrl}
               >
-                View Finding
+                {t.viewFinding}
               </Button>
             </Section>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              or copy and paste this URL into your browser:{' '}
+              {t.copyPaste}{' '}
               <a href={findingUrl} className="text-[#121212] underline">
                 {findingUrl}
               </a>
@@ -126,12 +158,12 @@ export const FindingNotificationEmail = ({
 
             <Section className="mt-[30px] mb-[20px]">
               <Text className="text-[12px] leading-[20px] text-[#666666]">
-                Don't want to receive finding notifications?{' '}
+                {t.unsubscribeQuestion}{' '}
                 <Link
                   href={unsubscribeUrl}
                   className="text-[#121212] underline"
                 >
-                  Manage your email preferences
+                  {t.managePrefs}
                 </Link>
                 .
               </Text>
@@ -139,7 +171,7 @@ export const FindingNotificationEmail = ({
 
             <br />
 
-            <Footer />
+            <Footer locale={locale} />
           </Container>
         </Body>
       </Tailwind>

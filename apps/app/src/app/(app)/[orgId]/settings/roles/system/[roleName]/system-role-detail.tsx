@@ -3,7 +3,7 @@
 import { apiClient } from '@/lib/api-client';
 import { Card, CardContent } from '@gideon-defender/ui/card';
 import { Stack, Text } from '@trycompai/design-system';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { PermissionMatrix } from '../../components/PermissionMatrix';
 
@@ -29,10 +29,14 @@ export function SystemRoleDetail({
 
   // Resync when the parent passes new props — either because the user
   // navigated to a different built-in role, or because the page re-fetched
-  // the same role's obligations.
-  useEffect(() => {
+  // the same role's obligations. Adjust-during-render instead of an effect.
+  const [prevRoleKey, setPrevRoleKey] = useState(roleName);
+  const [prevObligations, setPrevObligations] = useState(obligations);
+  if (prevRoleKey !== roleName || prevObligations !== obligations) {
+    setPrevRoleKey(roleName);
+    setPrevObligations(obligations);
     setCurrentObligations(obligations);
-  }, [roleName, obligations]);
+  }
 
   const handleObligationsChange = async (next: Record<string, boolean>) => {
     if (isSaving || !obligationsEditable) return;

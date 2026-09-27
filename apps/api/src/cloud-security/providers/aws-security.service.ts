@@ -4,6 +4,7 @@ import { retryAssume } from '@gideon-defender/integration-platform';
 import {
   CostExplorerClient,
   GetCostAndUsageCommand,
+  type GetCostAndUsageCommandOutput,
 } from '@aws-sdk/client-cost-explorer';
 import type { SecurityFinding } from '../cloud-security.service';
 import {
@@ -682,7 +683,7 @@ export class AWSSecurityService {
       .toISOString()
       .slice(0, 10);
 
-    let response;
+    let response: GetCostAndUsageCommandOutput;
     try {
       response = await client.send(
         new GetCostAndUsageCommand({

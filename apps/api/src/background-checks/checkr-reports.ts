@@ -1,4 +1,5 @@
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { withErrorCode } from '../common/i18n/error-messages';
 import {
   identityCreateResponseSchema,
   type IdentityCreateResponse,
@@ -43,7 +44,10 @@ export class CheckrReportsReader extends CheckrHttp {
       this.logger.error('Checkr report lookup rejected', {
         status: res.status,
       });
-      throw new UnauthorizedException('Checkr credentials are invalid.');
+      throw withErrorCode(
+        new UnauthorizedException('Checkr credentials are invalid.'),
+        'CHECKR_CREDENTIALS_INVALID',
+      );
     }
     if (!res.ok) {
       // Transient vendor errors (500/429) are not fatal: callers treat
@@ -76,7 +80,10 @@ export class CheckrReportsReader extends CheckrHttp {
       this.logger.error('Checkr invitation lookup rejected', {
         status: res.status,
       });
-      throw new UnauthorizedException('Checkr credentials are invalid.');
+      throw withErrorCode(
+        new UnauthorizedException('Checkr credentials are invalid.'),
+        'CHECKR_CREDENTIALS_INVALID',
+      );
     }
     if (!res.ok) {
       this.logger.warn('Checkr getInvitation failed', {
@@ -108,7 +115,10 @@ export class CheckrReportsReader extends CheckrHttp {
         this.logger.error('Checkr candidate lookup rejected', {
           status: res.status,
         });
-        throw new UnauthorizedException('Checkr credentials are invalid.');
+        throw withErrorCode(
+          new UnauthorizedException('Checkr credentials are invalid.'),
+          'CHECKR_CREDENTIALS_INVALID',
+        );
       }
       if (!res.ok) {
         this.throwForTransientFailure(res, 'find-candidate-by-email');
@@ -200,7 +210,10 @@ export class CheckrReportsReader extends CheckrHttp {
         this.logger.error('Checkr report creation rejected', {
           status: reportRes.status,
         });
-        throw new UnauthorizedException('Checkr credentials are invalid.');
+        throw withErrorCode(
+          new UnauthorizedException('Checkr credentials are invalid.'),
+          'CHECKR_CREDENTIALS_INVALID',
+        );
       }
       this.logger.error('Checkr create report/invitation failed', {
         invitationStatus,

@@ -262,7 +262,15 @@ export function BrowserAutomations({ taskId, isManualTask = false }: BrowserAuto
   // which would trap the user in it instead of letting them create a new
   // automation. They choose: resume it, or start a new one.
   useEffect(() => {
-    setPendingConnect(loadConnectState(taskId));
+    let cancelled = false;
+    (async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      setPendingConnect(loadConnectState(taskId));
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [taskId]);
 
   // Refresh the connection list whenever a connect/reconnect verifies.

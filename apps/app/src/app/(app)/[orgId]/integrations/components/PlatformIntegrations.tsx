@@ -383,52 +383,68 @@ export function PlatformIntegrations({ className, taskTemplates }: PlatformInteg
   );
 
   // Custom integration task loading
-  useEffect(() => {
-    if (selectedCustomIntegration && orgId && taskTemplates && taskTemplates.length > 0) {
+  const taskSelectionActive = Boolean(
+    selectedCustomIntegration && orgId && taskTemplates && taskTemplates.length > 0,
+  );
+  const [prevTaskSelectionActive, setPrevTaskSelectionActive] = useState(taskSelectionActive);
+  if (prevTaskSelectionActive !== taskSelectionActive) {
+    setPrevTaskSelectionActive(taskSelectionActive);
+    if (taskSelectionActive) {
       setIsLoadingTasks(true);
-      fetch('/api/integrations/relevant-tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          integrationName: selectedCustomIntegration.name,
-          integrationDescription: selectedCustomIntegration.description,
-          taskTemplates: taskTemplates.map((t) => ({
-            id: t.id,
-            name: t.name,
-            description: t.description,
-          })),
-          examplePrompts: selectedCustomIntegration.examplePrompts,
-        }),
-      })
-        .then((res) => res.json())
-        .then(
-          (data: {
-            tasks: Array<{
-              taskTemplateId: string;
-              taskName: string;
-              reason: string;
-              prompt: string;
-            }>;
-          }) => {
-            const aiTasks = Array.isArray(data.tasks) ? data.tasks : [];
-            const tasksWithIds = aiTasks
-              .map((task) => ({
-                ...task,
-                taskId: templateToTaskMap.get(task.taskTemplateId) || '',
-              }))
-              .filter((task) => task.taskId);
-            setRelevantTasks(tasksWithIds);
-          },
-        )
-        .catch((error) => {
-          console.error('Error fetching relevant tasks:', error);
-          setRelevantTasks([]);
-        })
-        .finally(() => setIsLoadingTasks(false));
     } else {
       setRelevantTasks([]);
     }
+  }
+
+  useEffect(() => {
+    const selection = selectedCustomIntegration;
+    if (!selection || !orgId || !taskTemplates || taskTemplates.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/integrations/relevant-tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            integrationName: selection.name,
+            integrationDescription: selection.description,
+            taskTemplates: taskTemplates.map((t) => ({
+              id: t.id,
+              name: t.name,
+              description: t.description,
+            })),
+            examplePrompts: selection.examplePrompts,
+          }),
+        });
+        const data: {
+          tasks: Array<{
+            taskTemplateId: string;
+            taskName: string;
+            reason: string;
+            prompt: string;
+          }>;
+        } = await res.json();
+        if (cancelled) return;
+        const aiTasks = Array.isArray(data.tasks) ? data.tasks : [];
+        const tasksWithIds = aiTasks
+          .map((task) => ({
+            ...task,
+            taskId: templateToTaskMap.get(task.taskTemplateId) || '',
+          }))
+          .filter((task) => task.taskId);
+        setRelevantTasks(tasksWithIds);
+      } catch (error) {
+        if (cancelled) return;
+        console.error('Error fetching relevant tasks:', error);
+        setRelevantTasks([]);
+      } finally {
+        if (!cancelled) setIsLoadingTasks(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [selectedCustomIntegration, orgId, taskTemplates, templateToTaskMap]);
 
   const handleCopyPrompt = (prompt: string) => {

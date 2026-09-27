@@ -109,7 +109,7 @@ export function extractVersionDescription(
   path: string,
   method: string,
   responseBody: unknown,
-  requestBody?: Record<string, unknown>,
+  _requestBody?: Record<string, unknown>,
 ): string | null {
   // Only match policy version paths, not automation version paths
   const isPolicyVersionPath = /\/policies\/[^/]+\/versions(?:\/|$)/.test(path);
@@ -352,6 +352,26 @@ function summarizeArrayItem(item: unknown): unknown {
   return item;
 }
 
+function toComparableString(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean')
+    return String(value);
+  if (typeof value === 'bigint') return String(value);
+  if (value === null || value === undefined) return String(value);
+  if (value instanceof Date) return value.toISOString();
+  return JSON.stringify(value) ?? '[Object]';
+}
+
+function toIdString(value: unknown): string | null {
+  if (!value) return null;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean')
+    return String(value);
+  if (typeof value === 'bigint') return String(value);
+  if (value instanceof Date) return value.toISOString();
+  return JSON.stringify(value) ?? null;
+}
+
 export function buildChanges(
   body: Record<string, unknown>,
   previousValues: Record<string, unknown> | null,
@@ -360,14 +380,18 @@ export function buildChanges(
   const changes: ChangesRecord = {};
 
   for (const [key, newValue] of Object.entries(body)) {
-    const previousRaw = previousValues?.[key];
+    const previousRaw: unknown = previousValues?.[key];
 
-    if (previousValues && String(previousRaw) === String(newValue)) continue;
+    if (
+      previousValues &&
+      toComparableString(previousRaw) === toComparableString(newValue)
+    )
+      continue;
 
     const displayLabel = MEMBER_REF_FIELDS[key];
     if (displayLabel) {
-      const prevId = previousRaw ? String(previousRaw) : null;
-      const newId = newValue ? String(newValue) : null;
+      const prevId = toIdString(previousRaw);
+      const newId = toIdString(newValue);
       const prevName = prevId ? memberNames[prevId] : null;
       const newName = newId ? memberNames[newId] : null;
       changes[displayLabel] = {

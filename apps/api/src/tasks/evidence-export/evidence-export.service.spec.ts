@@ -178,7 +178,7 @@ describe('EvidenceExportService — streaming ZIPs', () => {
       ];
 
       // Mock S3 GetObject to return a small Buffer body
-      (s3Client!.send as jest.Mock).mockResolvedValue({
+      (s3Client.send as jest.Mock).mockResolvedValue({
         Body: Buffer.from('FAKE-PDF-BYTES'),
       });
 
@@ -205,7 +205,7 @@ describe('EvidenceExportService — streaming ZIPs', () => {
       );
 
       // S3 hit with attachment's S3 key
-      expect(s3Client!.send).toHaveBeenCalledWith(expect.any(GetObjectCommand));
+      expect(s3Client.send).toHaveBeenCalledWith(expect.any(GetObjectCommand));
 
       // Summary PDF rendered with attachment count
       expect(generateTaskSummaryPDF).toHaveBeenCalledWith(expect.any(Object), {
@@ -228,7 +228,7 @@ describe('EvidenceExportService — streaming ZIPs', () => {
         name: 'NoSuchKey',
         $metadata: { httpStatusCode: 404 },
       });
-      (s3Client!.send as jest.Mock).mockRejectedValue(noSuchKeyError);
+      (s3Client.send as jest.Mock).mockRejectedValue(noSuchKeyError);
       primeTaskQueries({ attachments });
 
       const { archive } = await service.streamTaskEvidenceZip(
@@ -262,7 +262,7 @@ describe('EvidenceExportService — streaming ZIPs', () => {
         name: 'AccessDenied',
         $metadata: { httpStatusCode: 403 },
       });
-      (s3Client!.send as jest.Mock).mockRejectedValue(accessDeniedError);
+      (s3Client.send as jest.Mock).mockRejectedValue(accessDeniedError);
       primeTaskQueries({ attachments });
 
       const { archive } = await service.streamTaskEvidenceZip(
@@ -299,7 +299,7 @@ describe('EvidenceExportService — streaming ZIPs', () => {
         name: 'NoSuchBucket',
         $metadata: { httpStatusCode: 404 },
       });
-      (s3Client!.send as jest.Mock).mockRejectedValue(noSuchBucketError);
+      (s3Client.send as jest.Mock).mockRejectedValue(noSuchBucketError);
       primeTaskQueries({ attachments });
 
       const { archive } = await service.streamTaskEvidenceZip(
@@ -339,7 +339,7 @@ describe('EvidenceExportService — streaming ZIPs', () => {
         },
       ];
 
-      (s3Client!.send as jest.Mock).mockImplementation(
+      (s3Client.send as jest.Mock).mockImplementation(
         (cmd: { input: { Key: string } }) => {
           if (cmd.input.Key === 'key-real') {
             return Promise.resolve({ Body: Buffer.from('REAL') });
@@ -398,7 +398,7 @@ describe('EvidenceExportService — streaming ZIPs', () => {
         },
       ];
 
-      (s3Client!.send as jest.Mock).mockResolvedValue({
+      (s3Client.send as jest.Mock).mockResolvedValue({
         Body: Buffer.from('PDF'),
       });
       primeTaskQueries({ attachments });
@@ -478,7 +478,7 @@ describe('EvidenceExportService — streaming ZIPs', () => {
       expect(paths.some((p) => /\/app-.+\/evidence\.pdf$/.test(p))).toBe(true);
 
       // S3 GetObject should NOT have been called — no attachments to fetch.
-      expect(s3Client!.send).not.toHaveBeenCalled();
+      expect(s3Client.send).not.toHaveBeenCalled();
 
       // Summary PDF renders with attachmentsCount=0 (line omitted in PDF).
       expect(generateTaskSummaryPDF).toHaveBeenCalledWith(expect.any(Object), {
@@ -596,7 +596,7 @@ describe('EvidenceExportService — streaming ZIPs', () => {
         'acme-corp_soc-2-access-review_evidence/EXPORT_INFO.txt',
         'acme-corp_soc-2-access-review_evidence/00-summary.pdf',
       ]);
-      expect(s3Client!.send).not.toHaveBeenCalled();
+      expect(s3Client.send).not.toHaveBeenCalled();
     });
   });
 
@@ -649,7 +649,7 @@ describe('EvidenceExportService — streaming ZIPs', () => {
       });
       mockDb.integrationCheckRun.findMany.mockResolvedValue([]);
       mockDb.evidenceAutomationRun.findMany.mockResolvedValue([]);
-      (s3Client!.send as jest.Mock).mockResolvedValue({
+      (s3Client.send as jest.Mock).mockResolvedValue({
         Body: Buffer.from('PDF'),
       });
 
@@ -723,7 +723,7 @@ describe('EvidenceExportService — streaming ZIPs', () => {
       expect(paths.some((p) => p.includes('/01-attachments/'))).toBe(false);
 
       // No S3 fetches triggered (no attachments to stream)
-      expect(s3Client!.send).not.toHaveBeenCalled();
+      expect(s3Client.send).not.toHaveBeenCalled();
 
       // Manifest should record zero attachments
       const manifestCall = mock.appendCalls.find((c) =>
@@ -808,7 +808,7 @@ describe('EvidenceExportService — streaming ZIPs', () => {
             : Promise.resolve([]),
       );
 
-      (s3Client!.send as jest.Mock).mockResolvedValue({
+      (s3Client.send as jest.Mock).mockResolvedValue({
         Body: Buffer.from('PDF'),
       });
 

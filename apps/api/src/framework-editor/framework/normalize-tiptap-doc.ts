@@ -40,7 +40,7 @@ export function normalizeTipTapDoc(content: unknown): Prisma.InputJsonObject {
 
     // A single non-doc node (has a string type) → wrap it.
     if (typeof node.type === 'string') {
-      return { type: 'doc', content: [content as Prisma.InputJsonValue] };
+      return { type: 'doc', content: [content] };
     }
   }
 

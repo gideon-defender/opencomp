@@ -4,6 +4,7 @@ import { formatDateShort } from '@/lib/format';
 
 import { Badge, Button, Input, Stack, Text } from '@trycompai/design-system';
 import { Download, Launch, Search } from '@trycompai/design-system/icons';
+import { useLocale } from 'next-intl';
 import type React from 'react';
 import { useMemo, useState } from 'react';
 import type { BillingInvoice } from './types';
@@ -13,6 +14,7 @@ interface BillingInvoicesTableProps {
 }
 
 export function BillingInvoicesTable({ invoices }: BillingInvoicesTableProps) {
+  const locale = useLocale();
   const [query, setQuery] = useState('');
   const filteredInvoices = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -23,7 +25,7 @@ export function BillingInvoicesTable({ invoices }: BillingInvoicesTableProps) {
         invoice.number,
         invoice.status,
         invoice.type,
-        formatAmount(invoice.amountPaid, invoice.currency),
+        formatAmount(invoice.amountPaid, invoice.currency, locale),
         formatDate(invoice.createdAt),
       ]
         .join(' ')
@@ -31,7 +33,7 @@ export function BillingInvoicesTable({ invoices }: BillingInvoicesTableProps) {
 
       return searchable.includes(normalizedQuery);
     });
-  }, [invoices, query]);
+  }, [invoices, query, locale]);
 
   return (
     <div className="rounded-lg border bg-card">
@@ -102,6 +104,7 @@ export function BillingInvoicesTable({ invoices }: BillingInvoicesTableProps) {
 }
 
 function InvoiceRow({ invoice }: { invoice: BillingInvoice }) {
+  const locale = useLocale();
   return (
     <tr className="border-b last:border-b-0">
       <td className="px-6 py-4 font-medium">{invoice.number}</td>
@@ -109,7 +112,7 @@ function InvoiceRow({ invoice }: { invoice: BillingInvoice }) {
       <td className="px-6 py-4 text-muted-foreground">
         {invoice.dueDate ? formatDate(invoice.dueDate) : 'On receipt'}
       </td>
-      <td className="px-6 py-4">{formatAmount(invoice.amountPaid, invoice.currency)}</td>
+      <td className="px-6 py-4">{formatAmount(invoice.amountPaid, invoice.currency, locale)}</td>
       <td className="px-6 py-4">
         <Badge variant={invoice.status === 'paid' ? 'default' : 'outline'}>
           {formatStatus(invoice.status)}
@@ -152,8 +155,8 @@ function TableHead({ children }: { children: React.ReactNode }) {
   return <th className="px-6 py-3 font-medium">{children}</th>;
 }
 
-function formatAmount(amount: number, currency: string) {
-  return new Intl.NumberFormat('en-US', {
+function formatAmount(amount: number, currency: string, locale = 'en-US') {
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: currency.toUpperCase(),
   }).format(amount / 100);

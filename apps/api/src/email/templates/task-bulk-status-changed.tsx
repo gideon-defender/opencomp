@@ -14,6 +14,7 @@ import {
 } from '@react-email/components';
 import { Footer } from '../components/footer';
 import { Logo } from '../components/logo';
+import type { EmailLocale } from '../locale';
 import { getUnsubscribeUrl } from '@gideon-defender/email';
 
 interface Props {
@@ -24,7 +25,41 @@ interface Props {
   changedByName: string;
   organizationName: string;
   tasksUrl: string;
+  locale?: EmailLocale;
 }
+
+const copy = {
+  en: {
+    previewChanged: "status changed to",
+    task: "task",
+    tasks: "tasks",
+    heading: "Task Status Updated",
+    hello: "Hello",
+    bodyChanged: "changed the status of",
+    bodyTo: "to",
+    bodyIn: "in",
+    viewTasks: "View Tasks",
+    copyPaste: "or copy and paste this URL into your browser:",
+    unsubscribeQuestion:
+      "Don't want to receive task assignment notifications?",
+    managePrefs: "Manage your email preferences",
+  },
+  es: {
+    previewChanged: "estado cambiado a",
+    task: "tarea",
+    tasks: "tareas",
+    heading: "Estado de tareas actualizado",
+    hello: "Hola",
+    bodyChanged: "cambió el estado de",
+    bodyTo: "a",
+    bodyIn: "en",
+    viewTasks: "Ver tareas",
+    copyPaste: "o copia y pega esta URL en tu navegador:",
+    unsubscribeQuestion:
+      "¿No quieres recibir notificaciones de asignación de tareas?",
+    managePrefs: "Gestionar tus preferencias de correo electrónico",
+  },
+};
 
 export const TaskBulkStatusChangedEmail = ({
   toName,
@@ -34,13 +69,16 @@ export const TaskBulkStatusChangedEmail = ({
   changedByName,
   organizationName,
   tasksUrl,
+  locale = 'en',
 }: Props) => {
+  const t = copy[locale];
+
   const unsubscribeUrl = getUnsubscribeUrl(toEmail);
-  const taskText = taskCount === 1 ? 'task' : 'tasks';
+  const taskText = taskCount === 1 ? t.task : t.tasks;
   const statusText = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
 
   return (
-    <Html>
+    <Html lang={locale}>
       <Tailwind>
         <head>
           <Font
@@ -57,7 +95,7 @@ export const TaskBulkStatusChangedEmail = ({
           />
         </head>
         <Preview>
-          {`${taskCount} ${taskText} status changed to ${statusText}`}
+          {`${taskCount} ${taskText} ${t.previewChanged} ${statusText}`}
         </Preview>
 
         <Body className="mx-auto my-auto bg-[#fff] font-sans">
@@ -67,20 +105,15 @@ export const TaskBulkStatusChangedEmail = ({
           >
             <Logo />
             <Heading className="mx-0 my-[30px] p-0 text-center text-[24px] font-normal text-[#121212]">
-              Task Status Updated
+              {t.heading}
             </Heading>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              Hello {toName},
+              {t.hello} {toName},
             </Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              <strong>{changedByName}</strong> changed the status of{' '}
-              <strong>
-                {taskCount} {taskText}
-              </strong>{' '}
-              to <strong>{statusText}</strong> in{' '}
-              <strong>{organizationName}</strong>.
+              <strong>{changedByName}</strong> {t.bodyChanged} <strong>{taskCount} {taskText}</strong> {t.bodyTo} <strong>{statusText}</strong> {t.bodyIn} <strong>{organizationName}</strong>.
             </Text>
 
             <Section className="mt-[32px] mb-[32px] text-center">
@@ -88,12 +121,12 @@ export const TaskBulkStatusChangedEmail = ({
                 className="rounded-[3px] bg-[#121212] px-[20px] py-[12px] text-center text-[14px] font-semibold text-white no-underline"
                 href={tasksUrl}
               >
-                View Tasks
+                {t.viewTasks}
               </Button>
             </Section>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              or copy and paste this URL into your browser:{' '}
+              {t.copyPaste}{' '}
               <a href={tasksUrl} className="text-[#121212] underline">
                 {tasksUrl}
               </a>
@@ -101,12 +134,12 @@ export const TaskBulkStatusChangedEmail = ({
 
             <Section className="mt-[30px] mb-[20px]">
               <Text className="text-[12px] leading-[20px] text-[#666666]">
-                Don't want to receive task assignment notifications?{' '}
+                {t.unsubscribeQuestion}{' '}
                 <Link
                   href={unsubscribeUrl}
                   className="text-[#121212] underline"
                 >
-                  Manage your email preferences
+                  {t.managePrefs}
                 </Link>
                 .
               </Text>
@@ -114,7 +147,7 @@ export const TaskBulkStatusChangedEmail = ({
 
             <br />
 
-            <Footer />
+            <Footer locale={locale} />
           </Container>
         </Body>
       </Tailwind>

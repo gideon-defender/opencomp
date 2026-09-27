@@ -33,6 +33,6 @@ export function applyResolvedMetricFilterLogGroup(
   for (const step of steps) {
     if (step.command !== 'PutMetricFilterCommand') continue;
     if (!step.params || typeof step.params !== 'object') continue;
-    (step.params as Record<string, unknown>).logGroupName = resolved;
+    step.params.logGroupName = resolved;
   }
 }

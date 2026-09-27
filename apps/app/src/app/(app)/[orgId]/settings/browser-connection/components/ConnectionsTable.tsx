@@ -5,7 +5,7 @@ import { Button } from '@trycompai/design-system';
 import { Renew, Settings } from '@trycompai/design-system/icons';
 import { formatDistanceToNow } from 'date-fns';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   methodOf,
   permanenceHint,
@@ -70,7 +70,12 @@ export function ConnectionsTable({
   }, [connections, query]);
 
   // Back to the first page whenever the search narrows the list.
-  useEffect(() => setPage(0), [query]);
+  // Adjust-during-render instead of an effect to avoid setState-in-effect.
+  const [prevQuery, setPrevQuery] = useState(query);
+  if (prevQuery !== query) {
+    setPrevQuery(query);
+    setPage(0);
+  }
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount - 1);

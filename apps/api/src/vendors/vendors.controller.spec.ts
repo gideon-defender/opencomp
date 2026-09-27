@@ -298,7 +298,7 @@ describe('VendorsController', () => {
 
       const result = await controller.updateVendor(
         'vnd_1',
-        dto as any,
+        dto,
         'org_123',
         mockAuthContext,
       );
@@ -323,7 +323,7 @@ describe('VendorsController', () => {
 
       const result = await controller.updateVendor(
         'vnd_1',
-        dto as any,
+        dto,
         'org_123',
         apiKeyAuthContext,
       );

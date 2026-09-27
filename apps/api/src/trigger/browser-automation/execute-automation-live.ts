@@ -33,11 +33,7 @@ export const executeAutomationLive = task({
       // Live activity timeline — surfaced to the Run view via realtime metadata.
       // Steps are plain JSON; cast to the SDK's value type (named interfaces lack
       // the index signature DeserializedJson structurally requires).
-      (steps) =>
-        metadata.set(
-          'runSteps',
-          steps as unknown as Parameters<typeof metadata.set>[1],
-        ),
+      (steps) => metadata.set('runSteps', steps),
       // Each vendor's live view, so the Run iframe follows the run across vendors.
       // A fresh view means we're live again — clear any transition state.
       (liveViewUrl) => {

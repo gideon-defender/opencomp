@@ -1,4 +1,5 @@
 import type { FrameworkEditorFrameworkFamilyStatus } from '@/db';
+import { useTranslations } from 'next-intl';
 
 // FRAME-20: the four family statuses, in the order shown in the dropdown.
 export const FRAMEWORK_FAMILY_STATUSES: {
@@ -38,13 +39,20 @@ export function getFamilyStatusClassName(status: FrameworkEditorFrameworkFamilyS
 }
 
 export function FamilyStatusBadge({ status }: { status: FrameworkEditorFrameworkFamilyStatus }) {
+  const t = useTranslations('frameworks');
+
+  if (status === 'visible') return <StatusBadge className={getFamilyStatusClassName(status)} label={t('status.visible')} />;
+  if (status === 'hidden') return <StatusBadge className={getFamilyStatusClassName(status)} label={t('status.hidden')} />;
+  if (status === 'partial') return <StatusBadge className={getFamilyStatusClassName(status)} label={t('status.partial')} />;
+  return <StatusBadge className={getFamilyStatusClassName(status)} label={t('status.underConstruction')} />;
+}
+
+function StatusBadge({ className, label }: { className: string; label: string }) {
   return (
     <span
-      className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${getFamilyStatusClassName(
-        status,
-      )}`}
+      className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${className}`}
     >
-      {getFamilyStatusLabel(status)}
+      {label}
     </span>
   );
 }

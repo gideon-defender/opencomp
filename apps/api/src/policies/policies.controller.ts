@@ -19,6 +19,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { withErrorCode } from '../common/i18n/error-messages';
 import {
   ApiBody,
   ApiConsumes,
@@ -348,7 +349,10 @@ export class PoliciesController {
     });
 
     if (!policy) {
-      throw new NotFoundException('Policy not found');
+      throw withErrorCode(
+        new NotFoundException('Policy not found'),
+        'POLICY_NOT_FOUND',
+      );
     }
 
     const data = policy.controls.map((control) => ({
@@ -632,7 +636,11 @@ export class PoliciesController {
         pendingVersionId: true,
       },
     });
-    if (!policy) throw new NotFoundException('Policy not found');
+    if (!policy)
+      throw withErrorCode(
+        new NotFoundException('Policy not found'),
+        'POLICY_NOT_FOUND',
+      );
 
     let targetVersionId: string = body.versionId ?? '';
     if (!targetVersionId) {
@@ -806,7 +814,11 @@ export class PoliciesController {
         pendingVersionId: true,
       },
     });
-    if (!policy) throw new NotFoundException('Policy not found');
+    if (!policy)
+      throw withErrorCode(
+        new NotFoundException('Policy not found'),
+        'POLICY_NOT_FOUND',
+      );
 
     let targetVersionId = versionId;
     if (!targetVersionId) {

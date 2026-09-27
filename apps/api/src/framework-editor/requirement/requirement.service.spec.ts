@@ -63,7 +63,7 @@ describe('RequirementService — sortOrder (FRAME-18)', () => {
         name: 'R1',
         description: 'd',
         sortOrder: 5,
-      } as never);
+      });
 
       expect(createDataOf().sortOrder).toBe(5);
     });
@@ -73,7 +73,7 @@ describe('RequirementService — sortOrder (FRAME-18)', () => {
         frameworkId: 'frk_1',
         name: 'R1',
         description: 'd',
-      } as never);
+      });
 
       expect(createDataOf().sortOrder).toBeNull();
     });
@@ -81,17 +81,17 @@ describe('RequirementService — sortOrder (FRAME-18)', () => {
 
   describe('update', () => {
     it('persists a provided sortOrder', async () => {
-      await service.update('frk_rq_1', { sortOrder: 7 } as never);
+      await service.update('frk_rq_1', { sortOrder: 7 });
       expect(updateDataOf().sortOrder).toBe(7);
     });
 
     it('clears sortOrder when null is sent', async () => {
-      await service.update('frk_rq_1', { sortOrder: null } as never);
+      await service.update('frk_rq_1', { sortOrder: null });
       expect(updateDataOf().sortOrder).toBeNull();
     });
 
     it('leaves sortOrder untouched when not provided', async () => {
-      await service.update('frk_rq_1', { name: 'Renamed' } as never);
+      await service.update('frk_rq_1', { name: 'Renamed' });
       expect(updateDataOf().sortOrder).toBeUndefined();
     });
   });

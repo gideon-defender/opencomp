@@ -1,3 +1,4 @@
+import { t } from '../../lib/i18n';
 import type { SheetPastePayload } from '../../lib/sheets-paste-plan';
 
 export function showSheetPasteDialog(paste: SheetPastePayload): Promise<boolean> {
@@ -12,9 +13,9 @@ export function showSheetPasteDialog(paste: SheetPastePayload): Promise<boolean>
     };
     const handleCopy = (): void => {
       void copyText(paste.tsv).then(
-        () => setStatus(container, 'Copied. Select the first answer cell, then paste.'),
+        () => setStatus(container, t('sheetPasteCopied')),
         (error: unknown) => {
-          const message = error instanceof Error ? error.message : 'Unable to copy answers.';
+          const message = error instanceof Error ? error.message : t('sidepanelUnableCopy');
           setStatus(container, message);
         },
       );
@@ -32,18 +33,22 @@ export function showSheetPasteDialog(paste: SheetPastePayload): Promise<boolean>
 }
 
 function renderDialog(paste: SheetPastePayload): string {
+  const title =
+    paste.itemIds.length === 1
+      ? t('sheetPasteTitleOne', String(paste.itemIds.length))
+      : t('sheetPasteTitleOther', String(paste.itemIds.length));
   return `
     <div class="modal">
       <div class="backdrop"></div>
       <section class="dialog">
-        <div class="eyebrow">Google Sheets paste</div>
-        <h2>Paste ${paste.itemIds.length} answer${paste.itemIds.length === 1 ? '' : 's'}</h2>
-        <p>Copied for <code>${escapeHtml(paste.range)}</code>. Select the first answer cell in that range, paste, then confirm.</p>
-        <p class="paste-status" data-paste-status>Copying...</p>
+        <div class="eyebrow">${escapeHtml(t('sheetPasteEyebrow'))}</div>
+        <h2>${escapeHtml(title)}</h2>
+        <p>${escapeHtml(t('sheetPasteInstructions', paste.range))}</p>
+        <p class="paste-status" data-paste-status>${escapeHtml(t('sheetPasteCopying'))}</p>
         <div class="dialog-actions">
-          <button class="secondary" type="button" data-dialog="copy">Copy again</button>
-          <button class="secondary" type="button" data-dialog="cancel">Cancel</button>
-          <button class="primary" type="button" data-dialog="confirm">I pasted it</button>
+          <button class="secondary" type="button" data-dialog="copy">${escapeHtml(t('sheetPasteCopyAgain'))}</button>
+          <button class="secondary" type="button" data-dialog="cancel">${escapeHtml(t('commonCancel'))}</button>
+          <button class="primary" type="button" data-dialog="confirm">${escapeHtml(t('sheetPasteConfirm'))}</button>
         </div>
       </section>
     </div>
@@ -68,7 +73,7 @@ async function copyWithSelection(text: string): Promise<void> {
   textarea.select();
   const copied = document.execCommand('copy');
   textarea.remove();
-  if (!copied) throw new Error('Unable to copy answers to the clipboard.');
+  if (!copied) throw new Error(t('sidepanelUnableCopy'));
 }
 
 function setStatus(container: HTMLElement, message: string): void {

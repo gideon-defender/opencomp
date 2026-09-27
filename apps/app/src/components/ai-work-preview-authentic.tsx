@@ -70,6 +70,8 @@ const WORK_ITEMS: WorkItem[] = [
 
 const StatusIcon = ({ status }: { status: string }) => {
   const baseClass = 'w-4 h-4 flex-shrink-0';
+  // Stable per mount so all spinners share a phase without impure render reads.
+  const [spinDelay] = useState(() => `${-(Date.now() % 1000)}ms`);
 
   if (status === 'processing') {
     // Sync all spinners by using a fixed animation timing
@@ -78,7 +80,7 @@ const StatusIcon = ({ status }: { status: string }) => {
         className={cn(baseClass, 'text-primary')}
         style={{
           animation: 'spin 1s linear infinite',
-          animationDelay: `${-(Date.now() % 1000)}ms`,
+          animationDelay: spinDelay,
         }}
       />
     );

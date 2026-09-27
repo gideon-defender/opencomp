@@ -79,9 +79,9 @@ export class DynamicIntegrationsController {
       logoUrl: def.logoUrl,
       docsUrl: def.docsUrl,
       baseUrl: def.baseUrl,
-      defaultHeaders: def.defaultHeaders as unknown as Prisma.InputJsonValue,
+      defaultHeaders: def.defaultHeaders,
       authConfig: def.authConfig as unknown as Prisma.InputJsonValue,
-      capabilities: def.capabilities as unknown as Prisma.InputJsonValue,
+      capabilities: def.capabilities,
       supportsMultipleConnections: def.supportsMultipleConnections,
       syncDefinition: validatedSyncDef
         ? (JSON.parse(
@@ -93,7 +93,7 @@ export class DynamicIntegrationsController {
             JSON.stringify(validatedDeviceSyncDef),
           ) as Prisma.InputJsonValue)
         : null,
-      services: (def.services as unknown as Prisma.InputJsonValue) ?? undefined,
+      services: def.services ?? undefined,
     });
 
     // Delete checks not in the new definition, then upsert the rest
@@ -128,7 +128,7 @@ export class DynamicIntegrationsController {
       slug: def.slug,
       name: def.name,
       category: def.category,
-      capabilities: (def.capabilities as unknown as string[]) ?? ['checks'],
+      capabilities: def.capabilities ?? ['checks'],
       isActive: true,
     });
 
@@ -191,9 +191,9 @@ export class DynamicIntegrationsController {
       logoUrl: def.logoUrl,
       docsUrl: def.docsUrl,
       baseUrl: def.baseUrl,
-      defaultHeaders: def.defaultHeaders as unknown as Prisma.InputJsonValue,
+      defaultHeaders: def.defaultHeaders,
       authConfig: def.authConfig as unknown as Prisma.InputJsonValue,
-      capabilities: def.capabilities as unknown as Prisma.InputJsonValue,
+      capabilities: def.capabilities,
       supportsMultipleConnections: def.supportsMultipleConnections,
       syncDefinition: validatedSyncDefCreate
         ? (JSON.parse(
@@ -227,7 +227,7 @@ export class DynamicIntegrationsController {
       slug: def.slug,
       name: def.name,
       category: def.category,
-      capabilities: (def.capabilities as unknown as string[]) ?? ['checks'],
+      capabilities: def.capabilities ?? ['checks'],
       isActive: true,
     });
 
@@ -540,7 +540,7 @@ export class DynamicIntegrationsController {
    * Agents use this to check syntax/structure before committing.
    */
   @Post('validate')
-  async validate(@Body() body: Record<string, unknown>) {
+  validate(@Body() body: Record<string, unknown>) {
     const result = validateIntegrationDefinition(body);
 
     if (!result.success) {

@@ -84,7 +84,7 @@ describe('TaskTemplateService', () => {
     });
 
     it('applies default frequency and department when not supplied', async () => {
-      await service.create({ name: 'X' } as never);
+      await service.create({ name: 'X' });
       const createArgs = (
         mockDb.frameworkEditorTaskTemplate.create as jest.Mock
       ).mock.calls[0][0];

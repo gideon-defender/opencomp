@@ -44,6 +44,25 @@ function mergeDeviceLists<T>(
 }
 
 /**
+ * FleetDM's untyped client returns `any`; narrow the label-hosts payload to a
+ * list of numeric host IDs so callers never forward `any` into typed params.
+ */
+function extractHostIds(labelHosts: unknown): number[] {
+  if (typeof labelHosts !== 'object' || labelHosts === null) return [];
+  const hosts: unknown = (labelHosts as { hosts?: unknown }).hosts;
+  if (!Array.isArray(hosts)) return [];
+  const ids: number[] = [];
+  for (const host of hosts) {
+    const id: unknown =
+      typeof host === 'object' && host !== null
+        ? (host as { id?: unknown }).id
+        : undefined;
+    if (typeof id === 'number') ids.push(id);
+  }
+  return ids;
+}
+
+/**
  * Hybrid device service that fetches from both FleetDM and the Device Agent database.
  * FleetDM is the legacy system; Device Agent is the new system.
  * Results are merged and deduplicated by serial number / hostname.
@@ -255,14 +274,14 @@ export class DevicesService {
     }
 
     try {
-      const labelHosts =
+      const labelHosts: unknown =
         await this.fleetService.getHostsByLabel(fleetDmLabelId);
 
-      if (!labelHosts.hosts || labelHosts.hosts.length === 0) {
+      const hostIds = extractHostIds(labelHosts);
+      if (hostIds.length === 0) {
         return [];
       }
 
-      const hostIds = labelHosts.hosts.map((host: { id: number }) => host.id);
       const devices = await this.fleetService.getMultipleHosts(hostIds);
 
       // Tag each device with source
@@ -287,14 +306,14 @@ export class DevicesService {
     }
 
     try {
-      const labelHosts =
+      const labelHosts: unknown =
         await this.fleetService.getHostsByLabel(fleetDmLabelId);
 
-      if (!labelHosts.hosts || labelHosts.hosts.length === 0) {
+      const hostIds = extractHostIds(labelHosts);
+      if (hostIds.length === 0) {
         return [];
       }
 
-      const hostIds = labelHosts.hosts.map((host: { id: number }) => host.id);
       const devices = await this.fleetService.getMultipleHosts(hostIds);
 
       return devices.map((d: DeviceResponseDto) => ({

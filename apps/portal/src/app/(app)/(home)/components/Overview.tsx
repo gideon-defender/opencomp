@@ -9,6 +9,7 @@ import { NoAccessMessage } from './NoAccessMessage';
 import { auth } from '@/app/lib/auth';
 import { Card, CardContent, CardHeader, CardTitle, Stack, Text } from '@trycompai/design-system';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 
 // Define the type for the member prop including the user and organization relations
 interface MemberWithUserOrg extends Member {
@@ -19,6 +20,8 @@ interface MemberWithUserOrg extends Member {
 // Removed OverviewProps interface and searchParams prop
 // export async function Overview({ searchParams }: OverviewProps) {
 export async function Overview() {
+  const t = await getTranslations('overview');
+  const tAccess = await getTranslations('access');
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -57,7 +60,7 @@ export async function Overview() {
     console.warn('User has memberships but none with associated organizations.', {
       userId: session.user.id,
     });
-    return <NoAccessMessage message="You don't seem to belong to any organizations currently." />;
+    return <NoAccessMessage message={tAccess('noOrganizations')} />;
   }
 
   if (validMemberships.length === 1) {
@@ -67,7 +70,7 @@ export async function Overview() {
   // Render a dashboard for each valid membership
   return (
     <Stack gap="lg">
-      <Text weight="medium">Your Organizations</Text>
+      <Text weight="medium">{t('yourOrganizations')}</Text>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {validMemberships.map((member) => (
           <Link href={`/${member.organization.id}`} key={member.id}>

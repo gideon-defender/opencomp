@@ -1,15 +1,17 @@
 import { auth } from '@/app/lib/auth';
 import { isInternalUser } from '@/app/lib/utils';
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Balancer from 'react-wrap-balancer';
 import { GoogleSignIn } from './google-sign-in';
 import { Unauthorized } from './Unauthorized';
 
-export const metadata: Metadata = {
-  title: 'Login | OpenComp',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('auth');
+  return { title: t('pageTitle') };
+}
 
 export default async function Page() {
   const session = await auth.api.getSession({
@@ -28,13 +30,15 @@ export default async function Page() {
     redirect('/frameworks');
   }
 
+  const t = await getTranslations('auth');
+
   return (
     <div className="flex min-h-dvh items-center justify-center overflow-hidden p-6 md:p-0">
       <div className="relative z-20 m-auto flex w-full max-w-[380px] flex-col py-8">
         <div className="relative flex w-full flex-col">
           <Balancer>
-            <h1 className="pb-1 text-3xl font-medium">Get Started with OpenComp</h1>
-            <h2 className="pb-1 text-xl font-medium">Sign in to continue</h2>
+            <h1 className="pb-1 text-3xl font-medium">{t('heroTitle')}</h1>
+            <h2 className="pb-1 text-xl font-medium">{t('heroSubtitle')}</h2>
           </Balancer>
 
           <div className="pointer-events-auto mt-6 mb-6 flex flex-col">
@@ -42,13 +46,13 @@ export default async function Page() {
           </div>
 
           <p className="text-muted-foreground text-xs">
-            By clicking continue, you acknowledge that you have read and agree to the{' '}
+            {t('termsPrefix')}{' '}
             <a href="https://gideondefender.com/terms-and-conditions" className="underline">
-              Terms and Conditions
+              {t('termsLink')}
             </a>{' '}
-            and{' '}
+            {t('termsMiddle')}{' '}
             <a href="https://gideondefender.com/privacy-policy" className="underline">
-              Privacy Policy
+              {t('privacyLink')}
             </a>
             .
           </p>

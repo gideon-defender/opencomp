@@ -55,14 +55,6 @@ export function AzureSetupGuide({
 
   const ranRef = useRef(false);
 
-  // Auto-run setup on first mount — no user action needed
-  useEffect(() => {
-    if (ranRef.current) return;
-    ranRef.current = true;
-    handleAutoSetup();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const handleAutoSetup = async () => {
     setIsSettingUp(true);
     try {
@@ -95,6 +87,14 @@ export function AzureSetupGuide({
       setIsSettingUp(false);
     }
   };
+
+  // Auto-run setup on first mount — no user action needed
+  useEffect(() => {
+    if (ranRef.current) return;
+    ranRef.current = true;
+    handleAutoSetup();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const allStepsSucceeded = setupResult?.steps.every((s) => s.success);
 

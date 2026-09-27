@@ -1,4 +1,5 @@
 import { extensionConfig } from '../config';
+import { t } from '../i18n';
 import { parseSheetIdentityFromUrl } from '../sheet-mapping';
 import type { TabQuestionQueue } from '../types';
 import {
@@ -36,16 +37,16 @@ export async function insertAnswersWithGoogleSheetsApi(params: {
   answers: SheetAnswer[];
 }): Promise<string[]> {
   if (!extensionConfig.googleSheetsApiEnabled) {
-    throw new Error('Google Sheets API OAuth is not configured for this extension build.');
+    throw new Error(t('sheetsOauthNotConfigured'));
   }
 
   const spreadsheetId = getSpreadsheetId(params.queue);
   const targets = parseSheetTargets(params.answers);
-  if (targets.length === 0) throw new Error('No mapped sheet answers are ready to insert.');
+  if (targets.length === 0) throw new Error(t('sheetsNoMappedAnswers'));
 
   const gid = targets[0].gid;
   if (targets.some((target) => target.gid !== gid)) {
-    throw new Error('Answers span multiple sheet tabs. Insert one tab at a time.');
+    throw new Error(t('sheetsMultiTab'));
   }
 
   return withFreshToken(async (token) => {
@@ -107,16 +108,14 @@ async function getGoogleAccessToken(): Promise<string> {
   if (isRecord(result) && typeof result.token === 'string' && result.token.length > 0) {
     return result.token;
   }
-  throw new Error('Google authorization did not return an access token.');
+  throw new Error(t('sheetsNoToken'));
 }
 
 function getChromeIdentityApi(): ChromeIdentityApi {
   const chromeApi = readRecordProperty(globalThis, 'chrome');
   const identity = readRecordProperty(chromeApi, 'identity');
   if (!isChromeIdentityApi(identity)) {
-    throw new Error(
-      'Chrome Identity API is unavailable. Rebuild the extension with WXT_GOOGLE_OAUTH_CLIENT_ID set, reload it, and confirm the manifest includes the identity permission.',
-    );
+    throw new Error(t('sheetsIdentityUnavailable'));
   }
   return identity;
 }
@@ -146,7 +145,7 @@ async function getSheetTitle(params: {
     url: `${SHEETS_API_BASE}/${encodeURIComponent(params.spreadsheetId)}?fields=${fields}`,
   });
   const title = readSheetTitle({ gid: params.gid, metadata });
-  if (!title) throw new Error('Could not find the active Google Sheets tab.');
+  if (!title) throw new Error(t('sheetsTabNotFound'));
   return title;
 }
 
@@ -240,7 +239,7 @@ function readValueRows(value: unknown): string[] {
 function getSpreadsheetId(queue: TabQuestionQueue): string {
   if (queue.sheetMapping?.spreadsheetId) return queue.sheetMapping.spreadsheetId;
   const identity = parseSheetIdentityFromUrl(queue.url);
-  if (!identity) throw new Error('Could not identify the active spreadsheet.');
+  if (!identity) throw new Error(t('sheetsNoSpreadsheet'));
   return identity.spreadsheetId;
 }
 
@@ -266,9 +265,9 @@ async function readApiError(response: Response): Promise<string> {
       return parsed.error.message;
     }
   } catch {
-    return `Google Sheets API request failed with HTTP ${response.status}.`;
+    return t('sheetsRequestFailed', String(response.status));
   }
-  return `Google Sheets API request failed with HTTP ${response.status}.`;
+  return t('sheetsRequestFailed', String(response.status));
 }
 
 function columnName(column: number): string {

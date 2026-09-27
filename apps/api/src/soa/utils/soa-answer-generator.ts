@@ -1,7 +1,4 @@
-import {
-  findSimilarContent,
-  findSimilarContentBatch,
-} from '@/vector-store/lib';
+import { findSimilarContentBatch } from '@/vector-store/lib';
 import type { SimilarContentResult } from '@/vector-store/lib';
 import { google } from '@ai-sdk/google';
 import { generateText } from 'ai';
@@ -22,18 +19,6 @@ interface SOAAnswerWithSources {
   answer: string | null;
   sources: Source[];
 }
-
-interface SOAAnswerLogger {
-  log: (message: string, meta?: Record<string, unknown>) => void;
-  warn: (message: string, meta?: Record<string, unknown>) => void;
-  error: (message: string, meta?: Record<string, unknown>) => void;
-}
-
-const defaultLogger: SOAAnswerLogger = {
-  log: () => {},
-  warn: () => {},
-  error: () => {},
-};
 
 /**
  * Extracts source information from similar content results and deduplicates them
@@ -101,7 +86,7 @@ function buildContextFromContent(
  * Generates a SOA answer from pre-fetched similar content
  * Used for batch processing - skips individual vector search
  */
-async function generateSOAAnswerFromContent(
+export async function generateSOAAnswerFromContent(
   question: string,
   similarContent: SimilarContentResult[],
 ): Promise<SOAAnswerWithSources> {

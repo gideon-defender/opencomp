@@ -27,8 +27,21 @@ export function useBrowserAutomationDrafts({ taskId }: { taskId: string }) {
   }, [taskId]);
 
   useEffect(() => {
-    void fetchDrafts();
-  }, [fetchDrafts]);
+    let cancelled = false;
+    (async () => {
+      const res = await apiClient.get<BrowserAutomationDraft[]>(
+        `/v1/browserbase/automations/task/${taskId}/drafts`,
+      );
+      if (cancelled) return;
+      // apiClient resolves (doesn't throw) on error — don't mask a failed fetch as
+      // "no drafts"; keep whatever we already have.
+      if (res.error) return;
+      setDrafts(Array.isArray(res.data) ? res.data : []);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [taskId]);
 
   const createDraft = useCallback(
     async (payload: DraftPayload): Promise<BrowserAutomationDraft | null> => {

@@ -14,7 +14,7 @@ import {
 import { Label } from '@gideon-defender/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@gideon-defender/ui/select';
 import { Loader2, UserIcon } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useTasks } from '../hooks/useTasks';
 
@@ -63,11 +63,13 @@ export function BulkTaskAssigneeChangeModal({
     [assigneeId, members],
   );
 
-  useEffect(() => {
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (prevOpen !== open) {
+    setPrevOpen(open);
     if (open) {
       setAssigneeId(null);
     }
-  }, [open]);
+  }
 
   const handleAssigneeChange = (value: string) => {
     setAssigneeId(value === 'none' ? null : value);

@@ -7,16 +7,16 @@ import { useEffect } from 'react';
 // leave, since leaving a page discards all uncommitted grid rows.
 const dirtyKeys = new Set<string>();
 
-const UNSAVED_CHANGES_MESSAGE =
+const DEFAULT_UNSAVED_CHANGES_MESSAGE =
   'You have uncommitted changes that will be lost if you leave. Click "Commit Changes" first, or leave anyway?';
 
 export function hasUnsavedChanges(): boolean {
   return dirtyKeys.size > 0;
 }
 
-export function confirmDiscardUnsavedChanges(): boolean {
+export function confirmDiscardUnsavedChanges(message?: string): boolean {
   if (!hasUnsavedChanges()) return true;
-  return window.confirm(UNSAVED_CHANGES_MESSAGE);
+  return window.confirm(message ?? DEFAULT_UNSAVED_CHANGES_MESSAGE);
 }
 
 /**

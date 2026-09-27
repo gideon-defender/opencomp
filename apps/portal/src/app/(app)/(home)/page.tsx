@@ -7,19 +7,21 @@ import {
   PageLayout,
 } from '@trycompai/design-system';
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { Overview } from './components/Overview';
 
-export default function HomePage() {
+export default async function HomePage() {
+  const t = await getTranslations('overview');
   return (
     <PageLayout>
-      <PageHeader title="Employee Portal Overview" />
+      <PageHeader title={t('pageTitle')} />
       <Suspense
         fallback={
           <Empty>
             <EmptyHeader>
-              <EmptyTitle>Loading overview...</EmptyTitle>
-              <EmptyDescription>Fetching your organizations and tasks.</EmptyDescription>
+              <EmptyTitle>{t('loadingTitle')}</EmptyTitle>
+              <EmptyDescription>{t('loadingDescription')}</EmptyDescription>
             </EmptyHeader>
           </Empty>
         }
@@ -31,7 +33,8 @@ export default function HomePage() {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('overview');
   return {
-    title: 'Employee Portal Overview',
+    title: t('pageTitle'),
   };
 }

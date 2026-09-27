@@ -89,15 +89,11 @@ export class TaskManagementController {
     @OrganizationId() organizationId: string,
     @Query() query: GetTaskItemStatsQueryDto,
   ) {
-    try {
-      return await this.taskManagementService.getTaskItemsStats(
-        organizationId,
-        query.entityId,
-        query.entityType,
-      );
-    } catch (error) {
-      throw error;
-    }
+    return this.taskManagementService.getTaskItemsStats(
+      organizationId,
+      query.entityId,
+      query.entityType,
+    );
   }
 
   @Get()
@@ -115,14 +111,7 @@ export class TaskManagementController {
     @OrganizationId() organizationId: string,
     @Query() query: GetTaskItemQueryDto,
   ): Promise<PaginatedTaskItemResponseDto> {
-    try {
-      return await this.taskManagementService.getTaskItems(
-        organizationId,
-        query,
-      );
-    } catch (error) {
-      throw error;
-    }
+    return this.taskManagementService.getTaskItems(organizationId, query);
   }
 
   @Post()
@@ -141,15 +130,11 @@ export class TaskManagementController {
     @AuthContext() authContext: AuthContextType,
     @Body() createTaskItemDto: CreateTaskItemDto,
   ): Promise<TaskItemResponseDto> {
-    try {
-      return await this.taskManagementService.createTaskItem(
-        organizationId,
-        authContext,
-        createTaskItemDto,
-      );
-    } catch (error) {
-      throw error;
-    }
+    return this.taskManagementService.createTaskItem(
+      organizationId,
+      authContext,
+      createTaskItemDto,
+    );
   }
 
   @Put(':id')
@@ -174,16 +159,12 @@ export class TaskManagementController {
     @AuthContext() authContext: AuthContextType,
     @Body() updateTaskItemDto: UpdateTaskItemDto,
   ): Promise<TaskItemResponseDto> {
-    try {
-      return await this.taskManagementService.updateTaskItem(
-        taskItemId,
-        organizationId,
-        authContext,
-        updateTaskItemDto,
-      );
-    } catch (error) {
-      throw error;
-    }
+    return this.taskManagementService.updateTaskItem(
+      taskItemId,
+      organizationId,
+      authContext,
+      updateTaskItemDto,
+    );
   }
 
   @Delete(':id')
@@ -205,15 +186,11 @@ export class TaskManagementController {
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
   ): Promise<void> {
-    try {
-      await this.taskManagementService.deleteTaskItem(
-        taskItemId,
-        organizationId,
-        authContext,
-      );
-    } catch (error) {
-      throw error;
-    }
+    return this.taskManagementService.deleteTaskItem(
+      taskItemId,
+      organizationId,
+      authContext,
+    );
   }
 
   @Post('attachments')
@@ -233,26 +210,22 @@ export class TaskManagementController {
     @AuthContext() authContext: AuthContextType,
     @Body() uploadDto: UploadTaskItemAttachmentDto,
   ): Promise<AttachmentResponseDto> {
-    try {
-      // Pass entityType and entityId via description field for S3 path construction
-      // Format: "{entityType}|{entityId}" - e.g., "vendor|vnd_abc123"
-      const description = `${uploadDto.entityType}|${uploadDto.entityId}`;
+    // Pass entityType and entityId via description field for S3 path construction
+    // Format: "{entityType}|{entityId}" - e.g., "vendor|vnd_abc123"
+    const description = `${uploadDto.entityType}|${uploadDto.entityId}`;
 
-      return await this.attachmentsService.uploadAttachment(
-        organizationId,
-        uploadDto.entityId, // This is the vendor/risk ID (used as entityId in attachment record)
-        'task_item', // This is the AttachmentEntityType
-        {
-          fileName: uploadDto.fileName,
-          fileType: uploadDto.fileType,
-          fileData: uploadDto.fileData,
-          description, // Contains task item's entityType and entityId for S3 path
-        },
-        authContext.userId,
-      );
-    } catch (error) {
-      throw error;
-    }
+    return this.attachmentsService.uploadAttachment(
+      organizationId,
+      uploadDto.entityId, // This is the vendor/risk ID (used as entityId in attachment record)
+      'task_item', // This is the AttachmentEntityType
+      {
+        fileName: uploadDto.fileName,
+        fileType: uploadDto.fileType,
+        fileData: uploadDto.fileData,
+        description, // Contains task item's entityType and entityId for S3 path
+      },
+      authContext.userId,
+    );
   }
 
   @Delete('attachments/:attachmentId')
@@ -274,14 +247,10 @@ export class TaskManagementController {
     @OrganizationId() organizationId: string,
     @Param('attachmentId') attachmentId: string,
   ): Promise<void> {
-    try {
-      await this.attachmentsService.deleteAttachment(
-        organizationId,
-        attachmentId,
-      );
-    } catch (error) {
-      throw error;
-    }
+    return this.attachmentsService.deleteAttachment(
+      organizationId,
+      attachmentId,
+    );
   }
 
   @Get(':id/activity')
@@ -302,13 +271,6 @@ export class TaskManagementController {
     @Param('id') taskItemId: string,
     @OrganizationId() organizationId: string,
   ) {
-    try {
-      return await this.auditService.getTaskItemActivity(
-        taskItemId,
-        organizationId,
-      );
-    } catch (error) {
-      throw error;
-    }
+    return this.auditService.getTaskItemActivity(taskItemId, organizationId);
   }
 }

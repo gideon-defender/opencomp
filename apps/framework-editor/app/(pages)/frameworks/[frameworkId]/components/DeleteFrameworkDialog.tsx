@@ -12,6 +12,7 @@ import {
   Button,
 } from '@gideon-defender/ui';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -29,6 +30,8 @@ export function DeleteFrameworkDialog({
   frameworkName,
 }: DeleteFrameworkDialogProps) {
   const router = useRouter();
+  const t = useTranslations('dialogs');
+  const tToasts = useTranslations('toasts');
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
 
@@ -37,12 +40,12 @@ export function DeleteFrameworkDialog({
     setIsPending(true);
     try {
       await apiClient(`/framework/${frameworkId}`, { method: 'DELETE' });
-      toast.success('Framework deleted successfully.');
+      toast.success(tToasts('frameworkDeleted'));
       onOpenChange(false);
       router.push('/frameworks');
       router.refresh();
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to delete framework.';
+      const message = err instanceof Error ? err.message : tToasts('frameworkDeleteFailed');
       setError(message);
       toast.error(message);
     } finally {
@@ -61,22 +64,22 @@ export function DeleteFrameworkDialog({
     >
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>
-            Are you sure you want to delete {`"${frameworkName}"`}?
-          </AlertDialogTitle>
+          <AlertDialogTitle>{t('editFramework.deleteConfirmTitle', { name: frameworkName })}</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete the framework, all of its
-            requirements and published versions, and remove it from any organizations currently
-            tracking it.
-            {error && <p className="text-destructive mt-2 text-sm font-medium">Error: {error}</p>}
+            {t('editFramework.deleteConfirmDescription')}
+            {error && (
+              <p className="text-destructive mt-2 text-sm font-medium">
+                {t('editFramework.errorPrefix')}: {error}
+              </p>
+            )}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isPending} onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('editFramework.cancel')}
           </AlertDialogCancel>
           <Button variant="destructive" onClick={handleDelete} disabled={isPending}>
-            {isPending ? 'Deleting...' : 'Delete'}
+            {isPending ? t('editFramework.deleting') : t('editFramework.delete')}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

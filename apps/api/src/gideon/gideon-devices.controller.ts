@@ -92,9 +92,9 @@ export class GideonDevicesProxyController {
 
     try {
       const headers: Record<string, string> = {};
-      const auth = req.headers['authorization'] as string | undefined;
+      const auth = req.headers['authorization'];
       if (auth) headers['authorization'] = auth;
-      const cookie = req.headers['cookie'] as string | undefined;
+      const cookie = req.headers['cookie'];
       if (cookie) headers['cookie'] = cookie;
       // Forward tenant header if present
       const tenant = req.headers['x-gideon-tenant-id'] as string | undefined;
@@ -158,7 +158,7 @@ export class GideonDevicesProxyController {
     }
   }
 
-  private async logShadowComparison(
+  private logShadowComparison(
     req: Request,
     upstream: globalThis.Response,
   ): Promise<void> {
@@ -167,18 +167,20 @@ export class GideonDevicesProxyController {
         process.env.GIDEON_SHADOW_ENABLED &&
         process.env.GIDEON_SHADOW_ENABLED === 'false'
       ) {
-        return;
+        return Promise.resolve();
       }
       // Best-effort: compare count with local DB without blocking response (already sent)
       // This is called after response is proxied, so we just log at debug
       const authReq = req as unknown as { organizationId?: string };
       const orgId = authReq.organizationId;
-      if (!orgId) return;
+      if (!orgId) return Promise.resolve();
       this.logger.debug(
         `[GideonShadow] devices proxy org=${orgId} upstream=${upstream.status}`,
       );
+      return Promise.resolve();
     } catch {
       // Never throw from shadow logger
+      return Promise.resolve();
     }
   }
 }

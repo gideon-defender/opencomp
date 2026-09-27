@@ -98,7 +98,7 @@ describe('SOAController', () => {
       mockSOAService.saveAnswer.mockResolvedValue({ success: true });
 
       const result = await controller.saveAnswer(
-        dto as never,
+        dto,
         'org_123',
         mockAuthContext,
       );
@@ -162,7 +162,7 @@ describe('SOAController', () => {
       };
       mockSOAService.getSetup.mockResolvedValue(setupResult);
 
-      const result = await controller.getSetup(dto as never, 'org_123');
+      const result = await controller.getSetup(dto, 'org_123');
 
       expect(soaService.getSetup).toHaveBeenCalledWith(dto);
       expect(result).toEqual(setupResult);
@@ -180,7 +180,7 @@ describe('SOAController', () => {
       mockSOAService.approveDocument.mockResolvedValue(approved);
 
       const result = await controller.approveDocument(
-        dto as never,
+        dto,
         'org_123',
         mockAuthContext,
       );
@@ -208,7 +208,7 @@ describe('SOAController', () => {
       mockSOAService.declineDocument.mockResolvedValue(declined);
 
       const result = await controller.declineDocument(
-        dto as never,
+        dto,
         'org_123',
         mockAuthContext,
       );

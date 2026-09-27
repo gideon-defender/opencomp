@@ -171,6 +171,7 @@ export function VendorDetailTabs({
   }, [assessmentRun]);
 
   // Extract research progress from local-trigger run metadata
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization -- the run gets a fresh identity on every realtime event; this memo only reads `metadata`.
   const researchMetadata = useMemo(() => {
     if (!assessmentRun?.metadata) return null;
     const meta = assessmentRun.metadata as Record<string, unknown>;
@@ -191,34 +192,58 @@ export function VendorDetailTabs({
 
   // Trigger SWR refetch when core data or news data becomes ready
   useEffect(() => {
-    if (researchMetadata?.coreReady) {
-      setIsRegenerating(false);
-      void refreshVendor();
-    }
+    let cancelled = false;
+    (async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      if (researchMetadata?.coreReady) {
+        setIsRegenerating(false);
+        void refreshVendor();
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [researchMetadata?.coreReady, refreshVendor]);
 
   useEffect(() => {
-    if (researchMetadata?.newsReady) {
-      void refreshVendor();
-    }
+    let cancelled = false;
+    (async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      if (researchMetadata?.newsReady) {
+        void refreshVendor();
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [researchMetadata?.newsReady, refreshVendor]);
 
   useEffect(() => {
-    if (!assessmentRun?.status) return;
-    if (assessmentRun.status === 'COMPLETED') {
-      void refreshVendor();
-      void refreshTaskItems();
-      setAssessmentRunId(null);
-      setAssessmentToken(null);
-      setIsRegenerating(false);
-    } else if (isFailureRunStatus(assessmentRun.status)) {
-      toast.error(t('detail.riskAssessmentFailed'));
-      void refreshVendor();
-      void refreshTaskItems();
-      setAssessmentRunId(null);
-      setAssessmentToken(null);
-      setIsRegenerating(false);
-    }
+    let cancelled = false;
+    (async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      if (!assessmentRun?.status) return;
+      if (assessmentRun.status === 'COMPLETED') {
+        void refreshVendor();
+        void refreshTaskItems();
+        setAssessmentRunId(null);
+        setAssessmentToken(null);
+        setIsRegenerating(false);
+      } else if (isFailureRunStatus(assessmentRun.status)) {
+        toast.error(t('detail.riskAssessmentFailed'));
+        void refreshVendor();
+        void refreshTaskItems();
+        setAssessmentRunId(null);
+        setAssessmentToken(null);
+        setIsRegenerating(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [assessmentRun?.status, refreshVendor, refreshTaskItems, t]);
 
   const isRiskAssessmentGenerating = useMemo(() => {

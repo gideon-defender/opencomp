@@ -1,9 +1,13 @@
+import { mockNextIntl } from '@/test-utils/mocks/next-intl';
 import { apiClient } from '@/lib/api-client';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { toast } from 'sonner';
 import { SWRConfig } from 'swr';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+mockNextIntl();
+
 import { BillingAddOnPlansClient } from './BillingAddOnPlansClient';
 import { BillingAddOnsOverview } from './BillingAddOnsOverview';
 import { getBillingAddOn } from './billingAddOns';

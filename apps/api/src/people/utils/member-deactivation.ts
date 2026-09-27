@@ -2,6 +2,7 @@ import { db, Prisma } from '@db';
 import { isUserUnsubscribed } from '@gideon-defender/email';
 import { Logger } from '@nestjs/common';
 import { triggerEmail } from '../../email/trigger-email';
+import { resolveEmailLocale, type EmailLocale } from '../../email/locale';
 import { UnassignedItemsNotificationEmail } from '../../email/templates/unassigned-items-notification';
 
 interface UnassignedItem {
@@ -140,12 +141,15 @@ export async function notifyOwnerOfUnassignedItems({
   organizationId,
   removedMemberName,
   unassignedItems,
+  locale,
 }: {
   organizationId: string;
   removedMemberName: string;
   unassignedItems: UnassignedItem[];
+  locale?: EmailLocale;
 }): Promise<void> {
   if (unassignedItems.length === 0) return;
+  const emailLocale = resolveEmailLocale(locale);
 
   try {
     const organization = await db.organization.findUnique({
@@ -174,8 +178,12 @@ export async function notifyOwnerOfUnassignedItems({
     const userName = owner.user.name || owner.user.email || 'Owner';
     await triggerEmail({
       to: owner.user.email,
-      subject: `Member removed from ${organization.name} - items require reassignment`,
+      subject:
+        emailLocale === 'es'
+          ? `Miembro eliminado de ${organization.name}: elementos requieren reasignación`
+          : `Member removed from ${organization.name} - items require reassignment`,
       react: UnassignedItemsNotificationEmail({
+        locale: emailLocale,
         email: owner.user.email,
         userName,
         organizationName: organization.name,

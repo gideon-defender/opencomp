@@ -85,9 +85,9 @@ describe('TaskIntegrationChecksService', () => {
       slug: 'github',
     });
     mockedGetManifest.mockReturnValue(baseManifest as never);
-    mockedFindTask.mockResolvedValue({ id: TASK_ID } as never);
+    mockedFindTask.mockResolvedValue({ id: TASK_ID });
     mockConnectionService.updateConnectionMetadata.mockResolvedValue(
-      baseConnection as never,
+      baseConnection,
     );
   });
 

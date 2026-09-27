@@ -43,6 +43,7 @@ import {
   Text,
 } from '@trycompai/design-system';
 import { Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -105,6 +106,8 @@ export function TaskItemFocusView({
   onBack,
   onStatusOrPriorityChange,
 }: TaskItemFocusViewProps) {
+  const t = useTranslations('tasks');
+  const tt = useTranslations('toasts');
   const { hasPermission } = usePermissions();
   const canUpdate = hasPermission('task', 'update');
   const canDelete = hasPermission('task', 'delete');
@@ -161,10 +164,10 @@ export function TaskItemFocusView({
     }
     try {
       await handleUpdate({ description: descriptionValue.trim() });
-      toast.success('Description updated');
+      toast.success(t('single.descriptionUpdated'));
       setIsEditingDescription(false);
     } catch {
-      toast.error('Failed to update description');
+      toast.error(t('single.descriptionUpdateFailed'));
     }
   };
 
@@ -173,11 +176,11 @@ export function TaskItemFocusView({
     if (newStatus === taskItem.status) return;
     try {
       await optimisticUpdate(taskItem.id, { status: newStatus });
-      toast.success('Status updated');
+      toast.success(tt('statusUpdated'));
       onStatusOrPriorityChange?.();
       refreshActivity();
     } catch {
-      toast.error('Failed to update status');
+      toast.error(tt('statusUpdateFailed'));
     }
   };
 
@@ -186,22 +189,22 @@ export function TaskItemFocusView({
     if (newPriority === taskItem.priority) return;
     try {
       await optimisticUpdate(taskItem.id, { priority: newPriority });
-      toast.success('Priority updated');
+      toast.success(tt('priorityUpdated'));
       onStatusOrPriorityChange?.();
       refreshActivity();
     } catch {
-      toast.error('Failed to update priority');
+      toast.error(tt('priorityUpdateFailed'));
     }
   };
 
   const handleAssigneeChange = async (assigneeId: string | null) => {
     try {
       await optimisticUpdate(taskItem.id, { assigneeId });
-      toast.success('Assignee updated');
+      toast.success(tt('assigneeUpdated'));
       onStatusOrPriorityChange?.();
       refreshActivity();
     } catch {
-      toast.error('Failed to update assignee');
+      toast.error(tt('assigneeUpdateFailed'));
     }
   };
 
@@ -209,9 +212,9 @@ export function TaskItemFocusView({
     const url = `${window.location.origin}${pathname}?taskItemId=${taskItem.id}`;
     try {
       await navigator.clipboard.writeText(url);
-      toast.success('Link copied');
+      toast.success(tt('linkCopied'));
     } catch {
-      toast.error('Failed to copy link');
+      toast.error(tt('linkCopyFailed'));
     }
   };
 
@@ -219,12 +222,12 @@ export function TaskItemFocusView({
     setIsDeleting(true);
     try {
       await optimisticDelete(taskItem.id);
-      toast.success('Task deleted');
+      toast.success(tt('taskDeleted'));
       setIsDeleteOpen(false);
       onStatusOrPriorityChange?.();
       onBack();
     } catch {
-      toast.error('Failed to delete task');
+      toast.error(tt('taskDeleteFailed'));
     } finally {
       setIsDeleting(false);
     }

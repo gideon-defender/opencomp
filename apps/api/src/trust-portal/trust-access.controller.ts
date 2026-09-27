@@ -35,6 +35,30 @@ import { TrustFramework } from '@db';
 import { SignNdaDto } from './dto/nda.dto';
 import { TrustAccessService } from './trust-access.service';
 
+/** Express-style network fields carried on the request object. */
+interface RequestNetworkInfo {
+  ip?: unknown;
+  socket?: { remoteAddress?: unknown };
+}
+
+/** Authenticated user id attached by the auth layer. */
+interface RequestUserInfo {
+  userId?: unknown;
+}
+
+/** Best-effort client IP: `req.ip` with socket fallback, string-only. */
+function getRequestIp(req: Request): string | undefined {
+  const candidate = req as unknown as RequestNetworkInfo;
+  const ip = candidate.ip ?? candidate.socket?.remoteAddress;
+  return typeof ip === 'string' ? ip : undefined;
+}
+
+/** Authenticated user id, string-only. */
+function getRequestUserId(req: Request): string | undefined {
+  const candidate = req as unknown as RequestUserInfo;
+  return typeof candidate.userId === 'string' ? candidate.userId : undefined;
+}
+
 @ApiTags('Trust Access')
 @Controller({ path: 'trust-access', version: '1' })
 export class TrustAccessController {
@@ -61,8 +85,7 @@ export class TrustAccessController {
     @Body() dto: CreateAccessRequestDto,
     @Req() req: Request,
   ) {
-    const ipAddress =
-      (req as any).ip ?? (req as any).socket.remoteAddress ?? undefined;
+    const ipAddress = getRequestIp(req);
     const userAgent =
       typeof req.headers['user-agent'] === 'string'
         ? req.headers['user-agent']
@@ -135,7 +158,7 @@ export class TrustAccessController {
     @Body() dto: ApproveAccessRequestDto,
     @Req() req: Request,
   ) {
-    const userId = (req as any).userId;
+    const userId = getRequestUserId(req);
     if (!userId) {
       throw new UnauthorizedException('User ID is required');
     }
@@ -167,7 +190,7 @@ export class TrustAccessController {
     @Body() dto: DenyAccessRequestDto,
     @Req() req: Request,
   ) {
-    const userId = (req as any).userId;
+    const userId = getRequestUserId(req);
     if (!userId) {
       throw new UnauthorizedException('User ID is required');
     }
@@ -213,7 +236,7 @@ export class TrustAccessController {
     @Body() dto: RevokeGrantDto,
     @Req() req: Request,
   ) {
-    const userId = (req as any).userId;
+    const userId = getRequestUserId(req);
     if (!userId) {
       throw new UnauthorizedException('User ID is required');
     }
@@ -300,8 +323,7 @@ export class TrustAccessController {
       throw new Error('You must accept the NDA to proceed');
     }
 
-    const ipAddress =
-      (req as any).ip ?? (req as any).socket.remoteAddress ?? undefined;
+    const ipAddress = getRequestIp(req);
     const userAgent =
       typeof req.headers['user-agent'] === 'string'
         ? req.headers['user-agent']
@@ -615,7 +637,7 @@ export class TrustAccessController {
   ) {
     return this.trustAccessService.getComplianceResourceUrlByAccessToken(
       token,
-      framework as any,
+      framework as TrustFramework,
     );
   }
 

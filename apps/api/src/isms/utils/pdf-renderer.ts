@@ -20,6 +20,16 @@ interface JsPdfWithAutoTable extends jsPDF {
   lastAutoTable?: { finalY: number };
 }
 
+/**
+ * `splitTextToSize` is typed `any` by jspdf; narrow its result to `string[]`
+ * (its documented runtime shape) so wrapped lines are never `any`.
+ */
+function toTextLines(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map((line: unknown) => String(line));
+  if (typeof value === 'string') return [value];
+  return [String(value)];
+}
+
 function accentColor(hex: string | null): Rgb {
   const fallback: Rgb = [0, 77, 61];
   if (!hex) return fallback;
@@ -67,7 +77,7 @@ export function renderIsmsPdf({
     pdf.setFont('helvetica', style);
     pdf.setFontSize(10.5);
     pdf.setTextColor(...INK);
-    for (const line of pdf.splitTextToSize(text, contentWidth)) {
+    for (const line of toTextLines(pdf.splitTextToSize(text, contentWidth))) {
       ensureSpace(6);
       pdf.text(line, margin, y);
       y += 5;
@@ -78,7 +88,7 @@ export function renderIsmsPdf({
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(10.5);
     pdf.setTextColor(...INK);
-    const lines = pdf.splitTextToSize(text, contentWidth - 6);
+    const lines = toTextLines(pdf.splitTextToSize(text, contentWidth - 6));
     lines.forEach((line: string, index: number) => {
       ensureSpace(6);
       if (index === 0) pdf.text('•', margin + 1, y);
@@ -237,7 +247,9 @@ export function renderIsmsPdf({
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(22);
     pdf.setTextColor(...accent);
-    const titleLines = pdf.splitTextToSize(metadata.title, contentWidth);
+    const titleLines = toTextLines(
+      pdf.splitTextToSize(metadata.title, contentWidth),
+    );
     pdf.text(titleLines, centerX, y, { align: 'center' });
     y += titleLines.length * 9 + 1;
 

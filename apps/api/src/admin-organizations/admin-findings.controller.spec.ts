@@ -123,7 +123,7 @@ describe('AdminFindingsController', () => {
       const created = { id: 'fnd_1', ...dto };
       mockService.create.mockResolvedValue(created);
 
-      const result = await controller.create('org_1', dto as never, {
+      const result = await controller.create('org_1', dto, {
         userId: 'usr_admin',
       });
 

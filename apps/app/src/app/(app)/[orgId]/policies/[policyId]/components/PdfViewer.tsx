@@ -69,32 +69,53 @@ export function PdfViewer({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Reset to loading immediately when the PDF key changes so the previous
+  // version's URL never flashes. Adjust-during-render; the fetch itself stays
+  // in the effect below.
+  const pdfKey = `${pdfUrl ?? ''}:${versionId ?? ''}`;
+  const [prevPdfKey, setPrevPdfKey] = useState(pdfKey);
+  if (prevPdfKey !== pdfKey) {
+    setPrevPdfKey(pdfKey);
+    setSignedUrl(null);
+    setUrlLoading(true);
+  }
+
   // Fetch the secure, temporary URL when the component loads with an S3 key.
+  // Async IIFE with setState only after await (plus a cancellation flag) so
+  // no setState runs synchronously in the effect body.
   useEffect(() => {
-    if (pdfUrl) {
-      setUrlLoading(true);
-      setSignedUrl(null); // Reset before fetching
+    let cancelled = false;
+    (async () => {
+      if (!pdfUrl) {
+        // No PDF for this version - reset state
+        await Promise.resolve();
+        if (cancelled) return;
+        setSignedUrl(null);
+        setUrlLoading(false);
+        return;
+      }
       const query = versionId ? `?versionId=${versionId}` : '';
-      api
-        .get<{ url: string }>(`/v1/policies/${policyId}/pdf-url${query}`)
-        .then((response) => {
-          if (response.data?.url) {
-            setSignedUrl(response.data.url);
-          } else {
-            setSignedUrl(null);
-          }
-          setUrlLoading(false);
-        })
-        .catch(() => {
-          toast.error(t('loadFailedToast'));
-          setUrlLoading(false);
-        });
-    } else {
-      // No PDF for this version - reset state
-      setSignedUrl(null);
-      setUrlLoading(false);
-    }
-  }, [pdfUrl, policyId, versionId]); // eslint-disable-line react-hooks/exhaustive-deps
+      try {
+        const response = await api.get<{ url: string }>(
+          `/v1/policies/${policyId}/pdf-url${query}`,
+        );
+        if (cancelled) return;
+        if (response.data?.url) {
+          setSignedUrl(response.data.url);
+        } else {
+          setSignedUrl(null);
+        }
+        setUrlLoading(false);
+      } catch {
+        if (cancelled) return;
+        toast.error(t('loadFailedToast'));
+        setUrlLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [pdfUrl, policyId, versionId]);
 
   const handleReplaceClick = () => {
     fileInputRef.current?.click();

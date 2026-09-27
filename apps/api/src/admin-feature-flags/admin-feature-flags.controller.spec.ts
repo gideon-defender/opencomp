@@ -25,13 +25,11 @@ jest.mock('../admin-organizations/admin-audit-log.interceptor', () => ({
   },
 }));
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 import { AdminFeatureFlagsController } from './admin-feature-flags.controller';
 import { AdminFeatureFlagsService } from './admin-feature-flags.service';
 import { PlatformAdminGuard } from '../auth/platform-admin.guard';
 import { AdminAuditLogInterceptor } from '../admin-organizations/admin-audit-log.interceptor';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
 const mockDb = require('@db').db as {
   organization: { findUnique: jest.Mock };
 };

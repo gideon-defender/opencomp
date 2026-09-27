@@ -65,7 +65,7 @@ HARD RULES (output that violates these is stripped server-side):
 Style: short, clear, factual.`;
 
 export interface CheckDescriptionInput {
-  provider: 'aws' | 'gcp' | 'azure' | string;
+  provider: string;
   serviceName: string | null;
   title: string;
   description: string | null;

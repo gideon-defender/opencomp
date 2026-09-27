@@ -252,11 +252,14 @@ export function LoadingState({
   // identity), but always read the freshest `output` and handlers — avoids
   // the stale-closure race Cubic flagged (#32 on PR #2671).
   const outputRef = useRef(output);
-  outputRef.current = output;
   const onReadyRef = useRef(onReady);
-  onReadyRef.current = onReady;
   const onFailedRef = useRef(onFailed);
-  onFailedRef.current = onFailed;
+  // Synced in an effect (never during render) so ref writes stay out of render.
+  useEffect(() => {
+    outputRef.current = output;
+    onReadyRef.current = onReady;
+    onFailedRef.current = onFailed;
+  });
 
   useEffect(() => {
     if (!status) return;

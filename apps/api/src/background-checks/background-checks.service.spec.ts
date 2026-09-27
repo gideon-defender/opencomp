@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/unbound-method -- spec references jest-mocked db methods directly; `this` scoping is not a concern for mocks */
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { CheckrClient } from './checkr.client';
 import { BillingService } from '../billing/billing.service';

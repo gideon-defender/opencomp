@@ -1,3 +1,4 @@
+import { mockNextIntl } from '@/test-utils/mocks/next-intl';
 import {
   ADMIN_PERMISSIONS,
   AUDITOR_PERMISSIONS,
@@ -34,6 +35,8 @@ vi.mock('next/image', () => ({
     <img alt={alt} {...props} />
   ),
 }));
+
+mockNextIntl();
 
 import { UpdateOrganizationLogo } from './update-organization-logo';
 

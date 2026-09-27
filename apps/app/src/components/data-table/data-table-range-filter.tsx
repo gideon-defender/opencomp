@@ -1,6 +1,7 @@
 'use client';
 
 import type { Column } from '@tanstack/react-table';
+import { useLocale, useTranslations } from 'next-intl';
 import * as React from 'react';
 
 import type { ExtendedColumnFilter } from '@/types/data-table';
@@ -25,6 +26,8 @@ export function DataTableRangeFilter<TData>({
   className,
   ...props
 }: DataTableRangeFilterProps<TData>) {
+  const locale = useLocale();
+  const t = useTranslations('dataTable');
   const meta = column.columnDef.meta;
 
   const [min, max] = React.useMemo(() => {
@@ -40,11 +43,11 @@ export function DataTableRangeFilter<TData>({
   const formatValue = React.useCallback((value: string | number | undefined) => {
     if (value === undefined || value === '') return '';
     const numValue = Number(value);
-    return Number.isNaN(numValue)
-      ? ''
-      : numValue.toLocaleString(undefined, {
-          maximumFractionDigits: 0,
-        });
+    if (Number.isNaN(numValue)) return '';
+    // `type="number"` inputs reject grouped digits ("1,234" / "1.234"),
+    // so the input value stays ungrouped. Grouped display lives in the
+    // placeholder below, which is display-only and never parsed.
+    return String(numValue);
   }, []);
 
   const value = React.useMemo(() => {
@@ -78,12 +81,12 @@ export function DataTableRangeFilter<TData>({
       <Input
         id={`${inputId}-min`}
         type="number"
-        aria-label={`${meta?.label} minimum value`}
+        aria-label={t('rangeMin', { label: meta?.label ?? column.id })}
         aria-valuemin={min}
         aria-valuemax={max}
         data-slot="range-min"
         inputMode="numeric"
-        placeholder={min.toString()}
+        placeholder={min.toLocaleString(locale)}
         min={min}
         max={max}
         className="h-8 w-full rounded-sm"
@@ -93,12 +96,12 @@ export function DataTableRangeFilter<TData>({
       <Input
         id={`${inputId}-max`}
         type="number"
-        aria-label={`${meta?.label} maximum value`}
+        aria-label={t('rangeMax', { label: meta?.label ?? column.id })}
         aria-valuemin={min}
         aria-valuemax={max}
         data-slot="range-max"
         inputMode="numeric"
-        placeholder={max.toString()}
+        placeholder={max.toLocaleString(locale)}
         min={min}
         max={max}
         className="h-8 w-full rounded-sm"

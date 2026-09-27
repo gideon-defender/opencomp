@@ -1,26 +1,18 @@
-import { FlatCompat } from '@eslint/eslintrc';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { defineConfig, globalIgnores } from 'eslint/config';
+import nextVitals from 'eslint-config-next/core-web-vitals';
+import nextTs from 'eslint-config-next/typescript';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
-
-export default [
-  {
-    ignores: [
-      '**/.next/**',
-      '**/dist/**',
-      '**/node_modules/**',
-      '**/coverage/**',
-      '**/.turbo/**',
-      '**/out/**',
-    ],
-  },
-  ...compat.extends('next/core-web-vitals', 'next/typescript'),
+export default defineConfig([
+  ...nextVitals,
+  ...nextTs,
+  globalIgnores([
+    '**/.next/**',
+    '**/dist/**',
+    '**/node_modules/**',
+    '**/coverage/**',
+    '**/.turbo/**',
+    '**/out/**',
+  ]),
   {
     rules: {
       // This repo has existing violations; keep lint actionable while we migrate.
@@ -29,4 +21,4 @@ export default [
       'prefer-const': 'off',
     },
   },
-];
+]);

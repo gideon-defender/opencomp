@@ -55,9 +55,12 @@ export function FilterToolbar({ isEmpty = false, users }: FilterToolbarProps) {
     parse: (value) => value || null,
   });
 
-  useEffect(() => {
+  // Mirror the URL search param into the input, adjusted during render.
+  const [prevSearchParam, setPrevSearchParam] = useState(search);
+  if (prevSearchParam !== search) {
+    setPrevSearchParam(search);
     setSearchInput(search || '');
-  }, [search]);
+  }
 
   // Debounce search input
   useEffect(() => {

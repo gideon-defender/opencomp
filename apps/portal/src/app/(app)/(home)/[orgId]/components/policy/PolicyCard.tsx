@@ -13,6 +13,7 @@ import {
   Text,
 } from '@trycompai/design-system';
 import { ArrowRight } from '@trycompai/design-system/icons';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { PolicyEditor } from './PolicyEditor';
 import { PortalPdfViewer } from './PortalPdfViewer';
@@ -32,6 +33,7 @@ interface PolicyCardProps {
 
 export function PolicyCard({ policy, onNext, onComplete, member, isLastPolicy }: PolicyCardProps) {
   const [isAccepted, setIsAccepted] = useState(policy.signedBy.includes(member.id));
+  const t = useTranslations('policies');
 
   const handleAccept = () => {
     setIsAccepted(true);
@@ -49,15 +51,15 @@ export function PolicyCard({ policy, onNext, onComplete, member, isLastPolicy }:
         {isAccepted && (
           <div className="bg-background/80 absolute inset-0 z-10 flex items-center justify-center backdrop-blur-xs">
             <div className="space-y-4 text-center">
-              <Text weight="medium">Policy Accepted</Text>
-              <Text variant="muted">You have accepted this policy</Text>
+              <Text weight="medium">{t('policyAccepted')}</Text>
+              <Text variant="muted">{t('youAcceptedPolicy')}</Text>
               <div className="flex justify-center gap-2">
                 <Button variant="outline" onClick={() => setIsAccepted(false)}>
-                  View Again
+                  {t('viewAgain')}
                 </Button>
                 {!isLastPolicy && (
                   <Button onClick={onNext} iconRight={<ArrowRight size={16} />}>
-                    Next Policy
+                    {t('nextPolicy')}
                   </Button>
                 )}
               </div>
@@ -82,9 +84,9 @@ export function PolicyCard({ policy, onNext, onComplete, member, isLastPolicy }:
               )}
             </div>
             <Text variant="muted" size="sm">
-              Status: {policy.status}{' '}
+              {t('statusLabel', { status: policy.status })}{' '}
               {policy.updatedAt && (
-                <span>(Last updated: {new Date(policy.updatedAt).toLocaleDateString()})</span>
+                <span>({t('lastUpdated', { date: new Date(policy.updatedAt).toLocaleDateString() })})</span>
               )}
             </Text>
           </div>
@@ -94,12 +96,12 @@ export function PolicyCard({ policy, onNext, onComplete, member, isLastPolicy }:
             <div className="flex items-center gap-2">
               {policy.updatedAt && (
                 <Text variant="muted" size="sm">
-                  Last updated: {new Date(policy.updatedAt).toLocaleDateString()}
+                  {t('lastUpdated', { date: new Date(policy.updatedAt).toLocaleDateString() })}
                 </Text>
               )}
             </div>
             <div className="flex gap-2">
-              <Button onClick={handleAccept}>Accept Policy</Button>
+              <Button onClick={handleAccept}>{t('acceptPolicy')}</Button>
             </div>
           </div>
         </CardFooter>

@@ -156,7 +156,7 @@ export class AdminTasksController {
           `Invalid status. Must be one of: ${Object.values(TaskStatus).join(', ')}`,
         );
       }
-      updateData.status = body.status as TaskStatus;
+      updateData.status = body.status;
     }
 
     if (body.department !== undefined) {
@@ -179,7 +179,7 @@ export class AdminTasksController {
           `Invalid frequency. Must be one of: ${Object.values(TaskFrequency).join(', ')}`,
         );
       }
-      updateData.frequency = body.frequency as TaskFrequency;
+      updateData.frequency = body.frequency;
     }
 
     if (Object.keys(updateData).length === 0) {

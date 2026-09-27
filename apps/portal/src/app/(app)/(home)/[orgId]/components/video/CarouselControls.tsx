@@ -1,5 +1,6 @@
 import { Button, Text } from '@trycompai/design-system';
 import { ChevronLeft, ChevronRight } from '@trycompai/design-system/icons';
+import { useTranslations } from 'next-intl';
 
 interface CarouselControlsProps {
   currentIndex: number;
@@ -15,6 +16,7 @@ export function CarouselControls({
   onNext,
 }: CarouselControlsProps) {
   const isFirstVideo = currentIndex === 0;
+  const t = useTranslations('training');
 
   return (
     <div className="flex items-center justify-between">
@@ -23,13 +25,13 @@ export function CarouselControls({
         size="icon"
         onClick={onPrevious}
         disabled={isFirstVideo}
-        aria-label="Previous video"
+        aria-label={t('previousVideo')}
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
 
       <Text variant="muted" size="sm">
-        {currentIndex + 1} of {total}
+        {t('videoCount', { current: currentIndex + 1, total })}
       </Text>
 
       <Button
@@ -37,7 +39,7 @@ export function CarouselControls({
         size="icon"
         onClick={onNext}
         disabled={!onNext}
-        aria-label="Next video"
+        aria-label={t('nextVideo')}
       >
         <ChevronRight className="h-4 w-4" />
       </Button>

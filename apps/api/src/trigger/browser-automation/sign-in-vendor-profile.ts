@@ -33,11 +33,7 @@ export const signInVendorProfile = task({
       // Live activity timeline — surfaced to the connect flow via realtime metadata.
       // Steps are plain JSON; cast to the SDK's value type (named interfaces lack
       // the index signature DeserializedJson structurally requires).
-      onSteps: (steps) =>
-        metadata.set(
-          'signinSteps',
-          steps as unknown as Parameters<typeof metadata.set>[1],
-        ),
+      onSteps: (steps) => metadata.set('signinSteps', steps),
       // The tab the AI is on — so the connect flow's iframe follows it across
       // new tabs (e.g. AWS opening its sign-in in a new tab).
       onLiveView: (liveViewUrl) =>

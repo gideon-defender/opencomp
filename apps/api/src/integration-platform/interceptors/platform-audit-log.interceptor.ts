@@ -9,19 +9,29 @@ import { db } from '@db';
 import { Observable, tap } from 'rxjs';
 import { MUTATION_METHODS } from '../../audit/audit-log.constants';
 
+interface PlatformAuditRequest {
+  method: string;
+  url: string;
+  userId?: unknown;
+  params?: Record<string, string>;
+  body?: Record<string, unknown>;
+}
+
 @Injectable()
 export class PlatformAuditLogInterceptor implements NestInterceptor {
   private readonly logger = new Logger('PlatformAuditLog');
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
-    const request = context.switchToHttp().getRequest();
+    const rawRequest: unknown = context.switchToHttp().getRequest();
+    const request = rawRequest as PlatformAuditRequest;
     const method: string = request.method;
 
     if (!MUTATION_METHODS.has(method)) {
       return next.handle();
     }
 
-    const userId: string | undefined = request.userId;
+    const userId: string | undefined =
+      typeof request.userId === 'string' ? request.userId : undefined;
     if (!userId) {
       this.logger.warn(
         `Platform audit log skipped for ${method} ${request.url}: missing userId`,

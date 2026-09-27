@@ -35,7 +35,7 @@ describe('BrowserMfaInstructionsService', () => {
     // deterministic; grounding tests opt in by setting the key + mocking fetch.
     delete process.env.FIRECRAWL_API_KEY;
     mockFetch = jest.fn();
-    global.fetch = mockFetch as unknown as typeof fetch;
+    global.fetch = mockFetch;
     service = new BrowserMfaInstructionsService();
   });
 

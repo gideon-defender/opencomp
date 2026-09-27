@@ -12,6 +12,7 @@ import {
 import { Footer } from '../components/footer';
 import { Logo } from '../components/logo';
 import { UnsubscribeLink } from '../components/unsubscribe-link';
+import type { Locale } from '../lib/locale';
 import { getUnsubscribeUrl } from '../lib/unsubscribe';
 
 interface UnassignedItem {
@@ -27,7 +28,34 @@ interface Props {
   removedMemberName: string;
   unassignedItems: UnassignedItem[];
   email?: string;
+  locale?: Locale;
 }
+
+const copy: Record<
+  Locale,
+  { preview: string; heading: string; greeting: string; cta: string; loginPrompt: string }
+> = {
+  en: {
+    preview: 'Member removed - items require reassignment',
+    heading: 'Member Removed - Items Require Reassignment',
+    greeting: 'Hi',
+    cta: 'View Organization',
+    loginPrompt: 'Please log in to assign these items to appropriate team members.',
+  },
+  es: {
+    preview: 'Miembro eliminado: los elementos requieren reasignación',
+    heading: 'Miembro eliminado: los elementos requieren reasignación',
+    greeting: 'Hola',
+    cta: 'Ver organización',
+    loginPrompt:
+      'Inicia sesión para asignar estos elementos a los miembros adecuados del equipo.',
+  },
+};
+
+const itemLabels: Record<Locale, Record<UnassignedItem['type'], string>> = {
+  en: { task: 'Task', policy: 'Policy', risk: 'Risk', vendor: 'Vendor' },
+  es: { task: 'Tarea', policy: 'Política', risk: 'Riesgo', vendor: 'Proveedor' },
+};
 
 export const UnassignedItemsNotificationEmail = ({
   userName,
@@ -36,22 +64,13 @@ export const UnassignedItemsNotificationEmail = ({
   removedMemberName,
   unassignedItems,
   email,
+  locale = 'en',
 }: Props) => {
+  const t = copy[locale];
   const baseUrl = process.env.NEXT_PUBLIC_BETTER_AUTH_URL ?? 'https://app.gideondefender.com';
   const link = `${baseUrl}/${organizationId}`;
 
-  const getItemTypeLabel = (type: UnassignedItem['type']) => {
-    switch (type) {
-      case 'task':
-        return 'Task';
-      case 'policy':
-        return 'Policy';
-      case 'risk':
-        return 'Risk';
-      case 'vendor':
-        return 'Vendor';
-    }
-  };
+  const getItemTypeLabel = (type: UnassignedItem['type']) => itemLabels[locale][type];
 
   const getItemUrl = (item: UnassignedItem) => {
     switch (item.type) {
@@ -78,10 +97,10 @@ export const UnassignedItemsNotificationEmail = ({
   );
 
   return (
-    <Html>
+    <Html lang={locale}>
       <Tailwind>
         <head />
-        <Preview>Member removed - items require reassignment</Preview>
+        <Preview>{t.preview}</Preview>
 
         <Body className="mx-auto my-auto bg-[#fff] font-sans">
           <Container
@@ -90,16 +109,26 @@ export const UnassignedItemsNotificationEmail = ({
           >
             <Logo />
             <Heading className="mx-0 my-[30px] p-0 text-center text-[24px] font-normal text-[#121212]">
-              Member Removed - Items Require Reassignment
+              {t.heading}
             </Heading>
 
-            <Text className="text-[14px] leading-[24px] text-[#121212]">Hi {userName},</Text>
-
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              <strong>{removedMemberName}</strong> has been removed from{' '}
-              <strong>{organizationName}</strong>. As a result, the following items that were
-              previously assigned to them now require a new assignee:
+              {t.greeting} {userName},
             </Text>
+
+            {locale === 'es' ? (
+              <Text className="text-[14px] leading-[24px] text-[#121212]">
+                <strong>{removedMemberName}</strong> ha sido eliminado de{' '}
+                <strong>{organizationName}</strong>. Por ello, los siguientes elementos que tenía
+                asignados ahora requieren un nuevo responsable:
+              </Text>
+            ) : (
+              <Text className="text-[14px] leading-[24px] text-[#121212]">
+                <strong>{removedMemberName}</strong> has been removed from{' '}
+                <strong>{organizationName}</strong>. As a result, the following items that were
+                previously assigned to them now require a new assignee:
+              </Text>
+            )}
 
             {Object.entries(groupedItems).map(([type, items]) => (
               <Section key={type} className="my-[12px]">
@@ -119,7 +148,7 @@ export const UnassignedItemsNotificationEmail = ({
             ))}
 
             <Text className="text-[14px] leading-[24px] text-[#121212] mt-[24px]">
-              Please log in to assign these items to appropriate team members.
+              {t.loginPrompt}
             </Text>
 
             <Section className="mt-[32px] mb-[42px] text-center">
@@ -127,15 +156,17 @@ export const UnassignedItemsNotificationEmail = ({
                 href={link}
                 className="text-primary border border-solid border-[#121212] bg-transparent px-6 py-3 text-center text-[14px] font-medium text-[#121212] no-underline inline-block"
               >
-                View Organization
+                {t.cta}
               </a>
             </Section>
 
-            {email && <UnsubscribeLink email={email} unsubscribeUrl={getUnsubscribeUrl(email)} />}
+            {email && (
+              <UnsubscribeLink email={email} unsubscribeUrl={getUnsubscribeUrl(email)} locale={locale} />
+            )}
 
             <br />
 
-            <Footer />
+            <Footer locale={locale} />
           </Container>
         </Body>
       </Tailwind>

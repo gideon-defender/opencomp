@@ -26,7 +26,7 @@ vi.mock('@/lib/rerank-suggestions', () => ({
 }));
 
 vi.mock('@gideon-defender/trigger-local', () => ({
-  task: (def: { run: Function }) => ({ run: def.run }),
+  task: (def: { run: (...args: unknown[]) => unknown }) => ({ run: def.run }),
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
   metadata: { set: vi.fn() },
 }));

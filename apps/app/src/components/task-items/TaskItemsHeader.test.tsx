@@ -1,3 +1,4 @@
+import { mockNextIntl } from '@/test-utils/mocks/next-intl';
 import {
   ADMIN_PERMISSIONS,
   AUDITOR_PERMISSIONS,
@@ -6,6 +7,8 @@ import {
 } from '@/test-utils/mocks/permissions';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+mockNextIntl();
 
 // Mock usePermissions
 vi.mock('@/hooks/use-permissions', () => ({
@@ -45,7 +48,7 @@ describe('TaskItemsHeader permission gating', () => {
 
     render(<TaskItemsHeader {...defaultProps} />);
 
-    expect(screen.getByRole('button', { name: /create task/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'header.createTask' })).toBeInTheDocument();
   });
 
   it('hides the create button when user lacks task:create permission', () => {
@@ -53,7 +56,7 @@ describe('TaskItemsHeader permission gating', () => {
 
     render(<TaskItemsHeader {...defaultProps} />);
 
-    expect(screen.queryByRole('button', { name: /create task/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'header.createTask' })).not.toBeInTheDocument();
   });
 
   it('hides the create button when user has no permissions', () => {
@@ -61,7 +64,7 @@ describe('TaskItemsHeader permission gating', () => {
 
     render(<TaskItemsHeader {...defaultProps} />);
 
-    expect(screen.queryByRole('button', { name: /create task/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'header.createTask' })).not.toBeInTheDocument();
   });
 
   it('renders title and description regardless of permissions', () => {
@@ -79,8 +82,8 @@ describe('TaskItemsHeader permission gating', () => {
     render(<TaskItemsHeader {...defaultProps} />);
 
     expect(screen.getByText('5')).toBeInTheDocument();
-    expect(screen.getByText('2 Todo')).toBeInTheDocument();
-    expect(screen.getByText('1 In Progress')).toBeInTheDocument();
+    expect(screen.getByText('2 todo')).toBeInTheDocument();
+    expect(screen.getByText('1 inProgress')).toBeInTheDocument();
   });
 
   it('shows close button variant when isCreateOpen is true and user has permission', () => {
@@ -88,6 +91,6 @@ describe('TaskItemsHeader permission gating', () => {
 
     render(<TaskItemsHeader {...defaultProps} isCreateOpen={true} />);
 
-    expect(screen.getByRole('button', { name: /close create task/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'header.closeCreateTask' })).toBeInTheDocument();
   });
 });

@@ -14,10 +14,13 @@ import {
   cn,
 } from '@trycompai/design-system';
 import { CheckmarkFilled, CircleDash } from '@trycompai/design-system/icons';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 export function HipaaTrainingAccordionItem() {
   const { completions, markVideoComplete } = useTrainingCompletions();
+  const t = useTranslations('tasks');
+  const tTraining = useTranslations('training');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [allChecked, setAllChecked] = useState(false);
   const [checkedItems, setCheckedItems] = useState<Record<number, boolean>>({});
@@ -61,17 +64,14 @@ export function HipaaTrainingAccordionItem() {
               <span
                 className={cn('text-base', isCompleted && 'text-muted-foreground line-through')}
               >
-                HIPAA Security Awareness Training
+                {t('hipaaTraining')}
               </span>
             </div>
           </AccordionTrigger>
         </div>
         <AccordionContent>
           <div className="px-4 pb-4 space-y-6">
-            <p className="text-muted-foreground text-sm">
-              Read the following HIPAA security awareness training and acknowledge each statement at
-              the bottom to complete this requirement.
-            </p>
+            <p className="text-muted-foreground text-sm">{tTraining('hipaaDescription')}</p>
 
             {isCompleted ? (
               <CompletedBanner completedAt={hipaaCompletion?.completedAt ?? null} />
@@ -95,21 +95,24 @@ export function HipaaTrainingAccordionItem() {
 }
 
 function CompletedBanner({ completedAt }: { completedAt: Date | null }) {
+  const tTraining = useTranslations('training');
   return (
     <div className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4">
       <div className="text-primary">
         <CheckmarkFilled size={24} />
       </div>
       <div>
-        <p className="font-medium text-sm">HIPAA training acknowledged</p>
+        <p className="font-medium text-sm">{tTraining('hipaaAcknowledged')}</p>
         <p className="text-muted-foreground text-xs">
           {completedAt
-            ? `Completed on ${new Date(completedAt).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}. A certificate was emailed to you.`
-            : 'You have completed the HIPAA Security Awareness Training.'}
+            ? tTraining('hipaaCompletedOn', {
+                date: new Date(completedAt).toLocaleDateString(undefined, {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                }),
+              })
+            : tTraining('hipaaCompletedFallback')}
         </p>
       </div>
     </div>
@@ -229,12 +232,11 @@ function AcknowledgementSection({
   isSubmitting: boolean;
   onAcknowledge: () => void;
 }) {
+  const tTraining = useTranslations('training');
   return (
     <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
-      <h3 className="font-semibold text-sm">Acknowledgement</h3>
-      <p className="text-muted-foreground text-xs">
-        By acknowledging this training, you confirm the following:
-      </p>
+      <h3 className="font-semibold text-sm">{tTraining('acknowledgement')}</h3>
+      <p className="text-muted-foreground text-xs">{tTraining('acknowledgementConfirm')}</p>
       <div className="space-y-3">
         {hipaaAcknowledgements.map((statement, index) => (
           <label key={index} className="flex items-start gap-3 cursor-pointer">
@@ -254,7 +256,7 @@ function AcknowledgementSection({
           loading={isSubmitting}
           onClick={onAcknowledge}
         >
-          Acknowledge HIPAA Training
+          {tTraining('acknowledgeButton')}
         </Button>
       </div>
     </div>

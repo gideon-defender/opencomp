@@ -3,6 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { isUserUnsubscribed } from '@gideon-defender/email';
 import { toExternalEvidenceFormType } from '@gideon-defender/company';
 import { triggerEmail } from '../email/trigger-email';
+import { resolveEmailLocale, type EmailLocale } from '../email/locale';
 import { FindingNotificationEmail } from '../email/templates/finding-notification';
 import { NovuService } from '../notifications/novu.service';
 
@@ -52,6 +53,7 @@ interface FindingForNotification {
 
 interface TriggerParams {
   organizationId: string;
+  locale?: EmailLocale;
   finding: FindingForNotification;
   actorUserId: string;
   actorName: string;
@@ -243,6 +245,7 @@ export class FindingNotifierService {
       heading,
       message,
       newStatus,
+      locale,
     } = params;
 
     const organization = await db.organization.findUnique({
@@ -272,6 +275,7 @@ export class FindingNotifierService {
           heading,
           message,
           newStatus: statusLabel,
+          locale,
           findingUrl: url,
         }),
       ),
@@ -293,8 +297,10 @@ export class FindingNotifierService {
     message: string;
     newStatus?: string;
     findingUrl: string;
+    locale?: EmailLocale;
   }): Promise<void> {
     const { recipient, organizationId, subject, action } = params;
+    const emailLocale = resolveEmailLocale(params.locale);
 
     try {
       const isUnsubscribed = await isUserUnsubscribed(
@@ -318,6 +324,7 @@ export class FindingNotifierService {
           to: recipient.email,
           subject,
           react: FindingNotificationEmail({
+            locale: emailLocale,
             toName: recipient.name,
             toEmail: recipient.email,
             heading: params.heading,

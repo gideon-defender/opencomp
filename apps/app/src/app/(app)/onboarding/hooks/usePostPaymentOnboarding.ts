@@ -73,20 +73,28 @@ export function usePostPaymentOnboarding({
 
   // Initialize step index after component mounts to prevent flicker
   useEffect(() => {
-    // Use saved step index, but also verify it makes sense
-    // (e.g., don't jump to step 7 if steps 4-6 aren't answered)
-    const firstUnansweredIndex = postPaymentSteps.findIndex((step) => !savedAnswers[step.key]);
+    let cancelled = false;
+    (async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      // Use saved step index, but also verify it makes sense
+      // (e.g., don't jump to step 7 if steps 4-6 aren't answered)
+      const firstUnansweredIndex = postPaymentSteps.findIndex((step) => !savedAnswers[step.key]);
 
-    // Use the saved step index if it's valid, otherwise use first unanswered
-    const initialStep =
-      savedStepIndex >= 0 && savedStepIndex < postPaymentSteps.length
-        ? savedStepIndex
-        : firstUnansweredIndex === -1
-          ? 0
-          : firstUnansweredIndex;
+      // Use the saved step index if it's valid, otherwise use first unanswered
+      const initialStep =
+        savedStepIndex >= 0 && savedStepIndex < postPaymentSteps.length
+          ? savedStepIndex
+          : firstUnansweredIndex === -1
+            ? 0
+            : firstUnansweredIndex;
 
-    setStepIndex(initialStep);
-    setIsLoading(false);
+      setStepIndex(initialStep);
+      setIsLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [savedAnswers, savedStepIndex, postPaymentSteps]);
 
   const step = postPaymentSteps[stepIndex];

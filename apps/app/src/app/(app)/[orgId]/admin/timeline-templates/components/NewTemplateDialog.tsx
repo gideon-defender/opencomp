@@ -21,18 +21,25 @@ import {
   Text,
 } from '@trycompai/design-system';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { useTranslations } from 'next-intl';
 
-const newTemplateSchema = z.object({
-  name: z.string().min(1, 'Template name is required'),
-  frameworkId: z.string().min(1, 'Please select a framework'),
-  cycleNumber: z.number().min(1, 'Cycle must be at least 1'),
-});
+export interface NewTemplateSchemaMessages {
+  name: string;
+  framework: string;
+  cycle: string;
+}
 
-type NewTemplateFormValues = z.infer<typeof newTemplateSchema>;
+export function createNewTemplateSchema(messages: NewTemplateSchemaMessages) {
+  return z.object({
+    name: z.string().min(1, messages.name),
+    frameworkId: z.string().min(1, messages.framework),
+    cycleNumber: z.number().min(1, messages.cycle),
+  });
+}
 
 interface Framework {
   id: string;
@@ -50,6 +57,20 @@ export function NewTemplateDialog({ open, onClose }: NewTemplateDialogProps) {
   const { mutate } = useAdminTimelineTemplates();
   const [saving, setSaving] = useState(false);
   const [frameworks, setFrameworks] = useState<Framework[]>([]);
+  const t = useTranslations('admin');
+  const tv = useTranslations('validation');
+
+  const newTemplateSchema = useMemo(
+    () =>
+      createNewTemplateSchema({
+        name: tv('templateNameRequired'),
+        framework: tv('selectFrameworkRequired'),
+        cycle: tv('cycleMin'),
+      }),
+    [tv],
+  );
+
+  type NewTemplateFormValues = z.infer<typeof newTemplateSchema>;
 
   useEffect(() => {
     if (!open) return;
@@ -79,7 +100,7 @@ export function NewTemplateDialog({ open, onClose }: NewTemplateDialogProps) {
       return;
     }
 
-    toast.success('Template created');
+    toast.success(t('timelineTemplates.editor.templateCreated'));
     reset();
     mutate();
     onClose();
@@ -99,14 +120,18 @@ export function NewTemplateDialog({ open, onClose }: NewTemplateDialogProps) {
     <Sheet open={open} onOpenChange={(o) => !o && handleClose()}>
       <SheetContent>
         <SheetHeader>
-          <SheetTitle>New Template</SheetTitle>
+          <SheetTitle>{t('timelineTemplates.editor.newTemplate')}</SheetTitle>
         </SheetHeader>
         <SheetBody>
           <form onSubmit={handleSubmit(handleCreate)}>
             <Stack gap="md">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="new-name">Template Name</Label>
-                <Input id="new-name" {...register('name')} placeholder="e.g. SOC 2 Type 2" />
+                <Label htmlFor="new-name">{t('timelineTemplates.editor.templateNameLabel')}</Label>
+                <Input
+                  id="new-name"
+                  {...register('name')}
+                  placeholder={t('timelineTemplates.editor.newNamePlaceholder')}
+                />
                 {errors.name && (
                   <Text size="xs" variant="destructive">
                     {errors.name.message}
@@ -115,14 +140,16 @@ export function NewTemplateDialog({ open, onClose }: NewTemplateDialogProps) {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label>Framework</Label>
+                <Label>{t('timelineTemplates.editor.frameworkLabel')}</Label>
                 <Controller
                   control={control}
                   name="frameworkId"
                   render={({ field }) => (
                     <Select value={field.value} onValueChange={field.onChange}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a framework" />
+                        <SelectValue
+                          placeholder={t('timelineTemplates.editor.selectFramework')}
+                        />
                       </SelectTrigger>
                       <SelectContent>
                         {frameworks.map((fw) => (
@@ -142,7 +169,9 @@ export function NewTemplateDialog({ open, onClose }: NewTemplateDialogProps) {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="new-cycleNumber">Cycle Number</Label>
+                <Label htmlFor="new-cycleNumber">
+                  {t('timelineTemplates.editor.cycleNumberLabel')}
+                </Label>
                 <Input
                   id="new-cycleNumber"
                   type="number"
@@ -157,7 +186,7 @@ export function NewTemplateDialog({ open, onClose }: NewTemplateDialogProps) {
               </div>
 
               <Button type="submit" loading={saving}>
-                Create Template
+                {t('timelineTemplates.editor.createTemplate')}
               </Button>
             </Stack>
           </form>

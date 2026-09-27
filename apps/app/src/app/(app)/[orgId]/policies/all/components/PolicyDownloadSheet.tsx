@@ -15,7 +15,7 @@ import {
   Stack,
   Text,
 } from '@trycompai/design-system';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 interface PolicyDownloadSheetProps {
@@ -41,12 +41,17 @@ export function PolicyDownloadSheet({ open, onOpenChange, policies }: PolicyDown
 
   // Reset selection + search whenever the sheet opens or the underlying policy
   // list changes, so reopens and prop refreshes don't leave stale or deleted
-  // IDs in the selection.
-  useEffect(() => {
-    if (!open) return;
-    setSelected(new Set(allIds));
-    setQuery('');
-  }, [open, allIds]);
+  // IDs in the selection. Adjust-during-render keyed on the open state plus
+  // the id list instead of an effect.
+  const resetKey = open ? allIds.join(',') : null;
+  const [prevResetKey, setPrevResetKey] = useState<string | null>(null);
+  if (prevResetKey !== resetKey) {
+    setPrevResetKey(resetKey);
+    if (open) {
+      setSelected(new Set(allIds));
+      setQuery('');
+    }
+  }
 
   const normalizedQuery = query.trim().toLowerCase();
   const filteredPolicies = useMemo(() => {

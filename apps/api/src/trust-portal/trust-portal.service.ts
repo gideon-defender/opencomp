@@ -104,10 +104,28 @@ export class TrustPortalService {
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
     });
     if (!resp.ok) {
-      const errorBody = await resp.json().catch(() => ({}));
+      const errorBody: unknown = await resp.json().catch(() => ({}));
+      let vercelMessage: string | undefined;
+      if (
+        typeof errorBody === 'object' &&
+        errorBody !== null &&
+        'error' in errorBody
+      ) {
+        const nested: unknown = (errorBody as { error?: unknown }).error;
+        if (
+          typeof nested === 'object' &&
+          nested !== null &&
+          'message' in nested
+        ) {
+          const messageValue: unknown = (nested as { message?: unknown })
+            .message;
+          if (typeof messageValue === 'string' && messageValue.length > 0) {
+            vercelMessage = messageValue;
+          }
+        }
+      }
       const err = new Error(
-        errorBody?.error?.message ||
-          `Vercel API ${method} ${path} failed (${resp.status})`,
+        vercelMessage ?? `Vercel API ${method} ${path} failed (${resp.status})`,
       ) as Error & { status: number; responseData: unknown };
       err.status = resp.status;
       err.responseData = errorBody;
@@ -354,7 +372,7 @@ export class TrustPortalService {
       },
     });
 
-    await s3Client!.send(putCommand);
+    await s3Client.send(putCommand);
 
     const frameworkRef =
       target.kind === 'native'
@@ -433,7 +451,7 @@ export class TrustPortalService {
       Key: record.s3Key,
     });
 
-    const signedUrl = await getSignedUrl(s3Client!, getCommand, {
+    const signedUrl = await getSignedUrl(s3Client, getCommand, {
       expiresIn: this.SIGNED_URL_EXPIRY_SECONDS,
     });
 
@@ -498,7 +516,7 @@ export class TrustPortalService {
       },
     });
 
-    await s3Client!.send(putCommand);
+    await s3Client.send(putCommand);
 
     const record = await db.trustDocument.create({
       data: {
@@ -554,7 +572,7 @@ export class TrustPortalService {
       ResponseContentDisposition: `attachment; filename="${record.name.replaceAll('"', '')}"`,
     });
 
-    const signedUrl = await getSignedUrl(s3Client!, getCommand, {
+    const signedUrl = await getSignedUrl(s3Client, getCommand, {
       expiresIn: this.SIGNED_URL_EXPIRY_SECONDS,
     });
 
@@ -1259,7 +1277,7 @@ export class TrustPortalService {
       );
     }
     return hasNative
-      ? { kind: 'native', framework: framework as TrustFramework }
+      ? { kind: 'native', framework: framework }
       : { kind: 'custom', customFrameworkId: customFrameworkId as string };
   }
 
@@ -1441,7 +1459,7 @@ export class TrustPortalService {
         Bucket: APP_AWS_ORG_ASSETS_BUCKET,
         Key: key,
       });
-      await s3Client!.send(deleteCommand);
+      await s3Client.send(deleteCommand);
     } catch (error) {
       this.logger.warn(
         `Failed to delete previous compliance resource with key ${key}`,
@@ -1812,7 +1830,7 @@ export class TrustPortalService {
       ContentType: fileType,
       CacheControl: 'public, max-age=31536000, immutable',
     });
-    await s3Client!.send(putCommand);
+    await s3Client.send(putCommand);
 
     // Update trust record
     const trust = await db.trust.findUnique({
@@ -1833,7 +1851,7 @@ export class TrustPortalService {
       Bucket: APP_AWS_ORG_ASSETS_BUCKET,
       Key: key,
     });
-    const signedUrl = await getSignedUrl(s3Client!, getCommand, {
+    const signedUrl = await getSignedUrl(s3Client, getCommand, {
       expiresIn: 3600,
     });
 
@@ -1895,8 +1913,7 @@ export class TrustPortalService {
                 [...extractedTypes].some((t) => !currentTypes.has(t));
 
               if (isDifferent) {
-                updates.complianceBadges =
-                  extractedBadges as unknown as Prisma.InputJsonValue;
+                updates.complianceBadges = extractedBadges;
                 hasUpdates = true;
               }
             }

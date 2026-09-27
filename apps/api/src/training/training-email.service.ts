@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { triggerEmail } from '../email/trigger-email';
+import { resolveEmailLocale, type EmailLocale } from '../email/locale';
 import { TrainingCompletedEmail } from '../email/templates/training-completed';
 import { HipaaTrainingCompletedEmail } from '../email/templates/hipaa-training-completed';
 import { TrainingCertificatePdfService } from './training-certificate-pdf.service';
@@ -17,8 +18,10 @@ export class TrainingEmailService {
     toName: string;
     organizationName: string;
     completedAt: Date;
+    locale?: EmailLocale;
   }): Promise<void> {
     const { toEmail, toName, organizationName, completedAt } = params;
+    const emailLocale = resolveEmailLocale(params.locale);
 
     // Generate the certificate PDF
     const certificatePdf =
@@ -38,8 +41,12 @@ export class TrainingEmailService {
 
     const { id } = await triggerEmail({
       to: toEmail,
-      subject: `Congratulations! You've completed your Security Awareness Training - ${organizationName}`,
+      subject:
+        emailLocale === 'es'
+          ? `¡Felicidades! Has completado tu formación de concienciación en seguridad - ${organizationName}`
+          : `Congratulations! You've completed your Security Awareness Training - ${organizationName}`,
       react: TrainingCompletedEmail({
+        locale: emailLocale,
         email: toEmail,
         userName: toName,
         organizationName,
@@ -65,8 +72,10 @@ export class TrainingEmailService {
     toName: string;
     organizationName: string;
     completedAt: Date;
+    locale?: EmailLocale;
   }): Promise<void> {
     const { toEmail, toName, organizationName, completedAt } = params;
+    const emailLocale = resolveEmailLocale(params.locale);
 
     const certificatePdf =
       await this.certificatePdfService.generateHipaaCertificatePdf({
@@ -84,8 +93,12 @@ export class TrainingEmailService {
 
     const { id } = await triggerEmail({
       to: toEmail,
-      subject: `Congratulations! You've completed your HIPAA Security Awareness Training - ${organizationName}`,
+      subject:
+        emailLocale === 'es'
+          ? `¡Felicidades! Has completado tu formación de concienciación en seguridad HIPAA - ${organizationName}`
+          : `Congratulations! You've completed your HIPAA Security Awareness Training - ${organizationName}`,
       react: HipaaTrainingCompletedEmail({
+        locale: emailLocale,
         email: toEmail,
         userName: toName,
         organizationName,

@@ -258,7 +258,7 @@ export class OrganizationController {
   @Get('api-keys/available-scopes')
   @RequirePermission('apiKey', 'read')
   @ApiOperation({ summary: 'Get available API key scopes' })
-  async getAvailableScopes() {
+  getAvailableScopes() {
     return { data: this.apiKeyService.getAvailableScopes() };
   }
 

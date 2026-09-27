@@ -2,11 +2,13 @@
 
 import { Button } from '@gideon-defender/ui';
 import { Moon, Sun } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
+  const t = useTranslations('shell');
   const [mounted, setMounted] = useState(false);
 
   // next-themes can't know the resolved theme during SSR; wait for mount before
@@ -19,8 +21,8 @@ export function ThemeToggle() {
     <Button
       variant="ghost"
       size="icon"
-      aria-label="Toggle theme"
-      title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      aria-label={t('toggleTheme')}
+      title={isDark ? t('switchToLightMode') : t('switchToDarkMode')}
       className="h-8 w-8"
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
     >

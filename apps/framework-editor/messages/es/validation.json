@@ -1,0 +1,11 @@
+{
+  "nameRequired": "El nombre es obligatorio.",
+  "descriptionRequired": "La descripción es obligatoria.",
+  "versionRequired": "La versión es obligatoria.",
+  "requirementNameRequired": "El nombre del requisito es obligatorio.",
+  "identifierRequired": "El identificador es obligatorio.",
+  "invalidEmail": "Introduce una dirección de correo válida.",
+  "invalidUrl": "Introduce una URL válida.",
+  "minLength": "Debe tener al menos {min} caracteres.",
+  "maxLength": "Debe tener como máximo {max} caracteres."
+}

@@ -31,7 +31,7 @@ export function MinimalOrganizationSwitcher({
       setIsSwitching(true);
       try {
         await authClient.organization.setActive({ organizationId: org.id });
-        window.location.href = `/${org.id}/`;
+        window.location.assign(`/${org.id}/`);
       } catch {
         setIsSwitching(false);
       }

@@ -4,6 +4,7 @@ import type { Member, Policy, PolicyVersion } from '@db';
 import { Button, Text } from '@trycompai/design-system';
 import { ChevronLeft, ChevronRight } from '@trycompai/design-system/icons';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { PolicyCard } from './PolicyCard';
 
@@ -26,6 +27,7 @@ export function PolicyCarousel({
 }: PolicyCarouselProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
+  const t = useTranslations('policies');
 
   const handleCompletePolicy = async (policyId: string) => {
     try {
@@ -36,11 +38,11 @@ export function PolicyCarousel({
         body: JSON.stringify({ policyId }),
       });
       if (!res.ok) {
-        throw new Error('Failed to complete policy');
+        throw new Error(t('policyCompletedError'));
       }
-      toast.success('Policy completed');
+      toast.success(t('policyCompletedToast'));
     } catch {
-      toast.error('Failed to complete policy');
+      toast.error(t('policyCompletedError'));
     }
   };
 
@@ -120,7 +122,7 @@ export function PolicyCarousel({
           <ChevronLeft size={16} />
         </Button>
         <Text variant="muted" size="sm">
-          Policy {currentIndex + 1} of {policies.length}
+          {t('policyCount', { current: currentIndex + 1, total: policies.length })}
         </Text>
         <Button
           variant="outline"

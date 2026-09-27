@@ -52,9 +52,7 @@ export class ServicesController {
 
     const raw = connection.variables;
     const variables: Record<string, unknown> =
-      raw && typeof raw === 'object' && !Array.isArray(raw)
-        ? (raw as Record<string, unknown>)
-        : {};
+      raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
     const disabledServices = new Set<string>(
       Array.isArray(variables.disabledServices)
         ? (variables.disabledServices as string[])

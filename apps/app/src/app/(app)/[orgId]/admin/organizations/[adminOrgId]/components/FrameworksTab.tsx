@@ -58,8 +58,25 @@ export function FrameworksTab({ orgId }: { orgId: string }) {
   }, [orgId]);
 
   useEffect(() => {
-    void fetchFrameworks();
-  }, [fetchFrameworks]);
+    let cancelled = false;
+    (async () => {
+      const res = await api.get<AdminFrameworksResponse>(
+        `/v1/admin/organizations/${orgId}/frameworks`,
+      );
+      if (cancelled) return;
+      if (res.error) {
+        toast.error(res.error);
+      }
+      if (res.data) {
+        setFrameworks(res.data.frameworks);
+        setAvailableFrameworks(res.data.availableFrameworks);
+      }
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [orgId]);
 
   const handleDialogOpenChange = (open: boolean) => {
     if (submitting) return;

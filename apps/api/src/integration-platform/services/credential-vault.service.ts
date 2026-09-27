@@ -105,7 +105,7 @@ export class CredentialVaultService {
     });
   }
 
-  async encrypt(text: string): Promise<EncryptedData> {
+  encrypt(text: string): Promise<EncryptedData> {
     const secretKey = this.getSecretKey();
     const salt = randomBytes(SALT_LENGTH);
     const iv = randomBytes(IV_LENGTH);
@@ -118,15 +118,15 @@ export class CredentialVaultService {
     ]);
     const tag = cipher.getAuthTag();
 
-    return {
+    return Promise.resolve({
       encrypted: encrypted.toString('base64'),
       iv: iv.toString('base64'),
       tag: tag.toString('base64'),
       salt: salt.toString('base64'),
-    };
+    });
   }
 
-  async decrypt(encryptedData: EncryptedData): Promise<string> {
+  decrypt(encryptedData: EncryptedData): Promise<string> {
     const secretKey = this.getSecretKey();
     const encrypted = Buffer.from(encryptedData.encrypted, 'base64');
     const iv = Buffer.from(encryptedData.iv, 'base64');
@@ -141,7 +141,7 @@ export class CredentialVaultService {
       decipher.update(encrypted),
       decipher.final(),
     ]);
-    return decrypted.toString('utf8');
+    return Promise.resolve(decrypted.toString('utf8'));
   }
 
   /**

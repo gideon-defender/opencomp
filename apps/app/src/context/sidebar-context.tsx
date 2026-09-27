@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useState } from 'react';
 
 interface SidebarContextType {
   isCollapsed: boolean;
@@ -18,10 +18,12 @@ export function SidebarProvider({
 }) {
   const [isCollapsed, setIsCollapsed] = useState(initialIsCollapsed);
 
-  // Update state if server value changes
-  useEffect(() => {
+  // Update state if server value changes (adjusted during render).
+  const [prevInitialIsCollapsed, setPrevInitialIsCollapsed] = useState(initialIsCollapsed);
+  if (prevInitialIsCollapsed !== initialIsCollapsed) {
+    setPrevInitialIsCollapsed(initialIsCollapsed);
     setIsCollapsed(initialIsCollapsed);
-  }, [initialIsCollapsed]);
+  }
 
   return (
     <SidebarContext.Provider value={{ isCollapsed, setIsCollapsed }}>

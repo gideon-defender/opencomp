@@ -138,7 +138,7 @@ describe('SecurityPenetrationTestsService', () => {
     );
     mockBillingEntitlementsService.refundIncludedUsageForProduct.mockResolvedValue();
     fetchMock.mockReset();
-    global.fetch = fetchMock as unknown as typeof fetch;
+    global.fetch = fetchMock;
     service = new SecurityPenetrationTestsService(
       mockPentestCreditsService as unknown as PentestCreditsService,
       mockBillingEntitlementsService as unknown as BillingEntitlementsService,

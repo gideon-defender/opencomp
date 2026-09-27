@@ -21,7 +21,7 @@ interface CheckDescriptionRequest {
   organizationId: string;
   /** Normalized, resource-agnostic check identifier — see normalizeCheckId. */
   checkId: string;
-  provider: 'aws' | 'gcp' | 'azure' | string;
+  provider: string;
   serviceName: string | null;
   /** Per-finding title / description / remediation — the SOURCE we hash. */
   title: string;

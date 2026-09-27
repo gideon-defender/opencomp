@@ -3,7 +3,7 @@
 import { cn } from '@/lib/utils';
 import { Text } from '@trycompai/design-system';
 import { Checkmark, ChevronLeft, ChevronRight } from '@trycompai/design-system/icons';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   isControlDerived,
   type SuggestedControl,
@@ -103,9 +103,7 @@ export function TasksSection({
   // Re-clamp the page when the list shrinks (e.g. after a re-run returns
   // fewer tasks). Keeps the user on a valid page rather than rendering
   // empty space.
-  useEffect(() => {
-    if (page > pageCount) setPage(pageCount);
-  }, [page, pageCount]);
+  if (page > pageCount) setPage(pageCount);
   const start = (page - 1) * PAGE_SIZE;
   const visible = tasks.slice(start, start + PAGE_SIZE);
 
@@ -174,9 +172,7 @@ export function ControlsSection({
 }) {
   const pageCount = Math.max(1, Math.ceil(controls.length / PAGE_SIZE));
   const [page, setPage] = useState(1);
-  useEffect(() => {
-    if (page > pageCount) setPage(pageCount);
-  }, [page, pageCount]);
+  if (page > pageCount) setPage(pageCount);
   const start = (page - 1) * PAGE_SIZE;
   const visible = controls.slice(start, start + PAGE_SIZE);
 

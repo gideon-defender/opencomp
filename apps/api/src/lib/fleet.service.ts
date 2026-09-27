@@ -32,7 +32,9 @@ export class FleetService {
       },
       (error) => {
         this.logger.error('FleetDM Request Error:', error);
-        return Promise.reject(error);
+        return Promise.reject(
+          error instanceof Error ? error : new Error(String(error)),
+        );
       },
     );
 
@@ -48,7 +50,9 @@ export class FleetService {
           `FleetDM Response Error: ${error.response?.status} ${error.config?.url}`,
           error.response?.data,
         );
-        return Promise.reject(error);
+        return Promise.reject(
+          error instanceof Error ? error : new Error(String(error)),
+        );
       },
     );
   }

@@ -30,14 +30,17 @@ export function OnboardingFormActions({
   const [isLocalhost, setIsLocalhost] = useState(false);
 
   useEffect(() => {
-    // Only check on client side after mount
-    const hostname = window.location.hostname;
-    setIsLocalhost(
-      hostname === 'localhost' ||
-        hostname === '127.0.0.1' ||
-        hostname.startsWith('192.168.') ||
-        hostname.startsWith('10.0.'),
-    );
+    // Client-only hostname read after mount (avoids hydration mismatch);
+    // deferred past render to avoid cascading renders.
+    queueMicrotask(() => {
+      const hostname = window.location.hostname;
+      setIsLocalhost(
+        hostname === 'localhost' ||
+          hostname === '127.0.0.1' ||
+          hostname.startsWith('192.168.') ||
+          hostname.startsWith('10.0.'),
+      );
+    });
   }, []);
 
   return (

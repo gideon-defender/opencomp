@@ -213,7 +213,7 @@ export class GideonJwtService {
 
       return {
         payload: payload as GideonJwtPayload,
-        protectedHeader: protectedHeader as Record<string, unknown>,
+        protectedHeader: protectedHeader,
       };
     } catch (error) {
       this.logger.debug(

@@ -2,7 +2,6 @@
 
 import { useChat } from '@ai-sdk/react';
 import { useEffect, useState } from 'react';
-import { flushSync } from 'react-dom';
 import { generateAutomationSuggestions } from '../actions/generate-suggestions';
 import { Chat } from '../chat';
 import { useSharedChatContext } from '../lib';
@@ -42,26 +41,32 @@ export function AutomationPageClient({
     automationId === 'new' && !!taskDescription,
   );
 
-  // Load suggestions asynchronously (non-blocking - page renders immediately)
+  // Load suggestions asynchronously (non-blocking - page renders immediately).
+  // State updates happen only after await, with cancellation on unmount/change.
   useEffect(() => {
-    if (automationId === 'new' && taskDescription) {
-      setIsLoadingSuggestions(true);
-      generateAutomationSuggestions(taskDescription, orgId)
-        .then((result) => {
-          // Use flushSync to force immediate re-render
-          flushSync(() => {
-            setSuggestions(result);
-            setIsLoadingSuggestions(false);
-          });
-        })
-        .catch((error) => {
-          console.error('Failed to generate suggestions:', error);
-          setIsLoadingSuggestions(false);
-        });
-    } else {
-      // Not a new automation, no need to load suggestions
-      setIsLoadingSuggestions(false);
+    if (!(automationId === 'new' && taskDescription)) {
+      return;
     }
+    let cancelled = false;
+    (async () => {
+      try {
+        const result = await generateAutomationSuggestions(taskDescription, orgId);
+        if (cancelled) {
+          return;
+        }
+        setSuggestions(result);
+        setIsLoadingSuggestions(false);
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+        console.error('Failed to generate suggestions:', error);
+        setIsLoadingSuggestions(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [automationId, taskDescription, orgId]);
 
   const hasMessages = messages.length > 0;

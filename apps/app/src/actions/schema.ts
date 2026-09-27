@@ -10,26 +10,82 @@ import {
 } from '@db';
 import { z } from 'zod';
 
+/**
+ * English fallback messages for server-action schemas.
+ *
+ * These schemas run server-side, where next-intl hooks are unavailable, so
+ * messages stay as literals. Each key mirrors the `validation` message
+ * namespace — clients should translate the key via
+ * `useTranslations('validation')` before display.
+ */
+export const actionValidationMessages = {
+  selectFrameworkToStart: 'Please select at least one framework to get started with',
+  organizationNameRequired: 'Organization name is required',
+  organizationNameTooLong: 'Organization name cannot exceed 255 characters',
+  subdomainRequired: 'Subdomain is required',
+  subdomainTooLong: 'Subdomain cannot exceed 255 characters',
+  subdomainInvalid: 'Subdomain can only contain lowercase letters, numbers, and hyphens',
+  websiteInvalid: 'Please enter a valid website that starts with https://',
+  websiteTooLong: 'Website cannot exceed 255 characters',
+  riskNameRequired: 'Risk name is required',
+  riskNameTooShort: 'Risk name should be at least 1 character',
+  riskNameTooLong: 'Risk name should be at most 100 characters',
+  riskDescriptionRequired: 'Risk description is required',
+  riskDescriptionTooShort: 'Risk description should be at least 1 character',
+  riskDescriptionTooLong: 'Risk description should be at most 255 characters',
+  riskCategoryRequired: 'Risk category is required',
+  riskDepartmentRequired: 'Risk department is required',
+  riskDepartmentTooLong: 'Risk department must be at most 64 characters',
+  riskIdRequired: 'Risk ID is required',
+  riskTitleRequired: 'Risk title is required',
+  riskStatusRequired: 'Risk status is required',
+  commentContentRequired: 'Comment content is required',
+  commentContentTooLong: 'Comment content should be at most 1000 characters',
+  taskTitleRequired: 'Task title is required',
+  taskDescriptionRequired: 'Task description is required',
+  taskIdRequired: 'Task ID is required',
+  taskStatusRequired: 'Task status is required',
+  integrationNameRequired: 'Integration name is required',
+  integrationIdRequired: 'Integration ID is required',
+  titleRequired: 'Title is required',
+  descriptionRequired: 'Description is required',
+  organizationIdRequired: 'Organization ID is required',
+  selectFrameworkToAdd: 'Please select at least one framework to add',
+  departmentRequired: 'Department is required',
+  departmentTooLong: 'Department must be at most 64 characters',
+  nameRequired: 'Name is required',
+  nameTooLong: 'Name must be less than 64 characters',
+  policyIdRequired: 'Policy ID is required',
+  entityIdRequired: 'Entity ID is required',
+  questionRequired: 'Question is required',
+  answerRequired: 'Answer is required',
+  idRequired: 'ID is required',
+} as const;
+
+export type ActionValidationKey = keyof typeof actionValidationMessages;
+
+const m = actionValidationMessages;
+
 const organizationSchema = z.object({
   frameworkIds: z
     .array(z.string())
-    .min(1, 'Please select at least one framework to get started with'),
+    .min(1, m.selectFrameworkToStart),
 });
 
 export const organizationNameSchema = z.object({
   name: z
     .string()
-    .min(1, 'Organization name is required')
-    .max(255, 'Organization name cannot exceed 255 characters'),
+    .min(1, m.organizationNameRequired)
+    .max(255, m.organizationNameTooLong),
 });
 
 export const subdomainAvailabilitySchema = z.object({
   subdomain: z
     .string()
-    .min(1, 'Subdomain is required')
-    .max(255, 'Subdomain cannot exceed 255 characters')
+    .min(1, m.subdomainRequired)
+    .max(255, m.subdomainTooLong)
     .regex(/^[a-z0-9-]+$/, {
-      message: 'Subdomain can only contain lowercase letters, numbers, and hyphens',
+      message: m.subdomainInvalid,
     }),
 });
 
@@ -46,9 +102,9 @@ export const organizationWebsiteSchema = z.object({
   website: z
     .string()
     .url({
-      message: 'Please enter a valid website that starts with https://',
+      message: m.websiteInvalid,
     })
-    .max(255, 'Website cannot exceed 255 characters'),
+    .max(255, m.websiteTooLong),
 });
 
 export const organizationAdvancedModeSchema = z.object({
@@ -78,53 +134,53 @@ export const organizationAccessRequestFormSchema = z.object({
 // Risks
 export const createRiskSchema = z.object({
   title: z
-    .string({ error: 'Risk name is required' })
-    .min(1, { message: 'Risk name should be at least 1 character' })
-    .max(100, { message: 'Risk name should be at most 100 characters' }),
+    .string({ error: m.riskNameRequired })
+    .min(1, { message: m.riskNameTooShort })
+    .max(100, { message: m.riskNameTooLong }),
   description: z
-    .string({ error: 'Risk description is required' })
-    .min(1, { message: 'Risk description should be at least 1 character' })
-    .max(255, { message: 'Risk description should be at most 255 characters' }),
-  category: z.nativeEnum(RiskCategory, { error: 'Risk category is required' }),
+    .string({ error: m.riskDescriptionRequired })
+    .min(1, { message: m.riskDescriptionTooShort })
+    .max(255, { message: m.riskDescriptionTooLong }),
+  category: z.nativeEnum(RiskCategory, { error: m.riskCategoryRequired }),
   department: z
-    .string({ error: 'Risk department is required' })
+    .string({ error: m.riskDepartmentRequired })
     .trim()
-    .min(1, { message: 'Risk department is required' })
-    .max(64, { message: 'Risk department must be at most 64 characters' }),
+    .min(1, { message: m.riskDepartmentRequired })
+    .max(64, { message: m.riskDepartmentTooLong }),
   assigneeId: z.string().optional().nullable(),
 });
 
 export const updateRiskSchema = z.object({
   id: z.string().min(1, {
-    message: 'Risk ID is required',
+    message: m.riskIdRequired,
   }),
   title: z.string().min(1, {
-    message: 'Risk title is required',
+    message: m.riskTitleRequired,
   }),
   description: z.string().min(1, {
-    message: 'Risk description is required',
+    message: m.riskDescriptionRequired,
   }),
-  category: z.nativeEnum(RiskCategory, { error: 'Risk category is required' }),
+  category: z.nativeEnum(RiskCategory, { error: m.riskCategoryRequired }),
   department: z
-    .string({ error: 'Risk department is required' })
+    .string({ error: m.riskDepartmentRequired })
     .trim()
-    .min(1, { message: 'Risk department is required' })
-    .max(64, { message: 'Risk department must be at most 64 characters' }),
+    .min(1, { message: m.riskDepartmentRequired })
+    .max(64, { message: m.riskDepartmentTooLong }),
   assigneeId: z.string().optional().nullable(),
-  status: z.nativeEnum(RiskStatus, { error: 'Risk status is required' }),
+  status: z.nativeEnum(RiskStatus, { error: m.riskStatusRequired }),
 });
 
 export const createRiskCommentSchema = z.object({
   riskId: z.string().min(1, {
-    message: 'Risk ID is required',
+    message: m.riskIdRequired,
   }),
   content: z
     .string()
     .min(1, {
-      message: 'Comment content is required',
+      message: m.commentContentRequired,
     })
     .max(1000, {
-      message: 'Comment content should be at most 1000 characters',
+      message: m.commentContentTooLong,
     })
     .transform((val) => {
       // Remove any HTML tags by applying the replacement repeatedly until no changes occur
@@ -142,13 +198,13 @@ export const createRiskCommentSchema = z.object({
 
 export const createTaskSchema = z.object({
   riskId: z.string().min(1, {
-    message: 'Risk ID is required',
+    message: m.riskIdRequired,
   }),
   title: z.string().min(1, {
-    message: 'Task title is required',
+    message: m.taskTitleRequired,
   }),
   description: z.string().min(1, {
-    message: 'Task description is required',
+    message: m.taskDescriptionRequired,
   }),
   dueDate: z.date().optional(),
   assigneeId: z.string().optional().nullable(),
@@ -156,29 +212,29 @@ export const createTaskSchema = z.object({
 
 export const updateTaskSchema = z.object({
   id: z.string().min(1, {
-    message: 'Task ID is required',
+    message: m.taskIdRequired,
   }),
   title: z.string().optional(),
   description: z.string().optional(),
   dueDate: z.date().optional(),
-  status: z.nativeEnum(TaskStatus, { error: 'Task status is required' }),
+  status: z.nativeEnum(TaskStatus, { error: m.taskStatusRequired }),
   assigneeId: z.string().optional().nullable(),
 });
 
 export const createTaskCommentSchema = z.object({
   riskId: z.string().min(1, {
-    message: 'Risk ID is required',
+    message: m.riskIdRequired,
   }),
   taskId: z.string().min(1, {
-    message: 'Task ID is required',
+    message: m.taskIdRequired,
   }),
   content: z
     .string()
     .min(1, {
-      message: 'Comment content is required',
+      message: m.commentContentRequired,
     })
     .max(1000, {
-      message: 'Comment content should be at most 1000 characters',
+      message: m.commentContentTooLong,
     })
     .transform((val) => {
       // Remove any HTML tags by applying the replacement repeatedly until no changes occur
@@ -196,23 +252,23 @@ export const createTaskCommentSchema = z.object({
 
 export const uploadTaskFileSchema = z.object({
   riskId: z.string().min(1, {
-    message: 'Risk ID is required',
+    message: m.riskIdRequired,
   }),
   taskId: z.string().min(1, {
-    message: 'Task ID is required',
+    message: m.taskIdRequired,
   }),
 });
 
 // Integrations
 export const deleteIntegrationConnectionSchema = z.object({
   integrationName: z.string().min(1, {
-    message: 'Integration name is required',
+    message: m.integrationNameRequired,
   }),
 });
 
 export const createIntegrationSchema = z.object({
   integrationId: z.string().min(1, {
-    message: 'Integration ID is required',
+    message: m.integrationIdRequired,
   }),
 });
 
@@ -223,7 +279,7 @@ export const seedDataSchema = z.object({
 
 export const updateInherentRiskSchema = z.object({
   id: z.string().min(1, {
-    message: 'Risk ID is required',
+    message: m.riskIdRequired,
   }),
   probability: z.nativeEnum(Likelihood),
   impact: z.nativeEnum(Impact),
@@ -231,7 +287,7 @@ export const updateInherentRiskSchema = z.object({
 
 export const updateResidualRiskSchema = z.object({
   id: z.string().min(1, {
-    message: 'Risk ID is required',
+    message: m.riskIdRequired,
   }),
   probability: z.number().min(1).max(10),
   impact: z.number().min(1).max(10),
@@ -240,7 +296,7 @@ export const updateResidualRiskSchema = z.object({
 // ADD START: Schema for enum-based residual risk update
 export const updateResidualRiskEnumSchema = z.object({
   id: z.string().min(1, {
-    message: 'Risk ID is required',
+    message: m.riskIdRequired,
   }),
   probability: z.nativeEnum(Likelihood),
   impact: z.nativeEnum(Impact),
@@ -249,8 +305,8 @@ export const updateResidualRiskEnumSchema = z.object({
 
 // Policies
 export const createPolicySchema = z.object({
-  title: z.string({ error: 'Title is required' }).min(1, 'Title is required'),
-  description: z.string({ error: 'Description is required' }).min(1, 'Description is required'),
+  title: z.string({ error: m.titleRequired }).min(1, m.titleRequired),
+  description: z.string({ error: m.descriptionRequired }).min(1, m.descriptionRequired),
   frameworkIds: z.array(z.string()).optional(),
   controlIds: z.array(z.string()).optional(),
   entityId: z.string().optional(),
@@ -265,8 +321,8 @@ export const updatePolicySchema = z.object({
 });
 
 export const addFrameworksSchema = z.object({
-  organizationId: z.string().min(1, 'Organization ID is required'),
-  frameworkIds: z.array(z.string()).min(1, 'Please select at least one framework to add'),
+  organizationId: z.string().min(1, m.organizationIdRequired),
+  frameworkIds: z.array(z.string()).min(1, m.selectFrameworkToAdd),
 });
 
 export const assistantSettingsSchema = z.object({
@@ -285,10 +341,10 @@ export const updatePolicyFormSchema = z.object({
   status: z.nativeEnum(PolicyStatus),
   assigneeId: z.string().optional().nullable(),
   department: z
-    .string({ error: 'Department is required' })
+    .string({ error: m.departmentRequired })
     .trim()
-    .min(1, { message: 'Department is required' })
-    .max(64, { message: 'Department must be at most 64 characters' }),
+    .min(1, { message: m.departmentRequired })
+    .max(64, { message: m.departmentTooLong }),
   review_frequency: z.nativeEnum(Frequency),
   review_date: z.date(),
   approverId: z.string().optional().nullable(), // Added for selecting an approver
@@ -298,22 +354,22 @@ export const updatePolicyFormSchema = z.object({
 export const apiKeySchema = z.object({
   name: z
     .string()
-    .min(1, { message: 'Name is required' })
-    .max(64, { message: 'Name must be less than 64 characters' }),
+    .min(1, { message: m.nameRequired })
+    .max(64, { message: m.nameTooLong }),
   expiresAt: z.enum(['30days', '90days', '1year', 'never']),
 });
 
 export const createPolicyCommentSchema = z.object({
   policyId: z.string().min(1, {
-    message: 'Policy ID is required',
+    message: m.policyIdRequired,
   }),
   content: z
     .string()
     .min(1, {
-      message: 'Comment content is required',
+      message: m.commentContentRequired,
     })
     .max(1000, {
-      message: 'Comment content should be at most 1000 characters',
+      message: m.commentContentTooLong,
     })
     .transform((val) => {
       // Remove any HTML tags by applying the replacement repeatedly until no changes occur
@@ -332,8 +388,8 @@ export const createPolicyCommentSchema = z.object({
 export const addCommentSchema = z.object({
   content: z
     .string()
-    .min(1, 'Comment content is required')
-    .max(1000, 'Comment content should be at most 1000 characters')
+    .min(1, m.commentContentRequired)
+    .max(1000, m.commentContentTooLong)
     .transform((val) => {
       // Remove any HTML tags by applying the replacement repeatedly until no changes occur
       let sanitized = val;
@@ -346,30 +402,30 @@ export const addCommentSchema = z.object({
 
       return sanitized;
     }),
-  entityId: z.string().min(1, 'Entity ID is required'),
+  entityId: z.string().min(1, m.entityIdRequired),
   entityType: z.nativeEnum(CommentEntityType),
 });
 
 export const createContextEntrySchema = z.object({
-  question: z.string().min(1, 'Question is required'),
-  answer: z.string().min(1, 'Answer is required'),
+  question: z.string().min(1, m.questionRequired),
+  answer: z.string().min(1, m.answerRequired),
   tags: z.string().optional(), // comma separated
 });
 
 export const updateContextEntrySchema = z.object({
-  id: z.string().min(1, 'ID is required'),
-  question: z.string().min(1, 'Question is required'),
-  answer: z.string().min(1, 'Answer is required'),
+  id: z.string().min(1, m.idRequired),
+  question: z.string().min(1, m.questionRequired),
+  answer: z.string().min(1, m.answerRequired),
   tags: z.string().optional(),
 });
 
 export const deleteContextEntrySchema = z.object({
-  id: z.string().min(1, 'ID is required'),
+  id: z.string().min(1, m.idRequired),
 });
 
 // Comment schemas for the new generic comments API
 const createCommentSchema = z.object({
-  content: z.string().min(1, 'Comment content is required'),
+  content: z.string().min(1, m.commentContentRequired),
   entityId: z.string(),
   entityType: z.nativeEnum(CommentEntityType),
   attachments: z
@@ -385,7 +441,7 @@ const createCommentSchema = z.object({
 
 const updateCommentSchema = z.object({
   commentId: z.string(),
-  content: z.string().min(1, 'Comment content is required'),
+  content: z.string().min(1, m.commentContentRequired),
 });
 
 const deleteCommentSchema = z.object({

@@ -18,7 +18,7 @@ async function buildWorkbook(): Promise<Buffer> {
   sheet.getCell('A1').value = 'Will your company sign a BAA?';
   sheet.getCell('B1').value = 'Yes';
   const data = await workbook.xlsx.writeBuffer();
-  return Buffer.from(data as ArrayBuffer);
+  return Buffer.from(data);
 }
 
 function injectValidation(xlsx: Buffer, block: string): Buffer {

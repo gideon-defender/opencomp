@@ -11,6 +11,7 @@ import { rolesGrantPermissions } from './app-access';
 import { auth } from './auth.server';
 import { resolveServiceByName } from './service-token.config';
 import { AuthenticatedRequest } from './types';
+import { withErrorCode } from '../common/i18n/error-messages';
 
 /**
  * Represents a required permission for an endpoint
@@ -90,7 +91,10 @@ export class PermissionGuard implements CanActivate {
       );
 
       if (!hasAllPerms) {
-        throw new ForbiddenException('API key lacks required permission scope');
+        throw withErrorCode(
+          new ForbiddenException('API key lacks required permission scope'),
+          'API_KEY_SCOPE',
+        );
       }
       return true;
     }
@@ -152,7 +156,10 @@ export class PermissionGuard implements CanActivate {
         this.logger.warn(
           `[PermissionGuard] Access denied for ${request.method} ${request.url}. Required: ${JSON.stringify(permissionBody)}`,
         );
-        throw new ForbiddenException('Access denied');
+        throw withErrorCode(
+          new ForbiddenException('Access denied'),
+          'ACCESS_DENIED',
+        );
       }
       return true;
     }
@@ -164,7 +171,10 @@ export class PermissionGuard implements CanActivate {
         this.logger.warn(
           `[PermissionGuard] Access denied for ${request.method} ${request.url}. Required: ${JSON.stringify(permissionBody)}`,
         );
-        throw new ForbiddenException('Access denied');
+        throw withErrorCode(
+          new ForbiddenException('Access denied'),
+          'ACCESS_DENIED',
+        );
       }
 
       return true;

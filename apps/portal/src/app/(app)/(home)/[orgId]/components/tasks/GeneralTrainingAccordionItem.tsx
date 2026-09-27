@@ -10,6 +10,7 @@ import {
   cn,
 } from '@trycompai/design-system';
 import { CheckmarkFilled, CircleDash } from '@trycompai/design-system/icons';
+import { useTranslations } from 'next-intl';
 import { VideoCarousel } from '../video/VideoCarousel';
 
 const generalTrainingVideoIds = trainingVideos
@@ -18,6 +19,8 @@ const generalTrainingVideoIds = trainingVideos
 
 export function GeneralTrainingAccordionItem() {
   const { completions } = useTrainingCompletions();
+  const t = useTranslations('tasks');
+  const tTraining = useTranslations('training');
 
   const completedVideoIds = new Set(
     completions
@@ -53,7 +56,7 @@ export function GeneralTrainingAccordionItem() {
                   hasCompletedGeneralTraining && 'text-muted-foreground line-through',
                 )}
               >
-                Security Awareness Training
+                {t('generalTraining')}
               </span>
               {!hasCompletedGeneralTraining && totalCount > 0 && (
                 <Badge variant="outline">
@@ -65,10 +68,7 @@ export function GeneralTrainingAccordionItem() {
         </div>
         <AccordionContent>
           <div className="px-4 pb-4 space-y-4">
-            <p className="text-muted-foreground text-sm">
-              Complete the security awareness training videos to learn about best practices for
-              keeping company data secure.
-            </p>
+            <p className="text-muted-foreground text-sm">{tTraining('generalDescription')}</p>
             <VideoCarousel />
           </div>
         </AccordionContent>

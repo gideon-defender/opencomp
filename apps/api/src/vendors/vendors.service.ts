@@ -334,10 +334,7 @@ export class VendorsService {
     // If we are NOT forcing research, avoid triggering runs for vendors that already have
     // GlobalVendors riskAssessmentData. (This keeps onboarding + UI creates cheap and quiet.)
     let vendorsToTrigger = vendors;
-    let skippedBecauseAlreadyHasData = 0;
     let skippedVendors: TriggerVendorRiskAssessmentVendorDto[] = [];
-    let createdVerifyTasks = 0;
-    let updatedVerifyTasks = 0;
 
     if (!withResearch) {
       // Extract domains for all vendors and check which ones already have risk assessment data
@@ -393,8 +390,6 @@ export class VendorsService {
         return existingDomains.has(domain);
       });
 
-      skippedBecauseAlreadyHasData = vendors.length - vendorsToTrigger.length;
-
       // For vendors we are skipping (because GlobalVendors already has data), still ensure the human
       // "Verify risk assessment" task exists. This keeps the UI consistent without running any job.
       if (skippedVendors.length > 0) {
@@ -439,8 +434,6 @@ export class VendorsService {
                 select: { id: true },
               });
 
-              createdVerifyTasks += 1;
-
               // Audit log (best-effort)
               if (creatorMember?.userId) {
                 try {
@@ -481,7 +474,6 @@ export class VendorsService {
                   updatedById: creatorMemberId,
                 },
               });
-              updatedVerifyTasks += 1;
             }
           }),
         );

@@ -20,7 +20,7 @@ jest.mock('better-auth/plugins', () => ({
   organization: jest.fn(),
 }));
 jest.mock('better-auth/plugins/access', () => ({
-  createAccessControl: (stmt: Record<string, readonly string[]>) => ({
+  createAccessControl: (_stmt: Record<string, readonly string[]>) => ({
     newRole: (statements: Record<string, readonly string[]>) => ({
       statements,
     }),

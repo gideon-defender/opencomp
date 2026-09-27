@@ -1951,7 +1951,7 @@ export class SyncController {
     const { ctx, getResults } = createCheckContext({
       manifest,
       accessToken: typeof accessToken === 'string' ? accessToken : undefined,
-      credentials: (credentials ?? {}) as Record<string, string>,
+      credentials: credentials ?? {},
       variables: ((connection.variables as Record<string, unknown>) ??
         {}) as Record<string, string | boolean | number | string[]>,
       connectionId,
@@ -2211,7 +2211,7 @@ export class SyncController {
     const { ctx, getResults } = createCheckContext({
       manifest,
       accessToken: typeof accessToken === 'string' ? accessToken : undefined,
-      credentials: (credentials ?? {}) as Record<string, string>,
+      credentials: credentials ?? {},
       variables: ((connection.variables as Record<string, unknown>) ??
         {}) as Record<string, string | boolean | number | string[]>,
       connectionId,

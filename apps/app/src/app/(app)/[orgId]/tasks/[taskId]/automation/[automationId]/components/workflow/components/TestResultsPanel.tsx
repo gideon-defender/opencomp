@@ -33,8 +33,8 @@ export function TestResultsPanel({
   const [animateSuccess, setAnimateSuccess] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const { automationIdRef } = useSharedChatContext();
-  const { automation } = useTaskAutomation(automationIdRef.current);
+  const { resolvedAutomationId } = useSharedChatContext();
+  const { automation } = useTaskAutomation(resolvedAutomationId);
   const t = useTranslations('tasks');
 
   const actualEvaluationCriteria = automation?.evaluationCriteria || evaluationCriteria;
@@ -81,20 +81,26 @@ export function TestResultsPanel({
 
   const testState = getTestState();
 
-  useEffect(() => {
+  // Trigger the success animation on entering a success state (adjust-during-render).
+  const [prevTestStateType, setPrevTestStateType] = useState(testState?.type);
+  if (prevTestStateType !== testState?.type) {
+    setPrevTestStateType(testState?.type);
     if (testState?.type === 'pass' || testState?.type === 'success') {
       setAnimateSuccess(true);
-      const timer = setTimeout(() => setAnimateSuccess(false), 2000);
-      return () => clearTimeout(timer);
     }
-  }, [testState]);
-
-  // Reset states when results change
-  useEffect(() => {
     if (!result && !isExecuting) {
       setAnimateSuccess(false);
     }
-  }, [result, isExecuting]);
+  }
+
+  // Clear the success animation after it plays (async callback only).
+  useEffect(() => {
+    if (testState?.type === 'pass' || testState?.type === 'success') {
+      const timer = setTimeout(() => setAnimateSuccess(false), 2000);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [testState?.type]);
 
   if (isExecuting && !result) {
     return (

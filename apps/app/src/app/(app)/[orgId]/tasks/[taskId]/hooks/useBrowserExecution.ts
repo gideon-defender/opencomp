@@ -45,7 +45,15 @@ export function useBrowserExecution({ onNeedsReauth, onComplete }: UseBrowserExe
   // first. (start-live seeds the initial view; this swaps it as steps advance.)
   const streamedLiveView = runState?.metadata?.liveViewUrl as string | undefined;
   useEffect(() => {
-    if (streamedLiveView) setLiveViewUrl(streamedLiveView);
+    let cancelled = false;
+    (async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      if (streamedLiveView) setLiveViewUrl(streamedLiveView);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [streamedLiveView]);
 
   // Live-view phase (mirrors the server's metadata). While a session is being

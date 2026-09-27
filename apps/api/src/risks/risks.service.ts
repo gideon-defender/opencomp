@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { db, Prisma } from '@db';
 import { validateAssigneeNotPlatformAdmin } from '../utils/assignee-validation';
 import { paginate } from '../utils/base-crud.service';

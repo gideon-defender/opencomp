@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 import { cn } from '@gideon-defender/ui/cn';
 import { Icons } from '@gideon-defender/ui/icons';
 import {
@@ -25,13 +27,14 @@ interface ItemProps {
 }
 
 const Item = ({ item, isActive, onSelect, disabled }: ItemProps) => {
+  const tNav = useTranslations('nav');
   const Icon = icons[item.path as keyof typeof icons];
   const linkDisabled = disabled || item.disabled;
 
   return (
     <TooltipProvider delayDuration={70}>
       {linkDisabled ? (
-        <div className="flex h-[45px] w-[45px] items-center md:justify-center">Coming</div>
+        <div className="flex h-[45px] w-[45px] items-center md:justify-center">{tNav('comingSoon')}</div>
       ) : (
         <Link prefetch href={item.path} onClick={() => onSelect?.()}>
           <Tooltip>
@@ -96,10 +99,11 @@ type Props = {
 };
 
 export function MainMenu({ initialItems, onSelect }: Props) {
+  const tNav = useTranslations('nav');
   const defaultItems = [
     {
       path: '/',
-      name: 'Frameworks',
+      name: tNav('frameworks'),
       disabled: false,
     },
   ];

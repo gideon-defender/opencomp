@@ -161,7 +161,7 @@ describe('IsmsMeasurementService', () => {
           metricId: 'met_1',
           periodStart: '2026-07-01',
           value: '1',
-        } as never,
+        },
       });
 
       expect(
@@ -260,7 +260,7 @@ describe('IsmsMeasurementService', () => {
       await service.update({
         measurementId: 'msr_1',
         organizationId: 'org_1',
-        dto: { value: ' 97% ', note: 'corrected' } as never,
+        dto: { value: ' 97% ', note: 'corrected' },
       });
 
       const { data } = (mockDb.ismsMeasurement.update as jest.Mock).mock
@@ -290,7 +290,7 @@ describe('IsmsMeasurementService', () => {
         service.update({
           measurementId: 'msr_1',
           organizationId: 'org_1',
-          dto: { periodStart: '2026-06-01' } as never,
+          dto: { periodStart: '2026-06-01' },
         }),
       ).rejects.toThrow(BadRequestException);
     });

@@ -41,8 +41,9 @@ export class AzureRemediationService {
       if (now - entry.timestamp > PLAN_CACHE_TTL) this.planCache.delete(key);
     }
     while (this.planCache.size > this.PLAN_CACHE_MAX) {
-      const firstKey = this.planCache.keys().next().value;
-      if (firstKey) this.planCache.delete(firstKey);
+      const firstKey: unknown = this.planCache.keys().next().value;
+      if (typeof firstKey === 'string' && firstKey)
+        this.planCache.delete(firstKey);
       else break;
     }
   }
@@ -242,7 +243,7 @@ export class AzureRemediationService {
                 plan.reason ||
                 'Auto-fix not possible for this finding after analyzing real resource state.',
               guidedSteps: plan.guidedSteps,
-            } as unknown as Prisma.InputJsonValue,
+            },
             executedAt: new Date(),
           },
         });
@@ -454,7 +455,7 @@ export class AzureRemediationService {
         where: { id: action.id },
         data: {
           status: 'failed',
-          appliedState: { error: msg } as unknown as Prisma.InputJsonValue,
+          appliedState: { error: msg },
           executedAt: new Date(),
         },
       });
@@ -573,7 +574,7 @@ export class AzureRemediationService {
               purpose: result.error.step.purpose,
               error: result.error.message,
             },
-          } as unknown as Prisma.InputJsonValue,
+          },
         },
       });
 

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/unbound-method -- spec references jest-mocked db methods directly; `this` scoping is not a concern for mocks */
 import { AttachmentEntityType, BackgroundCheckStatus, db } from '@db';
 import { AttachmentsService } from '../attachments/attachments.service';
 import { BackgroundCheckCustomService } from './background-check-custom.service';

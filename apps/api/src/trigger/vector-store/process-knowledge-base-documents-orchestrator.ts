@@ -42,7 +42,7 @@ export const processKnowledgeBaseDocumentsOrchestratorTask = task({
     );
 
     // Initialize individual document statuses - all start as 'pending'
-    payload.documentIds.forEach((documentId, index) => {
+    payload.documentIds.forEach((documentId) => {
       metadata.set(`document_${documentId}_status`, 'pending');
     });
 
@@ -112,7 +112,9 @@ export const processKnowledgeBaseDocumentsOrchestratorTask = task({
             run.ok === false && run.error
               ? run.error instanceof Error
                 ? run.error.message
-                : String(run.error)
+                : typeof run.error === 'string'
+                  ? run.error
+                  : JSON.stringify(run.error)
               : 'Unknown error';
 
           logger.error('Document processing task failed', {

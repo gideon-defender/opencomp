@@ -13,6 +13,7 @@ import {
 } from '@react-email/components';
 import { Footer } from '../components/footer';
 import { Logo } from '../components/logo';
+import type { EmailLocale } from '../locale';
 import { UnsubscribeFooter } from '../components/unsubscribe-footer';
 
 interface Props {
@@ -24,7 +25,41 @@ interface Props {
   changedByName: string;
   organizationName: string;
   taskUrl: string;
+  locale?: EmailLocale;
 }
+
+const copy = {
+  en: {
+    previewTask: "Task",
+    previewReassigned: "reassigned from",
+    previewTo: "to",
+    heading: "Task Reassigned",
+    hello: "Hello",
+    bodyReassigned: "reassigned task",
+    bodyFrom: "from",
+    bodyTo: "to",
+    bodyIn: "in",
+    viewTask: "View Task",
+    copyPaste: "or copy and paste this URL into your browser:",
+    unsubscribeQuestion:
+      "Don't want to receive task assignment notifications?",
+  },
+  es: {
+    previewTask: "Tarea",
+    previewReassigned: "reasignada de",
+    previewTo: "a",
+    heading: "Tarea reasignada",
+    hello: "Hola",
+    bodyReassigned: "reasignó la tarea",
+    bodyFrom: "de",
+    bodyTo: "a",
+    bodyIn: "en",
+    viewTask: "Ver tarea",
+    copyPaste: "o copia y pega esta URL en tu navegador:",
+    unsubscribeQuestion:
+      "¿No quieres recibir notificaciones de asignación de tareas?",
+  },
+};
 
 export const TaskAssigneeChangedEmail = ({
   toName,
@@ -35,9 +70,12 @@ export const TaskAssigneeChangedEmail = ({
   changedByName,
   organizationName,
   taskUrl,
+  locale = 'en',
 }: Props) => {
+  const t = copy[locale];
+
   return (
-    <Html>
+    <Html lang={locale}>
       <Tailwind>
         <head>
           <Font
@@ -54,7 +92,7 @@ export const TaskAssigneeChangedEmail = ({
           />
         </head>
         <Preview>
-          {`Task "${taskTitle}" reassigned from ${oldAssigneeName} to ${newAssigneeName}`}
+          {`${t.previewTask} "${taskTitle}" ${t.previewReassigned} ${oldAssigneeName} ${t.previewTo} ${newAssigneeName}`}
         </Preview>
 
         <Body className="mx-auto my-auto bg-[#fff] font-sans">
@@ -64,19 +102,15 @@ export const TaskAssigneeChangedEmail = ({
           >
             <Logo />
             <Heading className="mx-0 my-[30px] p-0 text-center text-[24px] font-normal text-[#121212]">
-              Task Reassigned
+              {t.heading}
             </Heading>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              Hello {toName},
+              {t.hello} {toName},
             </Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              <strong>{changedByName}</strong> reassigned task{' '}
-              <strong>"{taskTitle}"</strong> from{' '}
-              <strong>{oldAssigneeName}</strong> to{' '}
-              <strong>{newAssigneeName}</strong> in{' '}
-              <strong>{organizationName}</strong>.
+              <strong>{changedByName}</strong> {t.bodyReassigned} <strong>"{taskTitle}"</strong> {t.bodyFrom} <strong>{oldAssigneeName}</strong> {t.bodyTo} <strong>{newAssigneeName}</strong> {t.bodyIn} <strong>{organizationName}</strong>.
             </Text>
 
             <Section className="mt-[32px] mb-[32px] text-center">
@@ -84,12 +118,12 @@ export const TaskAssigneeChangedEmail = ({
                 className="rounded-[3px] bg-[#121212] px-[20px] py-[12px] text-center text-[14px] font-semibold text-white no-underline"
                 href={taskUrl}
               >
-                View Task
+                {t.viewTask}
               </Button>
             </Section>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              or copy and paste this URL into your browser:{' '}
+              {t.copyPaste}{' '}
               <a href={taskUrl} className="text-[#121212] underline">
                 {taskUrl}
               </a>
@@ -97,12 +131,13 @@ export const TaskAssigneeChangedEmail = ({
 
             <UnsubscribeFooter
               email={toEmail}
-              message="Don't want to receive task assignment notifications?"
+              message={t.unsubscribeQuestion}
+              locale={locale}
             />
 
             <br />
 
-            <Footer />
+            <Footer locale={locale} />
           </Container>
         </Body>
       </Tailwind>

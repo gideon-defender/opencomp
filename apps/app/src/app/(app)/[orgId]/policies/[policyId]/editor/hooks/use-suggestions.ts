@@ -11,6 +11,24 @@ interface UseSuggestionsOptions {
   proposedMarkdown: string | null;
 }
 
+/**
+ * Purely derive the initial suggestion ranges for a proposal: diff the live
+ * editor doc against the proposed markdown, extending heading-led deletes to
+ * whole sections. Runs during render (initializer + adjust below), never in
+ * an effect, so consumers see ranges synchronously on mount.
+ */
+function computeInitialRanges(
+  editor: Editor | null,
+  proposedMarkdown: string | null,
+): SuggestionRange[] {
+  if (!editor || !proposedMarkdown) return [];
+  const positionMap = buildPositionMap(editor.state.doc);
+  const initial = computeSuggestionRanges(positionMap, proposedMarkdown);
+  // Extend heading-led delete ranges to cover the whole section so full
+  // section deletions include all content between headings.
+  return extendDeleteRangesToSections(editor.state.doc, initial);
+}
+
 interface UseSuggestionsReturn {
   ranges: SuggestionRange[];
   activeCount: number;
@@ -37,16 +55,37 @@ export function useSuggestions({
   editor,
   proposedMarkdown,
 }: UseSuggestionsOptions): UseSuggestionsReturn {
-  const [ranges, setRanges] = useState<SuggestionRange[]>([]);
+  const [ranges, setRanges] = useState<SuggestionRange[]>(() =>
+    computeInitialRanges(editor, proposedMarkdown),
+  );
   const [currentIndex, setCurrentIndex] = useState(0);
   const [editingRangeId, setEditingRangeId] = useState<string | null>(null);
   const proposedMarkdownRef = useRef(proposedMarkdown);
   const rangesRef = useRef(ranges);
   const rangesHistoryRef = useRef<SuggestionRange[][]>([]);
 
-  // Keep refs in sync
-  proposedMarkdownRef.current = proposedMarkdown;
-  rangesRef.current = ranges;
+  // Recompute ranges when a new proposal (or editor) arrives.
+  // Adjust-during-render instead of an effect to avoid setState-in-effect and
+  // to keep ranges synchronously in step with the proposal.
+  const [prevProposal, setPrevProposal] = useState<{
+    editor: Editor | null;
+    proposedMarkdown: string | null;
+  }>(() => ({ editor, proposedMarkdown }));
+  if (
+    prevProposal.editor !== editor ||
+    prevProposal.proposedMarkdown !== proposedMarkdown
+  ) {
+    setPrevProposal({ editor, proposedMarkdown });
+    setEditingRangeId(null);
+    setRanges(computeInitialRanges(editor, proposedMarkdown));
+    setCurrentIndex(0);
+  }
+
+  // Keep refs in sync. Ref writes live in an effect — never during render.
+  useEffect(() => {
+    proposedMarkdownRef.current = proposedMarkdown;
+    rangesRef.current = ranges;
+  });
 
   const pushRangesSnapshot = useCallback(() => {
     rangesHistoryRef.current.push([...rangesRef.current]);
@@ -75,14 +114,15 @@ export function useSuggestions({
     }
   }, [editor, pendingRanges.length, loadingRanges.length]);
 
-  // Clamp currentIndex when pending ranges change
-  useEffect(() => {
-    if (pendingRanges.length === 0) {
+  // Clamp currentIndex when pending ranges change.
+  // Adjust-during-render instead of an effect to avoid setState-in-effect.
+  if (pendingRanges.length === 0) {
+    if (currentIndex !== 0) {
       setCurrentIndex(0);
-    } else if (currentIndex >= pendingRanges.length) {
-      setCurrentIndex(pendingRanges.length - 1);
     }
-  }, [pendingRanges.length, currentIndex]);
+  } else if (currentIndex >= pendingRanges.length) {
+    setCurrentIndex(pendingRanges.length - 1);
+  }
 
   const scrollToRange = useCallback(
     (range: SuggestionRange) => {
@@ -148,24 +188,13 @@ export function useSuggestions({
     [editor],
   );
 
-  // Compute initial ranges when proposedMarkdown changes
+  // Reset undo history and auto-scroll when a new proposal (or editor)
+  // arrives. No setState here — range state syncs in the adjust-during-render
+  // block above; the refs-sync effect above runs first, so rangesRef already
+  // holds the fresh ranges when this runs.
   useEffect(() => {
-    setEditingRangeId(null);
-    if (!editor || !proposedMarkdown) {
-      setRanges([]);
-      return;
-    }
-    const positionMap = buildPositionMap(editor.state.doc);
-    const initial = computeSuggestionRanges(positionMap, proposedMarkdown);
-    // Extend heading-led delete ranges to cover the whole section so full
-    // section deletions include all content between headings.
-    const extended = extendDeleteRangesToSections(editor.state.doc, initial);
-    setRanges(extended);
-    setCurrentIndex(0);
     rangesHistoryRef.current = [];
-
-    // Auto-scroll to the first change
-    const firstPending = initial.find((r) => r.decision === 'pending');
+    const firstPending = rangesRef.current.find((r) => r.decision === 'pending');
     if (firstPending) {
       // Small delay to let decorations render before scrolling
       requestAnimationFrame(() => {

@@ -17,7 +17,7 @@ import {
   Text,
   Textarea,
 } from '@trycompai/design-system';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 interface EditableFinding {
@@ -59,13 +59,15 @@ export function EditFindingSheet<TFinding extends EditableFinding>({
   const [status, setStatus] = useState<string>('open');
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
+  const [prevFinding, setPrevFinding] = useState(finding);
+  if (prevFinding !== finding) {
+    setPrevFinding(finding);
     if (finding) {
       setContent(finding.content);
       setSeverity(finding.severity);
       setStatus(finding.status);
     }
-  }, [finding]);
+  }
 
   if (!finding) return null;
 

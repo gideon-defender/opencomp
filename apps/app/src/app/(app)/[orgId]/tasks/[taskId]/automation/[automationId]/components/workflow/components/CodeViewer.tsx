@@ -2,7 +2,7 @@
 
 import { Code2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), {
   ssr: false,
@@ -24,15 +24,16 @@ interface Props {
 }
 
 export function CodeViewer({ content, isLoading }: Props) {
-  const [isDark, setIsDark] = useState<boolean>(true);
-
-  useEffect(() => {
-    // Detect Tailwind's dark class or system preference as a fallback
-    const hasDarkClass = document.documentElement.classList.contains('dark');
-    const prefersDark =
-      window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setIsDark(hasDarkClass || prefersDark);
-  }, []);
+  // Detect Tailwind's dark class or system preference (lazy initializer, SSR-safe).
+  const [isDark] = useState<boolean>(() => {
+    if (typeof document !== 'undefined' && document.documentElement.classList.contains('dark')) {
+      return true;
+    }
+    if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return true;
+  });
 
   const editorTheme = useMemo(() => (isDark ? 'vs-dark' : 'vs'), [isDark]);
 

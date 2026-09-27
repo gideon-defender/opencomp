@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from '@gideon-defender/ui/select';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import type { FrameworkFamilyWithCount, FrameworkWithCounts } from '../FrameworksClientPage';
@@ -40,6 +41,8 @@ export function MoveFrameworkDialog({
   families,
 }: MoveFrameworkDialogProps) {
   const router = useRouter();
+  const t = useTranslations('dialogs');
+  const tToasts = useTranslations('toasts');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [destination, setDestination] = useState<string>(ROOT_VALUE);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -63,7 +66,7 @@ export function MoveFrameworkDialog({
 
   async function handleMove() {
     if (selected.size === 0) {
-      toast.error('Select at least one framework to move.');
+      toast.error(tToasts('moveSelectAtLeastOne'));
       return;
     }
     setIsSubmitting(true);
@@ -75,11 +78,11 @@ export function MoveFrameworkDialog({
           familyId: destination === ROOT_VALUE ? null : destination,
         }),
       });
-      toast.success(`Moved ${selected.size} framework(s).`);
+      toast.success(tToasts('frameworksMoved', { count: selected.size }));
       onOpenChange(false);
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to move frameworks.');
+      toast.error(error instanceof Error ? error.message : tToasts('moveFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -89,17 +92,17 @@ export function MoveFrameworkDialog({
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Move Framework</DialogTitle>
-          <DialogDescription>
-            Pick the frameworks to move, then choose the destination family.
-          </DialogDescription>
+          <DialogTitle>{t('moveFramework.title')}</DialogTitle>
+          <DialogDescription>{t('moveFramework.description')}</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div>
-            <p className="mb-2 text-sm font-medium">Frameworks</p>
+            <p className="mb-2 text-sm font-medium">{t('moveFramework.frameworksLabel')}</p>
             <div className="max-h-64 overflow-y-auto rounded-md border">
               {frameworks.length === 0 ? (
-                <p className="text-muted-foreground p-3 text-sm">No frameworks yet.</p>
+                <p className="text-muted-foreground p-3 text-sm">
+                  {t('moveFramework.noFrameworks')}
+                </p>
               ) : (
                 frameworks.map((fw) => (
                   <label
@@ -109,7 +112,9 @@ export function MoveFrameworkDialog({
                     <Checkbox checked={selected.has(fw.id)} onCheckedChange={() => toggle(fw.id)} />
                     <span className="text-sm">{fw.name}</span>
                     <span className="text-muted-foreground ml-auto text-xs">
-                      {fw.familyId ? (familyNameById.get(fw.familyId) ?? 'Unknown') : '/'}
+                      {fw.familyId
+                        ? (familyNameById.get(fw.familyId) ?? t('moveFramework.unknownFamily'))
+                        : '/'}
                     </span>
                   </label>
                 ))
@@ -117,13 +122,13 @@ export function MoveFrameworkDialog({
             </div>
           </div>
           <div>
-            <p className="mb-2 text-sm font-medium">Destination family</p>
+            <p className="mb-2 text-sm font-medium">{t('moveFramework.destinationLabel')}</p>
             <Select value={destination} onValueChange={setDestination}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={ROOT_VALUE}>/ (Root)</SelectItem>
+                <SelectItem value={ROOT_VALUE}>{t('moveFramework.rootLabel')}</SelectItem>
                 {families.map((f) => (
                   <SelectItem key={f.id} value={f.id}>
                     {f.name}
@@ -135,10 +140,10 @@ export function MoveFrameworkDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('moveFramework.cancel')}
           </Button>
           <Button onClick={handleMove} disabled={isSubmitting || selected.size === 0}>
-            {isSubmitting ? 'Moving...' : 'Move'}
+            {isSubmitting ? t('moveFramework.moving') : t('moveFramework.move')}
           </Button>
         </DialogFooter>
       </DialogContent>

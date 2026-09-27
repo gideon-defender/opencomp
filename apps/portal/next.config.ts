@@ -1,4 +1,5 @@
 import { withSentryConfig } from '@sentry/nextjs';
+import createNextIntlPlugin from 'next-intl/plugin';
 import path from 'path';
 import './src/env.mjs';
 
@@ -8,6 +9,7 @@ const config = {
   transpilePackages: [
     '@gideon-defender/auth',
     '@gideon-defender/db',
+    '@gideon-defender/email',
     '@trycompai/design-system',
     '@carbon/icons-react',
     '@gideon-defender/company',
@@ -17,7 +19,7 @@ const config = {
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
+        protocol: 'https' as const,
         hostname: '**',
       },
     ],
@@ -44,7 +46,7 @@ const config = {
         source: '/:path*',
         has: [
           {
-            type: 'header',
+            type: 'header' as const,
             key: 'Next-Action',
           },
         ],
@@ -74,7 +76,9 @@ const config = {
     : {}),
 };
 
-export default withSentryConfig(config, {
+const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
+
+export default withSentryConfig(withNextIntl(config), {
   org: 'comp-ai',
   project: 'comp',
 

@@ -2,11 +2,14 @@
 
 import { authClient } from '@/app/lib/auth-client';
 import { Button } from '@gideon-defender/ui';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 export const Unauthorized = () => {
   const router = useRouter();
+  const t = useTranslations('auth');
+  const tShell = useTranslations('shell');
   const [loading, setLoading] = useState(false);
 
   const handleSignOut = async () => {
@@ -23,12 +26,10 @@ export const Unauthorized = () => {
   return (
     <div className="flex min-h-dvh items-center justify-center">
       <div className="flex w-full max-w-md flex-col gap-4">
-        <h1 className="text-center text-3xl font-bold">Oops, you don't belong here</h1>
-        <p className="text-center">
-          You are not authorized to access this page. Please sign in with a different account.
-        </p>
+        <h1 className="text-center text-3xl font-bold">{t('unauthorizedTitle')}</h1>
+        <p className="text-center">{t('unauthorizedDescription')}</p>
         <Button onClick={handleSignOut} disabled={loading}>
-          {loading ? 'Signing out...' : 'Sign Out'}
+          {loading ? tShell('loading') : tShell('signOut')}
         </Button>
       </div>
     </div>

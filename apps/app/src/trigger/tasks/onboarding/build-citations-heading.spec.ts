@@ -83,4 +83,33 @@ describe('buildCitationsHeading', () => {
       'This plan addresses the risk:',
     );
   });
+
+  it('renders the full heading in Spanish for locale es', () => {
+    const heading = buildCitationsHeading({
+      citations: [ctrl('CC1.1', 'X'), tsk('Y')],
+      linkedTotals: { controls: 1, tasks: 1 },
+      locale: 'es',
+    });
+    expect(heading).toBe('Este plan aborda el riesgo a través de 1 control y 1 tarea:');
+  });
+
+  it('renders highlights tail and gap fallback in Spanish for locale es', () => {
+    const highlights = buildCitationsHeading({
+      citations: [ctrl('CC1.1', 'X'), tsk('Y')],
+      linkedTotals: { controls: 6, tasks: 8 },
+      locale: 'es',
+    });
+    expect(highlights).toBe(
+      'Este plan aborda el riesgo a través de 6 controles y 8 tareas. Aspectos destacados a continuación:',
+    );
+
+    const gaps = buildCitationsHeading({
+      citations: [gap('technical'), gap('compliance')],
+      linkedTotals: { controls: 0, tasks: 0 },
+      locale: 'es',
+    });
+    expect(gaps).toBe(
+      'Este plan aborda el riesgo a través de 2 brechas recomendadas:',
+    );
+  });
 });

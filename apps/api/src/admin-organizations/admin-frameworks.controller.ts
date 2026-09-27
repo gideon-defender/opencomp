@@ -47,7 +47,8 @@ export class AdminFrameworksController {
       frameworks,
       availableFrameworks: availableFrameworks.filter(
         (framework) =>
-          framework.isCustom === false && !activeFrameworkIds.has(framework.id),
+          framework.isCustom === false &&
+          !activeFrameworkIds.has(String(framework.id)),
       ),
     };
   }

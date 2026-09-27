@@ -42,7 +42,10 @@ export function ConnectionVariableMultiSelect({
   // `sync_excluded_emails` have an empty dropdown (no fetchOptions, no static
   // options), so a removed tag can only be brought back by retyping it.
   const [seenValues, setSeenValues] = useState<Set<string>>(() => new Set(reposForSelector));
-  useEffect(() => {
+  const reposKey = JSON.stringify(reposForSelector);
+  const [prevReposKey, setPrevReposKey] = useState(reposKey);
+  if (prevReposKey !== reposKey) {
+    setPrevReposKey(reposKey);
     setSeenValues((prev) => {
       let next: Set<string> | null = null;
       for (const v of reposForSelector) {
@@ -53,7 +56,7 @@ export function ConnectionVariableMultiSelect({
       }
       return next ?? prev;
     });
-  }, [reposForSelector]);
+  }
 
   useEffect(() => {
     if (

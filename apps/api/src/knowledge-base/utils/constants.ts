@@ -41,12 +41,15 @@ export function sanitizeFileName(fileName: string): string {
  * Sanitizes a filename for use in S3 metadata (ASCII only)
  */
 export function sanitizeMetadataFileName(fileName: string): string {
-  return Buffer.from(fileName, 'utf8')
-    .toString('ascii')
-    .replace(/[\x00-\x1F\x7F]/g, '')
-    .replace(/\?/g, '_')
-    .trim()
-    .substring(0, 1024);
+  const ascii = Buffer.from(fileName, 'utf8').toString('ascii');
+  const withoutControls = ascii
+    .split('')
+    .filter((ch) => {
+      const code = ch.charCodeAt(0);
+      return code > 0x1f && code !== 0x7f;
+    })
+    .join('');
+  return withoutControls.replace(/\?/g, '_').trim().substring(0, 1024);
 }
 
 /**

@@ -350,13 +350,17 @@ export function BatchRemediationDialog({
   const [cancelling, setCancelling] = useState(false);
 
   // Resume active batch if provided
-  useEffect(() => {
+  const [prevResumeBatch, setPrevResumeBatch] = useState(activeBatch);
+  const [prevResumeOpen, setPrevResumeOpen] = useState(open);
+  if (prevResumeBatch !== activeBatch || prevResumeOpen !== open) {
+    setPrevResumeBatch(activeBatch);
+    setPrevResumeOpen(open);
     if (activeBatch && open) {
       setBatchId(activeBatch.batchId);
       setRunId(activeBatch.triggerRunId);
       setAccessToken(activeBatch.accessToken);
     }
-  }, [activeBatch, open]);
+  }
 
   // Real-time task progress
   const { run } = useRealtimeRun(runId ?? '', {
@@ -383,7 +387,13 @@ export function BatchRemediationDialog({
   const isDone = progress?.phase === 'done' || progress?.phase === 'cancelled' || runFinished;
 
   // Reset on open
-  useEffect(() => {
+  const [prevResetOpen, setPrevResetOpen] = useState(open);
+  const [prevResetFindings, setPrevResetFindings] = useState(findings);
+  const [prevResetBatch, setPrevResetBatch] = useState(activeBatch);
+  if (prevResetOpen !== open || prevResetFindings !== findings || prevResetBatch !== activeBatch) {
+    setPrevResetOpen(open);
+    setPrevResetFindings(findings);
+    setPrevResetBatch(activeBatch);
     if (open && !activeBatch) {
       setSelected(new Set(findings.map((f) => f.id)));
       setAcknowledged(false);
@@ -392,7 +402,7 @@ export function BatchRemediationDialog({
       setAccessToken(null);
       setCancelling(false);
     }
-  }, [open, findings, activeBatch]);
+  }
 
   // Auto-complete + auto-close when all findings are fixed
   useEffect(() => {

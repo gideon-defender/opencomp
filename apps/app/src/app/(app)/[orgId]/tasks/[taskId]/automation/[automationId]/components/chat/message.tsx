@@ -1,6 +1,6 @@
 import { UserIcon } from 'lucide-react';
 import Image from 'next/image';
-import { createContext, memo, useContext, useEffect, useState } from 'react';
+import { createContext, memo, useContext, useState } from 'react';
 import { MessagePart } from './message-part';
 import type { ChatUIMessage } from './types';
 
@@ -35,22 +35,19 @@ export const Message = memo(function Message({
     .map((part, index) => ({ part, index }))
     .filter(({ part }) => part.type === 'reasoning');
 
-  useEffect(() => {
-    // Prefer expanding the latest streaming reasoning part if present.
-    const latestStreaming = [...reasoningParts]
-      .reverse()
-      .find(({ part }) => (part as any)?.state === 'streaming');
-    if (latestStreaming && latestStreaming.index !== expandedReasoningIndex) {
-      setExpandedReasoningIndex(latestStreaming.index);
-      return;
-    }
-
-    // Otherwise, if nothing expanded yet, expand the latest reasoning block.
-    if (expandedReasoningIndex === null && reasoningParts.length > 0) {
-      const latestReasoningIndex = reasoningParts[reasoningParts.length - 1].index;
-      setExpandedReasoningIndex(latestReasoningIndex);
-    }
-  }, [reasoningParts, expandedReasoningIndex]);
+  // Keep the latest reasoning block expanded (adjust-during-render):
+  // prefer the latest streaming part, else the latest reasoning block.
+  const latestStreamingReasoning = [...reasoningParts]
+    .reverse()
+    .find(({ part }) => (part as any)?.state === 'streaming');
+  if (
+    latestStreamingReasoning &&
+    latestStreamingReasoning.index !== expandedReasoningIndex
+  ) {
+    setExpandedReasoningIndex(latestStreamingReasoning.index);
+  } else if (expandedReasoningIndex === null && reasoningParts.length > 0) {
+    setExpandedReasoningIndex(reasoningParts[reasoningParts.length - 1].index);
+  }
 
   const renderMessageParts = () => {
     const hasStreamingReasoning = message.parts.some(

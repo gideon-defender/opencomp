@@ -206,7 +206,7 @@ async function executeOnce(
   if (
     step.method === 'POST' &&
     step.url.includes(':getIamPolicy') &&
-    (!step.body || !(step.body as Record<string, unknown>).options)
+    (!step.body || !step.body.options)
   ) {
     effectiveBody = {
       ...step.body,

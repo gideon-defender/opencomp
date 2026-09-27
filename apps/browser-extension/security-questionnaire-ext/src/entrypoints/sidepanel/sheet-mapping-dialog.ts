@@ -1,3 +1,4 @@
+import { t } from '../../lib/i18n';
 import { normalizeColumnName } from '../../lib/sheet-columns';
 import type { SheetMappingDraft } from '../../lib/sheet-mapping';
 
@@ -37,15 +38,15 @@ function readDraft(form: HTMLFormElement): SheetMappingDraft | null {
   const endRow = readOptionalEndRow(data.get('endRow'));
 
   if (!questionColumn || !answerColumn) {
-    showError(form, 'Use column letters like B, C, or AA.');
+    showError(form, t('sheetMapErrColumns'));
     return null;
   }
   if (!startRow) {
-    showError(form, 'Start row must be a positive number.');
+    showError(form, t('sheetMapErrStartRow'));
     return null;
   }
   if (endRow !== null && endRow < startRow) {
-    showError(form, 'End row must be after the start row.');
+    showError(form, t('sheetMapErrEndRow'));
     return null;
   }
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@trycompai/design-system';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 /**
@@ -15,6 +16,7 @@ export function GideonSignIn({
   redirectTo?: string;
 }) {
   const [isLoading, setLoading] = useState(false);
+  const t = useTranslations('auth');
 
   const handleSignIn = () => {
     setLoading(true);
@@ -28,7 +30,7 @@ export function GideonSignIn({
 
   return (
     <Button onClick={handleSignIn} variant="outline" width="full" size="xl" loading={isLoading}>
-      Continue with Gideon
+      {t('continueWithGideon')}
     </Button>
   );
 }

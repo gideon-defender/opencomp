@@ -39,7 +39,7 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useRef, useState } from 'react';
+import { createElement, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import type { QuestionnaireListItem } from '../../components/types';
 import { useQuestionnaires } from '../../hooks/useQuestionnaires';
@@ -309,7 +309,6 @@ function QuestionnaireHistoryItem({
   ).length;
   const totalQuestions = questionnaire.questions.length;
   const isParsing = questionnaire.status === 'parsing';
-  const FileIcon = getFileIcon(questionnaire.filename);
 
   const handleItemClick = () => {
     if (!isParsing) {
@@ -361,7 +360,9 @@ function QuestionnaireHistoryItem({
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             ) : (
               <>
-                <FileIcon className="h-5 w-5 text-primary" />
+                {createElement(getFileIcon(questionnaire.filename), {
+                  className: 'h-5 w-5 text-primary',
+                })}
                 {isCompleted && (
                   <div className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-green-500 ring-2 ring-background">
                     <CheckCircle2 className="h-3 w-3 text-white" />

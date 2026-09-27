@@ -22,7 +22,7 @@ import {
   lastAssistantMessageIsCompleteWithToolCalls,
 } from 'ai';
 import { useParams } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { LogoSpinner } from '../logo-spinner';
 
 const API_URL = env.NEXT_PUBLIC_API_URL || 'http://localhost:3333';
@@ -112,18 +112,20 @@ export default function Chat() {
     resolvedOrganizationIdRef.current = resolvedOrganizationId;
   }, [resolvedOrganizationId]);
 
-  const transport = new DefaultChatTransport({
-    api: `${API_URL}/v1/assistant-chat/completions`,
-    credentials: 'include',
-    // Scope the AI (and its org-data tools) to the org the user is viewing,
-    // not the session's ambient active org which can lag for multi-org users.
-    // Read the ref at request time so a stale transport closure can't send the
-    // wrong org after the user switches.
-    headers: (): Record<string, string> => {
-      const orgId = resolvedOrganizationIdRef.current;
-      return orgId ? { 'X-Organization-Id': orgId } : {};
-    },
-  });
+  // Memoized on the resolved org so the headers closure always captures the
+  // current org without reading a ref during render.
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: `${API_URL}/v1/assistant-chat/completions`,
+        credentials: 'include',
+        // Scope the AI (and its org-data tools) to the org the user is viewing,
+        // not the session's ambient active org which can lag for multi-org users.
+        headers: (): Record<string, string> =>
+          resolvedOrganizationId ? { 'X-Organization-Id': resolvedOrganizationId } : {},
+      }),
+    [resolvedOrganizationId],
+  );
 
   const { messages, sendMessage, error, status, stop, setMessages } = useChat({
     id:

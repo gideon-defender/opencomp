@@ -2,7 +2,7 @@
 
 import type { Member, Task, User } from '@db';
 import clsx from 'clsx';
-import { useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { useDrop } from 'react-dnd';
 import { useTasks } from '../hooks/useTasks';
 import { ItemTypes, TaskCard, type DragItem, type StatusId } from './TaskCard';
@@ -53,8 +53,15 @@ export function StatusGroup({
     [status.id, tasks.length, handleDropTaskInternal],
   );
 
-  // Attach the main group drop ref to the outer container
-  groupDropRef(groupContainerRef);
+  // Attach the main group drop ref to the outer container via a callback ref
+  // (calling it during render would read the ref during render).
+  const setGroupContainerRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      groupContainerRef.current = node;
+      groupDropRef(node);
+    },
+    [groupDropRef],
+  );
 
   // Handles the reordering logic when a task is dropped within this specific group.
   async function handleDropReorder(dragIndex: number, hoverIndex: number) {
@@ -78,7 +85,7 @@ export function StatusGroup({
 
   return (
     // Attach group drop ref here
-    <div ref={groupContainerRef} key={status.id} className="rounded-sm">
+    <div ref={setGroupContainerRef} key={status.id} className="rounded-sm">
       {/* Status Group Header */}
       <div className="bg-muted/50 flex items-center py-2 pr-2 pl-6">
         <h2 className="text-muted-foreground text-xs font-medium tracking-wide uppercase">

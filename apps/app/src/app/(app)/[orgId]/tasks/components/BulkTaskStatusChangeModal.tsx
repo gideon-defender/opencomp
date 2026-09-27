@@ -20,7 +20,7 @@ import {
 } from '@gideon-defender/ui/select';
 import { Label, Textarea } from '@trycompai/design-system';
 import { Loader2 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useTasks } from '../hooks/useTasks';
 import { TaskStatusIndicator } from './TaskStatusIndicator';
@@ -62,13 +62,15 @@ export function BulkTaskStatusChangeModal({
   const needsApproval = evidenceApprovalEnabled && status === TaskStatus.done;
   const isNotRelevant = status === TaskStatus.not_relevant;
 
-  useEffect(() => {
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (prevOpen !== open) {
+    setPrevOpen(open);
     if (open) {
       setStatus(defaultStatus);
       setApproverId(null);
       setJustification('');
     }
-  }, [defaultStatus, open]);
+  }
 
   const handleMove = async () => {
     if (selectedTaskIds.length === 0) {

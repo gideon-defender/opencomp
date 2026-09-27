@@ -44,6 +44,7 @@ export function useOnboardingStatus(
     }, {});
   }, [run?.metadata, itemType]);
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization -- `run` gets a fresh identity on every realtime event; this memo only reads `metadata`.
   const progress = useMemo(() => {
     if (!run?.metadata) return null;
 

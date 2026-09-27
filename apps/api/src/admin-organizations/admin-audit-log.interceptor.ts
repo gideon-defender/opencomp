@@ -51,6 +51,14 @@ interface ParsedPath {
   actionSegment: string | null;
 }
 
+interface AdminAuditRequest {
+  method: string;
+  url: string;
+  params?: Record<string, string>;
+  userId?: unknown;
+  body?: unknown;
+}
+
 @Injectable()
 export class AdminAuditLogInterceptor implements NestInterceptor {
   private readonly logger = new Logger(AdminAuditLogInterceptor.name);
@@ -66,7 +74,8 @@ export class AdminAuditLogInterceptor implements NestInterceptor {
       return next.handle();
     }
 
-    const request = context.switchToHttp().getRequest();
+    const rawRequest: unknown = context.switchToHttp().getRequest();
+    const request = rawRequest as AdminAuditRequest;
     const method: string = request.method;
 
     if (!MUTATION_METHODS.has(method)) {
@@ -75,7 +84,8 @@ export class AdminAuditLogInterceptor implements NestInterceptor {
 
     const organizationId: string | undefined =
       request.params?.orgId ?? request.params?.id;
-    const userId: string | undefined = request.userId;
+    const userId: string | undefined =
+      typeof request.userId === 'string' ? request.userId : undefined;
 
     if (!organizationId || !userId) {
       this.logger.warn(

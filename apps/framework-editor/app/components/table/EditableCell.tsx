@@ -10,6 +10,7 @@ import {
   Textarea,
 } from '@gideon-defender/ui';
 import { Maximize2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 import { loadEditorSize, saveEditorSize, type EditorSize } from './editor-size-storage';
 
@@ -36,11 +37,14 @@ export function EditableCell({
   columnId,
   onUpdate,
   disabled = false,
-  placeholder = 'Click to edit',
+  placeholder,
   expandable = false,
-  expandTitle = 'Edit',
+  expandTitle,
   onExpandedChange,
 }: EditableCellProps) {
+  const t = useTranslations('editableCell');
+  const resolvedPlaceholder = placeholder ?? t('defaultPlaceholder');
+  const resolvedExpandTitle = expandTitle ?? t('defaultExpandTitle');
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value ?? '');
   const [isExpanded, setIsExpanded] = useState(false);
@@ -135,7 +139,7 @@ export function EditableCell({
         className="hover:bg-muted/50 block cursor-text truncate px-2 py-1.5 text-sm"
         onClick={handleStartEditing}
       >
-        {value || <span className="text-muted-foreground italic">{placeholder}</span>}
+        {value || <span className="text-muted-foreground italic">{resolvedPlaceholder}</span>}
       </span>
     );
   }
@@ -152,12 +156,12 @@ export function EditableCell({
         className="hover:bg-muted/50 block cursor-text truncate px-2 py-1.5 pr-7 text-sm"
         onClick={handleStartEditing}
       >
-        {value || <span className="text-muted-foreground italic">{placeholder}</span>}
+        {value || <span className="text-muted-foreground italic">{resolvedPlaceholder}</span>}
       </span>
       <button
         type="button"
-        aria-label="Open large editor"
-        title="Open large editor (or right-click)"
+        aria-label={t('openLargeEditor')}
+        title={t('openLargeEditorHint')}
         className="text-muted-foreground hover:text-foreground absolute right-1 top-1.5 rounded-xs p-0.5 opacity-0 transition-opacity group-hover:opacity-100"
         onClick={(e) => {
           e.stopPropagation();
@@ -170,7 +174,7 @@ export function EditableCell({
       <Dialog open={isExpanded} onOpenChange={setExpanded}>
         <DialogContent className="max-h-[95vh] w-fit max-w-[95vw] overflow-y-auto sm:max-w-[95vw]">
           <DialogHeader>
-            <DialogTitle>{expandTitle}</DialogTitle>
+            <DialogTitle>{resolvedExpandTitle}</DialogTitle>
           </DialogHeader>
           <Textarea
             ref={textareaRef}
@@ -185,10 +189,10 @@ export function EditableCell({
           />
           <DialogFooter>
             <Button variant="outline" onClick={() => setExpanded(false)}>
-              Cancel
+              {t('cancel')}
             </Button>
             <Button onClick={handleExpandSave} disabled={expandValue === (value ?? '')}>
-              Save
+              {t('save')}
             </Button>
           </DialogFooter>
         </DialogContent>

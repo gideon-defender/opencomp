@@ -23,7 +23,7 @@ export class RoleValidator implements CanActivate {
       'Access denied. User does not have the required roles: {allowedRoles}, user has roles: {userRoles}';
   }
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
+  canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
 
     const { userRoles, userId, organizationId, authType, isApiKey } = request;

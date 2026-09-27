@@ -519,7 +519,7 @@ export class AttachmentsService {
       throw new InternalServerErrorException('No file data received from S3');
     }
 
-    for await (const chunk of response.Body as any) {
+    for await (const chunk of response.Body as unknown as AsyncIterable<Uint8Array>) {
       chunks.push(chunk);
     }
 
@@ -537,7 +537,13 @@ export class AttachmentsService {
    * - Trim whitespace
    */
   private sanitizeHeaderValue(value: string): string {
-    const withoutControls = value.replace(/[\x00-\x1F\x7F]/g, '');
+    const withoutControls = value
+      .split('')
+      .filter((ch) => {
+        const code = ch.charCodeAt(0);
+        return code > 0x1f && code !== 0x7f;
+      })
+      .join('');
     const asciiOnly = withoutControls.replace(/[^\x20-\x7E]/g, '_');
     return asciiOnly.trim();
   }

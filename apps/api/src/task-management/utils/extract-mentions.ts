@@ -13,17 +13,26 @@ export function extractMentionedUserIds(description: string | null): string[] {
     const mentionedUserIds: string[] = [];
 
     // Recursively traverse the TipTap JSON structure
-    function traverse(node: any) {
-      if (!node || typeof node !== 'object') return;
+    function traverse(node: unknown) {
+      if (typeof node !== 'object' || node === null) return;
+      const record = node as Record<string, unknown>;
 
       // Check if this is a mention node
-      if (node.type === 'mention' && node.attrs?.id) {
-        mentionedUserIds.push(node.attrs.id);
+      if (record.type === 'mention') {
+        const attrs: unknown = record.attrs;
+        if (typeof attrs === 'object' && attrs !== null) {
+          const id: unknown = (attrs as Record<string, unknown>).id;
+          if (typeof id === 'string' && id) {
+            mentionedUserIds.push(id);
+          } else if (typeof id === 'number' && Number.isFinite(id)) {
+            mentionedUserIds.push(String(id));
+          }
+        }
       }
 
       // Traverse content array
-      if (Array.isArray(node.content)) {
-        node.content.forEach(traverse);
+      if (Array.isArray(record.content)) {
+        record.content.forEach(traverse);
       }
     }
 
@@ -31,7 +40,7 @@ export function extractMentionedUserIds(description: string | null): string[] {
 
     // Return unique user IDs
     return [...new Set(mentionedUserIds)];
-  } catch (error) {
+  } catch {
     // If parsing fails, return empty array
     return [];
   }

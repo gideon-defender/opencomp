@@ -12,6 +12,7 @@ import {
   Stack,
   Text,
 } from '@trycompai/design-system';
+import { useLocale } from 'next-intl';
 
 interface ConfirmPlanChangeDialogProps {
   open: boolean;
@@ -94,6 +95,7 @@ function getChargeDescription(params: { isUpgrade: boolean; isTrialing: boolean 
 }
 
 function PlanChangeRow({ label, sku }: { label: string; sku: BillingSku | null }) {
+  const locale = useLocale();
   const usage = sku?.includedUsage;
   const unit = usage ? formatUsageUnit(usage.unit, usage.quantity) : 'credits';
 
@@ -107,15 +109,15 @@ function PlanChangeRow({ label, sku }: { label: string; sku: BillingSku | null }
       </Text>
       <Text size="xs" variant="muted">
         {sku
-          ? `${formatAmount(sku.unitAmount)} / mo with ${usage?.quantity ?? 0} ${unit}`
+          ? `${formatAmount(sku.unitAmount, locale)} / mo with ${usage?.quantity ?? 0} ${unit}`
           : 'Existing subscription'}
       </Text>
     </div>
   );
 }
 
-function formatAmount(amount: number) {
-  return new Intl.NumberFormat('en-US', {
+function formatAmount(amount: number, locale = 'en-US') {
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: 'USD',
     maximumFractionDigits: 0,

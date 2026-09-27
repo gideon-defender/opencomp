@@ -1,0 +1,24 @@
+{
+  "addTask": "Add Task",
+  "addExistingTask": "Add Existing Task",
+  "newTask": "New Task",
+  "cancel": "Cancel",
+  "commitChanges": "Commit Changes",
+  "emptyMessage": "No tasks yet. Click \"Add Task\" to create one.",
+  "deleteTask": "Delete task",
+  "automated": "Automated",
+  "manual": "Manual",
+  "selectFrequency": "Select frequency...",
+  "selectDepartment": "Select department...",
+  "columns": {
+    "automation": "Automation",
+    "name": "Name",
+    "description": "Description",
+    "frequency": "Frequency",
+    "department": "Department",
+    "linkedControls": "Linked Controls",
+    "createdAt": "Created At",
+    "updatedAt": "Updated At",
+    "id": "ID"
+  }
+}

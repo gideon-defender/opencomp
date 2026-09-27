@@ -23,9 +23,12 @@ export function TaskItemEditableTitle({
   const [editedTitle, setEditedTitle] = useState(title);
   const titleInputRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
+  // Re-sync the draft when the title prop changes (adjusted during render).
+  const [prevTitle, setPrevTitle] = useState(title);
+  if (prevTitle !== title) {
+    setPrevTitle(title);
     setEditedTitle(title);
-  }, [title]);
+  }
 
   useEffect(() => {
     if (isEditingTitle && titleInputRef.current) {

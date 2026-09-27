@@ -33,7 +33,12 @@ function stringifyAutomationMeta(header: NormalizedAutomation): string {
 }
 
 function stringifyRun(run: NormalizedEvidenceRun): string {
-  const { type, automationName, automationId, ...rest } = run;
+  const {
+    type: _type,
+    automationName: _automationName,
+    automationId: _automationId,
+    ...rest
+  } = run;
   return safeStringify(redactSensitiveData(rest), null, 2) ?? '{}';
 }
 

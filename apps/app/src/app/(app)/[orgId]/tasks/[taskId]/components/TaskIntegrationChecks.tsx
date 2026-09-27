@@ -118,9 +118,11 @@ export function TaskIntegrationChecks({
   const [revoking, setRevoking] = useState(false);
 
   // Sync hook-level error into local state
-  useEffect(() => {
+  const [prevHookError, setPrevHookError] = useState(hookError);
+  if (prevHookError !== hookError) {
+    setPrevHookError(hookError);
     if (hookError) setError(hookError);
-  }, [hookError]);
+  }
 
   // OAuth success handling - open config dialog after successful connection
   const [configureDialogOpen, setConfigureDialogOpen] = useState(false);
@@ -136,39 +138,46 @@ export function TaskIntegrationChecks({
 
   // Handle OAuth callback success - find the newly connected integration and open config dialog
   useEffect(() => {
-    if (hasHandledOAuthRef.current || loading) return;
+    let cancelled = false;
+    (async () => {
+      await Promise.resolve();
+      if (cancelled || hasHandledOAuthRef.current || loading) return;
 
-    const success = searchParams.get('success');
-    const providerSlug = searchParams.get('provider');
+      const success = searchParams.get('success');
+      const providerSlug = searchParams.get('provider');
 
-    if (success === 'true' && providerSlug && checks.length > 0) {
-      hasHandledOAuthRef.current = true;
+      if (success === 'true' && providerSlug && checks.length > 0) {
+        hasHandledOAuthRef.current = true;
 
-      // Find the connected check for this provider
-      const connectedCheck = checks.find(
-        (c) => c.integrationId === providerSlug && c.isConnected && c.connectionId,
-      );
-
-      if (connectedCheck) {
-        // Open the configure dialog
-        setConfigureConnection({
-          connectionId: connectedCheck.connectionId!,
-          integrationId: connectedCheck.integrationId,
-          integrationName: connectedCheck.integrationName,
-          integrationLogoUrl: connectedCheck.integrationLogoUrl,
-        });
-        setConfigureDialogOpen(true);
-        toast.success(
-          t('integrationChecks.connectedToast', { name: connectedCheck.integrationName }),
+        // Find the connected check for this provider
+        const connectedCheck = checks.find(
+          (c) => c.integrationId === providerSlug && c.isConnected && c.connectionId,
         );
-      }
 
-      // Clean up URL params
-      const url = new URL(window.location.href);
-      url.searchParams.delete('success');
-      url.searchParams.delete('provider');
-      window.history.replaceState({}, '', url.toString());
-    }
+        if (connectedCheck) {
+          // Open the configure dialog
+          setConfigureConnection({
+            connectionId: connectedCheck.connectionId!,
+            integrationId: connectedCheck.integrationId,
+            integrationName: connectedCheck.integrationName,
+            integrationLogoUrl: connectedCheck.integrationLogoUrl,
+          });
+          setConfigureDialogOpen(true);
+          toast.success(
+            t('integrationChecks.connectedToast', { name: connectedCheck.integrationName }),
+          );
+        }
+
+        // Clean up URL params
+        const url = new URL(window.location.href);
+        url.searchParams.delete('success');
+        url.searchParams.delete('provider');
+        window.history.replaceState({}, '', url.toString());
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [searchParams, checks, loading, t]);
 
   const handleRunCheck = useCallback(
@@ -322,12 +331,9 @@ export function TaskIntegrationChecks({
     currentSuggestionsPage * INTEGRATIONS_PER_PAGE,
   );
 
-  useEffect(() => {
-    setSuggestionsPage(1);
-  }, [suggestionsSearchQuery]);
-
   const handleSuggestionsSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
     setSuggestionsSearchQuery(event.target.value);
+    setSuggestionsPage(1);
   };
 
   const handlePreviousSuggestionsPage = () => {
@@ -1223,12 +1229,9 @@ function IntegrationEmptyState({
     currentPage * INTEGRATIONS_PER_PAGE,
   );
 
-  useEffect(() => {
-    setPage(1);
-  }, [searchQuery]);
-
   const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value);
+    setPage(1);
   };
 
   const handlePreviousPage = () => {

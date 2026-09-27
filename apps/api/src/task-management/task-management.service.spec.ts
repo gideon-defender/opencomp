@@ -31,7 +31,6 @@ jest.mock('@db', () => ({
   },
 }));
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { db } = require('@db') as {
   db: {
     taskItem: {

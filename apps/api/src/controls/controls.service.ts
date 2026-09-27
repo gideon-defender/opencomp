@@ -309,9 +309,9 @@ export class ControlsService {
     const totalItems = policies.length + tasks.length;
 
     const {
-      frameworkPolicyLinks,
-      frameworkTaskLinks,
-      frameworkDocumentLinks,
+      frameworkPolicyLinks: _frameworkPolicyLinks,
+      frameworkTaskLinks: _frameworkTaskLinks,
+      frameworkDocumentLinks: _frameworkDocumentLinks,
       policies: _policies,
       tasks: _tasks,
       controlDocumentTypes: _controlDocumentTypes,

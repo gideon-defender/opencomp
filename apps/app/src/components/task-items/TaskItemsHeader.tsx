@@ -5,6 +5,7 @@ import { Badge } from '@gideon-defender/ui/badge';
 import { Button, HStack, Stack, Text } from '@trycompai/design-system';
 import { Add, Close } from '@trycompai/design-system/icons';
 import { Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface TaskItemsHeaderProps {
   title: string;
@@ -32,6 +33,7 @@ export function TaskItemsHeader({
   isCreateOpen,
   onToggleCreate,
 }: TaskItemsHeaderProps) {
+  const t = useTranslations('tasks');
   const { hasPermission } = usePermissions();
   const canCreateTask = hasPermission('task', 'create');
 
@@ -62,7 +64,7 @@ export function TaskItemsHeader({
               <div className="flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full bg-muted-foreground" />
                 <Text size="xs" variant="muted" as="span">
-                  {stats.byStatus.todo} Todo
+                  {stats.byStatus.todo} {t('todo')}
                 </Text>
               </div>
             )}
@@ -70,7 +72,7 @@ export function TaskItemsHeader({
               <div className="flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400" />
                 <Text size="xs" variant="muted" as="span">
-                  {stats.byStatus.in_progress} In Progress
+                  {stats.byStatus.in_progress} {t('inProgress')}
                 </Text>
               </div>
             )}
@@ -78,7 +80,7 @@ export function TaskItemsHeader({
               <div className="flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full bg-purple-500 dark:bg-purple-400" />
                 <Text size="xs" variant="muted" as="span">
-                  {stats.byStatus.in_review} In Review
+                  {stats.byStatus.in_review} {t('inReview')}
                 </Text>
               </div>
             )}
@@ -86,7 +88,7 @@ export function TaskItemsHeader({
               <div className="flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full bg-primary" />
                 <Text size="xs" variant="muted" as="span">
-                  {stats.byStatus.done} Done
+                  {stats.byStatus.done} {t('done')}
                 </Text>
               </div>
             )}
@@ -94,7 +96,7 @@ export function TaskItemsHeader({
               <div className="flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full bg-muted-foreground" />
                 <Text size="xs" variant="muted" as="span">
-                  {stats.byStatus.canceled} Canceled
+                  {stats.byStatus.canceled} {t('canceled')}
                 </Text>
               </div>
             )}
@@ -106,7 +108,7 @@ export function TaskItemsHeader({
           size="icon"
           onClick={onToggleCreate}
           variant={isCreateOpen ? 'outline' : 'default'}
-          aria-label={isCreateOpen ? 'Close create task' : 'Create task'}
+          aria-label={isCreateOpen ? t('header.closeCreateTask') : t('header.createTask')}
         >
           {isCreateOpen ? <Close /> : <Add />}
         </Button>

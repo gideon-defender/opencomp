@@ -1,0 +1,13 @@
+{
+  "appTitle": "Framework Editor",
+  "signOut": "Sign out",
+  "loading": "Loading...",
+  "language": "Language",
+  "english": "English",
+  "spanish": "Español",
+  "frameworks": "Frameworks",
+  "toggleTheme": "Toggle theme",
+  "switchToLightMode": "Switch to light mode",
+  "switchToDarkMode": "Switch to dark mode",
+  "userMenu": "User menu"
+}

@@ -752,9 +752,7 @@ describe('TimelinesService', () => {
       },
     ]);
 
-    const findAllSpy = jest
-      .spyOn(service, 'findAllForOrganization')
-      .mockResolvedValue([] as any);
+    jest.spyOn(service, 'findAllForOrganization').mockResolvedValue([]);
     const reconcileSpy = jest
       .spyOn(service, 'reconcileAutoPhasesForOrganization')
       .mockResolvedValue();

@@ -193,7 +193,7 @@ describe('AdminOrganizationsController', () => {
 
       const result = await controller.inviteMember(
         'org_1',
-        { userId: 'usr_admin' } as { userId: string },
+        { userId: 'usr_admin' },
         { email: 'user@test.com', role: 'admin' },
       );
 
@@ -228,7 +228,7 @@ describe('AdminOrganizationsController', () => {
 
       const result = await controller.purge(
         'org_1',
-        { userId: 'usr_admin' } as { userId: string },
+        { userId: 'usr_admin' },
         { confirm: 'acme' },
       );
 

@@ -83,7 +83,13 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
     ...tableProps
   } = props;
 
-  const queryStateOptions = React.useMemo<Omit<UseQueryStateOptions<string>, 'parse'>>(
+  // `startTransition` is supported at runtime by the installed nuqs version
+  // but missing from its `UseQueryStateOptions` type — declare it explicitly.
+  const queryStateOptions = React.useMemo<
+    Omit<UseQueryStateOptions<string>, 'parse'> & {
+      startTransition?: React.TransitionStartFunction;
+    }
+  >(
     () => ({
       history,
       scroll,
@@ -91,7 +97,6 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
       throttleMs,
       debounceMs,
       clearOnDefault,
-      //@ts-ignore
       startTransition,
     }),
     [history, scroll, shallow, throttleMs, debounceMs, clearOnDefault, startTransition],

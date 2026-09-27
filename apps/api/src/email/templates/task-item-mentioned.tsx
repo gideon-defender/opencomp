@@ -14,6 +14,7 @@ import {
 } from '@react-email/components';
 import { Footer } from '../components/footer';
 import { Logo } from '../components/logo';
+import type { EmailLocale } from '../locale';
 import { getUnsubscribeUrl } from '@gideon-defender/email';
 
 interface Props {
@@ -26,7 +27,34 @@ interface Props {
   entityId: string;
   organizationId: string;
   taskUrl: string;
+  locale?: EmailLocale;
 }
+
+const copy = {
+  en: {
+    previewSuffix: "mentioned you in a task",
+    heading: "You were mentioned in a task",
+    hello: "Hello",
+    bodyMentioned: "mentioned you in the task",
+    bodyFor: "for",
+    viewTask: "View Task",
+    copyPaste: "or copy and paste this URL into your browser:",
+    unsubscribeQuestion: "Don't want to receive task mention notifications?",
+    managePrefs: "Manage your email preferences",
+  },
+  es: {
+    previewSuffix: "te mencionó en una tarea",
+    heading: "Te mencionaron en una tarea",
+    hello: "Hola",
+    bodyMentioned: "te mencionó en la tarea",
+    bodyFor: "para",
+    viewTask: "Ver tarea",
+    copyPaste: "o copia y pega esta URL en tu navegador:",
+    unsubscribeQuestion:
+      "¿No quieres recibir notificaciones de menciones en tareas?",
+    managePrefs: "Gestionar tus preferencias de correo electrónico",
+  },
+};
 
 export const TaskItemMentionedEmail = ({
   toName,
@@ -38,10 +66,13 @@ export const TaskItemMentionedEmail = ({
   entityId,
   organizationId,
   taskUrl,
+  locale = 'en',
 }: Props) => {
+  const t = copy[locale];
+
   const unsubscribeUrl = getUnsubscribeUrl(toEmail);
   return (
-    <Html>
+    <Html lang={locale}>
       <Tailwind>
         <head>
           <Font
@@ -57,7 +88,7 @@ export const TaskItemMentionedEmail = ({
             fontStyle="normal"
           />
         </head>
-        <Preview>{mentionedByName} mentioned you in a task</Preview>
+        <Preview>{mentionedByName} {t.previewSuffix}</Preview>
 
         <Body className="mx-auto my-auto bg-[#fff] font-sans">
           <Container
@@ -66,16 +97,15 @@ export const TaskItemMentionedEmail = ({
           >
             <Logo />
             <Heading className="mx-0 my-[30px] p-0 text-center text-[24px] font-normal text-[#121212]">
-              You were mentioned in a task
+              {t.heading}
             </Heading>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              Hello {toName},
+              {t.hello} {toName},
             </Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              <strong>{mentionedByName}</strong> mentioned you in the task{' '}
-              <strong>"{taskTitle}"</strong> for <strong>{entityName}</strong>.
+              <strong>{mentionedByName}</strong> {t.bodyMentioned} <strong>"{taskTitle}"</strong> {t.bodyFor} <strong>{entityName}</strong>.
             </Text>
 
             <Section className="mt-[32px] mb-[32px] text-center">
@@ -83,12 +113,12 @@ export const TaskItemMentionedEmail = ({
                 className="rounded-[3px] bg-[#121212] px-[20px] py-[12px] text-center text-[14px] font-semibold text-white no-underline"
                 href={taskUrl}
               >
-                View Task
+                {t.viewTask}
               </Button>
             </Section>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              or copy and paste this URL into your browser:{' '}
+              {t.copyPaste}{' '}
               <a href={taskUrl} className="text-[#121212] underline">
                 {taskUrl}
               </a>
@@ -96,12 +126,12 @@ export const TaskItemMentionedEmail = ({
 
             <Section className="mt-[30px] mb-[20px]">
               <Text className="text-[12px] leading-[20px] text-[#666666]">
-                Don't want to receive task mention notifications?{' '}
+                {t.unsubscribeQuestion}{' '}
                 <Link
                   href={unsubscribeUrl}
                   className="text-[#121212] underline"
                 >
-                  Manage your email preferences
+                  {t.managePrefs}
                 </Link>
                 .
               </Text>
@@ -109,7 +139,7 @@ export const TaskItemMentionedEmail = ({
 
             <br />
 
-            <Footer />
+            <Footer locale={locale} />
           </Container>
         </Body>
       </Tailwind>

@@ -21,12 +21,13 @@ import {
   Textarea,
 } from '@gideon-defender/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { FrameworkBaseSchema } from '../../schemas';
+import { createFrameworkBaseSchema } from '../../schemas';
 
 interface FrameworkData {
   id: string;
@@ -43,8 +44,6 @@ interface EditFrameworkDialogProps {
   onFrameworkUpdated?: (updatedData: FrameworkData) => void;
 }
 
-type FrameworkFormValues = z.infer<typeof FrameworkBaseSchema>;
-
 export function EditFrameworkDialog({
   isOpen,
   onOpenChange,
@@ -52,9 +51,25 @@ export function EditFrameworkDialog({
   onFrameworkUpdated,
 }: EditFrameworkDialogProps) {
   const router = useRouter();
+  const t = useTranslations('dialogs');
+  const tToasts = useTranslations('toasts');
+  const tValidation = useTranslations('validation');
+
+  const schema = useMemo(
+    () =>
+      createFrameworkBaseSchema({
+        nameRequired: tValidation('nameRequired'),
+        descriptionRequired: tValidation('descriptionRequired'),
+        versionRequired: tValidation('versionRequired'),
+        requirementNameRequired: tValidation('requirementNameRequired'),
+      }),
+    [tValidation],
+  );
+
+  type FrameworkFormValues = z.infer<typeof schema>;
 
   const form = useForm<FrameworkFormValues>({
-    resolver: zodResolver(FrameworkBaseSchema),
+    resolver: zodResolver(schema),
     defaultValues: {
       name: framework.name,
       description: framework.description,
@@ -84,12 +99,12 @@ export function EditFrameworkDialog({
           visible: values.visible,
         }),
       });
-      toast.success('Framework updated successfully!');
+      toast.success(tToasts('frameworkUpdated'));
       onOpenChange(false);
       onFrameworkUpdated?.(updatedFramework);
       router.refresh();
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to update framework.';
+      const message = error instanceof Error ? error.message : tToasts('frameworkUpdateFailed');
       toast.error(message);
     }
   }
@@ -111,10 +126,8 @@ export function EditFrameworkDialog({
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Edit Framework</DialogTitle>
-          <DialogDescription>
-            Update the details for the framework. Click save when you're done.
-          </DialogDescription>
+          <DialogTitle>{t('editFramework.title')}</DialogTitle>
+          <DialogDescription>{t('editFramework.description')}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-2">
@@ -123,9 +136,9 @@ export function EditFrameworkDialog({
               name="name"
               render={({ field }) => (
                 <FormItem className="grid grid-cols-4 items-center gap-2">
-                  <FormLabel className="text-right">Name</FormLabel>
+                  <FormLabel className="text-right">{t('editFramework.nameLabel')}</FormLabel>
                   <FormControl className="col-span-3">
-                    <Input placeholder="Enter framework name" {...field} />
+                    <Input placeholder={t('editFramework.namePlaceholder')} {...field} />
                   </FormControl>
                   <div className="col-span-3 col-start-2">
                     <FormMessage />
@@ -138,9 +151,9 @@ export function EditFrameworkDialog({
               name="description"
               render={({ field }) => (
                 <FormItem className="grid grid-cols-4 items-center gap-2">
-                  <FormLabel className="text-right">Description</FormLabel>
+                  <FormLabel className="text-right">{t('editFramework.descriptionLabel')}</FormLabel>
                   <FormControl className="col-span-3">
-                    <Textarea placeholder="Enter framework description" {...field} />
+                    <Textarea placeholder={t('editFramework.descriptionPlaceholder')} {...field} />
                   </FormControl>
                   <div className="col-span-3 col-start-2">
                     <FormMessage />
@@ -153,9 +166,9 @@ export function EditFrameworkDialog({
               name="version"
               render={({ field }) => (
                 <FormItem className="grid grid-cols-4 items-center gap-2">
-                  <FormLabel className="text-right">Version</FormLabel>
+                  <FormLabel className="text-right">{t('editFramework.versionLabel')}</FormLabel>
                   <FormControl className="col-span-3">
-                    <Input placeholder="e.g., 1.0.0" {...field} />
+                    <Input placeholder={t('editFramework.versionPlaceholder')} {...field} />
                   </FormControl>
                   <div className="col-span-3 col-start-2">
                     <FormMessage />
@@ -168,7 +181,7 @@ export function EditFrameworkDialog({
               name="visible"
               render={({ field }) => (
                 <FormItem className="grid grid-cols-4 items-center gap-2">
-                  <FormLabel className="text-right">Visible</FormLabel>
+                  <FormLabel className="text-right">{t('editFramework.visibleLabel')}</FormLabel>
                   <FormControl className="col-span-3">
                     <Switch checked={Boolean(field.value)} onCheckedChange={field.onChange} />
                   </FormControl>
@@ -181,14 +194,16 @@ export function EditFrameworkDialog({
             <DialogFooter>
               <DialogClose asChild>
                 <Button type="button" variant="outline">
-                  Cancel
+                  {t('editFramework.cancel')}
                 </Button>
               </DialogClose>
               <Button
                 type="submit"
                 disabled={form.formState.isSubmitting || !form.formState.isDirty}
               >
-                {form.formState.isSubmitting ? 'Saving...' : 'Save Changes'}
+                {form.formState.isSubmitting
+                  ? t('editFramework.saving')
+                  : t('editFramework.saveChanges')}
               </Button>
             </DialogFooter>
           </form>

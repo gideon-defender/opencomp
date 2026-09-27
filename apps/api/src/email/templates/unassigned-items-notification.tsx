@@ -13,6 +13,7 @@ import {
 import { getUnsubscribeUrl } from '@gideon-defender/email';
 import { Footer } from '../components/footer';
 import { Logo } from '../components/logo';
+import type { EmailLocale } from '../locale';
 
 interface UnassignedItem {
   type: 'task' | 'policy' | 'risk' | 'vendor';
@@ -27,14 +28,10 @@ interface Props {
   removedMemberName: string;
   unassignedItems: UnassignedItem[];
   email?: string;
+  locale?: EmailLocale;
 }
 
-const ITEM_TYPE_LABELS: Record<UnassignedItem['type'], string> = {
-  task: 'Task',
-  policy: 'Policy',
-  risk: 'Risk',
-  vendor: 'Vendor',
-};
+
 
 function getItemUrl(
   baseUrl: string,
@@ -50,6 +47,49 @@ function getItemUrl(
   return `${baseUrl}/${organizationId}/${paths[item.type]}/${item.id}`;
 }
 
+const copy = {
+  en: {
+    preview: "Member removed - items require reassignment",
+    heading: "Member Removed - Items Require Reassignment",
+    hi: "Hi",
+    removedPrefix: "has been removed from",
+    reassignSuffix:
+      ". As a result, the following items that were previously assigned to them now require a new assignee:",
+    loginPrompt:
+      "Please log in to assign these items to appropriate team members.",
+    viewOrg: "View Organization",
+    unsubscribe: "Unsubscribe",
+  },
+  es: {
+    preview: "Miembro eliminado: elementos requieren reasignación",
+    heading: "Miembro eliminado: elementos requieren reasignación",
+    hi: "Hola",
+    removedPrefix: "ha sido eliminado de",
+    reassignSuffix:
+      ". Como resultado, los siguientes elementos que tenía asignados ahora requieren un nuevo responsable:",
+    loginPrompt:
+      "Inicia sesión para asignar estos elementos a los miembros adecuados del equipo.",
+    viewOrg: "Ver la organización",
+    unsubscribe: "Cancelar suscripción",
+  },
+};
+
+function itemTypeLabel(
+  type: UnassignedItem["type"],
+  locale: EmailLocale,
+): string {
+  const labels: Record<EmailLocale, Record<UnassignedItem["type"], string>> = {
+    en: { task: "Tasks", policy: "Policies", risk: "Risks", vendor: "Vendors" },
+    es: {
+      task: "Tareas",
+      policy: "Políticas",
+      risk: "Riesgos",
+      vendor: "Proveedores",
+    },
+  };
+  return labels[locale][type];
+}
+
 export const UnassignedItemsNotificationEmail = ({
   userName,
   organizationName,
@@ -57,7 +97,10 @@ export const UnassignedItemsNotificationEmail = ({
   removedMemberName,
   unassignedItems,
   email,
+  locale = 'en',
 }: Props) => {
+  const t = copy[locale];
+
   const baseUrl =
     process.env.NEXT_PUBLIC_APP_URL ??
     process.env.BETTER_AUTH_URL ??
@@ -74,7 +117,7 @@ export const UnassignedItemsNotificationEmail = ({
   );
 
   return (
-    <Html>
+    <Html lang={locale}>
       <Tailwind>
         <head>
           <Font
@@ -91,7 +134,7 @@ export const UnassignedItemsNotificationEmail = ({
           />
         </head>
 
-        <Preview>Member removed - items require reassignment</Preview>
+        <Preview>{t.preview}</Preview>
 
         <Body className="mx-auto my-auto bg-[#fff] font-sans">
           <Container
@@ -100,24 +143,21 @@ export const UnassignedItemsNotificationEmail = ({
           >
             <Logo />
             <Heading className="mx-0 my-[30px] p-0 text-center text-[24px] font-normal text-[#121212]">
-              Member Removed - Items Require Reassignment
+              {t.heading}
             </Heading>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              Hi {userName},
+              {t.hi} {userName},
             </Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              <strong>{removedMemberName}</strong> has been removed from{' '}
-              <strong>{organizationName}</strong>. As a result, the following
-              items that were previously assigned to them now require a new
-              assignee:
+              <strong>{removedMemberName}</strong> {t.removedPrefix} <strong>{organizationName}</strong>{t.reassignSuffix}
             </Text>
 
             {Object.entries(groupedItems).map(([type, items]) => (
               <Section key={type} className="my-[12px]">
                 <Text className="text-[16px] font-medium text-[#121212] mb-[8px] mt-0">
-                  {ITEM_TYPE_LABELS[type as UnassignedItem['type']]}s (
+                  {itemTypeLabel(type as UnassignedItem['type'], locale)} (
                   {items.length})
                 </Text>
                 <ul className="list-disc pl-[12px]">
@@ -139,7 +179,7 @@ export const UnassignedItemsNotificationEmail = ({
             ))}
 
             <Text className="text-[14px] leading-[24px] text-[#121212] mt-[24px]">
-              Please log in to assign these items to appropriate team members.
+              {t.loginPrompt}
             </Text>
 
             <Section className="mt-[32px] mb-[42px] text-center">
@@ -147,7 +187,7 @@ export const UnassignedItemsNotificationEmail = ({
                 href={link}
                 className="text-primary border border-solid border-[#121212] bg-transparent px-6 py-3 text-center text-[14px] font-medium text-[#121212] no-underline inline-block"
               >
-                View Organization
+                {t.viewOrg}
               </a>
             </Section>
 
@@ -158,14 +198,14 @@ export const UnassignedItemsNotificationEmail = ({
                     href={getUnsubscribeUrl(email)}
                     className="text-[#121212] underline"
                   >
-                    Unsubscribe
+                    {t.unsubscribe}
                   </Link>
                 </Text>
               </Section>
             )}
 
             <br />
-            <Footer />
+            <Footer locale={locale} />
           </Container>
         </Body>
       </Tailwind>

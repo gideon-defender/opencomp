@@ -10,6 +10,12 @@ export interface CitationsHeadingInput {
    * these totals so it never under-reports vs. the column.
    */
   linkedTotals: { controls: number; tasks: number };
+  /**
+   * BCP-47 locale for the full heading copy (nouns, template, and list
+   * conjunction). Callers should pass the user's locale; defaults to
+   * English for background jobs without request context.
+   */
+  locale?: string;
 }
 
 /**
@@ -33,8 +39,55 @@ export interface CitationsHeadingInput {
  * the DB client (which `onboard-organization-helpers.ts` imports at the
  * top level).
  */
-export function buildCitationsHeading({ citations, linkedTotals }: CitationsHeadingInput): string {
-  const formatter = new Intl.ListFormat('en', { style: 'long', type: 'conjunction' });
+interface HeadingCopy {
+  controlOne: string;
+  controlMany: string;
+  taskOne: string;
+  taskMany: string;
+  policyOne: string;
+  policyMany: string;
+  recommendedGapOne: string;
+  recommendedGapMany: string;
+  introThrough: string;
+  introBare: string;
+  highlightsTail: string;
+}
+
+const EN_COPY: HeadingCopy = {
+  controlOne: 'control',
+  controlMany: 'controls',
+  taskOne: 'task',
+  taskMany: 'tasks',
+  policyOne: 'policy',
+  policyMany: 'policies',
+  recommendedGapOne: 'recommended gap',
+  recommendedGapMany: 'recommended gaps',
+  introThrough: 'This plan addresses the risk through',
+  introBare: 'This plan addresses the risk:',
+  highlightsTail: '. Highlights below:',
+};
+
+const ES_COPY: HeadingCopy = {
+  controlOne: 'control',
+  controlMany: 'controles',
+  taskOne: 'tarea',
+  taskMany: 'tareas',
+  policyOne: 'política',
+  policyMany: 'políticas',
+  recommendedGapOne: 'brecha recomendada',
+  recommendedGapMany: 'brechas recomendadas',
+  introThrough: 'Este plan aborda el riesgo a través de',
+  introBare: 'Este plan aborda el riesgo:',
+  highlightsTail: '. Aspectos destacados a continuación:',
+};
+
+export function buildCitationsHeading({
+  citations,
+  linkedTotals,
+  locale = 'en',
+}: CitationsHeadingInput): string {
+  const copy = locale === 'es' ? ES_COPY : EN_COPY;
+  const formatter = new Intl.ListFormat(locale, { style: 'long', type: 'conjunction' });
 
   // Happy path: at least one linked control or task exists. Report the
   // totals (matches the UI) and add "Highlights below:" when the bullets
@@ -43,11 +96,13 @@ export function buildCitationsHeading({ citations, linkedTotals }: CitationsHead
     const parts: string[] = [];
     if (linkedTotals.controls > 0) {
       parts.push(
-        `${linkedTotals.controls} ${linkedTotals.controls === 1 ? 'control' : 'controls'}`,
+        `${linkedTotals.controls} ${linkedTotals.controls === 1 ? copy.controlOne : copy.controlMany}`,
       );
     }
     if (linkedTotals.tasks > 0) {
-      parts.push(`${linkedTotals.tasks} ${linkedTotals.tasks === 1 ? 'task' : 'tasks'}`);
+      parts.push(
+        `${linkedTotals.tasks} ${linkedTotals.tasks === 1 ? copy.taskOne : copy.taskMany}`,
+      );
     }
     const citedControls = citations.filter((c) => c.kind === 'control').length;
     const citedTasks = citations.filter((c) => c.kind === 'task').length;
@@ -55,8 +110,8 @@ export function buildCitationsHeading({ citations, linkedTotals }: CitationsHead
       citedControls < linkedTotals.controls ||
       citedTasks < linkedTotals.tasks ||
       citations.some((c) => c.kind === 'gap' || c.kind === 'policy');
-    const tail = showsHighlights ? '. Highlights below:' : ':';
-    return `This plan addresses the risk through ${formatter.format(parts)}${tail}`;
+    const tail = showsHighlights ? copy.highlightsTail : ':';
+    return `${copy.introThrough} ${formatter.format(parts)}${tail}`;
   }
 
   // No linked work. Fall back to describing the citation kinds present —
@@ -65,13 +120,17 @@ export function buildCitationsHeading({ citations, linkedTotals }: CitationsHead
   const gapCount = citations.filter((c) => c.kind === 'gap').length;
   const parts: string[] = [];
   if (policyCount > 0) {
-    parts.push(`${policyCount} ${policyCount === 1 ? 'policy' : 'policies'}`);
+    parts.push(
+      `${policyCount} ${policyCount === 1 ? copy.policyOne : copy.policyMany}`,
+    );
   }
   if (gapCount > 0) {
-    parts.push(`${gapCount} recommended ${gapCount === 1 ? 'gap' : 'gaps'}`);
+    parts.push(
+      `${gapCount} ${gapCount === 1 ? copy.recommendedGapOne : copy.recommendedGapMany}`,
+    );
   }
   if (parts.length === 0) {
-    return 'This plan addresses the risk:';
+    return copy.introBare;
   }
-  return `This plan addresses the risk through ${formatter.format(parts)}:`;
+  return `${copy.introThrough} ${formatter.format(parts)}:`;
 }

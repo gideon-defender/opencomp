@@ -225,7 +225,7 @@ async function replayUndo(
         content: {
           set: Array.isArray(u.prevContent.content)
             ? (u.prevContent.content as unknown as Prisma.InputJsonValue[])
-            : [u.prevContent.content as unknown as Prisma.InputJsonValue],
+            : [u.prevContent.content as Prisma.InputJsonValue],
         },
         frequency: u.prevContent.frequency as Frequency | null,
         department: u.prevContent.department as Departments | null,
@@ -426,8 +426,8 @@ async function replayUndo(
       kind: 'ROLLBACK',
       performedById: ctx.memberId,
       rollbackExpiresAt: null,
-      undoPayload: {} as unknown as object,
-      summary: { reversedSyncOperationId: ctx.syncOp.id } as unknown as object,
+      undoPayload: {},
+      summary: { reversedSyncOperationId: ctx.syncOp.id },
     },
   });
 

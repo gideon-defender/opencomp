@@ -2,7 +2,7 @@
 
 import { Checkmark, Close, Locked, Play } from '@trycompai/design-system/icons';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { InstructionTestResult } from '../../hooks/types';
 import { LiveActivityBorder } from './LiveActivityBorder';
 import { StepList, type SignInStep } from './StepList';
@@ -76,7 +76,11 @@ export function InstructionTestPanel({
 }: InstructionTestPanelProps) {
   // Gate the ring on the iframe's load so it appears with the page, not before.
   const [loaded, setLoaded] = useState(false);
-  useEffect(() => setLoaded(false), [liveViewUrl]);
+  const [prevLiveViewUrl, setPrevLiveViewUrl] = useState(liveViewUrl);
+  if (prevLiveViewUrl !== liveViewUrl) {
+    setPrevLiveViewUrl(liveViewUrl);
+    setLoaded(false);
+  }
 
   if (phase === 'idle') {
     return (

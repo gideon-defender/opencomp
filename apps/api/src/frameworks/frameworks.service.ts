@@ -4,6 +4,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { withErrorCode } from '../common/i18n/error-messages';
 import { db, type EvidenceFormType } from '@db';
 
 import { tasks } from '@gideon-defender/trigger-local';
@@ -30,6 +31,46 @@ type RequirementDef = {
   customFrameworkId: string | null;
   kind: 'platform' | 'custom';
 };
+
+type FrameworkPolicyLinkForView = {
+  frameworkInstanceId: string;
+  policy: { id: string; name: string; status: string };
+};
+
+type FrameworkDocumentLinkForView = {
+  frameworkInstanceId: string;
+  formType: EvidenceFormType;
+} & Record<string, unknown>;
+
+type ControlForView = {
+  id: string;
+  frameworkPolicyLinks: FrameworkPolicyLinkForView[];
+  frameworkDocumentLinks: FrameworkDocumentLinkForView[];
+  frameworkControlFamilies?: Array<{
+    frameworkInstanceId: string;
+    controlFamily: string | null;
+  }> | null;
+} & Record<string, unknown>;
+
+type RequirementMappedForView = {
+  control?: ControlForView | null;
+};
+
+type FrameworkInstanceForView = {
+  id: string;
+  requirementsMapped?: RequirementMappedForView[];
+} & Record<string, unknown>;
+
+type ControlViewEntry = {
+  id: string;
+  policies: Array<{ id: string; name: string; status: string }>;
+  controlDocumentTypes: Array<
+    { formType: EvidenceFormType; isNotRelevant: boolean } & Record<
+      string,
+      unknown
+    >
+  >;
+} & Record<string, unknown>;
 
 // FRAME-18: numbered requirements first (ascending), unset rows (incl. per-instance
 // custom requirements) last, then by identifier (the canonical-order key, e.g.
@@ -212,14 +253,19 @@ export class FrameworksService {
     const notRelevantFormTypes =
       await this.getNotRelevantFormTypes(organizationId);
 
-    const frameworksWithControls = frameworkInstances.map((fi: any) => {
-      const controlsMap = new Map<string, any>();
+    // Past the `!includeControls` early return above, requirementsMapped
+    // always includes control — the Prisma conditional-spread type can't
+    // express that, so assert the view shape once here.
+    const frameworksWithControls = (
+      frameworkInstances as unknown as FrameworkInstanceForView[]
+    ).map((fi) => {
+      const controlsMap = new Map<string, ControlViewEntry>();
       for (const rm of fi.requirementsMapped || []) {
         if (rm.control && !controlsMap.has(rm.control.id)) {
           const {
             requirementsMapped: _,
-            frameworkPolicyLinks,
-            frameworkDocumentLinks,
+            frameworkPolicyLinks: _frameworkPolicyLinks,
+            frameworkDocumentLinks: _frameworkDocumentLinks,
             frameworkControlFamilies,
             ...controlData
           } = rm.control;
@@ -283,19 +329,21 @@ export class FrameworksService {
       }),
     ]);
 
-    return frameworksWithControls.map((fw: any) => ({
-      ...fw,
-      complianceScore: computeFrameworkComplianceScore(
-        fw,
-        tasks.map(({ frameworkControlLinks, ...task }) => ({
-          ...task,
-          controls: frameworkControlLinks
-            .filter((link) => link.frameworkInstanceId === fw.id)
-            .map((link) => link.control),
-        })),
-        evidenceSubmissions,
-      ),
-    }));
+    return frameworksWithControls.map(
+      (fw: (typeof frameworksWithControls)[number]) => ({
+        ...fw,
+        complianceScore: computeFrameworkComplianceScore(
+          fw,
+          tasks.map(({ frameworkControlLinks, ...task }) => ({
+            ...task,
+            controls: frameworkControlLinks
+              .filter((link) => link.frameworkInstanceId === fw.id)
+              .map((link) => link.control),
+          })),
+          evidenceSubmissions,
+        ),
+      }),
+    );
   }
 
   async findOne(frameworkInstanceId: string, organizationId: string) {
@@ -343,13 +391,13 @@ export class FrameworksService {
     const notRelevantFormTypes =
       await this.getNotRelevantFormTypes(organizationId);
 
-    const controlsMap = new Map<string, any>();
+    const controlsMap = new Map<string, ControlViewEntry>();
     for (const rm of fi.requirementsMapped) {
       if (rm.control && !controlsMap.has(rm.control.id)) {
         const {
           requirementsMapped: _,
-          frameworkPolicyLinks,
-          frameworkDocumentLinks,
+          frameworkPolicyLinks: _frameworkPolicyLinks,
+          frameworkDocumentLinks: _frameworkDocumentLinks,
           frameworkControlFamilies,
           ...controlData
         } = rm.control;
@@ -483,7 +531,10 @@ export class FrameworksService {
 
     // Reject an empty PATCH up front instead of issuing a no-op write.
     if (Object.keys(data).length === 0) {
-      throw new BadRequestException('No fields to update');
+      throw withErrorCode(
+        new BadRequestException('No fields to update'),
+        'NO_FIELDS_TO_UPDATE',
+      );
     }
 
     const frameworkInstance = await db.frameworkInstance.findUnique({
@@ -498,7 +549,10 @@ export class FrameworksService {
     // Only org-authored custom frameworks carry editable metadata. Platform
     // frameworks derive their name/description from the shared global template.
     if (!frameworkInstance.customFrameworkId) {
-      throw new BadRequestException('Only custom frameworks can be edited');
+      throw withErrorCode(
+        new BadRequestException('Only custom frameworks can be edited'),
+        'ONLY_CUSTOM_EDITABLE',
+      );
     }
 
     // Ownership is already enforced by the org-scoped instance lookup above,

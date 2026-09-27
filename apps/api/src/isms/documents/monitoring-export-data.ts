@@ -1,10 +1,6 @@
 import { db } from '@db';
 import type { Prisma } from '@db';
-import {
-  periodLabel,
-  toPeriodKey,
-  type MetricCadenceValue,
-} from '../utils/metric-periods';
+import { periodLabel, toPeriodKey } from '../utils/metric-periods';
 import type { MetricExportRow } from './types';
 
 /**
@@ -102,9 +98,7 @@ function currentValueText(metric: MetricWithExportIncludes): string {
   if (!latest) return '—';
   const key = toPeriodKey(latest.periodStart);
   if (!key) return latest.value;
-  const label = metric.cadence
-    ? periodLabel(metric.cadence as MetricCadenceValue, key)
-    : key;
+  const label = metric.cadence ? periodLabel(metric.cadence, key) : key;
   return `${latest.value} (${label})`;
 }
 

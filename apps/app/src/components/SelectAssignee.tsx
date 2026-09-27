@@ -5,7 +5,6 @@ import { Member, User } from '@db';
 import { Avatar, AvatarFallback, AvatarImage } from '@gideon-defender/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@gideon-defender/ui/select';
 import { UserIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
 
 interface SelectAssigneeProps {
   assigneeId: string | null;
@@ -32,34 +31,13 @@ export const SelectAssignee = ({
     .sort((a, b) =>
       (a.user.name || a.user.email || '').localeCompare(b.user.name || b.user.email || ''),
     );
-  const [selectedAssignee, setSelectedAssignee] = useState<(Member & { user: User }) | null>(null);
-
-  // Initialize selectedAssignee based on assigneeId prop
-  useEffect(() => {
-    if (assigneeId && assignees) {
-      const assignee = assignees.find((a) => a.id === assigneeId);
-      if (assignee) {
-        setSelectedAssignee(assignee);
-      }
-    } else {
-      setSelectedAssignee(null);
-    }
-  }, [assigneeId, assignees]);
+  // Derived directly from the assigneeId prop so the trigger always reflects
+  // the controlled value without a syncing effect.
+  const selectedAssignee = assignees.find((a) => a.id === assigneeId) ?? null;
 
   const handleAssigneeChange = (value: string) => {
     const newAssigneeId = value === 'none' ? null : value;
     onAssigneeChange(newAssigneeId);
-
-    if (newAssigneeId && assignees) {
-      const assignee = assignees.find((a) => a.id === newAssigneeId);
-      if (assignee) {
-        setSelectedAssignee(assignee);
-      } else {
-        setSelectedAssignee(null);
-      }
-    } else {
-      setSelectedAssignee(null);
-    }
   };
 
   // Function to safely prepare image URLs

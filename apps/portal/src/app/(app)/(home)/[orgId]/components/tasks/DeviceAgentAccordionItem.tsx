@@ -26,6 +26,7 @@ import {
   Spinner,
 } from '@trycompai/design-system';
 import { CheckmarkFilled, CircleDash, Download, Renew } from '@trycompai/design-system/icons';
+import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import type { FleetPolicy, Host } from '../../types';
@@ -50,6 +51,9 @@ export function DeviceAgentAccordionItem({
 }: DeviceAgentAccordionItemProps) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [detectedOS, setDetectedOS] = useState<SupportedOS | null>(null);
+  const t = useTranslations('deviceAgent');
+  const tTasks = useTranslations('tasks');
+  const tToasts = useTranslations('toasts');
 
   const isMacOS = useMemo(
     () => detectedOS === 'macos' || detectedOS === 'macos-intel',
@@ -71,7 +75,7 @@ export function DeviceAgentAccordionItem({
 
   const handleDownload = async () => {
     if (!detectedOS) {
-      toast.error('Could not detect your OS. Please refresh and try again.');
+      toast.error(t('osUndetected'));
       return;
     }
 
@@ -92,7 +96,7 @@ export function DeviceAgentAccordionItem({
 
       if (!tokenResponse.ok) {
         const errorText = await tokenResponse.text();
-        throw new Error(errorText || 'Failed to prepare download.');
+        throw new Error(errorText || t('downloadPrepareFailed'));
       }
 
       const { token } = await tokenResponse.json();
@@ -118,9 +122,9 @@ export function DeviceAgentAccordionItem({
       a.click();
       document.body.removeChild(a);
 
-      toast.success('Download started! Check your downloads folder.');
+      toast.success(t('downloadStarted'));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to download agent.');
+      toast.error(error instanceof Error ? error.message : t('downloadFailed'));
     } finally {
       // Reset after a short delay to allow download to start
       setTimeout(() => {
@@ -134,14 +138,14 @@ export function DeviceAgentAccordionItem({
       return (
         <>
           <Spinner size="sm" />
-          Downloading...
+          {t('downloading')}
         </>
       );
     } else {
       return (
         <>
           <Download size={16} />
-          Download Agent
+          {t('downloadAgent')}
         </>
       );
     }
@@ -177,11 +181,11 @@ export function DeviceAgentAccordionItem({
               <span
                 className={cn('text-base', isCompleted && 'text-muted-foreground line-through')}
               >
-                Device Agent
+                {tTasks('deviceAgent')}
               </span>
               {!hasAnyAgentDevice && hasFleetDevice && failedPoliciesCount > 0 && (
                 <span className="text-amber-600 dark:text-amber-400 text-xs ml-auto">
-                  {failedPoliciesCount} policies failing
+                  {tTasks('policiesFailing', { count: failedPoliciesCount })}
                 </span>
               )}
             </div>
@@ -190,14 +194,13 @@ export function DeviceAgentAccordionItem({
         <AccordionContent>
           <div className="px-4 pb-4 space-y-4">
             <p className="text-sm">
-              Installing OpenComp Device Agent helps you and your security administrator keep your
-              device protected against security threats.
+              {t('description')}
             </p>
 
             {agentDevices.length > 0 && (
               <div className="space-y-3">
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Your Devices
+                  {t('yourDevices')}
                 </p>
                 {agentDevices.map((device) => (
                   <Card key={device.id}>
@@ -220,8 +223,8 @@ export function DeviceAgentAccordionItem({
                           )}
                           <span className="text-sm">
                             {device.isCompliant
-                              ? 'All security checks passing'
-                              : 'Some security checks need attention'}
+                              ? t('allPassing')
+                              : t('needsAttention')}
                           </span>
                         </div>
                         <p className="text-muted-foreground text-xs">
@@ -229,7 +232,7 @@ export function DeviceAgentAccordionItem({
                           {device.lastCheckIn && (
                             <>
                               {' '}
-                              &middot; Last check-in:{' '}
+                              &middot; {t('lastCheckIn')}:{' '}
                               {new Date(device.lastCheckIn).toLocaleDateString()}
                             </>
                           )}
@@ -258,7 +261,7 @@ export function DeviceAgentAccordionItem({
                         </div>
                       }
                     >
-                      Refresh
+                      {t('refresh')}
                     </Button>
                   </div>
                 </CardHeader>
@@ -277,7 +280,7 @@ export function DeviceAgentAccordionItem({
                       </>
                     ) : (
                       <p className="text-muted-foreground text-sm">
-                        No policies configured for this device.
+                        {t('noPoliciesForDevice')}
                       </p>
                     )}
                   </div>
@@ -287,13 +290,13 @@ export function DeviceAgentAccordionItem({
 
             <div className="space-y-4">
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                {hasAnyAgentDevice ? 'Add Another Device' : 'Install on a Device'}
+                {hasAnyAgentDevice ? t('addAnotherDevice') : t('installOnDevice')}
               </p>
               <ol className="list-decimal space-y-4 pl-5 text-sm">
                 <li>
-                  <strong>Download the Device Agent installer.</strong>
+                  <strong>{t('stepDownloadTitle')}</strong>
                   <p className="mt-1">
-                    Click the download button below to get the Device Agent installer.
+                    {t('stepDownloadBody')}
                   </p>
                   <div className="flex items-center gap-2 mt-2">
                     {isMacOS && (
@@ -320,20 +323,19 @@ export function DeviceAgentAccordionItem({
                   </div>
                 </li>
                 <li>
-                  <strong>Install the OpenComp Device Agent</strong>
+                  <strong>{t('stepInstallTitle')}</strong>
                   <p className="mt-1">
                     {isMacOS
-                      ? 'Double-click the downloaded DMG file and follow the installation instructions.'
+                      ? t('stepInstallMac')
                       : detectedOS === 'linux'
-                        ? 'Install the downloaded DEB package using your package manager or by double-clicking it.'
-                        : 'Double-click the downloaded EXE file and follow the installation instructions.'}
+                        ? t('stepInstallLinux')
+                        : t('stepInstallWindows')}
                   </p>
                 </li>
                 <li>
-                  <strong>Login with your work email</strong>
+                  <strong>{t('stepLoginTitle')}</strong>
                   <p className="mt-1">
-                    After installation, login with your work email, select your organization and
-                    then click &quot;Link Device&quot;.
+                    {t('stepLoginBody')}
                   </p>
                 </li>
               </ol>
@@ -345,20 +347,19 @@ export function DeviceAgentAccordionItem({
                   <AccordionItem value="system-requirements">
                     <div className="px-4">
                       <AccordionTrigger>
-                        <span className="text-base">System Requirements</span>
+                        <span className="text-base">{t('systemRequirements')}</span>
                       </AccordionTrigger>
                     </div>
                     <AccordionContent>
                       <div className="px-4 pb-4 text-muted-foreground space-y-2 text-sm">
                         <p>
-                          <strong>Operating Systems:</strong> macOS 14+, Windows 10+, Linux (Ubuntu
-                          20.04+)
+                          {t('reqOs')}
                         </p>
                         <p>
-                          <strong>Memory:</strong> 512MB RAM minimum
+                          {t('reqMemory')}
                         </p>
                         <p>
-                          <strong>Storage:</strong> 200MB available disk space
+                          {t('reqStorage')}
                         </p>
                       </div>
                     </AccordionContent>
@@ -371,25 +372,22 @@ export function DeviceAgentAccordionItem({
                   <AccordionItem value="about">
                     <div className="px-4">
                       <AccordionTrigger>
-                        <span className="text-base">About OpenComp Device Monitor</span>
+                        <span className="text-base">{t('aboutTitle')}</span>
                       </AccordionTrigger>
                     </div>
                     <AccordionContent>
                       <div className="px-4 pb-4 text-muted-foreground space-y-2 text-sm">
                         <p>
-                          OpenComp Device Monitor is a lightweight agent that helps ensure your
-                          device meets security compliance requirements.
+                          {t('aboutBody1')}
                         </p>
                         <p>
-                          It monitors device configuration, installed software, and security
-                          settings to help maintain a secure work environment.
+                          {t('aboutBody2')}
                         </p>
                         <p>
-                          <strong>Security powered by OpenComp:</strong> Your organization uses
-                          OpenComp to maintain security and compliance standards.
+                          {t('aboutBody3')}
                         </p>
                         <p className="text-xs">
-                          If you have questions, contact your IT administrator.
+                          {t('aboutContact')}
                         </p>
                       </div>
                     </AccordionContent>

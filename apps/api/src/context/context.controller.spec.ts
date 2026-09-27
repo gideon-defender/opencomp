@@ -161,7 +161,7 @@ describe('ContextController', () => {
       mockContextService.create.mockResolvedValue(created);
 
       const result = await controller.createContext(
-        dto as never,
+        dto,
         'org_123',
         mockAuthContext,
       );
@@ -187,7 +187,7 @@ describe('ContextController', () => {
 
       const result = await controller.updateContext(
         'ctx_1',
-        dto as never,
+        dto,
         'org_123',
         mockAuthContext,
       );

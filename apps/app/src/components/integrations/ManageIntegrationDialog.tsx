@@ -162,8 +162,6 @@ export function ManageIntegrationDialog({
   const loadVariables = useCallback(async () => {
     if (!connectionId || !orgId) return;
 
-    setLoadingVariables(true);
-    setDynamicOptions({});
     try {
       const result = await getConnectionVariables<VariablesResponse>(connectionId);
       if (result.data) {
@@ -188,13 +186,31 @@ export function ManageIntegrationDialog({
     }
   }, [connectionId, orgId, getConnectionVariables]);
 
-  useEffect(() => {
-    if (open && connectionId) {
-      loadVariables();
-      loadConnectionDetails();
-      // Set initial tab based on what's available
+  // Reset to the variables tab and the loading state when a connection starts
+  // being managed, synced during render instead of in an effect.
+  const [prevManagedConnection, setPrevManagedConnection] = useState<string | null>(null);
+  const managedConnection = open ? connectionId : null;
+  if (prevManagedConnection !== managedConnection) {
+    setPrevManagedConnection(managedConnection);
+    if (managedConnection) {
       setActiveTab('variables');
+      setLoadingVariables(true);
+      setDynamicOptions({});
     }
+  }
+
+  useEffect(() => {
+    if (!open || !connectionId) return;
+    let cancelled = false;
+    // Data fetching: setState only settles after awaits, with cancellation.
+    void (async () => {
+      await loadVariables();
+      if (cancelled) return;
+      await loadConnectionDetails();
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [open, connectionId, loadVariables, loadConnectionDetails]);
 
   const fetchDynamicOptions = useCallback(

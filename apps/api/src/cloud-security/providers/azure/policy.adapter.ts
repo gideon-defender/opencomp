@@ -1,23 +1,6 @@
 import type { SecurityFinding } from '../../cloud-security.service';
 import type { AzureServiceAdapter } from './azure-service-adapter';
 
-interface PolicyStateSummary {
-  results: {
-    queryResultsTable: {
-      rows: unknown[][];
-      columns: Array<{ name: string; type: string }>;
-    };
-  };
-  'policyAssignments@odata.count'?: number;
-  policyAssignments?: Array<{
-    policyAssignmentId: string;
-    results: {
-      nonCompliantResources: number;
-      nonCompliantPolicies: number;
-    };
-  }>;
-}
-
 interface PolicySummaryResponse {
   value: Array<{
     policyAssignmentId: string;
