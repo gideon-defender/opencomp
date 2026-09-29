@@ -100,9 +100,7 @@ export function isStaticTrustedOrigin(origin: string): boolean {
     if (url.protocol !== 'https:') return false;
     return (
       url.hostname.endsWith('.gideondefender.com') ||
-      url.hostname.endsWith('.staging.gideondefender.com') ||
-      url.hostname.endsWith('.trust.inc') ||
-      url.hostname === 'trust.inc'
+      url.hostname.endsWith('.staging.gideondefender.com')
     );
   } catch {
     return false;

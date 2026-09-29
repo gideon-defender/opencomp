@@ -6,10 +6,37 @@ import { Button, Switch } from '@trycompai/design-system';
 import { ChevronLeft, ChevronRight } from '@trycompai/design-system/icons';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { GDPR, HIPAA, ISO27001, ISO42001, ISO9001, NEN7510, PCIDSS, SOC2Type2 } from './logos';
+import {
+  DORA,
+  GDPR,
+  HIPAA,
+  HITRUST,
+  ISO27001,
+  ISO42001,
+  ISO9001,
+  NEN7510,
+  NIS2,
+  NIST80053,
+  NISTCSF,
+  PCIDSS,
+  SOC2Type2,
+} from './logos';
 
 interface ComplianceBadge {
-  type: 'soc2' | 'iso27001' | 'iso42001' | 'gdpr' | 'hipaa' | 'pci_dss' | 'nen7510' | 'iso9001';
+  type:
+    | 'soc2'
+    | 'iso27001'
+    | 'iso42001'
+    | 'gdpr'
+    | 'hipaa'
+    | 'pci_dss'
+    | 'nen7510'
+    | 'iso9001'
+    | 'dora'
+    | 'nis2'
+    | 'hitrust'
+    | 'nistcsf'
+    | 'nist80053';
   verified: boolean;
 }
 
@@ -43,6 +70,11 @@ const BADGE_ICONS: Record<
   pci_dss: PCIDSS,
   nen7510: NEN7510,
   iso9001: ISO9001,
+  dora: DORA,
+  nis2: NIS2,
+  hitrust: HITRUST,
+  nistcsf: NISTCSF,
+  nist80053: NIST80053,
 };
 
 /**
@@ -57,6 +89,11 @@ const BADGE_LABELS: Record<ComplianceBadge['type'], string> = {
   pci_dss: 'PCI DSS',
   nen7510: 'NEN 7510',
   iso9001: 'ISO 9001',
+  dora: 'DORA',
+  nis2: 'NIS 2',
+  hitrust: 'HITRUST CSF',
+  nistcsf: 'NIST CSF',
+  nist80053: 'NIST 800-53',
 };
 
 /**
@@ -83,7 +120,54 @@ function extractDomain(url: string | null): string | null {
 function getVendorLogoUrl(website: string | null): string | null {
   const domain = extractDomain(website);
   if (!domain) return null;
-  return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+  return (
+    HIGH_RES_LOGO_OVERRIDES[domain.toLowerCase()] ??
+    HIGH_RES_LOGO_OVERRIDES[registrableDomain(domain)] ??
+    `https://www.google.com/s2/favicons?domain=${domain}&sz=128`
+  );
+}
+
+/**
+ * High-resolution logo overrides. Google's favicon service serves some
+ * domains at tiny sizes no matter the `sz` param (github.com comes back
+ * 32x32), which looks blurry once upscaled. These official assets replace
+ * those cases. Keyed by registrable domain so subdomains match too.
+ */
+const HIGH_RES_LOGO_OVERRIDES: Record<string, string> = {
+  'github.com': 'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png',
+  'google.com':
+    'https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png',
+};
+
+function registrableDomain(domain: string): string {
+  const parts = domain.toLowerCase().split('.');
+  return parts.length > 2 ? parts.slice(-2).join('.') : domain.toLowerCase();
+}
+
+/**
+ * Upgrade an auto-generated Google favicon URL to a high-res asset when its
+ * domain is a known-bad case. Applies to stored and computed URLs alike, so
+ * vendors synced before the override existed get fixed at render time.
+ * Manually uploaded logos (anything that is not a Google favicon URL) pass
+ * through untouched.
+ */
+function upgradeFaviconUrl(logoUrl: string | null): string | null {
+  if (!logoUrl) return null;
+  let domain: string | null = null;
+  try {
+    const parsed = new URL(logoUrl);
+    if (parsed.hostname === 'www.google.com' && parsed.pathname === '/s2/favicons') {
+      domain = parsed.searchParams.get('domain');
+    }
+  } catch {
+    return logoUrl;
+  }
+  if (!domain) return logoUrl;
+  return (
+    HIGH_RES_LOGO_OVERRIDES[domain.toLowerCase()] ??
+    HIGH_RES_LOGO_OVERRIDES[registrableDomain(domain)] ??
+    logoUrl
+  );
 }
 
 /**
@@ -100,8 +184,10 @@ function VendorLogo({
   storedLogoUrl: string | null;
 }) {
   const [hasError, setHasError] = useState(false);
-  // Use stored logo URL first, fall back to computed Google Favicon URL
-  const logoUrl = storedLogoUrl || getVendorLogoUrl(website);
+  // Use stored logo URL first, fall back to computed Google Favicon URL.
+  // Stored auto-generated favicons get upgraded to high-res assets for
+  // known-bad domains (e.g. GitHub's 32px favicon).
+  const logoUrl = upgradeFaviconUrl(storedLogoUrl || getVendorLogoUrl(website));
 
   // Reset error state when URL changes
   const [prevLogoUrl, setPrevLogoUrl] = useState(logoUrl);

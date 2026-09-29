@@ -51,6 +51,11 @@ export default async function TrustPage({ params }: { params: Promise<{ orgId: s
     iso_9001: 'iso9001FileName',
     pipeda: 'pipedaFileName',
     ccpa: 'ccpaFileName',
+    dora: 'doraFileName',
+    nis_2: 'nis2FileName',
+    hitrust_csf: 'hitrustFileName',
+    nist_csf: 'nistcsfFileName',
+    nist_800_53: 'nist80053FileName',
   };
 
   const certificateFiles: Record<string, string | null> = {
@@ -66,6 +71,11 @@ export default async function TrustPage({ params }: { params: Promise<{ orgId: s
     iso9001FileName: null,
     pipedaFileName: null,
     ccpaFileName: null,
+    doraFileName: null,
+    nis2FileName: null,
+    hitrustFileName: null,
+    nistcsfFileName: null,
+    nist80053FileName: null,
   };
 
   for (const resource of certificateResources) {
@@ -79,7 +89,7 @@ export default async function TrustPage({ params }: { params: Promise<{ orgId: s
   const portalUrl =
     settings?.domainVerified && settings.domain
       ? `https://${settings.domain}`
-      : `https://trust.inc/${settings?.friendlyUrl ?? orgId}`;
+      : `https://trust.gideondefender.com/${settings?.friendlyUrl ?? orgId}`;
 
   return (
     <PageLayout
@@ -117,6 +127,11 @@ export default async function TrustPage({ params }: { params: Promise<{ orgId: s
         iso9001={settings?.iso9001 ?? false}
         pipeda={settings?.pipeda ?? false}
         ccpa={settings?.ccpa ?? false}
+        dora={settings?.dora ?? false}
+        nis2={settings?.nis2 ?? false}
+        hitrust={settings?.hitrust ?? false}
+        nistcsf={settings?.nistcsf ?? false}
+        nist80053={settings?.nist80053 ?? false}
         soc2type1Status={settings?.soc2type1Status ?? 'started'}
         soc2type2Status={settings?.soc2type2Status ?? 'started'}
         soc3Status={settings?.soc3Status ?? 'started'}
@@ -129,6 +144,11 @@ export default async function TrustPage({ params }: { params: Promise<{ orgId: s
         iso9001Status={settings?.iso9001Status ?? 'started'}
         pipedaStatus={settings?.pipedaStatus ?? 'started'}
         ccpaStatus={settings?.ccpaStatus ?? 'started'}
+        doraStatus={settings?.doraStatus ?? 'started'}
+        nis2Status={settings?.nis2Status ?? 'started'}
+        hitrustStatus={settings?.hitrustStatus ?? 'started'}
+        nistcsfStatus={settings?.nistcsfStatus ?? 'started'}
+        nist80053Status={settings?.nist80053Status ?? 'started'}
         faqs={settings?.faqs ?? null}
         iso27001FileName={certificateFiles.iso27001FileName}
         iso42001FileName={certificateFiles.iso42001FileName}

@@ -279,7 +279,7 @@ export const createOrganizationMinimal = authActionClientWithoutOrg
       }
       createdOrgId = undefined; // Org is fully initialized, disable cleanup
 
-      // Publish the trust portal so trust.inc/{slug} is live immediately, even
+      // Publish the trust portal so trust.gideondefender.com/{slug} is live immediately, even
       // while empty. Goes through the guarded API (GET settings lazily creates a
       // published Trust row with a slug). Non-fatal — org creation must not depend on it.
       const trustPortalResponse = await serverApi.get('/v1/trust-portal/settings');

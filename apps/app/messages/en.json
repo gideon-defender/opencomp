@@ -2641,6 +2641,11 @@
       "fwIso9001Description": "An international standard for quality management systems.",
       "fwPipedaDescription": "Personal Information Protection and Electronic Documents Act",
       "fwCcpaDescription": "California Consumer Privacy Act",
+      "fwDoraDescription": "An EU regulation on digital operational resilience for financial entities.",
+      "fwNis2Description": "An EU directive on cybersecurity for essential and important entities.",
+      "fwHitrustDescription": "A certifiable security framework for protecting health information.",
+      "fwNistCsfDescription": "A voluntary framework for managing cybersecurity risk.",
+      "fwNist80053Description": "A catalog of security and privacy controls for information systems.",
       "frameworkCard": {
         "statusCompliant": "Compliant",
         "statusInProgress": "In Progress",

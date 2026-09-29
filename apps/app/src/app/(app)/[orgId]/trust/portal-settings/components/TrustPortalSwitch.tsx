@@ -42,6 +42,11 @@ const trustPortalSwitchSchema = z.object({
   iso9001: z.boolean(),
   pipeda: z.boolean(),
   ccpa: z.boolean(),
+  dora: z.boolean(),
+  nis2: z.boolean(),
+  hitrust: z.boolean(),
+  nistcsf: z.boolean(),
+  nist80053: z.boolean(),
   soc2type1Status: z.enum(['started', 'in_progress', 'compliant']),
   soc2type2Status: z.enum(['started', 'in_progress', 'compliant']),
   soc3Status: z.enum(['started', 'in_progress', 'compliant']),
@@ -54,6 +59,11 @@ const trustPortalSwitchSchema = z.object({
   iso9001Status: z.enum(['started', 'in_progress', 'compliant']),
   pipedaStatus: z.enum(['started', 'in_progress', 'compliant']),
   ccpaStatus: z.enum(['started', 'in_progress', 'compliant']),
+  doraStatus: z.enum(['started', 'in_progress', 'compliant']),
+  nis2Status: z.enum(['started', 'in_progress', 'compliant']),
+  hitrustStatus: z.enum(['started', 'in_progress', 'compliant']),
+  nistcsfStatus: z.enum(['started', 'in_progress', 'compliant']),
+  nist80053Status: z.enum(['started', 'in_progress', 'compliant']),
 });
 
 // Server action input schema (only fields that the server accepts)
@@ -76,6 +86,11 @@ const FRAMEWORK_KEY_TO_API_SLUG: Record<string, string> = {
   iso9001: 'iso_9001',
   pipeda: 'pipeda',
   ccpa: 'ccpa',
+  dora: 'dora',
+  nis2: 'nis_2',
+  hitrust: 'hitrust_csf',
+  nistcsf: 'nist_csf',
+  nist80053: 'nist_800_53',
 };
 
 interface ComplianceResourceResponse {
@@ -107,7 +122,20 @@ type TrustCustomLink = {
 };
 
 type ComplianceBadge = {
-  type: 'soc2' | 'iso27001' | 'iso42001' | 'gdpr' | 'hipaa' | 'pci_dss' | 'nen7510' | 'iso9001';
+  type:
+    | 'soc2'
+    | 'iso27001'
+    | 'iso42001'
+    | 'gdpr'
+    | 'hipaa'
+    | 'pci_dss'
+    | 'nen7510'
+    | 'iso9001'
+    | 'dora'
+    | 'nis2'
+    | 'hitrust'
+    | 'nistcsf'
+    | 'nist80053';
   verified: boolean;
 };
 
@@ -153,6 +181,16 @@ export function TrustPortalSwitch({
   pipedaStatus,
   ccpa,
   ccpaStatus,
+  dora,
+  doraStatus,
+  nis2,
+  nis2Status,
+  hitrust,
+  hitrustStatus,
+  nistcsf,
+  nistcsfStatus,
+  nist80053,
+  nist80053Status,
   faqs,
   iso27001FileName,
   iso42001FileName,
@@ -166,6 +204,11 @@ export function TrustPortalSwitch({
   iso9001FileName,
   pipedaFileName,
   ccpaFileName,
+  doraFileName,
+  nis2FileName,
+  hitrustFileName,
+  nistcsfFileName,
+  nist80053FileName,
   additionalDocuments,
   overview,
   customLinks,
@@ -192,6 +235,11 @@ export function TrustPortalSwitch({
   nen7510: boolean;
   pipeda: boolean;
   ccpa: boolean;
+  dora: boolean;
+  nis2: boolean;
+  hitrust: boolean;
+  nistcsf: boolean;
+  nist80053: boolean;
   soc2type1Status: 'started' | 'in_progress' | 'compliant';
   soc2type2Status: 'started' | 'in_progress' | 'compliant';
   soc3Status: 'started' | 'in_progress' | 'compliant';
@@ -205,6 +253,11 @@ export function TrustPortalSwitch({
   iso9001Status: 'started' | 'in_progress' | 'compliant';
   pipedaStatus: 'started' | 'in_progress' | 'compliant';
   ccpaStatus: 'started' | 'in_progress' | 'compliant';
+  doraStatus: 'started' | 'in_progress' | 'compliant';
+  nis2Status: 'started' | 'in_progress' | 'compliant';
+  hitrustStatus: 'started' | 'in_progress' | 'compliant';
+  nistcsfStatus: 'started' | 'in_progress' | 'compliant';
+  nist80053Status: 'started' | 'in_progress' | 'compliant';
   faqs: any[] | null;
   iso27001FileName?: string | null;
   iso42001FileName?: string | null;
@@ -218,6 +271,11 @@ export function TrustPortalSwitch({
   iso9001FileName?: string | null;
   pipedaFileName?: string | null;
   ccpaFileName?: string | null;
+  doraFileName?: string | null;
+  nis2FileName?: string | null;
+  hitrustFileName?: string | null;
+  nistcsfFileName?: string | null;
+  nist80053FileName?: string | null;
   additionalDocuments: TrustPortalDocument[];
   overview: TrustOverviewData;
   customLinks: TrustCustomLink[];
@@ -249,6 +307,11 @@ export function TrustPortalSwitch({
     iso9001: iso9001FileName ?? null,
     pipeda: pipedaFileName ?? null,
     ccpa: ccpaFileName ?? null,
+    dora: doraFileName ?? null,
+    nis2: nis2FileName ?? null,
+    hitrust: hitrustFileName ?? null,
+    nistcsf: nistcsfFileName ?? null,
+    nist80053: nist80053FileName ?? null,
   });
 
   const [prevCertificateFiles, setPrevCertificateFiles] = useState({
@@ -264,6 +327,11 @@ export function TrustPortalSwitch({
     iso9001: iso9001FileName ?? null,
     pipeda: pipedaFileName ?? null,
     ccpa: ccpaFileName ?? null,
+    dora: doraFileName ?? null,
+    nis2: nis2FileName ?? null,
+    hitrust: hitrustFileName ?? null,
+    nistcsf: nistcsfFileName ?? null,
+    nist80053: nist80053FileName ?? null,
   });
   if (
     prevCertificateFiles.iso27001 !== (iso27001FileName ?? null) ||
@@ -277,7 +345,12 @@ export function TrustPortalSwitch({
     prevCertificateFiles.nen7510 !== (nen7510FileName ?? null) ||
     prevCertificateFiles.iso9001 !== (iso9001FileName ?? null) ||
     prevCertificateFiles.pipeda !== (pipedaFileName ?? null) ||
-    prevCertificateFiles.ccpa !== (ccpaFileName ?? null)
+    prevCertificateFiles.ccpa !== (ccpaFileName ?? null) ||
+    prevCertificateFiles.dora !== (doraFileName ?? null) ||
+    prevCertificateFiles.nis2 !== (nis2FileName ?? null) ||
+    prevCertificateFiles.hitrust !== (hitrustFileName ?? null) ||
+    prevCertificateFiles.nistcsf !== (nistcsfFileName ?? null) ||
+    prevCertificateFiles.nist80053 !== (nist80053FileName ?? null)
   ) {
     const nextCertificateFiles = {
       iso27001: iso27001FileName ?? null,
@@ -292,6 +365,11 @@ export function TrustPortalSwitch({
       iso9001: iso9001FileName ?? null,
       pipeda: pipedaFileName ?? null,
       ccpa: ccpaFileName ?? null,
+      dora: doraFileName ?? null,
+      nis2: nis2FileName ?? null,
+      hitrust: hitrustFileName ?? null,
+      nistcsf: nistcsfFileName ?? null,
+      nist80053: nist80053FileName ?? null,
     };
     setPrevCertificateFiles(nextCertificateFiles);
     setCertificateFiles(nextCertificateFiles);
@@ -361,6 +439,11 @@ export function TrustPortalSwitch({
       iso9001: iso9001 ?? false,
       pipeda: pipeda ?? false,
       ccpa: ccpa ?? false,
+      dora: dora ?? false,
+      nis2: nis2 ?? false,
+      hitrust: hitrust ?? false,
+      nistcsf: nistcsf ?? false,
+      nist80053: nist80053 ?? false,
       soc2type1Status: soc2type1Status ?? 'started',
       soc2type2Status: soc2type2Status ?? 'started',
       soc3Status: soc3Status ?? 'started',
@@ -373,6 +456,11 @@ export function TrustPortalSwitch({
       iso9001Status: iso9001Status ?? 'started',
       pipedaStatus: pipedaStatus ?? 'started',
       ccpaStatus: ccpaStatus ?? 'started',
+      doraStatus: doraStatus ?? 'started',
+      nis2Status: nis2Status ?? 'started',
+      hitrustStatus: hitrustStatus ?? 'started',
+      nistcsfStatus: nistcsfStatus ?? 'started',
+      nist80053Status: nist80053Status ?? 'started',
     },
   });
 
@@ -395,7 +483,9 @@ export function TrustPortalSwitch({
     [updateToggleSettings],
   );
 
-  const portalUrl = domainVerified ? `https://${domain}` : `https://trust.inc/${slug}`;
+  const portalUrl = domainVerified
+    ? `https://${domain}`
+    : `https://trust.gideondefender.com/${slug}`;
 
   const lastSaved = useRef<{ [key: string]: string | boolean | null }>({
     contactEmail: contactEmail ?? '',
@@ -983,6 +1073,201 @@ export function TrustPortalSwitch({
                   onFileUpload={handleFileUpload}
                   onFilePreview={handleFilePreview}
                   frameworkKey="ccpa"
+                  orgId={orgId}
+                  disabled={!canUpdate}
+                />
+                {/* DORA */}
+                <ComplianceFramework
+                  title="DORA"
+                  description={t('portal.fwDoraDescription')}
+                  isEnabled={dora}
+                  status={doraStatus}
+                  onStatusChange={async (value) => {
+                    try {
+                      await updateFrameworkSettings({
+                        doraStatus: value as 'started' | 'in_progress' | 'compliant',
+                      });
+                      toast.success(t('portal.statusUpdated', { name: 'DORA' }));
+                    } catch (error) {
+                      console.error('[trust framework update] failed', error);
+                      toast.error(t('portal.statusUpdateFailed', { name: 'DORA' }), {
+                        description: error instanceof Error ? error.message : undefined,
+                      });
+                    }
+                  }}
+                  onToggle={async (checked) => {
+                    try {
+                      await updateFrameworkSettings({
+                        dora: checked,
+                      });
+                      toast.success(t('portal.statusUpdated', { name: 'DORA' }));
+                    } catch (error) {
+                      console.error('[trust framework update] failed', error);
+                      toast.error(t('portal.statusUpdateFailed', { name: 'DORA' }), {
+                        description: error instanceof Error ? error.message : undefined,
+                      });
+                    }
+                  }}
+                  fileName={certificateFiles.dora}
+                  onFileUpload={handleFileUpload}
+                  onFilePreview={handleFilePreview}
+                  frameworkKey="dora"
+                  orgId={orgId}
+                  disabled={!canUpdate}
+                />
+                {/* NIS 2 */}
+                <ComplianceFramework
+                  title="NIS 2"
+                  description={t('portal.fwNis2Description')}
+                  isEnabled={nis2}
+                  status={nis2Status}
+                  onStatusChange={async (value) => {
+                    try {
+                      await updateFrameworkSettings({
+                        nis2Status: value as 'started' | 'in_progress' | 'compliant',
+                      });
+                      toast.success(t('portal.statusUpdated', { name: 'NIS 2' }));
+                    } catch (error) {
+                      console.error('[trust framework update] failed', error);
+                      toast.error(t('portal.statusUpdateFailed', { name: 'NIS 2' }), {
+                        description: error instanceof Error ? error.message : undefined,
+                      });
+                    }
+                  }}
+                  onToggle={async (checked) => {
+                    try {
+                      await updateFrameworkSettings({
+                        nis2: checked,
+                      });
+                      toast.success(t('portal.statusUpdated', { name: 'NIS 2' }));
+                    } catch (error) {
+                      console.error('[trust framework update] failed', error);
+                      toast.error(t('portal.statusUpdateFailed', { name: 'NIS 2' }), {
+                        description: error instanceof Error ? error.message : undefined,
+                      });
+                    }
+                  }}
+                  fileName={certificateFiles.nis2}
+                  onFileUpload={handleFileUpload}
+                  onFilePreview={handleFilePreview}
+                  frameworkKey="nis2"
+                  orgId={orgId}
+                  disabled={!canUpdate}
+                />
+                {/* HITRUST CSF */}
+                <ComplianceFramework
+                  title="HITRUST CSF"
+                  description={t('portal.fwHitrustDescription')}
+                  isEnabled={hitrust}
+                  status={hitrustStatus}
+                  onStatusChange={async (value) => {
+                    try {
+                      await updateFrameworkSettings({
+                        hitrustStatus: value as 'started' | 'in_progress' | 'compliant',
+                      });
+                      toast.success(t('portal.statusUpdated', { name: 'HITRUST CSF' }));
+                    } catch (error) {
+                      console.error('[trust framework update] failed', error);
+                      toast.error(t('portal.statusUpdateFailed', { name: 'HITRUST CSF' }), {
+                        description: error instanceof Error ? error.message : undefined,
+                      });
+                    }
+                  }}
+                  onToggle={async (checked) => {
+                    try {
+                      await updateFrameworkSettings({
+                        hitrust: checked,
+                      });
+                      toast.success(t('portal.statusUpdated', { name: 'HITRUST CSF' }));
+                    } catch (error) {
+                      console.error('[trust framework update] failed', error);
+                      toast.error(t('portal.statusUpdateFailed', { name: 'HITRUST CSF' }), {
+                        description: error instanceof Error ? error.message : undefined,
+                      });
+                    }
+                  }}
+                  fileName={certificateFiles.hitrust}
+                  onFileUpload={handleFileUpload}
+                  onFilePreview={handleFilePreview}
+                  frameworkKey="hitrust"
+                  orgId={orgId}
+                  disabled={!canUpdate}
+                />
+                {/* NIST CSF */}
+                <ComplianceFramework
+                  title="NIST CSF"
+                  description={t('portal.fwNistCsfDescription')}
+                  isEnabled={nistcsf}
+                  status={nistcsfStatus}
+                  onStatusChange={async (value) => {
+                    try {
+                      await updateFrameworkSettings({
+                        nistcsfStatus: value as 'started' | 'in_progress' | 'compliant',
+                      });
+                      toast.success(t('portal.statusUpdated', { name: 'NIST CSF' }));
+                    } catch (error) {
+                      console.error('[trust framework update] failed', error);
+                      toast.error(t('portal.statusUpdateFailed', { name: 'NIST CSF' }), {
+                        description: error instanceof Error ? error.message : undefined,
+                      });
+                    }
+                  }}
+                  onToggle={async (checked) => {
+                    try {
+                      await updateFrameworkSettings({
+                        nistcsf: checked,
+                      });
+                      toast.success(t('portal.statusUpdated', { name: 'NIST CSF' }));
+                    } catch (error) {
+                      console.error('[trust framework update] failed', error);
+                      toast.error(t('portal.statusUpdateFailed', { name: 'NIST CSF' }), {
+                        description: error instanceof Error ? error.message : undefined,
+                      });
+                    }
+                  }}
+                  fileName={certificateFiles.nistcsf}
+                  onFileUpload={handleFileUpload}
+                  onFilePreview={handleFilePreview}
+                  frameworkKey="nistcsf"
+                  orgId={orgId}
+                  disabled={!canUpdate}
+                />
+                {/* NIST 800-53 */}
+                <ComplianceFramework
+                  title="NIST 800-53"
+                  description={t('portal.fwNist80053Description')}
+                  isEnabled={nist80053}
+                  status={nist80053Status}
+                  onStatusChange={async (value) => {
+                    try {
+                      await updateFrameworkSettings({
+                        nist80053Status: value as 'started' | 'in_progress' | 'compliant',
+                      });
+                      toast.success(t('portal.statusUpdated', { name: 'NIST 800-53' }));
+                    } catch (error) {
+                      console.error('[trust framework update] failed', error);
+                      toast.error(t('portal.statusUpdateFailed', { name: 'NIST 800-53' }), {
+                        description: error instanceof Error ? error.message : undefined,
+                      });
+                    }
+                  }}
+                  onToggle={async (checked) => {
+                    try {
+                      await updateFrameworkSettings({
+                        nist80053: checked,
+                      });
+                      toast.success(t('portal.statusUpdated', { name: 'NIST 800-53' }));
+                    } catch (error) {
+                      console.error('[trust framework update] failed', error);
+                      toast.error(t('portal.statusUpdateFailed', { name: 'NIST 800-53' }), {
+                        description: error instanceof Error ? error.message : undefined,
+                      });
+                    }
+                  }}
+                  fileName={certificateFiles.nist80053}
+                  onFileUpload={handleFileUpload}
+                  onFilePreview={handleFilePreview}
+                  frameworkKey="nist80053"
                   orgId={orgId}
                   disabled={!canUpdate}
                 />

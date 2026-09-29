@@ -22,8 +22,11 @@ describe('isStaticTrustedOrigin', () => {
     expect(
       isStaticTrustedOrigin('https://anything.staging.gideondefender.com'),
     ).toBe(true);
-    expect(isStaticTrustedOrigin('https://anything.trust.inc')).toBe(true);
-    expect(isStaticTrustedOrigin('https://trust.inc')).toBe(true);
+  });
+
+  it('no longer trusts trust.inc or its subdomains', () => {
+    expect(isStaticTrustedOrigin('https://anything.trust.inc')).toBe(false);
+    expect(isStaticTrustedOrigin('https://trust.inc')).toBe(false);
   });
 
   it('does not extend the wildcard match to plain HTTP', () => {

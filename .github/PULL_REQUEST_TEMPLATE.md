@@ -3,7 +3,6 @@
 <!-- Please include a summary of the change and which issue is fixed. Please also include relevant motivation and context. List any dependencies that are required for this change. -->
 
 - Fixes #XXXX (GitHub issue number)
-- Fixes COMP-XXXX (Linear issue number - should be visible at the bottom of the GitHub issue description)
 
 ## Visual Demo (For contributors especially)
 
@@ -33,12 +32,3 @@ A visual demonstration is strongly recommended, for both the original and new ch
 - What are the minimal test data to have?
 - What is expected (happy path) to have (input and output)?
 - Any other important info that could help to test that PR
-
-## Checklist
-
-<!-- Remove bullet points below that don't apply to you -->
-
-- I haven't read the [contributing guide](https://github.com/gideon-security/opencomp/blob/main/CONTRIBUTING.md)
-- My code doesn't follow the style guidelines of this project
-- I haven't commented my code, particularly in hard-to-understand areas
-- I haven't checked if my changes generate no new warnings

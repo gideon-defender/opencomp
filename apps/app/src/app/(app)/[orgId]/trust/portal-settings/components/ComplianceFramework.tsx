@@ -24,10 +24,14 @@ import { CustomFrameworkBadge } from './CustomFrameworkBadge';
 import {
   CCPA,
   CCPAInProgress,
+  DORA,
+  DORAInProgress,
   GDPR,
   GDPRInProgress,
   HIPAA,
   HIPAAInProgress,
+  HITRUST,
+  HITRUSTInProgress,
   ISO27001,
   ISO27001InProgress,
   ISO42001,
@@ -36,6 +40,12 @@ import {
   ISO9001InProgress,
   NEN7510,
   NEN7510InProgress,
+  NIS2,
+  NIS2InProgress,
+  NIST80053,
+  NIST80053InProgress,
+  NISTCSF,
+  NISTCSFInProgress,
   PCIDSS,
   PCIDSSInProgress,
   PIPEDA,
@@ -99,6 +109,16 @@ function ComplianceFrameworkLogo({
     LogoComponent = enabled && isInProgress ? ISO9001InProgress : ISO9001;
   } else if (title === 'SOC 3') {
     LogoComponent = enabled && isInProgress ? SOC3InProgress : SOC3;
+  } else if (title === 'DORA') {
+    LogoComponent = enabled && isInProgress ? DORAInProgress : DORA;
+  } else if (title === 'NIS 2') {
+    LogoComponent = enabled && isInProgress ? NIS2InProgress : NIS2;
+  } else if (title === 'HITRUST CSF') {
+    LogoComponent = enabled && isInProgress ? HITRUSTInProgress : HITRUST;
+  } else if (title === 'NIST CSF') {
+    LogoComponent = enabled && isInProgress ? NISTCSFInProgress : NISTCSF;
+  } else if (title === 'NIST 800-53') {
+    LogoComponent = enabled && isInProgress ? NIST80053InProgress : NIST80053;
   } else {
     LogoComponent = null;
   }

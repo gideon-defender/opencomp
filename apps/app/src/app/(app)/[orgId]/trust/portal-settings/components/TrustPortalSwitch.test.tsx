@@ -167,10 +167,14 @@ vi.mock('@trycompai/design-system/icons', () => ({
 vi.mock('./logos', () => ({
   CCPA: () => <span />,
   CCPAInProgress: () => <span />,
+  DORA: () => <span />,
+  DORAInProgress: () => <span />,
   GDPR: () => <span />,
   GDPRInProgress: () => <span />,
   HIPAA: () => <span />,
   HIPAAInProgress: () => <span />,
+  HITRUST: () => <span />,
+  HITRUSTInProgress: () => <span />,
   ISO27001: () => <span />,
   ISO27001InProgress: () => <span />,
   ISO42001: () => <span />,
@@ -179,6 +183,12 @@ vi.mock('./logos', () => ({
   ISO9001InProgress: () => <span />,
   NEN7510: () => <span />,
   NEN7510InProgress: () => <span />,
+  NIS2: () => <span />,
+  NIS2InProgress: () => <span />,
+  NIST80053: () => <span />,
+  NIST80053InProgress: () => <span />,
+  NISTCSF: () => <span />,
+  NISTCSFInProgress: () => <span />,
   PCIDSS: () => <span />,
   PCIDSSInProgress: () => <span />,
   PIPEDA: () => <span />,
@@ -238,6 +248,16 @@ describe('TrustPortalSwitch permission gating', () => {
     pipedaStatus: 'started' as const,
     ccpa: false,
     ccpaStatus: 'started' as const,
+    dora: false,
+    doraStatus: 'started' as const,
+    nis2: false,
+    nis2Status: 'started' as const,
+    hitrust: false,
+    hitrustStatus: 'started' as const,
+    nistcsf: false,
+    nistcsfStatus: 'started' as const,
+    nist80053: false,
+    nist80053Status: 'started' as const,
     faqs: [],
     additionalDocuments: [],
     overview: {
@@ -268,6 +288,11 @@ describe('TrustPortalSwitch permission gating', () => {
     render(<TrustPortalSwitch {...defaultProps} />);
     expect(screen.getByText('portal.complianceTitle')).toBeInTheDocument();
     expect(screen.getByText('ISO 27001')).toBeInTheDocument();
+    expect(screen.getByText('DORA')).toBeInTheDocument();
+    expect(screen.getByText('NIS 2')).toBeInTheDocument();
+    expect(screen.getByText('HITRUST CSF')).toBeInTheDocument();
+    expect(screen.getByText('NIST CSF')).toBeInTheDocument();
+    expect(screen.getByText('NIST 800-53')).toBeInTheDocument();
   });
 
   it('disables framework switches when user lacks trust:update permission', () => {
