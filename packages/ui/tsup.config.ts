@@ -4,7 +4,7 @@ export default defineConfig({
   // tsup expands these globs itself via tinyglobby (picomatch/fdir). We avoid
   // importing the `glob` package here: loading it during config evaluation
   // pulls in glob→minimatch→brace-expansion (ESM), whose `balanced-match`
-  // resolution is fragile under bun's hoisting and breaks the build on CI.
+  // resolution is fragile under hoisted installs and breaks the build on CI.
   entry: [
     'src/index.ts',
     'src/components/**/*.{ts,tsx}',

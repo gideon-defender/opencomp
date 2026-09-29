@@ -103,6 +103,9 @@ services:
       APP_AWS_ORG_ASSETS_BUCKET: comp-local-org-assets
       EMAIL_SQS_QUEUE_URL: http://localstack:4566/000000000000/comp-emails
       PORTAL_URL: http://portal:3000
+      # Browser-facing base for emailed trust links — must resolve on the
+      # recipient's machine, never an in-network hostname like trust-center.
+      TRUST_APP_URL: http://localhost:3008
     depends_on:
       postgres:
         condition: service_healthy
@@ -265,6 +268,37 @@ services:
     depends_on:
       - api
       - redis
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'node -e "fetch(\"http://localhost:3000/\").then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    logging: *default-logging
+
+  trust-center:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: trust-center
+      args:
+        NEXT_PUBLIC_TRUST_API_URL: ${NEXT_PUBLIC_TRUST_API_URL:-http://localhost:3333}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3333}
+    ports:
+      - '3008:3000'
+    environment:
+      HOSTNAME: 0.0.0.0
+      BACKEND_API_URL: http://api:3333
+      # NOTE: trust-center reads NEXT_PUBLIC_TRUST_API_URL at build time
+      # (inlined into the browser bundle) — set it as a build arg above,
+      # not here. A runtime value cannot change the shipped bundle.
+    depends_on:
+      - api
     restart: unless-stopped
     healthcheck:
       test:

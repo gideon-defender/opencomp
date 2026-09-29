@@ -38,23 +38,11 @@ import {
   UploadTrustDocumentDto,
 } from './dto/trust-document.dto';
 import { isTrustPortalConfigured } from './is-trust-portal-configured';
-
-/**
- * High-resolution vendor logo overrides. Kept in sync with the frontend copy
- * in TrustPortalVendors.tsx and the scan-time copy in
- * trigger/vendor/vendor-risk-assessment-task.ts.
- */
-const HIGH_RES_LOGO_OVERRIDES: Record<string, string> = {
-  'github.com':
-    'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png',
-  'google.com':
-    'https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png',
-};
-
-function registrableDomain(domain: string): string {
-  const parts = domain.toLowerCase().split('.');
-  return parts.length > 2 ? parts.slice(-2).join('.') : domain.toLowerCase();
-}
+import { ensureFriendlyUrl } from './trust-portal-urls';
+import {
+  HIGH_RES_LOGO_OVERRIDES,
+  registrableDomain,
+} from '@gideon-defender/utils';
 
 interface VercelDomainVerification {
   type: string;
@@ -853,61 +841,13 @@ export class TrustPortalService {
     return { success: true };
   }
 
-  private slugifyOrganizationName(name: string): string {
-    return name
-      .trim()
-      .toLowerCase()
-      .replace(/&/g, 'and')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '')
-      .slice(0, 60);
-  }
-
   private async ensureFriendlyUrl(
     organizationId: string,
     organizationName: string,
   ): Promise<string> {
-    const current = await db.trust.findUnique({
-      where: { organizationId },
-      select: { friendlyUrl: true },
-    });
-
-    if (current?.friendlyUrl) return current.friendlyUrl;
-
-    const baseCandidate =
-      this.slugifyOrganizationName(organizationName) ||
-      `org-${organizationId.slice(-8)}`;
-
-    for (let i = 0; i < 50; i += 1) {
-      const candidate = i === 0 ? baseCandidate : `${baseCandidate}-${i + 1}`;
-
-      const taken = await db.trust.findUnique({
-        where: { friendlyUrl: candidate },
-        select: { organizationId: true },
-      });
-
-      if (taken && taken.organizationId !== organizationId) continue;
-
-      try {
-        await db.trust.upsert({
-          where: { organizationId },
-          update: { friendlyUrl: candidate },
-          create: { organizationId, friendlyUrl: candidate },
-        });
-        return candidate;
-      } catch (error: unknown) {
-        if (
-          error instanceof Prisma.PrismaClientKnownRequestError &&
-          error.code === 'P2002'
-        ) {
-          continue;
-        }
-        throw error;
-      }
-    }
-
-    return organizationId;
+    // Single writer lives in trust-portal-urls.ts — this stays only so
+    // existing call sites keep their (organizationId, name) shape.
+    return ensureFriendlyUrl(organizationId, { organizationName });
   }
 
   async addCustomDomain(organizationId: string, domain: string) {

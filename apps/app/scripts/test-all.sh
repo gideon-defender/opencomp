@@ -21,7 +21,7 @@ if [ ! -f "package.json" ]; then
 fi
 
 echo -e "${YELLOW}1. Running type check...${NC}"
-if bun run typecheck; then
+if pnpm run typecheck; then
     echo -e "${GREEN}✓ Type check passed${NC}"
 else
     echo -e "${RED}✗ Type check failed${NC}"
@@ -30,7 +30,7 @@ fi
 echo ""
 
 echo -e "${YELLOW}2. Running linter...${NC}"
-if bun run lint; then
+if pnpm run lint; then
     echo -e "${GREEN}✓ Linting passed${NC}"
 else
     echo -e "${RED}✗ Linting failed${NC}"
@@ -39,7 +39,7 @@ fi
 echo ""
 
 echo -e "${YELLOW}3. Running unit tests...${NC}"
-if bun run test --run; then
+if pnpm exec vitest run; then
     echo -e "${GREEN}✓ Unit tests passed${NC}"
 else
     echo -e "${RED}✗ Unit tests failed${NC}"
@@ -51,7 +51,7 @@ echo -e "${YELLOW}4. Running E2E tests (Chromium only for speed)...${NC}"
 echo "Starting dev server..."
 
 # Start dev server in background
-bun run dev &
+pnpm run dev &
 DEV_PID=$!
 
 # Wait for server to be ready
@@ -72,11 +72,11 @@ if ! curl -s http://localhost:3000 > /dev/null; then
 fi
 
 # Run E2E tests
-if bunx playwright test --project=chromium; then
+if pnpm exec playwright test --project=chromium; then
     echo -e "${GREEN}✓ E2E tests passed${NC}"
 else
     echo -e "${RED}✗ E2E tests failed${NC}"
-    echo "Run 'bun run test:e2e:ui' to debug"
+    echo "Run 'pnpm run test:e2e:ui' to debug"
     exit 1
 fi
 

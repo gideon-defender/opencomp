@@ -6,7 +6,7 @@
  * 2. Update manifest details below
  * 3. Implement checks in checks/
  * 4. Register in src/registry/index.ts
- * 5. Run `bun run verify` then `bun run build`
+ * 5. Run `pnpm run verify` then `pnpm run build`
  */
 
 import type { IntegrationManifest } from '../../types';

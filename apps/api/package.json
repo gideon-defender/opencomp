@@ -185,6 +185,7 @@
       "^@gideon-defender/email$": "<rootDir>/../../../packages/email/index.ts",
       "^@gideon-defender/integration-platform$": "<rootDir>/../../../packages/integration-platform/src/index.ts",
       "^@gideon-defender/kv/rate-limit$": "<rootDir>/../../../packages/kv/src/rate-limit.ts",
+      "^@gideon-defender/utils$": "<rootDir>/../../../packages/utils/src/index.ts",
       "^@gideon-defender/utils/(.*)$": "<rootDir>/../../../packages/utils/src/$1.ts"
     }
   },

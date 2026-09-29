@@ -7,6 +7,12 @@ import { ChevronLeft, ChevronRight } from '@trycompai/design-system/icons';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
+  HIGH_RES_LOGO_OVERRIDES,
+  registrableDomain,
+  toSafeExternalHref,
+  upgradeFaviconUrl,
+} from '@gideon-defender/utils';
+import {
   DORA,
   GDPR,
   HIPAA,
@@ -128,49 +134,6 @@ function getVendorLogoUrl(website: string | null): string | null {
 }
 
 /**
- * High-resolution logo overrides. Google's favicon service serves some
- * domains at tiny sizes no matter the `sz` param (github.com comes back
- * 32x32), which looks blurry once upscaled. These official assets replace
- * those cases. Keyed by registrable domain so subdomains match too.
- */
-const HIGH_RES_LOGO_OVERRIDES: Record<string, string> = {
-  'github.com': 'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png',
-  'google.com':
-    'https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png',
-};
-
-function registrableDomain(domain: string): string {
-  const parts = domain.toLowerCase().split('.');
-  return parts.length > 2 ? parts.slice(-2).join('.') : domain.toLowerCase();
-}
-
-/**
- * Upgrade an auto-generated Google favicon URL to a high-res asset when its
- * domain is a known-bad case. Applies to stored and computed URLs alike, so
- * vendors synced before the override existed get fixed at render time.
- * Manually uploaded logos (anything that is not a Google favicon URL) pass
- * through untouched.
- */
-function upgradeFaviconUrl(logoUrl: string | null): string | null {
-  if (!logoUrl) return null;
-  let domain: string | null = null;
-  try {
-    const parsed = new URL(logoUrl);
-    if (parsed.hostname === 'www.google.com' && parsed.pathname === '/s2/favicons') {
-      domain = parsed.searchParams.get('domain');
-    }
-  } catch {
-    return logoUrl;
-  }
-  if (!domain) return logoUrl;
-  return (
-    HIGH_RES_LOGO_OVERRIDES[domain.toLowerCase()] ??
-    HIGH_RES_LOGO_OVERRIDES[registrableDomain(domain)] ??
-    logoUrl
-  );
-}
-
-/**
  * Vendor logo component with fallback to initials
  * Clickable if website URL is provided
  */
@@ -221,11 +184,15 @@ function VendorLogo({
       </div>
     );
 
+  // Stored websites render as <a href> — only http(s) targets are safe.
+  // Anything else (javascript:, data:, unparsable) renders without a link.
+  const safeWebsite = toSafeExternalHref(website);
+
   // Make logo clickable if website exists
-  if (website) {
+  if (safeWebsite) {
     return (
       <a
-        href={website}
+        href={safeWebsite}
         target="_blank"
         rel="noopener noreferrer"
         className="transition-opacity hover:opacity-80"

@@ -1,7 +1,7 @@
 // Script-style Jest spec: generates packages/docs/openapi.json using the same
 // mocks as openapi-docs.spec.ts (no live DB or env vars needed).
 // Skipped by default to avoid side effects in CI.
-// Run manually with: cd apps/api && GEN_OPENAPI=1 bunx jest src/gen-openapi.spec.ts
+// Run manually with: cd apps/api && GEN_OPENAPI=1 pnpm exec jest src/gen-openapi.spec.ts
 
 // Mock better-auth ESM-only modules so Jest (CJS) can import AppModule's transitive AuthModule.
 jest.mock('./auth/auth.server', () => ({

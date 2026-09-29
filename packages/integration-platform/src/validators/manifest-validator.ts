@@ -1,9 +1,9 @@
-#!/usr/bin/env bun
+#!/usr/bin/env tsx
 /**
  * Manifest Validator CLI
  *
  * Validates all integration manifests in the registry.
- * Run with: bun run src/validators/manifest-validator.ts
+ * Run with: pnpm run verify (or: pnpm exec tsx src/validators/manifest-validator.ts)
  */
 
 import { registry } from '../registry';

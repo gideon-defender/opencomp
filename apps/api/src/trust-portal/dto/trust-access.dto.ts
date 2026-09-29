@@ -6,13 +6,16 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  Max,
+  MaxLength,
   Min,
 } from 'class-validator';
 
 export class CreateAccessRequestDto {
-  @ApiProperty()
+  @ApiProperty({ maxLength: 100 })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   name: string;
 
   @ApiProperty()
@@ -20,47 +23,55 @@ export class CreateAccessRequestDto {
   @IsNotEmpty()
   email: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ maxLength: 200 })
   @IsString()
   @IsOptional()
+  @MaxLength(200)
   company?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ maxLength: 200 })
   @IsString()
   @IsOptional()
+  @MaxLength(200)
   jobTitle?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ maxLength: 2000 })
   @IsString()
   @IsOptional()
+  @MaxLength(2000)
   purpose?: string;
 
-  @ApiPropertyOptional({ minimum: 1 })
+  // Capped at 365 to match the admin approve dialog (7–365 days).
+  @ApiPropertyOptional({ minimum: 1, maximum: 365 })
   @IsInt()
   @Min(1)
+  @Max(365)
   @IsOptional()
   requestedDurationDays?: number;
 }
 
 export class ApproveAccessRequestDto {
-  @ApiPropertyOptional({ minimum: 1 })
+  @ApiPropertyOptional({ minimum: 1, maximum: 365 })
   @IsInt()
   @Min(1)
+  @Max(365)
   @IsOptional()
   durationDays?: number;
 }
 
 export class DenyAccessRequestDto {
-  @ApiProperty()
+  @ApiProperty({ maxLength: 2000 })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(2000)
   reason: string;
 }
 
 export class RevokeGrantDto {
-  @ApiProperty()
+  @ApiProperty({ maxLength: 2000 })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(2000)
   reason: string;
 }
 
