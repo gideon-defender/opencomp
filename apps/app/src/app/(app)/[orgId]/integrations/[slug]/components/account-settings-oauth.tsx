@@ -80,8 +80,33 @@ export function AccountSettingsOAuthBody({
 
   useEffect(() => {
     if (!open) return;
-    void loadVariables();
-  }, [open, loadVariables]);
+    let cancelled = false;
+    (async () => {
+      try {
+        const result = await getConnectionVariables<VariablesResponse>(connectionId);
+        if (cancelled) return;
+        if (result.data?.variables) {
+          setVariables(result.data.variables);
+          const next: Record<string, string | number | boolean | string[]> = {};
+          for (const v of result.data.variables) {
+            if (v.currentValue !== undefined) {
+              next[v.id] = normalizeVariableValue(v, v.currentValue);
+            }
+          }
+          setVariableValues(next);
+        }
+        if (result.error) toast.error(t('oauthSettings.failedToLoad'));
+      } catch {
+        if (cancelled) return;
+        toast.error(t('oauthSettings.failedToLoad'));
+      } finally {
+        if (!cancelled) setLoadingVariables(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, connectionId, getConnectionVariables, t]);
 
   const fetchOptions = useCallback(
     async (variableId: string) => {

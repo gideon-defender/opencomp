@@ -122,7 +122,11 @@ export function CreateVendorForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
+      <form
+        onSubmit={(e) => {
+          void form.handleSubmit(onSubmit)(e);
+        }}
+      >
         {/* p-1 prevents focus ring (box-shadow) being clipped by overflow containers */}
         <div className="scrollbar-hide h-[calc(100vh-250px)] overflow-auto p-1">
           <div className="space-y-4">

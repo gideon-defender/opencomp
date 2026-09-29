@@ -11,6 +11,7 @@ import {
   Text,
 } from '@trycompai/design-system';
 import { headers } from 'next/headers';
+import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { PolicyAcceptButton } from './PolicyAcceptButton';
@@ -29,6 +30,8 @@ export default async function PolicyPage({
   params: Promise<{ policyId: string; orgId: string }>;
 }) {
   const { policyId, orgId } = await params;
+  const t = await getTranslations('policies');
+  const tPage = await getTranslations('policyPage');
 
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -76,7 +79,7 @@ export default async function PolicyPage({
       <Breadcrumb
         items={[
           {
-            label: 'Overview',
+            label: tPage('overviewBreadcrumb'),
             href: `/${orgId}`,
             props: { render: <Link href={`/${orgId}`} /> },
           },
@@ -96,7 +99,7 @@ export default async function PolicyPage({
         {isAccepted && (
           <div className="rounded-md border border-green-200 bg-green-50 px-4 py-4 sm:px-5 sm:py-4 dark:border-green-800 dark:bg-green-950/30">
             <Text size="sm" weight="medium">
-              You have accepted this policy
+              {t('acceptedBanner')}
             </Text>
           </div>
         )}
@@ -106,7 +109,7 @@ export default async function PolicyPage({
               <PolicyViewer policy={policy} />
               {policy.updatedAt && (
                 <Text variant="muted" size="sm">
-                  Last updated: {new Date(policy.updatedAt).toLocaleDateString()}
+                  {tPage('lastUpdated', { date: new Date(policy.updatedAt).toLocaleDateString() })}
                 </Text>
               )}
             </Stack>

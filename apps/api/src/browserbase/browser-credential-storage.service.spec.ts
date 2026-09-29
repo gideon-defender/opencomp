@@ -17,7 +17,6 @@ jest.mock('@db', () => ({
 }));
 jest.mock('./onepassword-client');
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const { db } = require('@db');
 const findFirst = db.browserAuthProfile.findFirst as jest.Mock;
 const update = db.browserAuthProfile.update as jest.Mock;

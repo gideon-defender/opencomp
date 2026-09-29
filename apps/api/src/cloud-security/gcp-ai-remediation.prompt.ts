@@ -142,7 +142,7 @@ For each step, provide:
 - Create alert policy: POST https://monitoring.googleapis.com/v3/projects/{project}/alertPolicies
 - List alert policies: GET https://monitoring.googleapis.com/v3/projects/{project}/alertPolicies
 - For "NOT_MONITORED" findings: first create a log-based metric via Cloud Logging API, then create an alert policy referencing it
-- Alert policy body example: { "displayName": "...", "conditions": [{ "displayName": "...", "conditionThreshold": { "filter": "metric.type=\"logging.googleapis.com/user/{metricName}\"", "comparison": "COMPARISON_GT", "thresholdValue": 0, "duration": "0s" } }], "combiner": "OR", "enabled": true, "notificationChannels": [] }
+- Alert policy body example: { "displayName": "...", "conditions": [{ "displayName": "...", "conditionThreshold": { "filter": "metric.type="logging.googleapis.com/user/{metricName}"", "comparison": "COMPARISON_GT", "thresholdValue": 0, "duration": "0s" } }], "combiner": "OR", "enabled": true, "notificationChannels": [] }
 
 ### Cloud DNS
 - Get managed zone: GET https://dns.googleapis.com/dns/v1/projects/{project}/managedZones/{zone}

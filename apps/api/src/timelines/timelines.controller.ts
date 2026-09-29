@@ -51,7 +51,7 @@ export class TimelinesController {
     // alreadyReady=true on retries / double-clicks so the CX channel
     // doesn't get pinged repeatedly for the same phase.
     if (!result.alreadyReady) {
-      notifyReadyForReview({
+      void notifyReadyForReview({
         orgId: organizationId,
         orgName: result.organization.name,
         frameworkName: result.framework?.name ?? 'Unknown framework',

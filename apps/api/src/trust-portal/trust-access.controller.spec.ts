@@ -280,7 +280,7 @@ describe('TrustAccessController', () => {
       const req = mockRequest();
       mockService.signNda.mockResolvedValue({ success: true });
 
-      const result = await controller.signNda('token_abc', dto as any, req);
+      const result = await controller.signNda('token_abc', dto, req);
 
       expect(result).toEqual({ success: true });
       expect(service.signNda).toHaveBeenCalledWith(
@@ -332,7 +332,7 @@ describe('TrustAccessController', () => {
 
       const result = await controller.reclaimAccess(
         'my-portal',
-        dto as any,
+        dto,
         'security-questionnaire',
       );
 
@@ -348,7 +348,7 @@ describe('TrustAccessController', () => {
       const dto = { email: 'user@example.com' };
       mockService.reclaimAccess.mockResolvedValue({ success: true });
 
-      await controller.reclaimAccess('my-portal', dto as any);
+      await controller.reclaimAccess('my-portal', dto);
 
       expect(service.reclaimAccess).toHaveBeenCalledWith(
         'my-portal',

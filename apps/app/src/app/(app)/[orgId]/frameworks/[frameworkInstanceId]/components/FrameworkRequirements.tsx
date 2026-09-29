@@ -24,7 +24,7 @@ import {
 import { Search } from '@trycompai/design-system/icons';
 import { useTranslations } from 'next-intl';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ExpandableDescription } from './ExpandableDescription';
 import { compareRequirementsByOrder } from './framework-controls-shared';
 import {
@@ -127,9 +127,7 @@ export function FrameworkRequirements({
   );
 
   // Snap back to page 1 when filtering or page-size changes shrink the result set.
-  useEffect(() => {
-    if (page > pageCount) setPage(1);
-  }, [page, pageCount]);
+  if (page > pageCount) setPage(1);
 
   const handleRowClick = (requirementId: string) => {
     router.push(`/${orgId}/frameworks/${frameworkInstanceId}/requirements/${requirementId}`);

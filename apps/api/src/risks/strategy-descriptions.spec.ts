@@ -109,7 +109,7 @@ describe('resolveStrategyDescriptionUpdate', () => {
 
   it('handles malformed strategyDescriptions gracefully', () => {
     const result = resolveStrategyDescriptionUpdate(
-      { ...baseExisting, strategyDescriptions: 'not an object' as unknown },
+      { ...baseExisting, strategyDescriptions: 'not an object' },
       { treatmentStrategy: RiskTreatmentType.accept },
     );
     // Falls back to empty map; saves current Mitigate text

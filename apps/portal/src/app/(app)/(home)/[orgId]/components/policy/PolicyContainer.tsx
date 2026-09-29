@@ -3,6 +3,7 @@
 import type { Member, Policy, PolicyVersion } from '@db';
 import { Button, Text } from '@trycompai/design-system';
 import { ArrowLeft } from '@trycompai/design-system/icons';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { PolicyCarousel } from './PolicyCarousel';
 import { PolicyGrid } from './PolicyGrid';
@@ -18,6 +19,7 @@ interface PolicyContainerProps {
 
 export function PolicyContainer({ policies, member }: PolicyContainerProps) {
   const [selectedPolicyIndex, setSelectedPolicyIndex] = useState<number | null>(null);
+  const t = useTranslations('policies');
 
   const handlePolicyClick = (index: number) => {
     setSelectedPolicyIndex(index);
@@ -36,10 +38,10 @@ export function PolicyContainer({ policies, member }: PolicyContainerProps) {
       <div className="space-y-4">
         <div className="flex items-center gap-4">
           <Button variant="outline" iconLeft={<ArrowLeft size={16} />} onClick={handleBackToGrid}>
-            Back to Policies
+            {t('backToPolicies')}
           </Button>
           <Text variant="muted" size="sm">
-            Policy {selectedPolicyIndex + 1} of {policies.length}
+            {t('policyCount', { current: selectedPolicyIndex + 1, total: policies.length })}
           </Text>
         </div>
         <PolicyCarousel

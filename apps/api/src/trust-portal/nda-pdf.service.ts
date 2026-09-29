@@ -143,7 +143,6 @@ By signing below, the Receiving Party agrees to be bound by the terms of this Ag
     name: string,
     email: string,
     agreementId: string,
-    customWatermarkText?: string,
   ) {
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -280,10 +279,9 @@ By signing below, the Receiving Party agrees to be bound by the terms of this Ag
       name: string;
       email: string;
       docId: string;
-      watermarkText?: string;
     },
   ): Promise<Buffer> {
-    const { name, email, docId, watermarkText } = params;
+    const { name, email, docId } = params;
 
     let pdfDoc: PDFDocument;
     try {
@@ -308,7 +306,7 @@ By signing below, the Receiving Party agrees to be bound by the terms of this Ag
       throw error;
     }
 
-    await this.addWatermark(pdfDoc, name, email, docId, watermarkText);
+    await this.addWatermark(pdfDoc, name, email, docId);
     const pdfBytes = await pdfDoc.save();
     return Buffer.from(pdfBytes);
   }

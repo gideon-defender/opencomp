@@ -173,7 +173,7 @@ describe('ConnectionsController', () => {
   });
 
   describe('getProvider', () => {
-    it('should return provider details', async () => {
+    it('should return provider details', () => {
       const manifest = {
         id: 'github',
         name: 'GitHub',
@@ -190,16 +190,16 @@ describe('ConnectionsController', () => {
       };
       mockedGetManifest.mockReturnValue(manifest as never);
 
-      const result = await controller.getProvider('github');
+      const result = controller.getProvider('github');
 
       expect(result.id).toBe('github');
       expect(result.name).toBe('GitHub');
     });
 
-    it('should throw NOT_FOUND when provider does not exist', async () => {
-      mockedGetManifest.mockReturnValue(undefined as never);
+    it('should throw NOT_FOUND when provider does not exist', () => {
+      mockedGetManifest.mockReturnValue(undefined);
 
-      await expect(controller.getProvider('nonexistent')).rejects.toThrow(
+      expect(() => controller.getProvider('nonexistent')).toThrow(
         HttpException,
       );
     });
@@ -255,7 +255,7 @@ describe('ConnectionsController', () => {
         updatedAt: new Date(),
       };
       mockConnectionService.getConnectionForOrg.mockResolvedValue(connection);
-      mockedGetManifest.mockReturnValue(undefined as never);
+      mockedGetManifest.mockReturnValue(undefined);
 
       const result = await controller.getConnection('conn_1', 'org_1');
 
@@ -313,7 +313,7 @@ describe('ConnectionsController', () => {
     });
 
     it('should throw NOT_FOUND when provider does not exist', async () => {
-      mockedGetManifest.mockReturnValue(undefined as never);
+      mockedGetManifest.mockReturnValue(undefined);
 
       await expect(
         controller.createConnection('org_1', {

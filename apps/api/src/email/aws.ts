@@ -34,10 +34,10 @@ let sesClientInstance: SESClient | null = null;
 
 if (hasCredentials) {
   const clientConfig = {
-    region: EMAIL_AWS_REGION as string,
+    region: EMAIL_AWS_REGION,
     credentials: {
-      accessKeyId: EMAIL_AWS_ACCESS_KEY_ID as string,
-      secretAccessKey: EMAIL_AWS_SECRET_ACCESS_KEY as string,
+      accessKeyId: EMAIL_AWS_ACCESS_KEY_ID,
+      secretAccessKey: EMAIL_AWS_SECRET_ACCESS_KEY,
     },
     endpoint: EMAIL_AWS_ENDPOINT || undefined,
   };

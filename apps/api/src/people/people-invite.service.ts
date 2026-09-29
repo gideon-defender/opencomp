@@ -1,6 +1,7 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { db } from '@db';
 import { triggerEmail } from '../email/trigger-email';
+import { resolveEmailLocale, type EmailLocale } from '../email/locale';
 import { InviteEmail } from '../email/templates/invite-member';
 import { InvitePortalEmail } from '@gideon-defender/email';
 import {
@@ -34,6 +35,7 @@ export class PeopleInviteService {
     callerRole: string;
     isApiKey?: boolean;
     apiKeyScopes?: string[];
+    locale?: EmailLocale;
   }): Promise<InviteResult[]> {
     const {
       organizationId,
@@ -476,6 +478,7 @@ export class PeopleInviteService {
     sendAppEmail?: boolean;
     portalLink: string;
     appLink: string;
+    locale?: EmailLocale;
   }): Promise<void> {
     const {
       email,
@@ -485,12 +488,17 @@ export class PeopleInviteService {
       portalLink,
       appLink,
     } = params;
+    const emailLocale = resolveEmailLocale(params.locale);
 
     if (sendAppEmail) {
       await triggerEmail({
         to: email,
-        subject: `You've been invited to join ${organizationName} on OpenComp`,
+        subject:
+          emailLocale === 'es'
+            ? `Te han invitado a unirte a ${organizationName} en OpenComp`
+            : `You've been invited to join ${organizationName} on OpenComp`,
         react: InviteEmail({
+          locale: emailLocale,
           organizationName,
           inviteLink: appLink,
           portalLink: sendPortalEmail ? portalLink : undefined,
@@ -509,8 +517,12 @@ export class PeopleInviteService {
     } else {
       await triggerEmail({
         to: email,
-        subject: `You've been invited to join ${organizationName} on OpenComp`,
+        subject:
+          emailLocale === 'es'
+            ? `Te han invitado a unirte a ${organizationName} en OpenComp`
+            : `You've been invited to join ${organizationName} on OpenComp`,
         react: InviteEmail({
+          locale: emailLocale,
           organizationName,
           inviteLink: appLink,
         }),

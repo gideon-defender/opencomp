@@ -31,6 +31,7 @@ import {
 import { Button, Text } from '@trycompai/design-system';
 import { ArrowDown, Meter, TrashCan, UpToTop, WarningAlt } from '@trycompai/design-system/icons';
 import { format } from 'date-fns';
+import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { PRIORITY_OPTIONS, STATUS_OPTIONS } from './task-item-utils';
@@ -90,6 +91,7 @@ export function TaskItemItem({
   onSelect,
   onStatusOrPriorityChange,
 }: TaskItemItemProps) {
+  const t = useTranslations('toasts');
   const { hasPermission } = usePermissions();
   const canUpdate = hasPermission('task', 'update');
   const canDelete = hasPermission('task', 'delete');
@@ -119,10 +121,10 @@ export function TaskItemItem({
     if (newStatus === taskItem.status) return;
     try {
       await optimisticUpdate(taskItem.id, { status: newStatus });
-      toast.success('Status updated');
+      toast.success(t('statusUpdated'));
       onStatusOrPriorityChange?.();
     } catch {
-      toast.error('Failed to update status');
+      toast.error(t('statusUpdateFailed'));
     }
   };
 
@@ -130,20 +132,20 @@ export function TaskItemItem({
     if (newPriority === taskItem.priority) return;
     try {
       await optimisticUpdate(taskItem.id, { priority: newPriority });
-      toast.success('Priority updated');
+      toast.success(t('priorityUpdated'));
       onStatusOrPriorityChange?.();
     } catch {
-      toast.error('Failed to update priority');
+      toast.error(t('priorityUpdateFailed'));
     }
   };
 
   const handleAssigneeChange = async (assigneeId: string | null) => {
     try {
       await optimisticUpdate(taskItem.id, { assigneeId });
-      toast.success('Assignee updated');
+      toast.success(t('assigneeUpdated'));
       onStatusOrPriorityChange?.();
     } catch {
-      toast.error('Failed to update assignee');
+      toast.error(t('assigneeUpdateFailed'));
     }
   };
 
@@ -151,11 +153,11 @@ export function TaskItemItem({
     setIsDeleting(true);
     try {
       await optimisticDelete(taskItem.id);
-      toast.success('Task deleted');
+      toast.success(t('taskDeleted'));
       setIsDeleteOpen(false);
       onStatusOrPriorityChange?.();
     } catch {
-      toast.error('Failed to delete task');
+      toast.error(t('taskDeleteFailed'));
     } finally {
       setIsDeleting(false);
     }

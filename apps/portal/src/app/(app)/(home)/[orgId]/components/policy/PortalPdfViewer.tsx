@@ -12,6 +12,7 @@ import {
 } from '@trycompai/design-system';
 import { Document } from '@trycompai/design-system/icons';
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 
 interface PortalPdfViewerProps {
@@ -23,10 +24,12 @@ interface PortalPdfViewerProps {
 export function PortalPdfViewer({ policyId, s3Key, versionId }: PortalPdfViewerProps) {
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const t = useTranslations('policies');
 
   useEffect(() => {
     if (!s3Key) {
-      setIsLoading(false);
+      // Deferred out of the effect body; flushes before paint, same as before.
+      queueMicrotask(() => setIsLoading(false));
       return;
     }
 
@@ -42,7 +45,7 @@ export function PortalPdfViewer({ policyId, s3Key, versionId }: PortalPdfViewerP
           credentials: 'include',
         });
         if (!res.ok) {
-          throw new Error('Failed to fetch PDF URL');
+          throw new Error(t('loadDocumentFailed'));
         }
         const data = await res.json();
         if (!cancelled) {
@@ -50,12 +53,12 @@ export function PortalPdfViewer({ policyId, s3Key, versionId }: PortalPdfViewerP
             setSignedUrl(data.url);
           } else {
             setSignedUrl(null);
-            toast.error('Could not load the policy document.');
+            toast.error(t('loadDocumentFailed'));
           }
         }
       } catch {
         if (!cancelled) {
-          toast.error('An error occurred while loading the policy.');
+          toast.error(t('loadPolicyError'));
           setSignedUrl(null);
         }
       } finally {
@@ -75,7 +78,7 @@ export function PortalPdfViewer({ policyId, s3Key, versionId }: PortalPdfViewerP
   if (isLoading) {
     return (
       <div className="flex min-h-[320px] w-full items-center justify-center rounded-md border border-border md:min-h-[420px]">
-        <Text variant="muted">Loading policy document...</Text>
+        <Text variant="muted">{t('loadingDocument')}</Text>
       </div>
     );
   }
@@ -86,7 +89,7 @@ export function PortalPdfViewer({ policyId, s3Key, versionId }: PortalPdfViewerP
         key={signedUrl}
         src={signedUrl}
         className="h-[60vh] min-h-[320px] w-full rounded-md border border-border md:min-h-[420px]"
-        title="Policy Document"
+        title={t('pdfTitle')}
       />
     );
   }
@@ -100,9 +103,9 @@ export function PortalPdfViewer({ policyId, s3Key, versionId }: PortalPdfViewerP
             <Document size={24} />
           </EmptyMedia>
           <EmptyHeader>
-            <EmptyTitle>PDF Document Not Available</EmptyTitle>
+            <EmptyTitle>{t('pdfUnavailableTitle')}</EmptyTitle>
             <EmptyDescription>
-              This policy is stored as a PDF, but it could not be loaded.
+              {t('pdfUnavailableBody')}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>

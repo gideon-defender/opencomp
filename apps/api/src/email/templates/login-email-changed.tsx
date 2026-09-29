@@ -11,20 +11,50 @@ import {
 } from '@react-email/components';
 import { Footer } from '../components/footer';
 import { Logo } from '../components/logo';
+import type { EmailLocale } from '../locale';
 
 interface Props {
   organizationName: string;
   oldEmail: string;
   newEmail: string;
+  locale?: EmailLocale;
 }
+
+const copy = {
+  en: {
+    preview: "Your OpenComp login email was changed",
+    heading: "Your login email was changed",
+    bodyPrefix: "An administrator of",
+    bodyChangedFrom: "changed your OpenComp login email from",
+    bodyTo: "to",
+    fromNowOn: "From now on, use",
+    toSignIn: "to sign in",
+    unexpectedNote:
+      "If you did not expect this change, contact your organization administrator or support@gideondefender.com.",
+  },
+  es: {
+    preview: "Tu correo de inicio de sesión de OpenComp ha cambiado",
+    heading: "Tu correo de inicio de sesión ha cambiado",
+    bodyPrefix: "Un administrador de",
+    bodyChangedFrom: "cambió tu correo de inicio de sesión de OpenComp de",
+    bodyTo: "a",
+    fromNowOn: "A partir de ahora, usa",
+    toSignIn: "para iniciar sesión",
+    unexpectedNote:
+      "Si no esperabas este cambio, contacta al administrador de tu organización o a support@gideondefender.com.",
+  },
+};
 
 export const LoginEmailChangedEmail = ({
   organizationName,
   oldEmail,
   newEmail,
+  locale = 'en',
 }: Props) => {
+  const t = copy[locale];
+
   return (
-    <Html>
+    <Html lang={locale}>
       <Tailwind>
         <head>
           <Font
@@ -40,7 +70,7 @@ export const LoginEmailChangedEmail = ({
             fontStyle="normal"
           />
         </head>
-        <Preview>Your OpenComp login email was changed</Preview>
+        <Preview>{t.preview}</Preview>
 
         <Body className="mx-auto my-auto bg-[#fff] font-sans">
           <Container
@@ -49,32 +79,26 @@ export const LoginEmailChangedEmail = ({
           >
             <Logo />
             <Heading className="mx-0 my-[30px] p-0 text-center text-[24px] font-normal text-[#121212]">
-              Your login email was changed
+              {t.heading}
             </Heading>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              An administrator of{' '}
-              <span className="font-medium">{organizationName}</span> changed
-              your OpenComp login email from{' '}
-              <span className="font-medium">{oldEmail}</span> to{' '}
-              <span className="font-medium">{newEmail}</span>.
+              {t.bodyPrefix} <span className="font-medium">{organizationName}</span> {t.bodyChangedFrom} <span className="font-medium">{oldEmail}</span> {t.bodyTo} <span className="font-medium">{newEmail}</span>.
             </Text>
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              From now on, use <span className="font-medium">{newEmail}</span>{' '}
-              to sign in.
+              {t.fromNowOn} <span className="font-medium">{newEmail}</span> {t.toSignIn}.
             </Text>
 
             <br />
             <Section>
               <Text className="text-[12px] leading-[24px] text-[#666666]">
-                If you did not expect this change, contact your organization
-                administrator or support@gideondefender.com.
+                {t.unexpectedNote}
               </Text>
             </Section>
 
             <br />
 
-            <Footer />
+            <Footer locale={locale} />
           </Container>
         </Body>
       </Tailwind>

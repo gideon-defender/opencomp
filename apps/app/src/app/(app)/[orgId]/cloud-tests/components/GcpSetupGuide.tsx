@@ -63,14 +63,6 @@ export function GcpSetupGuide({
 
   const ranRef = useRef(false);
 
-  // Auto-run setup on first mount (only if projects are selected)
-  useEffect(() => {
-    if (ranRef.current || !hasSelectedProjects) return;
-    ranRef.current = true;
-    handleAutoSetup();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasSelectedProjects]);
-
   const hasBlockingFailuresForSteps = (steps: SetupStep[]) =>
     steps.some((step) => !step.success && step.requiredForScan !== false);
 
@@ -115,6 +107,14 @@ export function GcpSetupGuide({
       setIsSettingUp(false);
     }
   };
+
+  // Auto-run setup on first mount (only if projects are selected)
+  useEffect(() => {
+    if (ranRef.current || !hasSelectedProjects) return;
+    ranRef.current = true;
+    handleAutoSetup();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasSelectedProjects]);
 
   const handleResolveStep = async (step: SetupStep) => {
     if (!step.resolveAction) return;

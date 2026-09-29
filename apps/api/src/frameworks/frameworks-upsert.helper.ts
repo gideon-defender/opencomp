@@ -20,7 +20,7 @@ function sanitizeJsonContent(
     'set' in arr[0] &&
     Array.isArray(arr[0].set)
   ) {
-    arr = arr[0].set as Prisma.JsonValue[];
+    arr = arr[0].set;
   }
 
   // JsonValue and InputJsonValue are runtime-identical; only difference
@@ -69,7 +69,6 @@ export async function upsertOrgFrameworkStructure({
     taskTemplates,
     groupedRelations,
     latestVersionByFrameworkId,
-    requirementToFrameworkId,
   } = sources;
 
   const controlTemplateIds = controlTemplates.map((c) => c.id);

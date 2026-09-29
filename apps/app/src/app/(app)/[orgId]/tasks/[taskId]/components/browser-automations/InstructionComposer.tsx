@@ -179,15 +179,31 @@ export function InstructionComposer({
   });
 
   useEffect(() => {
-    const streamed = runState?.metadata?.testSteps as SignInStep[] | undefined;
-    if (streamed) setTimeline(streamed);
+    let cancelled = false;
+    (async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      const streamed = runState?.metadata?.testSteps as SignInStep[] | undefined;
+      if (streamed) setTimeline(streamed);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [runState]);
 
   // Follow the agent across tabs: when the run reports a new active-tab live
   // view, point the iframe at it (AWS etc. open sign-in/console in new tabs).
   useEffect(() => {
-    const streamed = runState?.metadata?.testLiveViewUrl as string | undefined;
-    if (streamed) setLiveViewUrl(streamed);
+    let cancelled = false;
+    (async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      const streamed = runState?.metadata?.testLiveViewUrl as string | undefined;
+      if (streamed) setLiveViewUrl(streamed);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [runState]);
 
   useEffect(() => {
@@ -344,6 +360,7 @@ export function InstructionComposer({
     setTestRun({ runId: handle.runId, accessToken: handle.publicAccessToken });
   }, [activeStep, activeConnection.url, sessionId, closeTestSession, startTest, taskId, t]);
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization -- `initialValues` is a fresh object per parent render; this callback only reads its stable id.
   const handleSave = useCallback(async () => {
     if (!canSave) {
       toast.error(t('instructionComposer.allStepsNeedInstructionToast'));

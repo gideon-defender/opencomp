@@ -221,7 +221,7 @@ export class OffboardingExportService {
       }
 
       if (batch.length < BATCH_SIZE) break;
-      cursor = batch[batch.length - 1]!.id;
+      cursor = batch[batch.length - 1].id;
     }
 
     await archive.finalize();

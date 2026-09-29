@@ -23,6 +23,7 @@ import {
   Stack,
   Textarea,
 } from '@trycompai/design-system';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -34,6 +35,7 @@ interface UpdatePolicyFormProps {
 }
 
 export function UpdatePolicyForm({ policy, onSuccess }: UpdatePolicyFormProps) {
+  const t = useTranslations('toasts');
   const { hasPermission } = usePermissions();
   const { updatePolicy } = usePolicyMutations();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -55,10 +57,10 @@ export function UpdatePolicyForm({ policy, onSuccess }: UpdatePolicyFormProps) {
         name: data.title,
         description: data.description,
       });
-      toast.success('Policy updated successfully');
+      toast.success(t('policyUpdated'));
       onSuccess?.();
     } catch {
-      toast.error('Failed to update policy');
+      toast.error(t('policyUpdateFailed'));
     } finally {
       setIsSubmitting(false);
     }

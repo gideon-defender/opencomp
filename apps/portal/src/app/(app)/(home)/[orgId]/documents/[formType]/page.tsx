@@ -5,6 +5,7 @@ import { Breadcrumb, PageLayout } from '@trycompai/design-system';
 import { isRedirectError } from 'next/dist/client/components/redirect-error';
 import { headers as getHeaders } from 'next/headers';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
 import { evidenceFormDefinitions, evidenceFormTypeSchema } from '../forms';
 import { PortalFormClient } from './PortalFormClient';
@@ -53,6 +54,8 @@ export default async function PortalCompanyFormPage({
   async function submitAction(formData: FormData) {
     'use server';
 
+    const tForms = await getTranslations('forms');
+
     const reqHeaders = await getHeaders();
     const session = await auth.api.getSession({ headers: reqHeaders });
 
@@ -63,7 +66,7 @@ export default async function PortalCompanyFormPage({
     const apiUrl = env.NEXT_PUBLIC_API_URL || 'http://localhost:3333';
     const cookie = reqHeaders.get('cookie') ?? '';
     if (!cookie) {
-      redirect(`${basePath}?error=${encodeURIComponent('Failed to authenticate with API')}`);
+      redirect(`${basePath}?error=${encodeURIComponent(tForms('authFailed'))}`);
     }
 
     const apiHeaders = {
@@ -81,12 +84,12 @@ export default async function PortalCompanyFormPage({
           const raw = formData.get(field.key);
           if (!(raw instanceof File) || raw.size === 0) {
             if (field.required) {
-              throw new Error(`${field.label} is required`);
+              throw new Error(tForms('fieldRequired', { label: field.label }));
             }
             continue;
           }
           if (raw.size > MAX_FILE_SIZE_BYTES) {
-            throw new Error(`File exceeds the ${MAX_FILE_SIZE_BYTES / (1024 * 1024)}MB limit`);
+            throw new Error(tForms('fileTooLarge', { size: MAX_FILE_SIZE_BYTES / (1024 * 1024) }));
           }
 
           // Upload file via API
@@ -106,7 +109,7 @@ export default async function PortalCompanyFormPage({
 
           if (!uploadRes.ok) {
             const errorText = await uploadRes.text();
-            throw new Error(`File upload failed: ${errorText}`);
+            throw new Error(tForms('uploadFailed', { detail: errorText }));
           }
 
           const uploadData = await uploadRes.json();
@@ -116,7 +119,7 @@ export default async function PortalCompanyFormPage({
 
         const value = String(formData.get(field.key) ?? '').trim();
         if (field.required && value.length === 0) {
-          throw new Error(`${field.label} is required`);
+          throw new Error(tForms('fieldRequired', { label: field.label }));
         }
         if (value.length > 0) {
           payload[field.key] = value;
@@ -132,7 +135,7 @@ export default async function PortalCompanyFormPage({
 
       if (!submitRes.ok) {
         const errorText = await submitRes.text();
-        throw new Error(`Submission failed: ${errorText}`);
+        throw new Error(tForms('submissionFailed', { detail: errorText }));
       }
 
       redirect(`${basePath}/submissions?success=1`);
@@ -141,7 +144,7 @@ export default async function PortalCompanyFormPage({
       if (isRedirectError(error)) {
         throw error;
       }
-      const errorMessage = error instanceof Error ? error.message : 'Failed to submit form';
+      const errorMessage = error instanceof Error ? error.message : tForms('submitFailedGeneric');
       redirect(`${basePath}?error=${encodeURIComponent(errorMessage)}`);
     }
   }

@@ -3,6 +3,7 @@ import { isOrgParticipant } from '../utils/org-participation-rule';
 import { Injectable, Logger } from '@nestjs/common';
 import { isUserUnsubscribed } from '@gideon-defender/email';
 import { triggerEmail } from '../email/trigger-email';
+import { resolveEmailLocale, type EmailLocale } from '../email/locale';
 import { TaskItemAssignedEmail } from '../email/templates/task-item-assigned';
 import { NovuService } from '../notifications/novu.service';
 
@@ -41,7 +42,9 @@ export class TaskItemAssignmentNotifierService {
     taskTitle: string;
     assigneeMemberId: string;
     assignedByUserId: string;
+    locale?: EmailLocale;
   }): Promise<void> {
+    const emailLocale = resolveEmailLocale(params.locale);
     const {
       organizationId,
       taskItemId,
@@ -150,8 +153,12 @@ export class TaskItemAssignmentNotifierService {
       try {
         const { id } = await triggerEmail({
           to: assigneeUser.email,
-          subject: `You were assigned to a task: ${taskTitle}`,
+          subject:
+            emailLocale === 'es'
+              ? `Se te asignó una tarea: ${taskTitle}`
+              : `You were assigned to a task: ${taskTitle}`,
           react: TaskItemAssignedEmail({
+            locale: emailLocale,
             toName: assigneeName,
             toEmail: assigneeUser.email,
             taskTitle,

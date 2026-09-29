@@ -38,7 +38,7 @@ function makeReview(
     inputs: [],
     actions: [],
     ...overrides,
-  } as ReviewWithExportIncludes;
+  };
 }
 
 function makeAction(
@@ -57,7 +57,7 @@ function makeAction(
     createdAt: new Date('2026-05-01T09:30:00.000Z'),
     updatedAt: new Date('2026-05-01T09:30:00.000Z'),
     ...overrides,
-  } as ReviewWithExportIncludes['actions'][number];
+  };
 }
 
 describe('mapReviews', () => {

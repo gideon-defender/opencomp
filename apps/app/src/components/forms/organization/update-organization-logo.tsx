@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from '@gideon-defender/ui/card';
 import { ImagePlus, Loader2, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -21,6 +22,7 @@ interface UpdateOrganizationLogoProps {
 }
 
 export function UpdateOrganizationLogo({ currentLogoUrl }: UpdateOrganizationLogoProps) {
+  const t = useTranslations('toasts');
   const { uploadLogo, removeLogo } = useOrganizationMutations();
   const { hasPermission } = usePermissions();
   const canUpdate = hasPermission('organization', 'update');
@@ -35,13 +37,13 @@ export function UpdateOrganizationLogo({ currentLogoUrl }: UpdateOrganizationLog
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file');
+      toast.error(t('selectImageFile'));
       return;
     }
 
     // Validate file size (2MB)
     if (file.size > 2 * 1024 * 1024) {
-      toast.error('Logo must be less than 2MB');
+      toast.error(t('logoTooLarge'));
       return;
     }
 
@@ -59,9 +61,9 @@ export function UpdateOrganizationLogo({ currentLogoUrl }: UpdateOrganizationLog
         if (result?.logoUrl) {
           setPreviewUrl(result.logoUrl);
         }
-        toast.success('Logo updated');
+        toast.success(t('logoUpdated'));
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : 'Failed to upload logo');
+        toast.error(error instanceof Error ? error.message : t('logoUploadFailed'));
       } finally {
         setIsUploading(false);
       }
@@ -79,9 +81,9 @@ export function UpdateOrganizationLogo({ currentLogoUrl }: UpdateOrganizationLog
     try {
       await removeLogo();
       setPreviewUrl(null);
-      toast.success('Logo removed');
+      toast.success(t('logoRemoved'));
     } catch {
-      toast.error('Failed to remove logo');
+      toast.error(t('logoRemoveFailed'));
     } finally {
       setIsRemoving(false);
     }

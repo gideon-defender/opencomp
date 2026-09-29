@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@gideon-defender/ui/dialog';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import { CarouselControls } from '../video/CarouselControls';
 
 interface PolicyImagePreviewModalProps {
@@ -18,12 +19,17 @@ export function PolicyImagePreviewModal({
   onOpenChange,
 }: PolicyImagePreviewModalProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const t = useTranslations('modals');
 
-  useEffect(() => {
-    if (open) {
-      setCurrentIndex(0);
-    }
-  }, [open, images.length]);
+  // Reset to the first image when the modal opens or the list changes.
+  // Replaces the equivalent effect; the guard mirrors `[open, images.length]`.
+  const [prevOpen, setPrevOpen] = useState(open);
+  const [prevLength, setPrevLength] = useState(images.length);
+  if (open && (prevOpen !== open || prevLength !== images.length)) {
+    setPrevOpen(open);
+    setPrevLength(images.length);
+    setCurrentIndex(0);
+  }
 
   const hasImages = images.length > 0;
 
@@ -39,10 +45,10 @@ export function PolicyImagePreviewModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Preview</DialogTitle>
+          <DialogTitle>{t('previewTitle')}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          {!hasImages && <p className="text-sm text-muted-foreground">No images to display.</p>}
+          {!hasImages && <p className="text-sm text-muted-foreground">{t('noImages')}</p>}
 
           {hasImages && currentIndex >= 0 && currentIndex < images.length && (
             <>

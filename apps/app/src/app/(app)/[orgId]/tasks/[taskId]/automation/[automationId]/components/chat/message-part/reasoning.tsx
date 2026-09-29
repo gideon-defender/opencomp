@@ -13,11 +13,13 @@ export function Reasoning({ part, partIndex }: { part: ReasoningUIPart; partInde
   const firstLine = text.split('\n')[0].replace(/\*\*/g, '');
   const hasMoreContent = text.includes('\n') || text.length > 80;
 
-  // Track actual timing
+  // Snapshot the elapsed time once reasoning finishes (deferred out of the effect body).
   useEffect(() => {
     if (part.state === 'done' && duration === null) {
-      const elapsed = Math.round((Date.now() - startTime) / 1000);
-      setDuration(elapsed);
+      // Defer so no setState happens synchronously within the effect.
+      queueMicrotask(() => {
+        setDuration(Math.round((Date.now() - startTime) / 1000));
+      });
     }
   }, [part.state, startTime, duration]);
 

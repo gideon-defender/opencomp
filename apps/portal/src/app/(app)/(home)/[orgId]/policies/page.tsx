@@ -11,6 +11,7 @@ import {
 } from '@trycompai/design-system';
 import { Document } from '@trycompai/design-system/icons';
 import { headers } from 'next/headers';
+import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { sortPoliciesByName } from '../components/policy/sort-policies-by-name';
@@ -21,6 +22,7 @@ export default async function SignedPoliciesPage({
   params: Promise<{ orgId: string }>;
 }) {
   const { orgId } = await params;
+  const t = await getTranslations('policies');
 
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -66,18 +68,18 @@ export default async function SignedPoliciesPage({
       <Breadcrumb
         items={[
           {
-            label: 'Overview',
+            label: t('overviewBreadcrumb'),
             href: `/${orgId}`,
             props: { render: <Link href={`/${orgId}`} /> },
           },
-          { label: 'Signed Policies', isCurrent: true },
+          { label: t('signedPolicies'), isCurrent: true },
         ]}
       />
       <Stack gap="md">
-        <PageHeader title="Signed Policies" />
+        <PageHeader title={t('signedPolicies')} />
         {policies.length === 0 ? (
           <Text variant="muted" size="sm">
-            No signed policies yet.
+            {t('noSignedPolicies')}
           </Text>
         ) : (
           <div className="space-y-2">

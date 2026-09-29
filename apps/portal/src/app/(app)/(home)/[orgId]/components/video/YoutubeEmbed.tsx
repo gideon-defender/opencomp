@@ -3,6 +3,7 @@
 import type { EmployeeTrainingVideoCompletion } from '@db';
 import { Button, Spinner } from '@trycompai/design-system';
 import { ArrowRight, Checkmark } from '@trycompai/design-system/icons';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 // Define our own TrainingVideo interface since we can't find the import
@@ -38,6 +39,8 @@ export function YoutubeEmbed({
   isMarkingComplete,
 }: YoutubeEmbedProps) {
   const [isRewatching, setIsRewatching] = useState(false);
+  const t = useTranslations('training');
+  
 
   const handleVideoEnded = () => {
     setIsRewatching(false);
@@ -55,12 +58,12 @@ export function YoutubeEmbed({
             {isMarkingComplete ? (
               <>
                 <Spinner size="sm" />
-                Marking as Complete...
+                {t('markingComplete')}
               </>
             ) : (
               <>
                 <Checkmark size={16} />
-                {isCompleted ? 'Completed' : 'Mark as Complete'}
+                {isCompleted ? t('completed') : t('markComplete')}
               </>
             )}
           </Button>
@@ -73,14 +76,14 @@ export function YoutubeEmbed({
               <div className="text-primary mx-auto">
                 <Checkmark size={48} />
               </div>
-              <h3 className="text-xl font-semibold">Video Completed</h3>
+              <h3 className="text-xl font-semibold">{t('videoCompleted')}</h3>
               <div className="flex justify-center gap-2">
                 <Button variant="outline" onClick={() => setIsRewatching(true)}>
-                  Watch Again
+                  {t('watchAgain')}
                 </Button>
                 {onNext && (
                   <Button onClick={onNext}>
-                    Next Video
+                    {t('nextVideoButton')}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 )}

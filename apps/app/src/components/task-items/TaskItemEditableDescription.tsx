@@ -1,5 +1,6 @@
 import type { MentionUser } from '@gideon-defender/ui/editor';
 import type { JSONContent } from '@tiptap/react';
+import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -63,6 +64,7 @@ export function TaskItemEditableDescription({
   descriptionMaxHeightClass,
   readOnly,
 }: TaskItemEditableDescriptionProps) {
+  const t = useTranslations('tasks');
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [editedDescription, setEditedDescription] = useState<JSONContent | null>(
     parseDescription(taskItem.description),
@@ -128,13 +130,15 @@ export function TaskItemEditableDescription({
     return results;
   };
 
-  // Keep editedDescription in sync if taskItem changes from outside (e.g. realtime refresh)
-  useEffect(() => {
+  // Keep editedDescription in sync if taskItem changes from outside (e.g. realtime refresh).
+  // Adjusted during render; skipped while editing so drafts aren't clobbered.
+  const [prevDescription, setPrevDescription] = useState(taskItem.description);
+  if (prevDescription !== taskItem.description) {
+    setPrevDescription(taskItem.description);
     if (!isEditingDescription) {
       setEditedDescription(parseDescription(taskItem.description));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [taskItem.description]);
+  }
 
   useEffect(() => {
     if (isEditingDescription && descriptionInputRef.current) {
@@ -170,10 +174,10 @@ export function TaskItemEditableDescription({
       isClosingRef.current = true;
       await onUpdate({ description: descriptionString });
       setIsEditingDescription(false);
-      toast.success('Description updated');
+      toast.success(t('single.descriptionUpdated'));
       onAfterUpdate?.();
     } catch {
-      toast.error('Failed to update description');
+      toast.error(t('single.descriptionUpdateFailed'));
       setEditedDescription(parseDescription(taskItem.description));
     } finally {
       // Reset after close attempt (even if save failed we keep editing open, so allow retry)
@@ -247,11 +251,11 @@ export function TaskItemEditableDescription({
           description: editedDescription ? JSON.stringify(editedDescription) : undefined,
         });
         setIsEditingDescription(false);
-        toast.success('Description updated');
+        toast.success(t('single.descriptionUpdated'));
         onAfterUpdate?.();
         isClosingRef.current = false;
       })().catch(() => {
-        toast.error('Failed to update description');
+        toast.error(t('single.descriptionUpdateFailed'));
         isClosingRef.current = false;
       });
     };

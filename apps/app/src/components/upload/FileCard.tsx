@@ -22,7 +22,7 @@ import {
 } from '@gideon-defender/ui/tooltip';
 import { ExternalLink, Loader2, Maximize2, Trash } from 'lucide-react';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { FileIcon } from './FileIcon';
 
 interface FilePreviewState {
@@ -51,14 +51,16 @@ export function FileCard({
   const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(fileName);
   const isPdf = /\.pdf$/i.test(fileName);
 
-  const [hasLoadedPreview, setHasLoadedPreview] = useState(false);
+  // One-shot guard for the initial preview fetch. A ref (not state) because the
+  // flag is only read inside this effect and never rendered.
+  const hasLoadedPreviewRef = useRef(false);
 
   useEffect(() => {
-    if (!hasLoadedPreview && !previewState.url && !previewState.isLoading) {
+    if (!hasLoadedPreviewRef.current && !previewState.url && !previewState.isLoading) {
+      hasLoadedPreviewRef.current = true;
       onPreviewClick(url);
-      setHasLoadedPreview(true);
     }
-  }, [hasLoadedPreview, onPreviewClick, previewState.isLoading, previewState.url, url]);
+  }, [onPreviewClick, previewState.isLoading, previewState.url, url]);
 
   return (
     <Card className="group flex h-[220px] flex-col overflow-hidden transition-all hover:shadow-md">

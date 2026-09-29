@@ -2,6 +2,7 @@
 
 import { useTrainingCompletions } from '@/hooks/use-training-completions';
 import { trainingVideos } from '@/lib/data/training-videos';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { CarouselControls } from './CarouselControls';
 import { YoutubeEmbed } from './YoutubeEmbed';
@@ -9,6 +10,7 @@ import { YoutubeEmbed } from './YoutubeEmbed';
 export function VideoCarousel() {
   const { completions, markVideoComplete } = useTrainingCompletions();
   const [isExecuting, setIsExecuting] = useState(false);
+  const t = useTranslations('training');
 
   const completionRecordsMap = new Map(completions.map((record) => [record.videoId, record]));
 
@@ -65,9 +67,9 @@ export function VideoCarousel() {
     <div className="space-y-4">
       {allVideosCompleted && (
         <div className="flex w-full flex-col items-center justify-center space-y-2 py-8">
-          <h2 className="text-2xl font-semibold">All Training Videos Completed!</h2>
+          <h2 className="text-2xl font-semibold">{t('allVideosCompleted')}</h2>
           <p className="text-muted-foreground text-center">
-            You're all done, now your manager won't pester you!
+            {t('allVideosDoneBody')}
           </p>
         </div>
       )}

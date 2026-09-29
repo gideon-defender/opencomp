@@ -2,7 +2,7 @@
 
 import { Button, Input, Label, Stack, Text } from '@trycompai/design-system';
 import { Add, TrashCan } from '@trycompai/design-system/icons';
-import { useRef } from 'react';
+import { useState } from 'react';
 
 export interface WizardObjective {
   objective: string;
@@ -31,12 +31,10 @@ export function WizardObjectivesEditor({ items, onChange }: WizardObjectivesEdit
   // Keep one stable id per row, aligned by index, so React reconciles by
   // identity rather than position. Grow/shrink to match the current row count
   // (handles defaults arriving after mount and external resets).
-  const idsRef = useRef<string[]>([]);
-  while (idsRef.current.length < rows.length) idsRef.current.push(newRowId());
-  if (idsRef.current.length > rows.length) {
-    idsRef.current = idsRef.current.slice(0, rows.length);
+  const [ids, setIds] = useState<string[]>([]);
+  if (ids.length !== rows.length) {
+    setIds(rows.map((_, i) => ids[i] ?? newRowId()));
   }
-  const ids = idsRef.current;
 
   const handleField = ({
     index,
@@ -51,12 +49,12 @@ export function WizardObjectivesEditor({ items, onChange }: WizardObjectivesEdit
   };
 
   const handleRemove = (index: number) => {
-    idsRef.current = ids.filter((_, i) => i !== index);
+    setIds(ids.filter((_, i) => i !== index));
     onChange(rows.filter((_, i) => i !== index));
   };
 
   const handleAdd = () => {
-    idsRef.current = [...ids, newRowId()];
+    setIds([...ids, newRowId()]);
     onChange([...rows, { objective: '', target: '' }]);
   };
 

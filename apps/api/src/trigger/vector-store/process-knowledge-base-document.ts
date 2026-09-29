@@ -47,7 +47,8 @@ async function extractContentFromKnowledgeBaseDocument(
 
   // Convert stream to buffer
   const chunks: Uint8Array[] = [];
-  for await (const chunk of response.Body as any) {
+  const body = response.Body as unknown as AsyncIterable<Uint8Array>;
+  for await (const chunk of body) {
     chunks.push(chunk);
   }
   const buffer = Buffer.concat(chunks);

@@ -20,33 +20,43 @@ import { useEffect, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { PhaseRow } from './PhaseRow';
 import { createNewTemplate, getDefaults, saveExistingTemplate } from './template-actions';
 
-const phaseSchema = z.object({
-  id: z.string().optional(),
-  name: z.string().min(1, 'Name is required'),
-  description: z.string().optional(),
-  defaultDurationWeeks: z.number().min(1, 'Must be at least 1 week'),
-  completionType: z.enum([
-    'AUTO_TASKS',
-    'AUTO_POLICIES',
-    'AUTO_PEOPLE',
-    'AUTO_FINDINGS',
-    'AUTO_UPLOAD',
-    'MANUAL',
-  ]),
-  locksTimelineOnComplete: z.boolean().optional(),
-});
+export interface TemplateSchemaMessages {
+  phaseName: string;
+  durationMin: string;
+  templateName: string;
+  frameworkId: string;
+  cycle: string;
+}
 
-const templateSchema = z.object({
-  name: z.string().min(1, 'Template name is required'),
-  frameworkId: z.string().min(1, 'Framework ID is required'),
-  cycleNumber: z.number().min(1, 'Cycle must be at least 1'),
-  phases: z.array(phaseSchema),
-});
+export function createTemplateSchema(messages: TemplateSchemaMessages) {
+  const phaseSchema = z.object({
+    id: z.string().optional(),
+    name: z.string().min(1, messages.phaseName),
+    description: z.string().optional(),
+    defaultDurationWeeks: z.number().min(1, messages.durationMin),
+    completionType: z.enum([
+      'AUTO_TASKS',
+      'AUTO_POLICIES',
+      'AUTO_PEOPLE',
+      'AUTO_FINDINGS',
+      'AUTO_UPLOAD',
+      'MANUAL',
+    ]),
+    locksTimelineOnComplete: z.boolean().optional(),
+  });
 
-type TemplateFormValues = z.infer<typeof templateSchema>;
+  return z.object({
+    name: z.string().min(1, messages.templateName),
+    frameworkId: z.string().min(1, messages.frameworkId),
+    cycleNumber: z.number().min(1, messages.cycle),
+    phases: z.array(phaseSchema),
+  });
+}
 
 interface TemplateEditorProps {
   open: boolean;
@@ -59,6 +69,23 @@ export function TemplateEditor({ open, onClose, template, onMutate }: TemplateEd
   const isEditing = !!template;
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const t = useTranslations('admin');
+  const tv = useTranslations('validation');
+  const tt = useTranslations('toasts');
+
+  const templateSchema = useMemo(
+    () =>
+      createTemplateSchema({
+        phaseName: tv('nameRequired'),
+        durationMin: tv('durationMinWeeks'),
+        templateName: tv('templateNameRequired'),
+        frameworkId: tv('frameworkIdRequired'),
+        cycle: tv('cycleMin'),
+      }),
+    [tv],
+  );
+
+  type TemplateFormValues = z.infer<typeof templateSchema>;
 
   const {
     register,
@@ -85,13 +112,15 @@ export function TemplateEditor({ open, onClose, template, onMutate }: TemplateEd
     try {
       if (isEditing) {
         await saveExistingTemplate(template, values);
+        toast.success(t('timelineTemplates.editor.templateUpdated'));
       } else {
         await createNewTemplate(values);
+        toast.success(t('timelineTemplates.editor.templateCreated'));
       }
       onMutate();
       onClose();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Save failed');
+      toast.error(err instanceof Error ? err.message : tt('saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -106,7 +135,7 @@ export function TemplateEditor({ open, onClose, template, onMutate }: TemplateEd
       toast.error(res.error);
       return;
     }
-    toast.success('Template deleted');
+    toast.success(tt('templateDeleted'));
     onMutate();
     onClose();
   };
@@ -125,14 +154,22 @@ export function TemplateEditor({ open, onClose, template, onMutate }: TemplateEd
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
       <SheetContent>
         <SheetHeader>
-          <SheetTitle>{isEditing ? 'Edit Template' : 'New Template'}</SheetTitle>
+          <SheetTitle>
+            {isEditing
+              ? t('timelineTemplates.editor.editTemplate')
+              : t('timelineTemplates.editor.newTemplate')}
+          </SheetTitle>
         </SheetHeader>
         <SheetBody>
           <form onSubmit={handleSubmit(handleSave)}>
             <Stack gap="md">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="name">Template Name</Label>
-                <Input id="name" {...register('name')} placeholder="e.g. SOC 2 Initial Audit" />
+                <Label htmlFor="name">{t('timelineTemplates.editor.templateNameLabel')}</Label>
+                <Input
+                  id="name"
+                  {...register('name')}
+                  placeholder={t('timelineTemplates.editor.namePlaceholder')}
+                />
                 {errors.name && (
                   <Text size="xs" variant="destructive">
                     {errors.name.message}
@@ -141,12 +178,14 @@ export function TemplateEditor({ open, onClose, template, onMutate }: TemplateEd
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="frameworkId">Framework ID</Label>
+                <Label htmlFor="frameworkId">
+                  {t('timelineTemplates.editor.frameworkIdLabel')}
+                </Label>
                 <Input
                   id="frameworkId"
                   {...register('frameworkId')}
                   disabled={isEditing}
-                  placeholder="Framework ID"
+                  placeholder={t('timelineTemplates.editor.frameworkIdPlaceholder')}
                 />
                 {errors.frameworkId && (
                   <Text size="xs" variant="destructive">
@@ -156,7 +195,9 @@ export function TemplateEditor({ open, onClose, template, onMutate }: TemplateEd
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="cycleNumber">Cycle Number</Label>
+                <Label htmlFor="cycleNumber">
+                  {t('timelineTemplates.editor.cycleNumberLabel')}
+                </Label>
                 <Input
                   id="cycleNumber"
                   type="number"
@@ -171,9 +212,9 @@ export function TemplateEditor({ open, onClose, template, onMutate }: TemplateEd
               </div>
 
               <div className="flex items-center justify-between">
-                <Text size="sm" weight="semibold">
-                  Phases
-                </Text>
+                  <Text size="sm" weight="semibold">
+                    {t('timelineTemplates.editor.phases')}
+                  </Text>
                 <Button
                   type="button"
                   size="sm"
@@ -181,13 +222,13 @@ export function TemplateEditor({ open, onClose, template, onMutate }: TemplateEd
                   iconLeft={<Add size={16} />}
                   onClick={handleAddPhase}
                 >
-                  Add Phase
+                  {t('timelineTemplates.editor.addPhase')}
                 </Button>
               </div>
 
               {fields.length === 0 && (
                 <div className="rounded-lg border border-dashed py-4 text-center text-sm text-muted-foreground">
-                  No phases yet. Add one above.
+                  {t('timelineTemplates.editor.noPhasesYet')}
                 </div>
               )}
 
@@ -203,7 +244,9 @@ export function TemplateEditor({ open, onClose, template, onMutate }: TemplateEd
 
               <div className="flex items-center gap-2 pt-4">
                 <Button type="submit" loading={saving}>
-                  {isEditing ? 'Save Changes' : 'Create Template'}
+                  {isEditing
+                    ? t('timelineTemplates.editor.saveChanges')
+                    : t('timelineTemplates.editor.createTemplate')}
                 </Button>
                 {isEditing && (
                   <Button
@@ -213,7 +256,7 @@ export function TemplateEditor({ open, onClose, template, onMutate }: TemplateEd
                     loading={deleting}
                     onClick={handleDelete}
                   >
-                    Delete
+                    {t('timelineTemplates.editor.delete')}
                   </Button>
                 )}
               </div>

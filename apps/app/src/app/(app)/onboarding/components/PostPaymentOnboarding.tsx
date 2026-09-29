@@ -81,9 +81,11 @@ export function PostPaymentOnboarding({
   }, [step?.key, hasInvalidUrl]);
 
   // Reset error state when step changes
-  useEffect(() => {
+  const [prevStepIndex, setPrevStepIndex] = useState(stepIndex);
+  if (prevStepIndex !== stepIndex) {
+    setPrevStepIndex(stepIndex);
     setShowUrlError(false);
-  }, [stepIndex]);
+  }
 
   // Auto-hide error after 2 seconds
   useEffect(() => {

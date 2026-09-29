@@ -1,0 +1,40 @@
+{
+  "title": "Frameworks",
+  "searchPlaceholder": "Search frameworks...",
+  "import": "Import",
+  "moveFramework": "Move Framework",
+  "createFamily": "Create New Framework Family",
+  "createFramework": "Create New Framework",
+  "emptyMessage": "No frameworks yet.",
+  "columns": {
+    "name": "Name",
+    "version": "Version",
+    "status": "Status",
+    "requirements": "Requirements",
+    "controls": "Controls"
+  },
+  "family": {
+    "empty": "Empty",
+    "frameworkCount": "{count, plural, one {# framework} other {# frameworks}}",
+    "expandFamily": "Expand family",
+    "collapseFamily": "Collapse family",
+    "editFamily": "Edit family",
+    "deleteFamily": "Delete family",
+    "deleteDisabledHint": "Family must be empty to delete"
+  },
+  "status": {
+    "visible": "Visible",
+    "hidden": "Hidden",
+    "underConstruction": "Under Construction",
+    "partial": "Partial"
+  },
+  "tabs": {
+    "requirements": "Requirements",
+    "controls": "Controls",
+    "policies": "Policies",
+    "tasks": "Tasks",
+    "documents": "Documents",
+    "ismsDocuments": "ISMS Documents",
+    "versions": "Versions"
+  }
+}

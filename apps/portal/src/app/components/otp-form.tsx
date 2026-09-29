@@ -7,19 +7,13 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@gideon-defender/ui/input
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Spinner } from '@trycompai/design-system';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
 const INPUT_LENGTH = 6;
-
-const otpFormSchema = z.object({
-  email: z.string().email(),
-  otp: z.string().min(INPUT_LENGTH, 'OTP is required'),
-});
-
-type OtpFormValues = z.infer<typeof otpFormSchema>;
 
 interface OtpFormProps {
   email: string;
@@ -29,6 +23,16 @@ interface OtpFormProps {
 export function OtpForm({ email, deviceAuthRedirect }: OtpFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const t = useTranslations('auth');
+  const tValidation = useTranslations('validation');
+
+  const otpFormSchema = z.object({
+    email: z.string().email(tValidation('emailInvalid')),
+    otp: z.string().min(INPUT_LENGTH, tValidation('otpRequired')),
+  });
+
+  type OtpFormValues = z.infer<typeof otpFormSchema>;
+
   const form = useForm<OtpFormValues>({
     resolver: zodResolver(otpFormSchema),
     defaultValues: {
@@ -37,7 +41,7 @@ export function OtpForm({ email, deviceAuthRedirect }: OtpFormProps) {
     },
   });
 
-  const onSubmit = async (formData: OtpFormValues) => {
+  const handleSubmit = async (formData: OtpFormValues) => {
     try {
       setIsLoading(true);
 
@@ -50,21 +54,21 @@ export function OtpForm({ email, deviceAuthRedirect }: OtpFormProps) {
         const lower = (error.message || '').toLowerCase();
 
         if (lower.includes('invalid') && lower.includes('otp')) {
-          toast.error('Invalid OTP code. Please check your code and try again.');
+          toast.error(t('invalidOtp'));
         } else if (lower.includes('expired') && lower.includes('otp')) {
-          toast.error('OTP code has expired. Please request a new code.');
+          toast.error(t('expiredOtp'));
         } else if (lower.includes('not found') || lower.includes('user not found')) {
-          toast.error('No account found with this email address.');
+          toast.error(t('noAccount'));
         } else {
-          toast.error('Login failed. Please check your OTP code and try again.');
+          toast.error(t('loginFailedOtp'));
         }
         return;
       }
 
-      toast.success('OTP verified');
+      toast.success(t('otpVerified'));
       router.push(deviceAuthRedirect || '/');
     } catch {
-      toast.error('An unexpected error occurred');
+      toast.error(t('unexpectedError'));
     } finally {
       setIsLoading(false);
     }
@@ -72,7 +76,7 @@ export function OtpForm({ email, deviceAuthRedirect }: OtpFormProps) {
 
   return (
     <Form {...form}>
-      <form className="grid gap-4 place-items-center" onSubmit={form.handleSubmit(onSubmit)}>
+      <form className="grid gap-4 place-items-center" onSubmit={form.handleSubmit(handleSubmit)}>
         <FormField
           control={form.control}
           name="otp"
@@ -96,7 +100,7 @@ export function OtpForm({ email, deviceAuthRedirect }: OtpFormProps) {
           disabled={isLoading}
           className="flex h-[40px] w-fit space-x-2 px-6 py-4 font-medium active:scale-[0.98]"
         >
-          {isLoading ? <Spinner size="sm" /> : <span>Continue</span>}
+          {isLoading ? <Spinner size="sm" /> : <span>{t('continue')}</span>}
         </Button>
       </form>
     </Form>

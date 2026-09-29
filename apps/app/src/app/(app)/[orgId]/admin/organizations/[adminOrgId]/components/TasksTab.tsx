@@ -83,8 +83,17 @@ export function TasksTab({ orgId }: { orgId: string }) {
   }, [orgId]);
 
   useEffect(() => {
-    void fetchTasks();
-  }, [fetchTasks]);
+    let cancelled = false;
+    (async () => {
+      const res = await api.get<TasksResponse>(`/v1/admin/organizations/${orgId}/tasks`);
+      if (cancelled) return;
+      if (res.data) setTasks(res.data.data);
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [orgId]);
 
   const handleFieldChange = async (taskId: string, field: string, value: string | null) => {
     setUpdatingId(taskId);

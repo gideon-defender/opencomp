@@ -50,6 +50,7 @@ export default defineConfig({
   manifest: {
     name: 'OpenComp Security Questionnaire',
     description: 'Generate and insert security questionnaire answers from OpenComp.',
+    default_locale: 'en',
     // No activeTab: the <all_urls> host permission already covers every page
     // the extension touches, and the store rejects redundant permissions.
     permissions: [

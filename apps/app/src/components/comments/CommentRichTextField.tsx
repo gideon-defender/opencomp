@@ -6,7 +6,7 @@ import { defaultExtensions } from '@gideon-defender/ui/editor/extensions';
 import type { JSONContent } from '@tiptap/react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import type { CSSProperties } from 'react';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 type EditorSizeStyle = CSSProperties & {
   '--editor-min-height': string;
@@ -38,14 +38,18 @@ export function CommentRichTextField({
     [],
   );
 
-  // Use a ref to always have the latest members available to the extension
-  const membersRef = useRef(members);
-  membersRef.current = members;
+  // Snapshot of the latest members for the mention extension, synced during
+  // render so the suggestion callback always reads state (never a ref).
+  const [latestMembers, setLatestMembers] = useState(members);
+  if (latestMembers !== members) {
+    setLatestMembers(members);
+  }
 
   // Search members for mention suggestions
-  const searchMembers = useCallback((query: string): MentionUser[] => {
-    const currentMembers = membersRef.current;
-    if (!currentMembers || currentMembers.length === 0) return [];
+  const searchMembers = useCallback(
+    (query: string): MentionUser[] => {
+      const currentMembers = latestMembers;
+      if (!currentMembers || currentMembers.length === 0) return [];
 
     // Show first 20 members immediately when query is empty
     if (!query || query.trim() === '') {
@@ -62,9 +66,11 @@ export function CommentRichTextField({
           member.id?.toLowerCase().includes(lowerQuery),
       )
       .slice(0, 20);
-  }, []);
+    },
+    [latestMembers],
+  );
 
-  // Create mention extension once - it reads members via ref so it always has latest data
+  // Create mention extension once - it reads members via state so it always has latest data
   const mentionExtension = useMemo(
     () =>
       createMentionExtension({

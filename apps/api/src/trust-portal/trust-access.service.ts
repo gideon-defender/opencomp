@@ -4,6 +4,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
+import { withErrorCode } from '../common/i18n/error-messages';
 import { db } from '@db';
 import { randomBytes } from 'crypto';
 import { extractComplianceBadges } from './cert-badge-mapper';
@@ -1899,10 +1900,11 @@ export class TrustAccessService {
           );
         }
 
+        const body: unknown = response.Body;
         const bodyStream =
-          response.Body instanceof Readable
-            ? response.Body
-            : Readable.from(response.Body as any);
+          body instanceof Readable
+            ? body
+            : Readable.from(body as Iterable<Uint8Array>);
 
         archive.append(bodyStream, { name: toSafeName(doc.name) });
       }
@@ -2004,7 +2006,7 @@ export class TrustAccessService {
     }
 
     const chunks: Uint8Array[] = [];
-    for await (const chunk of response.Body as Readable) {
+    for await (const chunk of response.Body as unknown as AsyncIterable<Uint8Array>) {
       chunks.push(chunk);
     }
     const originalPdfBuffer = Buffer.concat(chunks);
@@ -2015,7 +2017,6 @@ export class TrustAccessService {
         name: params.recipientName,
         email: params.recipientEmail,
         docId: params.docId,
-        watermarkText: 'OpenComp',
       },
     );
 
@@ -2498,7 +2499,10 @@ export class TrustAccessService {
     });
 
     if (!policy) {
-      throw new NotFoundException('Policy not found');
+      throw withErrorCode(
+        new NotFoundException('Policy not found'),
+        'POLICY_NOT_FOUND',
+      );
     }
 
     const effectiveContent = policy.currentVersion?.content ?? policy.content;
@@ -2673,7 +2677,9 @@ export class TrustAccessService {
     // Collect ZIP buffer - set up listeners BEFORE finalize to avoid deadlock
     const zipBufferPromise = new Promise<Buffer>((resolve, reject) => {
       const chunks: Buffer[] = [];
-      passThrough.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+      passThrough.on('data', (chunk: Buffer) =>
+        chunks.push(Buffer.from(chunk)),
+      );
       passThrough.on('end', () => resolve(Buffer.concat(chunks)));
       passThrough.on('error', reject);
     });

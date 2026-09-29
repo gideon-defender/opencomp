@@ -173,7 +173,7 @@ describe('TimelinesPhasesService', () => {
 
     const result = await service.updatePhase('tli_1', 'phase_1', 'org_1', {
       locksTimelineOnComplete: true,
-    } as any);
+    });
 
     expect(mockDb.timelinePhase.update).toHaveBeenCalledWith({
       where: { id: 'phase_1' },

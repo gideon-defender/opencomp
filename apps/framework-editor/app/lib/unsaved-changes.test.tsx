@@ -42,4 +42,14 @@ describe('unsaved-changes guard', () => {
     expect(confirmDiscardUnsavedChanges()).toBe(true);
     unmount();
   });
+
+  it('confirmDiscardUnsavedChanges forwards a translated prompt message', () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const { unmount } = renderHook(() => useUnsavedChangesGuard('grid-c', true));
+    const translated =
+      'Tienes cambios sin confirmar que se perderán si sales. Haz clic en «Confirmar cambios» primero, o sal de todos modos.';
+    expect(confirmDiscardUnsavedChanges(translated)).toBe(true);
+    expect(confirmSpy).toHaveBeenCalledWith(translated);
+    unmount();
+  });
 });

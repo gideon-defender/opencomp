@@ -94,7 +94,16 @@ function formatUtc(date: Date): string {
 
 function escapeXml(value: string): string {
   // Strip XML 1.0 illegal control chars (keep tab 0x09, LF 0x0A, CR 0x0D)
-  const stripped = value.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
+  const stripped = value
+    .split('')
+    .filter((ch) => {
+      const code = ch.charCodeAt(0);
+      if (code < 0x20) {
+        return code === 0x09 || code === 0x0a || code === 0x0d;
+      }
+      return true;
+    })
+    .join('');
   return stripped
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')

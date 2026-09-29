@@ -10,7 +10,7 @@ import {
   SheetTitle,
 } from '@trycompai/design-system';
 import { Checkmark, Close, Locked, View, ViewOff } from '@trycompai/design-system/icons';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { MfaSetupHelp } from '../../../tasks/[taskId]/components/browser-automations/MfaSetupHelp';
 
 /** The minimum the sheet needs — so both the settings list (Connection) and the
@@ -62,12 +62,17 @@ export function MakePermanentSheet({
   const [error, setError] = useState('');
 
   // Reset the form each time the sheet opens or a different connection loads.
-  useEffect(() => {
+  // Adjust-during-render keyed on open + connection instead of an effect.
+  // Sentinel initial key forces the mount sync, matching the old effect.
+  const sheetResetKey = open ? (connection?.id ?? 'open') : 'closed';
+  const [prevSheetResetKey, setPrevSheetResetKey] = useState<string | null>(null);
+  if (prevSheetResetKey !== sheetResetKey) {
+    setPrevSheetResetKey(sheetResetKey);
     setPhase('form');
     setSeed('');
     setShowKey(false);
     setError('');
-  }, [connection, open]);
+  }
 
   if (!connection) return null;
 

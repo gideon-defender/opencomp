@@ -19,12 +19,12 @@ export interface BrowserCredentialVaultAdapter {
 }
 
 export class NoopBrowserCredentialVaultAdapter implements BrowserCredentialVaultAdapter {
-  async resolveCredentialReference(_params: {
+  resolveCredentialReference(_params: {
     profileId: string;
     provider?: string | null;
     externalItemRef?: string | null;
     connectionId?: string | null;
   }): Promise<RuntimeCredentialMaterial | null> {
-    return null;
+    return Promise.resolve(null);
   }
 }

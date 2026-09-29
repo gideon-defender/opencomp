@@ -16,6 +16,44 @@ export interface FleetPolicyResult {
   description?: string;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function extractFirstHostId(data: unknown): number | null {
+  if (!isRecord(data)) return null;
+  const hosts = data.hosts;
+  if (!Array.isArray(hosts) || hosts.length === 0) return null;
+  const first = hosts[0];
+  if (!isRecord(first)) return null;
+  const id: unknown = first.id;
+  if (typeof id === 'number' && Number.isFinite(id)) return id;
+  if (typeof id === 'string' && id.trim() !== '' && Number.isFinite(Number(id)))
+    return Number(id);
+  return null;
+}
+
+function extractHostRecord(data: unknown): Record<string, unknown> | null {
+  if (!isRecord(data)) return null;
+  const host: unknown = data.host;
+  return isRecord(host) ? host : null;
+}
+
+function extractHostId(host: Record<string, unknown>): number | null {
+  const id: unknown = host.id;
+  if (typeof id === 'number' && Number.isFinite(id)) return id;
+  if (typeof id === 'string' && id.trim() !== '' && Number.isFinite(Number(id)))
+    return Number(id);
+  return null;
+}
+
+function extractHostsList(data: unknown): Record<string, unknown>[] {
+  if (!isRecord(data)) return [];
+  const hosts: unknown = data.hosts;
+  if (!Array.isArray(hosts)) return [];
+  return hosts.filter(isRecord);
+}
+
 function buildPoliciesWithResults(
   host: Record<string, unknown>,
   results: {
@@ -78,16 +116,16 @@ export async function getFleetComplianceForMember(
   }
 
   try {
-    const labelHostsData =
+    const labelHostsData: unknown =
       await fleetService.getHostsByLabel(memberFleetLabelId);
-    const firstHost = labelHostsData?.hosts?.[0];
+    const firstHostId = extractFirstHostId(labelHostsData);
 
-    if (!firstHost) {
+    if (firstHostId === null) {
       return { fleetPolicies: [], device: null };
     }
 
-    const hostData = await fleetService.getHostById(firstHost.id);
-    const host = hostData?.host;
+    const hostData: unknown = await fleetService.getHostById(firstHostId);
+    const host = extractHostRecord(hostData);
 
     if (!host) {
       return { fleetPolicies: [], device: null };
@@ -132,14 +170,14 @@ export async function getAllEmployeeDevices(
     const labelResponses = await Promise.all(
       membersWithLabels.map(async (employee) => {
         try {
-          const data = await fleetService.getHostsByLabel(
+          const data: unknown = await fleetService.getHostsByLabel(
             employee.fleetDmLabelId!,
           );
           return {
             userId: employee.userId,
             userName: employee.user?.name,
             memberId: employee.id,
-            hosts: data?.hosts || [],
+            hosts: extractHostsList(data),
           };
         } catch {
           return {
@@ -153,20 +191,25 @@ export async function getAllEmployeeDevices(
     );
 
     const hostRequests = labelResponses.flatMap((entry) =>
-      (entry.hosts as { id: number }[]).map((host) => ({
-        userId: entry.userId,
-        memberId: entry.memberId,
-        userName: entry.userName,
-        hostId: host.id,
-      })),
+      entry.hosts
+        .map((host) => ({
+          userId: entry.userId,
+          memberId: entry.memberId,
+          userName: entry.userName,
+          hostId: extractHostId(host),
+        }))
+        .filter(
+          (req): req is typeof req & { hostId: number } => req.hostId !== null,
+        ),
     );
 
     if (hostRequests.length === 0) return [];
 
-    const devices = await Promise.all(
+    const devices: unknown[] = await Promise.all(
       hostRequests.map(async ({ hostId }) => {
         try {
-          return await fleetService.getHostById(hostId);
+          const device: unknown = await fleetService.getHostById(hostId);
+          return device;
         } catch {
           return null;
         }
@@ -180,8 +223,8 @@ export async function getAllEmployeeDevices(
 
     return devices
       .map((device, index) => {
-        if (!device?.host) return null;
-        const host = device.host;
+        const host = extractHostRecord(device);
+        if (!host) return null;
         const req = hostRequests[index];
         const memberResults = results.filter((r) => r.userId === req.userId);
 

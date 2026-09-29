@@ -11,7 +11,7 @@ import {
 } from '@gideon-defender/ui/alert-dialog';
 import { Button } from '@gideon-defender/ui/button';
 import { Checkbox, Label } from '@trycompai/design-system';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 interface RemoveMemberAlertProps {
   open: boolean;
@@ -30,11 +30,15 @@ export function RemoveMemberAlert({
 }: RemoveMemberAlertProps) {
   const [skipOffboarding, setSkipOffboarding] = useState(false);
 
-  useEffect(() => {
+  // Reset the checkbox whenever the dialog closes. Adjust-during-render keyed
+  // on `open` instead of an effect to avoid setState-in-effect.
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (prevOpen !== open) {
+    setPrevOpen(open);
     if (!open) {
       setSkipOffboarding(false);
     }
-  }, [open]);
+  }
 
   const handleRemoveClick = () => {
     onRemove({ skipOffboarding });

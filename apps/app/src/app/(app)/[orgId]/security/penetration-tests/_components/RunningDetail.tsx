@@ -39,9 +39,12 @@ export function RunningDetail({ run, issues, events, onOpenFinding }: RunningDet
   // which would otherwise show "0m" hours into a real scan. Updates on
   // each SWR poll (~4s cadence), which is fine granularity for a
   // multi-hour run.
-  const startedMs = new Date(run.createdAt).getTime();
-  const elapsedMs =
-    Number.isFinite(startedMs) && startedMs > 0 ? Math.max(0, Date.now() - startedMs) : 0;
+  // The mount-time timestamp lives in a useState initializer to keep render
+  // pure (no Date.now() during render).
+  const [elapsedMs] = useState(() => {
+    const startedMs = new Date(run.createdAt).getTime();
+    return Number.isFinite(startedMs) && startedMs > 0 ? Math.max(0, Date.now() - startedMs) : 0;
+  });
   const elapsedLabel = formatElapsed(elapsedMs);
 
   return (
@@ -131,43 +134,52 @@ function useNewFindingHighlights(runId: string, issues: PentestIssue[]): Set<str
 
   // On run change: prime `seenRef` with the issues already present so
   // they don't all flash as newly-arrived. Bypass the next "newly
-  // landed" pass entirely for this run change.
-  if (lastRunIdRef.current !== runId) {
-    seenRef.current = new Set(issues.map((i) => i.id));
-    lastRunIdRef.current = runId;
-  }
-
+  // landed" pass entirely for this run change. All ref access and setState
+  // live inside an async IIFE (after await) — never during render.
   useEffect(() => {
-    const newlyLanded: string[] = [];
-    for (const issue of issues) {
-      if (!seenRef.current.has(issue.id)) {
-        seenRef.current.add(issue.id);
-        newlyLanded.push(issue.id);
+    let cancelled = false;
+    (async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      if (lastRunIdRef.current !== runId) {
+        seenRef.current = new Set(issues.map((i) => i.id));
+        lastRunIdRef.current = runId;
+        return;
       }
-    }
-    if (newlyLanded.length === 0) return;
+      const newlyLanded: string[] = [];
+      for (const issue of issues) {
+        if (!seenRef.current.has(issue.id)) {
+          seenRef.current.add(issue.id);
+          newlyLanded.push(issue.id);
+        }
+      }
+      if (newlyLanded.length === 0) return;
 
-    setHighlighted((prev) => {
-      const next = new Set(prev);
-      for (const id of newlyLanded) next.add(id);
-      return next;
-    });
-
-    // Schedule per-batch removal independently — fire and forget.
-    // Don't `clearTimeout` on cleanup: if `issues` changes in <2s
-    // (very common during a live scan polling at 3s), the cleanup
-    // would cancel the pending removal and the highlight class would
-    // stick to those rows forever. Each scheduled removal targets only
-    // the IDs from its batch, so multiple in-flight timers can't
-    // step on each other.
-    window.setTimeout(() => {
       setHighlighted((prev) => {
         const next = new Set(prev);
-        for (const id of newlyLanded) next.delete(id);
+        for (const id of newlyLanded) next.add(id);
         return next;
       });
-    }, 2000);
-  }, [issues]);
+
+      // Schedule per-batch removal independently — fire and forget.
+      // Don't `clearTimeout` on cleanup: if `issues` changes in <2s
+      // (very common during a live scan polling at 3s), the cleanup
+      // would cancel the pending removal and the highlight class would
+      // stick to those rows forever. Each scheduled removal targets only
+      // the IDs from its batch, so multiple in-flight timers can't
+      // step on each other.
+      window.setTimeout(() => {
+        setHighlighted((prev) => {
+          const next = new Set(prev);
+          for (const id of newlyLanded) next.delete(id);
+          return next;
+        });
+      }, 2000);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [runId, issues]);
 
   return highlighted;
 }

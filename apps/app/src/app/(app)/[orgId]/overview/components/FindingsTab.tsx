@@ -189,14 +189,18 @@ export function FindingsTab({
   );
 
   // Support deep links (e.g. emails + in-app notifications) that land on
-  // `/overview/findings?open=<id>`. Auto-open the matching finding's sheet
-  // once we've loaded the list, then strip the query param so a page
-  // refresh doesn't reopen it.
+  // `/overview/findings?open=<id>`. The sheet selection syncs during render
+  // (adjust-during-render); the effect below only strips the query param so a
+  // page refresh doesn't reopen it — no setState inside the effect.
+  if (openFindingId && !selectedFinding) {
+    const match = findings.find((f) => f.id === openFindingId);
+    if (match) setSelectedFinding(match);
+  }
+
   useEffect(() => {
     if (!openFindingId) return;
     const match = findings.find((f) => f.id === openFindingId);
     if (!match) return;
-    setSelectedFinding((current) => current ?? match);
     const params = new URLSearchParams(searchParams?.toString() ?? '');
     params.delete('open');
     const query = params.toString();

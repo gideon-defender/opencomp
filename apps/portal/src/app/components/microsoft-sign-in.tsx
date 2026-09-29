@@ -5,6 +5,7 @@ import { authClient } from '@/app/lib/auth-client';
 import { Button } from '@gideon-defender/ui/button';
 import { Icons } from '@gideon-defender/ui/icons';
 import { Spinner } from '@trycompai/design-system';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -16,6 +17,7 @@ export function MicrosoftSignIn({
   searchParams?: URLSearchParams;
 }) {
   const [isLoading, setLoading] = useState(false);
+  const t = useTranslations('auth');
 
   const handleSignIn = async () => {
     setLoading(true);
@@ -46,32 +48,32 @@ export function MicrosoftSignIn({
       // Show specific error messages based on error type
       if (error instanceof Error) {
         if (error.message.includes('redirect_uri_mismatch')) {
-          toast.error('Configuration error', {
-            description: 'Redirect URI mismatch. Please contact support.',
+          toast.error(t('microsoftConfigError'), {
+            description: t('microsoftRedirectMismatch'),
           });
         } else if (error.message.includes('invalid_client')) {
-          toast.error('Invalid credentials', {
-            description: 'Microsoft OAuth credentials are invalid. Please contact support.',
+          toast.error(t('microsoftInvalidClient'), {
+            description: t('microsoftInvalidClientDesc'),
           });
         } else if (error.message.includes('account_not_linked')) {
-          toast.error('Account linking failed', {
-            description: 'Unable to link Microsoft account automatically. Please contact support.',
+          toast.error(t('microsoftLinkFailed'), {
+            description: t('microsoftLinkFailedDesc'),
           });
           console.warn(
             '[Microsoft Sign-In] account_not_linked error occurred despite auto-linking being enabled. Check account linking configuration.',
           );
         } else if (error.message.includes('network') || error.message.includes('fetch')) {
-          toast.error('Network error', {
-            description: 'Please check your internet connection and try again.',
+          toast.error(t('microsoftNetworkError'), {
+            description: t('microsoftNetworkErrorDesc'),
           });
         } else {
-          toast.error('Sign-in failed', {
-            description: error.message || 'An unexpected error occurred. Please try again.',
+          toast.error(t('microsoftSignInFailed'), {
+            description: error.message || t('microsoftSignInFailedDesc'),
           });
         }
       } else {
-        toast.error('Failed to sign in with Microsoft', {
-          description: 'An unexpected error occurred. Please try again.',
+        toast.error(t('microsoftSignInFailedGeneric'), {
+          description: t('unexpectedError'),
         });
       }
     }
@@ -89,7 +91,7 @@ export function MicrosoftSignIn({
       ) : (
         <>
           <Icons.Microsoft className="h-4 w-4" />
-          Continue with Microsoft
+          {t('continueWithMicrosoft')}
         </>
       )}
     </Button>

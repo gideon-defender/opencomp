@@ -116,8 +116,17 @@ export function PoliciesTab({ orgId }: { orgId: string }) {
   }, [orgId]);
 
   useEffect(() => {
-    void fetchPolicies();
-  }, [fetchPolicies]);
+    let cancelled = false;
+    (async () => {
+      const res = await api.get<Policy[]>(`/v1/admin/organizations/${orgId}/policies`);
+      if (cancelled) return;
+      if (res.data) setPolicies(res.data);
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [orgId]);
 
   const handleFieldChange = async (policyId: string, field: string, value: string | null) => {
     setUpdatingId(policyId);

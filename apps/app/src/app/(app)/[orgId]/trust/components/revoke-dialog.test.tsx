@@ -1,3 +1,4 @@
+import { mockNextIntl } from '@/test-utils/mocks/next-intl';
 import {
   ADMIN_PERMISSIONS,
   AUDITOR_PERMISSIONS,
@@ -25,6 +26,8 @@ vi.mock('sonner', () => ({
   toast: { promise: vi.fn(), success: vi.fn(), error: vi.fn() },
 }));
 
+mockNextIntl();
+
 import { RevokeDialog } from './revoke-dialog';
 
 describe('RevokeDialog permission gating', () => {
@@ -41,39 +44,39 @@ describe('RevokeDialog permission gating', () => {
   it('renders dialog title regardless of permissions', () => {
     setMockPermissions({});
     render(<RevokeDialog {...defaultProps} />);
-    expect(screen.getByText('Revoke Access Grant')).toBeInTheDocument();
+    expect(screen.getByText('revoke.title')).toBeInTheDocument();
   });
 
   it('enables the revoke button when user has trust:update permission', () => {
     setMockPermissions(ADMIN_PERMISSIONS);
     render(<RevokeDialog {...defaultProps} />);
-    const revokeButton = screen.getByRole('button', { name: /revoke grant/i });
+    const revokeButton = screen.getByRole('button', { name: 'revoke.revokeGrant' });
     expect(revokeButton).toBeInTheDocument();
   });
 
   it('disables the revoke button when user lacks trust:update permission', () => {
     setMockPermissions(AUDITOR_PERMISSIONS);
     render(<RevokeDialog {...defaultProps} />);
-    const revokeButton = screen.getByRole('button', { name: /revoke grant/i });
+    const revokeButton = screen.getByRole('button', { name: 'revoke.revokeGrant' });
     expect(revokeButton).toBeDisabled();
   });
 
   it('disables the revoke button when user has no permissions', () => {
     setMockPermissions({});
     render(<RevokeDialog {...defaultProps} />);
-    const revokeButton = screen.getByRole('button', { name: /revoke grant/i });
+    const revokeButton = screen.getByRole('button', { name: 'revoke.revokeGrant' });
     expect(revokeButton).toBeDisabled();
   });
 
   it('always renders the cancel button regardless of permissions', () => {
     setMockPermissions({});
     render(<RevokeDialog {...defaultProps} />);
-    expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'revoke.cancel' })).toBeInTheDocument();
   });
 
   it('renders the reason textarea regardless of permissions', () => {
     setMockPermissions({});
     render(<RevokeDialog {...defaultProps} />);
-    expect(screen.getByPlaceholderText('Reason for revocation...')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('revoke.reasonPlaceholder')).toBeInTheDocument();
   });
 });

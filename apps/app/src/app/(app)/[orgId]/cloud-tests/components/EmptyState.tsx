@@ -26,7 +26,7 @@ import {
 } from '@trycompai/design-system';
 import { ArrowLeft, CheckmarkFilled, Launch } from '@trycompai/design-system/icons';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 type CloudProvider = 'aws' | 'gcp' | 'azure' | null;
@@ -138,12 +138,14 @@ export function EmptyState({
   const [awsRegions, setAwsRegions] = useState<{ value: string; label: string }[]>([]);
   const [awsAccountId, setAwsAccountId] = useState<string>('');
 
-  useEffect(() => {
+  const [prevInitialProvider, setPrevInitialProvider] = useState(initialProvider);
+  if (prevInitialProvider !== initialProvider) {
+    setPrevInitialProvider(initialProvider);
     if (initialProvider === 'aws' || initialProvider === 'gcp' || initialProvider === 'azure') {
       setConnectDialogProvider(initialProvider);
       setShowConnectDialog(true);
     }
-  }, [initialProvider]);
+  }
 
   const handleProviderSelect = (providerId: CloudProvider) => {
     if (providerId === 'aws' || providerId === 'gcp' || providerId === 'azure') {

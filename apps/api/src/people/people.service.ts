@@ -762,7 +762,7 @@ export class PeopleService {
   async getEmailPreferences(
     userId: string,
     userEmail: string,
-    organizationId: string,
+    _organizationId: string,
   ) {
     const user = await db.user.findUnique({
       where: { id: userId },

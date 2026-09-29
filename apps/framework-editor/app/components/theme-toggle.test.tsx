@@ -1,5 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { renderWithIntl } from '../test-utils/render-with-intl';
 
 const { setTheme, useThemeMock } = vi.hoisted(() => ({
   setTheme: vi.fn(),
@@ -27,14 +28,14 @@ describe('ThemeToggle', () => {
   });
 
   it('switches to dark when currently light', () => {
-    render(<ThemeToggle />);
+    renderWithIntl(<ThemeToggle />);
     fireEvent.click(screen.getByRole('button', { name: /toggle theme/i }));
     expect(setTheme).toHaveBeenCalledWith('dark');
   });
 
   it('switches to light when currently dark', () => {
     useThemeMock.mockReturnValue({ resolvedTheme: 'dark', setTheme });
-    render(<ThemeToggle />);
+    renderWithIntl(<ThemeToggle />);
     fireEvent.click(screen.getByRole('button', { name: /toggle theme/i }));
     expect(setTheme).toHaveBeenCalledWith('light');
   });

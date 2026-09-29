@@ -13,6 +13,7 @@ import {
 import { Footer } from '../../components/footer';
 import { Logo } from '../../components/logo';
 import { UnsubscribeLink } from '../../components/unsubscribe-link';
+import type { Locale } from '../../lib/locale';
 import { getUnsubscribeUrl } from '../../lib/unsubscribe';
 
 interface Props {
@@ -24,11 +25,37 @@ interface Props {
     id: string;
     title: string;
   }>;
+  locale?: Locale;
 }
 
-const getTaskCountMessage = (count: number) => {
+const getTaskCountMessage = (count: number, locale: Locale) => {
+  if (locale === 'es') {
+    return count === 1
+      ? 'Tienes 1 tarea pendiente aún sin completar'
+      : `Tienes ${count} tareas pendientes aún sin completar`;
+  }
   const plural = count !== 1 ? 's' : '';
   return `You have ${count} pending task${plural} that are not yet completed`;
+};
+
+const copy: Record<
+  Locale,
+  { heading: string; greeting: string; button: string; copyPaste: string; footer: string }
+> = {
+  en: {
+    heading: 'Weekly Task Reminder',
+    greeting: 'Hi',
+    button: 'View All Tasks',
+    copyPaste: 'or copy and paste this URL into your browser',
+    footer: 'This notification was intended for',
+  },
+  es: {
+    heading: 'Recordatorio semanal de tareas',
+    greeting: 'Hola',
+    button: 'Ver todas las tareas',
+    copyPaste: 'o copia y pega esta URL en tu navegador',
+    footer: 'Esta notificación estaba destinada a',
+  },
 };
 
 export const WeeklyTaskDigestEmail = ({
@@ -37,13 +64,15 @@ export const WeeklyTaskDigestEmail = ({
   organizationName,
   organizationId,
   tasks,
+  locale = 'en',
 }: Props) => {
+  const t = copy[locale];
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.gideondefender.com';
   const tasksUrl = `${baseUrl}/${organizationId}/tasks`;
-  const taskCountMessage = getTaskCountMessage(tasks.length);
+  const taskCountMessage = getTaskCountMessage(tasks.length, locale);
 
   return (
-    <Html>
+    <Html lang={locale}>
       <Tailwind>
         <head />
         <Preview>{taskCountMessage}</Preview>
@@ -55,13 +84,15 @@ export const WeeklyTaskDigestEmail = ({
           >
             <Logo />
             <Heading className="mx-0 my-[30px] p-0 text-center text-[24px] font-normal text-[#121212]">
-              Weekly Task Reminder
+              {t.heading}
             </Heading>
 
-            <Text className="text-[14px] leading-[24px] text-[#121212]">Hi {userName},</Text>
+            <Text className="text-[14px] leading-[24px] text-[#121212]">
+              {t.greeting} {userName},
+            </Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              {taskCountMessage} in <strong>{organizationName}</strong>:
+              {taskCountMessage} {locale === 'es' ? 'en' : 'in'} <strong>{organizationName}</strong>:
             </Text>
 
             <Section className="my-[24px]">
@@ -84,12 +115,12 @@ export const WeeklyTaskDigestEmail = ({
                 className="text-primary border border-solid border-[#121212] bg-transparent px-6 py-3 text-center text-[14px] font-medium text-[#121212] no-underline"
                 href={tasksUrl}
               >
-                View All Tasks
+                {t.button}
               </Button>
             </Section>
 
             <Text className="text-[14px] leading-[24px] break-all text-[#707070]">
-              or copy and paste this URL into your browser{' '}
+              {t.copyPaste}{' '}
               <Link href={tasksUrl} className="text-[#707070] underline">
                 {tasksUrl}
               </Link>
@@ -98,15 +129,19 @@ export const WeeklyTaskDigestEmail = ({
             <br />
             <Section>
               <Text className="text-[12px] leading-[24px] text-[#666666]">
-                This notification was intended for <span className="text-[#121212]">{email}</span>.
+                {t.footer} <span className="text-[#121212]">{email}</span>.
               </Text>
             </Section>
 
-            <UnsubscribeLink email={email} unsubscribeUrl={getUnsubscribeUrl(email)} />
+            <UnsubscribeLink
+              email={email}
+              unsubscribeUrl={getUnsubscribeUrl(email)}
+              locale={locale}
+            />
 
             <br />
 
-            <Footer />
+            <Footer locale={locale} />
           </Container>
         </Body>
       </Tailwind>

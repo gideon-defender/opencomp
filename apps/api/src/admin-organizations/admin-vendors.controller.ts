@@ -73,7 +73,7 @@ export class AdminVendorsController {
           `Invalid status. Must be one of: ${Object.values(VendorStatus).join(', ')}`,
         );
       }
-      updateData.status = body.status as VendorStatus;
+      updateData.status = body.status;
     }
 
     if (body.category !== undefined) {
@@ -84,7 +84,7 @@ export class AdminVendorsController {
           `Invalid category. Must be one of: ${Object.values(VendorCategory).join(', ')}`,
         );
       }
-      updateData.category = body.category as VendorCategory;
+      updateData.category = body.category;
     }
 
     if (Object.keys(updateData).length === 0) {

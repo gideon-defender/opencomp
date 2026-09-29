@@ -1,6 +1,7 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { GideonSignIn } from './gideon-sign-in';
 import { GoogleSignIn } from './google-sign-in';
 import { MicrosoftSignIn } from './microsoft-sign-in';
@@ -13,6 +14,7 @@ interface LoginFormProps {
 
 export function LoginForm({ inviteCode, showGoogle, showMicrosoft }: LoginFormProps) {
   const searchParams = useSearchParams();
+  const t = useTranslations('auth');
 
   // Gideon OIDC is always available; social buttons render when enabled.
   const showSocial = showGoogle || showMicrosoft;
@@ -28,7 +30,7 @@ export function LoginForm({ inviteCode, showGoogle, showMicrosoft }: LoginFormPr
               <span className="w-full border-t" />
             </div>
             <span className="relative z-10 bg-background px-3 text-xs text-muted-foreground font-medium">
-              OR
+              {t('or')}
             </span>
           </div>
           <div className="space-y-4 pt-4">

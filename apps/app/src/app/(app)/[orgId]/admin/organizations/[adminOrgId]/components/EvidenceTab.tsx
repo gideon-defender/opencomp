@@ -59,8 +59,19 @@ export function EvidenceTab({ orgId }: { orgId: string }) {
   }, [orgId]);
 
   useEffect(() => {
-    void fetchStatuses();
-  }, [fetchStatuses]);
+    let cancelled = false;
+    (async () => {
+      const res = await api.get<Record<string, FormStatus>>(
+        `/v1/admin/organizations/${orgId}/evidence-forms`,
+      );
+      if (cancelled) return;
+      if (res.data) setStatuses(res.data);
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [orgId]);
 
   if (loading) {
     return (

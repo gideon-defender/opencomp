@@ -1,6 +1,7 @@
 'use client';
 
 import type { Column } from '@tanstack/react-table';
+import { useLocale } from 'next-intl';
 import * as React from 'react';
 
 import { Button } from '@gideon-defender/ui/button';
@@ -33,6 +34,7 @@ interface DataTableSliderFilterProps<TData> {
 }
 
 export function DataTableSliderFilter<TData>({ column, title }: DataTableSliderFilterProps<TData>) {
+  const locale = useLocale();
   const id = React.useId();
 
   const columnFilterValue = getIsValidRange(column.getFilterValue())
@@ -74,9 +76,12 @@ export function DataTableSliderFilter<TData>({ column, title }: DataTableSliderF
     return columnFilterValue ?? [min, max];
   }, [columnFilterValue, min, max]);
 
-  const formatValue = React.useCallback((value: number) => {
-    return value.toLocaleString(undefined, { maximumFractionDigits: 0 });
-  }, []);
+  const formatValue = React.useCallback(
+    (value: number) => {
+      return value.toLocaleString(locale, { maximumFractionDigits: 0 });
+    },
+    [locale],
+  );
 
   const onFromInputChange = React.useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {

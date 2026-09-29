@@ -79,7 +79,7 @@ export async function uploadToS3(
     },
   });
 
-  await s3Client!.send(putCommand);
+  await s3Client.send(putCommand);
 
   return {
     s3Key,
@@ -102,7 +102,7 @@ export async function generateDownloadUrl(
     ResponseContentDisposition: `attachment; filename="${encodeURIComponent(fileName)}"`,
   });
 
-  const signedUrl = await getSignedUrl(s3Client!, command, {
+  const signedUrl = await getSignedUrl(s3Client, command, {
     expiresIn: SIGNED_URL_EXPIRATION_SECONDS,
   });
 
@@ -126,7 +126,7 @@ export async function generateViewUrl(
     ResponseContentType: fileType || 'application/octet-stream',
   });
 
-  const signedUrl = await getSignedUrl(s3Client!, command, {
+  const signedUrl = await getSignedUrl(s3Client, command, {
     expiresIn: SIGNED_URL_EXPIRATION_SECONDS,
   });
 
@@ -146,7 +146,7 @@ export async function deleteFromS3(s3Key: string): Promise<boolean> {
       Key: s3Key,
     });
 
-    await s3Client!.send(deleteCommand);
+    await s3Client.send(deleteCommand);
     return true;
   } catch {
     return false;

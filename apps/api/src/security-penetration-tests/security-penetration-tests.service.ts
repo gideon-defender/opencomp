@@ -125,13 +125,6 @@ interface PentestFailedWebhookPayload {
   failedAt: string;
 }
 
-type WebhookEventType = 'status' | 'completed' | 'failed';
-
-interface WebhookRequestMetadata {
-  webhookToken?: string;
-  eventId?: string;
-}
-
 type CreatePentestBodyWithScanProfile = CreatePentestBody & {
   scanDepth?: ScanDepth;
   evidenceLevel?: EvidenceLevel;
@@ -192,11 +185,12 @@ const MACED_PENTEST_CLIENT = 'MACED_PENTEST_CLIENT';
 
 function createUnconfiguredMacedClient(): MacedClient {
   const client: MacedClient = Object.create(MacedClient.prototype);
-  const fail = async () => {
-    throw new Error(
-      'MACED_API_KEY is not configured. Set MACED_API_KEY to enable penetration testing.',
+  const fail = (): Promise<never> =>
+    Promise.reject(
+      new Error(
+        'MACED_API_KEY is not configured. Set MACED_API_KEY to enable penetration testing.',
+      ),
     );
-  };
   Object.defineProperty(client, 'pentests', {
     value: {
       list: fail,
@@ -433,7 +427,7 @@ export class SecurityPenetrationTestsService {
     } catch (error) {
       if (
         error instanceof HttpException &&
-        error.getStatus() === HttpStatus.PAYMENT_REQUIRED
+        Number(error.getStatus()) === Number(HttpStatus.PAYMENT_REQUIRED)
       ) {
         // Record the blocked attempt so support / compliance can answer
         // "did the user try to scan without an allowance?". Best-

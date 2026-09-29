@@ -271,6 +271,10 @@ function AnimatedOrb({ scale = 1 }: AnimatedOrbProps) {
     }),
     [],
   );
+  // useFrame runs outside render and mutates three.js objects every frame —
+  // funnel those writes through a ref (stable, mutable container) instead of
+  // the memoized value so render stays pure.
+  const uniformsRef = useRef(uniforms);
 
   // Track mouse movement
   useEffect(() => {
@@ -389,6 +393,7 @@ function AnimatedOrb({ scale = 1 }: AnimatedOrbProps) {
   }, []);
 
   useFrame((state) => {
+    const uniforms = uniformsRef.current;
     if (meshRef.current) {
       const time = state.clock.getElapsedTime();
       uniforms.u_time.value = time;

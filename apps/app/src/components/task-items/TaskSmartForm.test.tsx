@@ -1,3 +1,4 @@
+import { mockNextIntl } from '@/test-utils/mocks/next-intl';
 import {
   ADMIN_PERMISSIONS,
   AUDITOR_PERMISSIONS,
@@ -6,6 +7,8 @@ import {
 } from '@/test-utils/mocks/permissions';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+mockNextIntl();
 
 // Mock usePermissions
 vi.mock('@/hooks/use-permissions', () => ({
@@ -119,7 +122,7 @@ describe('TaskSmartForm permission gating', () => {
 
     render(<TaskSmartForm {...defaultProps} />);
 
-    const submitButton = screen.getByText('Create Task');
+    const submitButton = screen.getByText('smartForm.createTask');
     // Button is disabled because title is empty, not because of permissions
     expect(submitButton).toBeDisabled();
   });
@@ -129,7 +132,7 @@ describe('TaskSmartForm permission gating', () => {
 
     render(<TaskSmartForm {...defaultProps} initialValues={{ title: 'Test task' }} />);
 
-    const submitButton = screen.getByText('Create Task');
+    const submitButton = screen.getByText('smartForm.createTask');
     expect(submitButton).toBeDisabled();
   });
 
@@ -138,7 +141,7 @@ describe('TaskSmartForm permission gating', () => {
 
     render(<TaskSmartForm {...defaultProps} initialValues={{ title: 'Test task' }} />);
 
-    const submitButton = screen.getByText('Create Task');
+    const submitButton = screen.getByText('smartForm.createTask');
     expect(submitButton).not.toBeDisabled();
   });
 
@@ -147,7 +150,7 @@ describe('TaskSmartForm permission gating', () => {
 
     render(<TaskSmartForm {...defaultProps} initialValues={{ title: 'Test task' }} />);
 
-    const submitButton = screen.getByText('Create Task');
+    const submitButton = screen.getByText('smartForm.createTask');
     expect(submitButton).toBeDisabled();
   });
 
@@ -156,8 +159,8 @@ describe('TaskSmartForm permission gating', () => {
 
     render(<TaskSmartForm {...defaultProps} />);
 
-    expect(screen.getByLabelText(/Title/)).toBeInTheDocument();
-    expect(screen.getByText('Create Task')).toBeInTheDocument();
+    expect(screen.getByLabelText(/smartForm\.titleLabel/)).toBeInTheDocument();
+    expect(screen.getByText('smartForm.createTask')).toBeInTheDocument();
   });
 
   it('shows cancel button when onCancel is provided regardless of permissions', () => {
@@ -165,6 +168,6 @@ describe('TaskSmartForm permission gating', () => {
 
     render(<TaskSmartForm {...defaultProps} onCancel={vi.fn()} />);
 
-    expect(screen.getByText('Cancel')).toBeInTheDocument();
+    expect(screen.getByText('smartForm.cancel')).toBeInTheDocument();
   });
 });

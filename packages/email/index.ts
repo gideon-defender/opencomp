@@ -15,4 +15,5 @@ export * from './emails/verify-email';
 
 // Email sending functions
 export * from './lib/check-unsubscribe';
+export * from './lib/locale';
 export * from './lib/unsubscribe';

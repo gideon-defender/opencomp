@@ -1,6 +1,5 @@
 import type { AdminTimelineTemplate } from '@/hooks/use-admin-timelines';
 import { api } from '@/lib/api-client';
-import { toast } from 'sonner';
 import type { CompletionType } from './constants';
 
 interface TemplateFormValues {
@@ -62,15 +61,13 @@ export async function createNewTemplate(values: TemplateFormValues) {
       });
       if (phaseRes.error) throw new Error(phaseRes.error);
     }
-  } catch (err) {
-    await api.delete(`/v1/admin/timeline-templates/${created.id}`).catch(() => {
-      // Rollback best-effort; the original error is what matters.
-    });
-    throw err;
+    } catch (err) {
+      await api.delete(`/v1/admin/timeline-templates/${created.id}`).catch(() => {
+        // Rollback best-effort; the original error is what matters.
+      });
+      throw err;
+    }
   }
-
-  toast.success('Template created');
-}
 
 export async function saveExistingTemplate(
   template: AdminTimelineTemplate,
@@ -115,15 +112,13 @@ export async function saveExistingTemplate(
     }
   }
 
-  // All upserts succeeded — safe to remove phases the user dropped.
-  for (const ep of template.phases) {
-    if (!formIds.has(ep.id)) {
-      const delRes = await api.delete(
-        `/v1/admin/timeline-templates/${template.id}/phases/${ep.id}`,
-      );
-      if (delRes.error) throw new Error(delRes.error);
+    // All upserts succeeded — safe to remove phases the user dropped.
+    for (const ep of template.phases) {
+      if (!formIds.has(ep.id)) {
+        const delRes = await api.delete(
+          `/v1/admin/timeline-templates/${template.id}/phases/${ep.id}`,
+        );
+        if (delRes.error) throw new Error(delRes.error);
+      }
     }
   }
-
-  toast.success('Template updated');
-}

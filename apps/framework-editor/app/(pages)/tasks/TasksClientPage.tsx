@@ -18,6 +18,7 @@ import {
   type SortingState,
 } from '@tanstack/react-table';
 import { ArrowDown, ArrowUp, ArrowUpDown, Link, Plus, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useCallback, useMemo, useState } from 'react';
 import {
   AddExistingItemDialog,
@@ -65,6 +66,8 @@ interface TasksClientPageProps {
 const columnHelper = createColumnHelper<TasksPageGridData>();
 
 export function TasksClientPage({ initialTasks, emptyMessage, frameworkId }: TasksClientPageProps) {
+  const t = useTranslations('tasks');
+  const resolvedEmptyMessage = emptyMessage ?? t('emptyMessage');
   const initialGridData: TasksPageGridData[] = useMemo(
     () =>
       initialTasks.map((task) => ({
@@ -124,7 +127,7 @@ export function TasksClientPage({ initialTasks, emptyMessage, frameworkId }: Tas
   const columns = useMemo(
     () => [
       columnHelper.accessor('automationStatus', {
-        header: 'Automation',
+        header: t('columns.automation'),
         size: 130,
         cell: ({ row, getValue }) => {
           const status = getValue();
@@ -135,14 +138,14 @@ export function TasksClientPage({ initialTasks, emptyMessage, frameworkId }: Tas
                 <DropdownMenuTrigger asChild>
                   {isAutomated ? (
                     <Badge variant="default" className="min-w-[80px] cursor-pointer justify-center">
-                      Automated
+                      {t('automated')}
                     </Badge>
                   ) : (
                     <Badge
                       variant="secondary"
                       className="min-w-[80px] cursor-pointer justify-center bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
                     >
-                      Manual
+                      {t('manual')}
                     </Badge>
                   )}
                 </DropdownMenuTrigger>
@@ -157,7 +160,7 @@ export function TasksClientPage({ initialTasks, emptyMessage, frameworkId }: Tas
                       )
                     }
                   >
-                    Automated
+                    {t('automated')}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     disabled={!isAutomated}
@@ -165,7 +168,7 @@ export function TasksClientPage({ initialTasks, emptyMessage, frameworkId }: Tas
                       updateCell(row.original.id, 'automationStatus', TaskAutomationStatus.MANUAL)
                     }
                   >
-                    Manual
+                    {t('manual')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -174,7 +177,7 @@ export function TasksClientPage({ initialTasks, emptyMessage, frameworkId }: Tas
         },
       }),
       columnHelper.accessor('name', {
-        header: 'Name',
+        header: t('columns.name'),
         size: 250,
         cell: ({ row, getValue }) => (
           <EditableCell
@@ -186,7 +189,7 @@ export function TasksClientPage({ initialTasks, emptyMessage, frameworkId }: Tas
         ),
       }),
       columnHelper.accessor('description', {
-        header: 'Description',
+        header: t('columns.description'),
         size: 300,
         maxSize: 300,
         cell: ({ row, getValue }) => (
@@ -199,7 +202,7 @@ export function TasksClientPage({ initialTasks, emptyMessage, frameworkId }: Tas
         ),
       }),
       columnHelper.accessor('frequency', {
-        header: 'Frequency',
+        header: t('columns.frequency'),
         size: 150,
         cell: ({ row, getValue }) => (
           <SelectCell
@@ -208,12 +211,12 @@ export function TasksClientPage({ initialTasks, emptyMessage, frameworkId }: Tas
             columnId="frequency"
             options={frequencyOptions}
             onUpdate={updateCell}
-            placeholder="Select frequency..."
+            placeholder={t('selectFrequency')}
           />
         ),
       }),
       columnHelper.accessor('department', {
-        header: 'Department',
+        header: t('columns.department'),
         size: 150,
         cell: ({ row, getValue }) => (
           <SelectCell
@@ -222,12 +225,12 @@ export function TasksClientPage({ initialTasks, emptyMessage, frameworkId }: Tas
             columnId="department"
             options={departmentOptions}
             onUpdate={updateCell}
-            placeholder="Select department..."
+            placeholder={t('selectDepartment')}
           />
         ),
       }),
       columnHelper.accessor('controls', {
-        header: 'Linked Controls',
+        header: t('columns.linkedControls'),
         size: 220,
         enableSorting: false,
         cell: ({ row, getValue }) => (
@@ -247,17 +250,17 @@ export function TasksClientPage({ initialTasks, emptyMessage, frameworkId }: Tas
         ),
       }),
       columnHelper.accessor('createdAt', {
-        header: 'Created At',
+        header: t('columns.createdAt'),
         size: 180,
         cell: ({ getValue }) => <DateCell value={getValue()} />,
       }),
       columnHelper.accessor('updatedAt', {
-        header: 'Updated At',
+        header: t('columns.updatedAt'),
         size: 180,
         cell: ({ getValue }) => <DateCell value={getValue()} />,
       }),
       columnHelper.accessor('id', {
-        header: 'ID',
+        header: t('columns.id'),
         size: 280,
         cell: ({ getValue }) => (
           <span className="text-muted-foreground truncate px-2 py-1.5 font-mono text-xs">
@@ -274,6 +277,7 @@ export function TasksClientPage({ initialTasks, emptyMessage, frameworkId }: Tas
             variant="ghost"
             size="icon"
             className="text-muted-foreground hover:text-destructive h-7 w-7"
+            aria-label={t('deleteTask')}
             onClick={() => deleteRow(row.original.id)}
           >
             <Trash2 className="h-4 w-4" />
@@ -282,6 +286,7 @@ export function TasksClientPage({ initialTasks, emptyMessage, frameworkId }: Tas
       }),
     ],
     [
+      t,
       updateCell,
       updateRelational,
       deleteRow,
@@ -313,7 +318,7 @@ export function TasksClientPage({ initialTasks, emptyMessage, frameworkId }: Tas
   const handleAddRow = useCallback(() => {
     addRow({
       id: simpleUUID(),
-      name: 'New Task',
+      name: t('newTask'),
       description: '',
       frequency: null,
       department: null,
@@ -323,7 +328,7 @@ export function TasksClientPage({ initialTasks, emptyMessage, frameworkId }: Tas
       createdAt: new Date(),
       updatedAt: new Date(),
     });
-  }, [addRow]);
+  }, [addRow, t]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -333,10 +338,10 @@ export function TasksClientPage({ initialTasks, emptyMessage, frameworkId }: Tas
             <>
               <span className="text-muted-foreground text-sm">{changesSummary}</span>
               <Button variant="outline" onClick={handleCancel} size="sm" className="rounded-xs">
-                Cancel
+                {t('cancel')}
               </Button>
               <Button onClick={handleCommit} size="sm" className="rounded-xs">
-                Commit Changes
+                {t('commitChanges')}
               </Button>
             </>
           )}
@@ -350,12 +355,12 @@ export function TasksClientPage({ initialTasks, emptyMessage, frameworkId }: Tas
               className="rounded-xs"
             >
               <Link className="mr-1 h-4 w-4" />
-              Add Existing Task
+              {t('addExistingTask')}
             </Button>
           )}
           <Button onClick={handleAddRow} size="sm" className="rounded-xs">
             <Plus className="mr-1 h-4 w-4" />
-            Add Task
+            {t('addTask')}
           </Button>
         </div>
       </div>
@@ -433,7 +438,7 @@ export function TasksClientPage({ initialTasks, emptyMessage, frameworkId }: Tas
                   colSpan={columns.length}
                   className="text-muted-foreground py-8 text-center text-sm"
                 >
-                  {emptyMessage ?? 'No tasks yet. Click "Add Task" to create one.'}
+                  {resolvedEmptyMessage}
                 </td>
               </tr>
             )}

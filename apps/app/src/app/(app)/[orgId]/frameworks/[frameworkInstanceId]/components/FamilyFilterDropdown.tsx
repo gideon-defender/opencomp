@@ -26,11 +26,14 @@ export function FamilyFilterDropdown({
   const [searchTerm, setSearchTerm] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const [prevDropdownOpen, setPrevDropdownOpen] = useState(open);
+  if (prevDropdownOpen !== open) {
+    setPrevDropdownOpen(open);
+    if (!open) setSearchTerm('');
+  }
+
   useEffect(() => {
-    if (!open) {
-      setSearchTerm('');
-      return;
-    }
+    if (!open) return;
 
     const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {

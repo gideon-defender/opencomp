@@ -38,6 +38,9 @@ export function isTransientLlmFailure(error: unknown): boolean {
 }
 
 function laHourAt(instant: Date): number {
+  // NOTE: 'en-US' here is computation-only (numeric hour extraction for the
+  // Pacific-midnight quota reset), never user-facing. It must stay a fixed
+  // locale so the non-digit strip below parses reliably.
   return (
     Number(
       new Intl.DateTimeFormat('en-US', {

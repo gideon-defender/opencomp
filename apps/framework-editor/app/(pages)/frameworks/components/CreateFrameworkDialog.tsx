@@ -22,11 +22,13 @@ import {
 import { Input } from '@gideon-defender/ui/input';
 import { Textarea } from '@gideon-defender/ui/textarea';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { FrameworkBaseSchema } from '../schemas';
+import { createFrameworkBaseSchema } from '../schemas';
 
 interface CreateFrameworkDialogProps {
   isOpen: boolean;
@@ -34,17 +36,31 @@ interface CreateFrameworkDialogProps {
   onFrameworkCreated?: () => void;
 }
 
-type FrameworkFormValues = z.infer<typeof FrameworkBaseSchema>;
-
 export function CreateFrameworkDialog({
   isOpen,
   onOpenChange,
   onFrameworkCreated,
 }: CreateFrameworkDialogProps) {
   const router = useRouter();
+  const t = useTranslations('dialogs');
+  const tToasts = useTranslations('toasts');
+  const tValidation = useTranslations('validation');
+
+  const schema = useMemo(
+    () =>
+      createFrameworkBaseSchema({
+        nameRequired: tValidation('nameRequired'),
+        descriptionRequired: tValidation('descriptionRequired'),
+        versionRequired: tValidation('versionRequired'),
+        requirementNameRequired: tValidation('requirementNameRequired'),
+      }),
+    [tValidation],
+  );
+
+  type FrameworkFormValues = z.infer<typeof schema>;
 
   const form = useForm<FrameworkFormValues>({
-    resolver: zodResolver(FrameworkBaseSchema),
+    resolver: zodResolver(schema),
     defaultValues: {
       name: '',
       description: '',
@@ -65,13 +81,14 @@ export function CreateFrameworkDialog({
           visible: values.visible,
         }),
       });
-      toast.success('Framework created successfully!');
+      toast.success(tToasts('frameworkCreated'));
       onOpenChange(false);
       form.reset();
       onFrameworkCreated?.();
       router.refresh();
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to create framework.';
+      const message =
+        error instanceof Error ? error.message : tToasts('frameworkCreateFailed');
       toast.error(message);
     }
   }
@@ -88,10 +105,8 @@ export function CreateFrameworkDialog({
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create New Framework</DialogTitle>
-          <DialogDescription>
-            Fill in the details below to create a new framework. Click create when you're done.
-          </DialogDescription>
+          <DialogTitle>{t('createFramework.title')}</DialogTitle>
+          <DialogDescription>{t('createFramework.description')}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-2 py-4">
@@ -100,9 +115,9 @@ export function CreateFrameworkDialog({
               name="name"
               render={({ field }) => (
                 <FormItem className="grid grid-cols-4 items-center gap-2">
-                  <FormLabel className="text-right">Name</FormLabel>
+                  <FormLabel className="text-right">{t('createFramework.nameLabel')}</FormLabel>
                   <FormControl className="col-span-3">
-                    <Input placeholder="Enter framework name" {...field} />
+                    <Input placeholder={t('createFramework.namePlaceholder')} {...field} />
                   </FormControl>
                   <div className="col-span-3 col-start-2">
                     <FormMessage />
@@ -115,9 +130,9 @@ export function CreateFrameworkDialog({
               name="description"
               render={({ field }) => (
                 <FormItem className="grid grid-cols-4 items-center gap-2">
-                  <FormLabel className="text-right">Description</FormLabel>
+                  <FormLabel className="text-right">{t('createFramework.descriptionLabel')}</FormLabel>
                   <FormControl className="col-span-3">
-                    <Textarea placeholder="Enter framework description" {...field} />
+                    <Textarea placeholder={t('createFramework.descriptionPlaceholder')} {...field} />
                   </FormControl>
                   <div className="col-span-3 col-start-2">
                     <FormMessage />
@@ -130,9 +145,9 @@ export function CreateFrameworkDialog({
               name="version"
               render={({ field }) => (
                 <FormItem className="grid grid-cols-4 items-center gap-2">
-                  <FormLabel className="text-right">Version</FormLabel>
+                  <FormLabel className="text-right">{t('createFramework.versionLabel')}</FormLabel>
                   <FormControl className="col-span-3">
-                    <Input placeholder="e.g., 1.0.0 or 2025 or V2" {...field} />
+                    <Input placeholder={t('createFramework.versionPlaceholder')} {...field} />
                   </FormControl>
                   <div className="col-span-3 col-start-2">
                     <FormMessage />
@@ -149,11 +164,13 @@ export function CreateFrameworkDialog({
                     onOpenChange(false);
                   }}
                 >
-                  Cancel
+                  {t('createFramework.cancel')}
                 </Button>
               </DialogClose>
               <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Creating...' : 'Create Framework'}
+                {form.formState.isSubmitting
+                  ? t('createFramework.submitting')
+                  : t('createFramework.submit')}
               </Button>
             </DialogFooter>
           </form>

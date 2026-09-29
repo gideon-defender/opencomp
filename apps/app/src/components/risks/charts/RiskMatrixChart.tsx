@@ -3,7 +3,7 @@
 import { Impact, Likelihood } from '@db';
 import { Button, HStack, Section, Text } from '@trycompai/design-system';
 import { Information } from '@trycompai/design-system/icons';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { AxisTooltip } from './AxisTooltip';
 import {
   MatrixBody,
@@ -52,14 +52,19 @@ export function RiskMatrixChart({
   const [activeImpact, setActiveImpact] = useState<Impact>(initialImpactProp);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
+  // Keep local edits in sync when the parent props change, adjusted during render.
+  const [prevLikelihoodProp, setPrevLikelihoodProp] = useState(initialLikelihoodProp);
+  if (prevLikelihoodProp !== initialLikelihoodProp) {
+    setPrevLikelihoodProp(initialLikelihoodProp);
     setInitialLikelihood(initialLikelihoodProp);
     setActiveLikelihood(initialLikelihoodProp);
-  }, [initialLikelihoodProp]);
-  useEffect(() => {
+  }
+  const [prevImpactProp, setPrevImpactProp] = useState(initialImpactProp);
+  if (prevImpactProp !== initialImpactProp) {
+    setPrevImpactProp(initialImpactProp);
     setInitialImpact(initialImpactProp);
     setActiveImpact(initialImpactProp);
-  }, [initialImpactProp]);
+  }
 
   const riskData = buildRiskData(activeLikelihood, activeImpact);
 

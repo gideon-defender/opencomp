@@ -28,7 +28,7 @@ describe('GideonShadowService', () => {
     // Default: shadow enabled via identityUrl
     process.env.GIDEON_IDENTITY_URL = 'https://auth.example.com';
     fetchMock = jest.fn();
-    global.fetch = fetchMock as unknown as typeof fetch;
+    global.fetch = fetchMock;
     service = new GideonShadowService();
   });
 
@@ -55,12 +55,12 @@ describe('GideonShadowService', () => {
     fetchMock.mockResolvedValue({
       ok: true,
       json: async () => ({ tenant: { name: 'Acme' } }),
-    } as never);
+    });
     mockOrgFindUnique.mockResolvedValue(null);
 
     const warn = jest
       .spyOn(service['logger'], 'warn')
-      .mockImplementation(() => undefined as never);
+      .mockImplementation(() => undefined);
 
     await service.logTenantOperationsMismatch('org_1', 'tok');
 
@@ -77,17 +77,17 @@ describe('GideonShadowService', () => {
     fetchMock.mockResolvedValue({
       ok: true,
       json: async () => ({ name: 'Gideon Acme' }),
-    } as never);
+    });
     mockOrgFindUnique.mockResolvedValue({
       id: 'org_1',
       name: 'OpenComp Acme',
       createdAt: new Date(),
-    } as never);
-    mockMemberFindFirst.mockResolvedValue({ id: 'mem_1' } as never);
+    });
+    mockMemberFindFirst.mockResolvedValue({ id: 'mem_1' });
 
     const warn = jest
       .spyOn(service['logger'], 'warn')
-      .mockImplementation(() => undefined as never);
+      .mockImplementation(() => undefined);
 
     await service.logTenantOperationsMismatch('org_1', 'tok');
 
@@ -98,17 +98,17 @@ describe('GideonShadowService', () => {
     fetchMock.mockResolvedValue({
       ok: true,
       json: async () => ({ name: 'Acme' }),
-    } as never);
+    });
     mockOrgFindUnique.mockResolvedValue({
       id: 'org_1',
       name: 'Acme',
       createdAt: new Date(),
-    } as never);
-    mockMemberFindFirst.mockResolvedValue({ id: 'mem_1' } as never);
+    });
+    mockMemberFindFirst.mockResolvedValue({ id: 'mem_1' });
 
     const debug = jest
       .spyOn(service['logger'], 'debug')
-      .mockImplementation(() => undefined as never);
+      .mockImplementation(() => undefined);
 
     await service.logTenantOperationsMismatch('org_1', 'tok');
 
@@ -119,12 +119,12 @@ describe('GideonShadowService', () => {
     fetchMock.mockResolvedValue({
       ok: true,
       json: async () => ({ tenant: { name: 'Acme' } }),
-    } as never);
+    });
     mockOrgFindUnique.mockResolvedValue({
       id: 'tenant-abc',
       name: 'Acme',
       createdAt: new Date(),
-    } as never);
+    });
     mockMemberFindFirst.mockResolvedValue(null);
 
     await service.logTenantOperationsMismatch('tenant-abc', 'tok');
@@ -141,13 +141,13 @@ describe('GideonShadowService', () => {
 
   it('falls back to internalToken when gideonToken empty', async () => {
     process.env.GIDEON_INTERNAL_SERVICE_TOKEN = 'internal_123';
-    fetchMock.mockResolvedValue({ ok: true, json: async () => ({}) } as never);
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({}) });
     mockOrgFindUnique.mockResolvedValue({
       id: 'org_1',
       name: 'Acme',
       createdAt: new Date(),
-    } as never);
-    mockMemberFindFirst.mockResolvedValue({ id: 'mem_1' } as never);
+    });
+    mockMemberFindFirst.mockResolvedValue({ id: 'mem_1' });
 
     await service.logTenantOperationsMismatch('org_1', '');
 
@@ -162,7 +162,7 @@ describe('GideonShadowService', () => {
   });
 
   it('does not throw on fetch non-ok or network error', async () => {
-    fetchMock.mockResolvedValue({ ok: false, status: 403 } as never);
+    fetchMock.mockResolvedValue({ ok: false, status: 403 });
     await expect(
       service.logTenantOperationsMismatch('org_1', 'tok'),
     ).resolves.toBeUndefined();
@@ -178,7 +178,7 @@ describe('GideonShadowService', () => {
     const s = new GideonShadowService();
     const warn = jest
       .spyOn(s['logger'], 'warn')
-      .mockImplementation(() => undefined as never);
+      .mockImplementation(() => undefined);
     s.logMismatch('ctx', { a: 1 });
     expect(warn).not.toHaveBeenCalled();
   });

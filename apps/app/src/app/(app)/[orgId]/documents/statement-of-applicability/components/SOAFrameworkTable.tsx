@@ -2,7 +2,7 @@
 
 import type { Member, User } from '@db';
 import { Card } from '@gideon-defender/ui';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useSOAAutoFill } from '../hooks/useSOAAutoFill';
 import { useSOADocument } from '../hooks/useSOADocument';
@@ -131,19 +131,20 @@ export function SOAFrameworkTable({
   });
 
   // Update answersMap when the live document changes
-  useEffect(() => {
-    if (!Array.isArray(resolvedDocument?.answers)) {
-      return;
+  const [prevAnswers, setPrevAnswers] = useState(resolvedDocument?.answers);
+  if (prevAnswers !== resolvedDocument?.answers) {
+    setPrevAnswers(resolvedDocument?.answers);
+    if (Array.isArray(resolvedDocument?.answers)) {
+      setAnswersMap(
+        new Map(
+          resolvedDocument.answers.map((answer: SOAAnswerRecord) => [
+            answer.questionId,
+            toAnswerData(answer),
+          ]),
+        ),
+      );
     }
-    setAnswersMap(
-      new Map(
-        resolvedDocument.answers.map((answer: SOAAnswerRecord) => [
-          answer.questionId,
-          toAnswerData(answer),
-        ]),
-      ),
-    );
-  }, [resolvedDocument?.answers]);
+  }
 
   const handleAnswerUpdate = (questionId: string, payload: SOAFieldSavePayload) => {
     const existingAnswer = answersMap.get(questionId);

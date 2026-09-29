@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { BrandSettings } from './BrandSettings';
 import { UpdateTrustFavicon } from './UpdateTrustFavicon';
 
@@ -18,13 +18,17 @@ export function TrustPortalBrandingSettings({
   const [currentPrimaryColor, setCurrentPrimaryColor] = useState(primaryColor);
   const [currentFaviconUrl, setCurrentFaviconUrl] = useState(faviconUrl);
 
-  useEffect(() => {
+  const [prevPrimaryColor, setPrevPrimaryColor] = useState(primaryColor);
+  if (prevPrimaryColor !== primaryColor) {
+    setPrevPrimaryColor(primaryColor);
     setCurrentPrimaryColor(primaryColor);
-  }, [primaryColor]);
+  }
 
-  useEffect(() => {
+  const [prevFaviconUrl, setPrevFaviconUrl] = useState(faviconUrl);
+  if (prevFaviconUrl !== faviconUrl) {
+    setPrevFaviconUrl(faviconUrl);
     setCurrentFaviconUrl(faviconUrl);
-  }, [faviconUrl]);
+  }
 
   return (
     <div className="space-y-6">

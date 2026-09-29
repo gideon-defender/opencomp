@@ -223,7 +223,9 @@ export function ProviderDetailView({
     if (!shouldOpenSettings) return;
 
     settingsQueryHandledRef.current = true;
-    setSettingsOpen(true);
+    // Defer the dialog open out of the synchronous effect body — the effect
+    // itself only synchronizes the external URL state on entry.
+    queueMicrotask(() => setSettingsOpen(true));
     router.replace(`/${orgId}/integrations/${provider.id}`, { scroll: false });
   }, [orgId, provider.id, router, searchParams, selectedConnection?.id]);
 

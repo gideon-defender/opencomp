@@ -26,7 +26,7 @@ describe('wizardAnswersSchema (full)', () => {
   });
 
   it('rejects a missing required field on completion', () => {
-    const { certificationBody, ...rest } = fullAnswers;
+    const { certificationBody: _certificationBody, ...rest } = fullAnswers;
     expect(wizardAnswersSchema.safeParse(rest).success).toBe(false);
   });
 

@@ -1,5 +1,7 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { renderWithIntl } from '../../test-utils/render-with-intl';
+import type { AppLocale } from '../../../i18n/messages';
 import { EditableCell } from './EditableCell';
 import { clearEditorSize, saveEditorSize } from './editor-size-storage';
 
@@ -21,9 +23,12 @@ vi.mock('@gideon-defender/ui', () => ({
   DialogFooter: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
-function setup(props: Partial<Parameters<typeof EditableCell>[0]> = {}) {
+function setup(
+  props: Partial<Parameters<typeof EditableCell>[0]> = {},
+  locale: AppLocale = 'en',
+) {
   const onUpdate = vi.fn();
-  render(
+  renderWithIntl(
     <EditableCell
       value="The organization shall assign account managers."
       rowId="row-1"
@@ -31,6 +36,7 @@ function setup(props: Partial<Parameters<typeof EditableCell>[0]> = {}) {
       onUpdate={onUpdate}
       {...props}
     />,
+    locale,
   );
   return { onUpdate };
 }
@@ -151,5 +157,22 @@ describe('EditableCell — expandable', () => {
     const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
     expect(textarea.style.width).toBe('900px');
     expect(textarea.style.height).toBe('500px');
+  });
+});
+
+describe('EditableCell — i18n', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    clearEditorSize();
+  });
+
+  it('uses translated default placeholder and dialog strings in Spanish', () => {
+    setup({ value: null, expandable: true }, 'es');
+    expect(screen.getByText('Haz clic para editar')).toBeTruthy();
+    fireEvent.contextMenu(screen.getByText('Haz clic para editar'));
+    expect(screen.getByText('Editar')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Abrir editor grande' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Guardar' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Cancelar' })).toBeTruthy();
   });
 });

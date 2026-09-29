@@ -1,7 +1,7 @@
 'use client';
 
 import { TrashCan, Upload } from '@trycompai/design-system/icons';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 const ALLOWED_BADGE_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
@@ -38,7 +38,11 @@ export function CustomFrameworkBadge({
   // signed URL). Reset when the URL changes so a freshly uploaded/replaced
   // badge gets a fresh attempt.
   const [imgErrored, setImgErrored] = useState(false);
-  useEffect(() => setImgErrored(false), [badgeUrl]);
+  const [prevBadgeUrl, setPrevBadgeUrl] = useState(badgeUrl);
+  if (prevBadgeUrl !== badgeUrl) {
+    setPrevBadgeUrl(badgeUrl);
+    setImgErrored(false);
+  }
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editable = !!onUpload && !disabled;
 

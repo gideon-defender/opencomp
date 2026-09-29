@@ -1,4 +1,4 @@
-import { db } from '@db';
+import { db, type Prisma } from '@db';
 import type { PeopleResponseDto } from '../dto/people-responses.dto';
 import type { CreatePeopleDto } from '../dto/create-people.dto';
 import type { UpdatePeopleDto } from '../dto/update-people.dto';
@@ -153,7 +153,7 @@ export class MemberQueries {
     } = updateData;
 
     // Prepare member update data
-    const updatePayload: any = { ...memberFields };
+    const updatePayload: Prisma.MemberUpdateInput = { ...memberFields };
 
     // Convert createdAt string to Date for Prisma
     if (createdAt !== undefined) {

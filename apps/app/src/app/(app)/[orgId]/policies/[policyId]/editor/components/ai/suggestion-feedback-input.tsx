@@ -20,9 +20,18 @@ export function SuggestionFeedbackInput({
   const [value, setValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Reset and focus when editing a new range
+  // Reset the input whenever a new range starts editing. Adjust-during-render
+  // instead of an effect setState; the focus side effect stays in the effect
+  // below (no setState there).
+  const [prevEditingRangeId, setPrevEditingRangeId] = useState(editingRangeId);
+  if (prevEditingRangeId !== editingRangeId) {
+    setPrevEditingRangeId(editingRangeId);
+    if (value !== '') {
+      setValue('');
+    }
+  }
+
   useEffect(() => {
-    setValue('');
     if (editingRangeId) {
       // Small delay to let the DOM settle before focusing
       const timer = setTimeout(() => inputRef.current?.focus(), 50);

@@ -488,7 +488,7 @@ describe('isUserUnsubscribed', () => {
       const db = createMockDb({
         user: {
           emailNotificationsUnsubscribed: false,
-          emailPreferences: 'invalid' as unknown,
+          emailPreferences: 'invalid',
         },
       });
 

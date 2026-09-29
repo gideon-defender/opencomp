@@ -4,7 +4,7 @@ import {
   TrustCustomFrameworkItem,
   useTrustPortalSettings,
 } from '@/hooks/use-trust-portal-settings';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { ComplianceFramework } from './ComplianceFramework';
 
@@ -50,9 +50,12 @@ export function CustomFrameworksSection({
   // is created). The prop reference is stable across client-only re-renders, so
   // this won't clobber in-session optimistic edits — it only fires on fresh
   // server data. Mirrors the certificate-file resync in TrustPortalSwitch.
-  useEffect(() => {
+  const [prevCustomFrameworks, setPrevCustomFrameworks] =
+    useState(initialCustomFrameworks);
+  if (prevCustomFrameworks !== initialCustomFrameworks) {
+    setPrevCustomFrameworks(initialCustomFrameworks);
     setFrameworks(initialCustomFrameworks);
-  }, [initialCustomFrameworks]);
+  }
 
   // Nothing to show until the org authors a custom framework — keep the section
   // out of the way rather than rendering an empty grid.

@@ -14,7 +14,7 @@ import {
 import { Add, TrashCan } from '@trycompai/design-system/icons';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 interface UpdateTrustFaviconProps {
@@ -35,9 +35,11 @@ export function UpdateTrustFavicon({
   const [isRemoving, setIsRemoving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
+  const [prevFaviconUrl, setPrevFaviconUrl] = useState(currentFaviconUrl);
+  if (prevFaviconUrl !== currentFaviconUrl) {
+    setPrevFaviconUrl(currentFaviconUrl);
     setPreviewUrl(currentFaviconUrl);
-  }, [currentFaviconUrl]);
+  }
 
   const handleUpload = useCallback(
     async (fileName: string, fileType: string, fileData: string) => {

@@ -2,7 +2,7 @@
 
 import { orderServicesForConnectionGrid } from '@/lib/connection-services-display-order';
 import { Search } from '@trycompai/design-system/icons';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ServiceCard } from './ServiceCard';
 
 export function ServicesGrid({
@@ -21,9 +21,11 @@ export function ServicesGrid({
   const [search, setSearch] = useState('');
   const [tailEnabledIds, setTailEnabledIds] = useState<string[]>([]);
 
-  useEffect(() => {
+  const [prevConnectionId, setPrevConnectionId] = useState(connectionId);
+  if (prevConnectionId !== connectionId) {
+    setPrevConnectionId(connectionId);
     setTailEnabledIds([]);
-  }, [connectionId]);
+  }
 
   const handleToggle = useCallback(
     async (id: string, enabled: boolean) => {

@@ -1,8 +1,12 @@
+import { mockNextIntl } from '@/test-utils/mocks/next-intl';
 import { apiClient } from '@/lib/api-client';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SWRConfig } from 'swr';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+mockNextIntl();
+
 import { BillingSettingsClient } from './BillingSettingsClient';
 import type { BackgroundCheckBillingStatus } from './types';
 

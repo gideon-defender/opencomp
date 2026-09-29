@@ -11,6 +11,7 @@ import {
   TableRow,
 } from '@trycompai/design-system';
 import { ChevronDown, ChevronRight } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
 import { Fragment, useState } from 'react';
 
 import { RemediationSection } from './RemediationSection';
@@ -48,6 +49,8 @@ const statusVariant = {
 } as const;
 
 export function FindingsTable({ findings }: FindingsTableProps) {
+  const t = useTranslations('cloudTests');
+  const locale = useLocale();
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   const toggleRow = (id: string) => {
@@ -65,7 +68,7 @@ export function FindingsTable({ findings }: FindingsTableProps) {
   if (findings.length === 0) {
     return (
       <div className="rounded-xs border p-12 text-center">
-        <p className="text-muted-foreground text-lg">No results available</p>
+        <p className="text-muted-foreground text-lg">{t('noResults')}</p>
       </div>
     );
   }
@@ -75,10 +78,10 @@ export function FindingsTable({ findings }: FindingsTableProps) {
       <TableHeader>
         <TableRow>
           <TableHead></TableHead>
-          <TableHead>Severity</TableHead>
-          <TableHead>Title</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Detected At</TableHead>
+          <TableHead>{t('severity')}</TableHead>
+          <TableHead>{t('tableTitle')}</TableHead>
+          <TableHead>{t('status')}</TableHead>
+          <TableHead>{t('detectedAt')}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -105,20 +108,24 @@ export function FindingsTable({ findings }: FindingsTableProps) {
                 </TableCell>
                 <TableCell>
                   <Badge variant={severityVariant[severityKey] || 'default'}>
-                    {finding.severity || 'Unknown'}
+                    {finding.severity || t('unknown')}
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <span className="font-medium">{finding.title || 'Untitled Finding'}</span>
+                  <span className="font-medium">{finding.title || t('untitledFinding')}</span>
                 </TableCell>
                 <TableCell>
                   <Badge variant={statusVariant[statusKey] || 'secondary'}>
-                    {finding.status === 'success' ? 'Passed' : finding.status || 'Unknown'}
+                    {finding.status === 'success'
+                      ? t('passed')
+                      : finding.status || t('unknown')}
                   </Badge>
                 </TableCell>
                 <TableCell>
                   <span className="text-muted-foreground text-sm">
-                    {finding.completedAt ? new Date(finding.completedAt).toLocaleString() : 'Never'}
+                    {finding.completedAt
+                      ? new Date(finding.completedAt).toLocaleString(locale)
+                      : t('never')}
                   </span>
                 </TableCell>
               </TableRow>
@@ -128,7 +135,7 @@ export function FindingsTable({ findings }: FindingsTableProps) {
                     <div className="space-y-4 bg-muted/30 p-4">
                       {finding.description && (
                         <div>
-                          <h4 className="mb-2 font-semibold">Description</h4>
+                          <h4 className="mb-2 font-semibold">{t('description')}</h4>
                           <p className="text-muted-foreground text-sm">{finding.description}</p>
                         </div>
                       )}

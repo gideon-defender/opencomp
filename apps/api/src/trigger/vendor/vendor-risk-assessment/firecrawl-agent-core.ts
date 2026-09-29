@@ -66,10 +66,13 @@ export async function firecrawlResearchCore(params: {
     });
   }
 
-  const responseErrorMessage =
-    typeof agentResponse.error === 'string'
-      ? agentResponse.error
-      : String(agentResponse.error ?? '');
+  const agentError: unknown = agentResponse?.error;
+  const responseErrorMessage: string =
+    typeof agentError === 'string'
+      ? agentError
+      : agentError instanceof Error
+        ? agentError.message
+        : '';
   const shouldRetryFetchFailed =
     agentResponse.status === 'failed' &&
     /fetch failed/i.test(responseErrorMessage);

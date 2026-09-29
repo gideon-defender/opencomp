@@ -106,49 +106,57 @@ export function MetricsSection({
   const [lastRunLabel, setLastRunLabel] = useState<string | null>(null);
 
   useEffect(() => {
-    const now = new Date();
-    const last = lastRunAt ? new Date(lastRunAt) : null;
-    const next = computeNextRunUtc(scheduleFrequency, last, now);
+    let cancelled = false;
+    (async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      const now = new Date();
+      const last = lastRunAt ? new Date(lastRunAt) : null;
+      const next = computeNextRunUtc(scheduleFrequency, last, now);
 
-    // Format the recurring time in the user's timezone (e.g., "Every day at
-    // 4:00 AM EST"). Pulling time-of-day from the next-run instant guarantees
-    // the schedule and next-run labels agree about clock time.
-    const timeOfDay = next.toLocaleTimeString(undefined, {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-      timeZoneName: 'short',
-    });
-    setScheduleLabel(
-      t('metricsSection.scheduleAt', {
-        frequency: frequencyDescription(t, scheduleFrequency),
-        time: timeOfDay,
-      }),
-    );
-
-    setNextRunLabel(
-      next.toLocaleString(undefined, {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
+      // Format the recurring time in the user's timezone (e.g., "Every day at
+      // 4:00 AM EST"). Pulling time-of-day from the next-run instant guarantees
+      // the schedule and next-run labels agree about clock time.
+      const timeOfDay = next.toLocaleTimeString(undefined, {
         hour: 'numeric',
         minute: '2-digit',
         hour12: true,
         timeZoneName: 'short',
-      }),
-    );
+      });
+      setScheduleLabel(
+        t('metricsSection.scheduleAt', {
+          frequency: frequencyDescription(t, scheduleFrequency),
+          time: timeOfDay,
+        }),
+      );
 
-    if (latestRun) {
-      setLastRunLabel(
-        new Date(latestRun.createdAt).toLocaleTimeString(undefined, {
+      setNextRunLabel(
+        next.toLocaleString(undefined, {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
           hour: 'numeric',
           minute: '2-digit',
           hour12: true,
+          timeZoneName: 'short',
         }),
       );
-    } else {
-      setLastRunLabel(null);
-    }
+
+      if (latestRun) {
+        setLastRunLabel(
+          new Date(latestRun.createdAt).toLocaleTimeString(undefined, {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+          }),
+        );
+      } else {
+        setLastRunLabel(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [scheduleFrequency, lastRunAt, latestRun, t]);
 
   return (

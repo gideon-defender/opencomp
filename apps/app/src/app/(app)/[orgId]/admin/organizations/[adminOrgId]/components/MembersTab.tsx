@@ -82,8 +82,19 @@ export function MembersTab({
   }, [orgId]);
 
   useEffect(() => {
-    void fetchInvitations();
-  }, [fetchInvitations]);
+    let cancelled = false;
+    (async () => {
+      const res = await api.get<PendingInvitation[]>(
+        `/v1/admin/organizations/${orgId}/invitations`,
+      );
+      if (cancelled) return;
+      if (res.data) setInvitations(res.data);
+      setLoadingInvitations(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [orgId]);
 
   const handleInvite = async () => {
     if (!inviteEmail.trim()) return;

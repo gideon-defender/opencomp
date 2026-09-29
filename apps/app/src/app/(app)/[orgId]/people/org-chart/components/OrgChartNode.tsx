@@ -26,12 +26,11 @@ export function OrgChartNode({ data, selected }: NodeProps & { data: OrgChartNod
     }
   }, [isEditingTitle]);
 
-  // Keep editValue in sync with data.title when not editing
-  useEffect(() => {
-    if (!isEditingTitle) {
-      setEditValue(data.title || '');
-    }
-  }, [data.title, isEditingTitle]);
+  // Keep editValue in sync with data.title when not editing.
+  // Adjust-during-render instead of an effect to avoid setState-in-effect.
+  if (!isEditingTitle && editValue !== (data.title || '')) {
+    setEditValue(data.title || '');
+  }
 
   const commitTitle = useCallback(() => {
     setIsEditingTitle(false);

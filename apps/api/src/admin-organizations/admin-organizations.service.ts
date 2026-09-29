@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { AuditLogEntityType, db } from '@db';
 import { triggerEmail } from '../email/trigger-email';
+import { resolveEmailLocale, type EmailLocale } from '../email/locale';
 import { InviteEmail } from '../email/templates/invite-member';
 import { UpdateAdminOrganizationDto } from './dto/update-admin-organization.dto';
 import { MAX_AUDIT_LOG_OFFSET } from '../audit/audit-log.pagination';
@@ -295,8 +296,10 @@ export class AdminOrganizationsService {
     email: string;
     role: string;
     adminUserId: string;
+    locale?: EmailLocale;
   }) {
     const { orgId, email, role, adminUserId } = params;
+    const emailLocale = resolveEmailLocale(params.locale);
     const normalizedEmail = email.toLowerCase().trim();
 
     if (!AdminOrganizationsService.ALLOWED_INVITE_ROLES.includes(role)) {
@@ -363,8 +366,12 @@ export class AdminOrganizationsService {
 
       await triggerEmail({
         to: normalizedEmail,
-        subject: `You've been invited to join ${org.name} on OpenComp`,
+        subject:
+          emailLocale === 'es'
+            ? `Te han invitado a unirte a ${org.name} en OpenComp`
+            : `You've been invited to join ${org.name} on OpenComp`,
         react: InviteEmail({
+          locale: emailLocale,
           organizationName: org.name,
           inviteLink,
           email: normalizedEmail,

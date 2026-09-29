@@ -85,11 +85,7 @@ describe('CommentsController', () => {
       const comments = [{ id: 'cmt_1', content: 'Hello' }];
       mockCommentsService.getComments.mockResolvedValue(comments);
 
-      const result = await controller.getComments(
-        'org_123',
-        'tsk_1',
-        'task' as never,
-      );
+      const result = await controller.getComments('org_123', 'tsk_1', 'task');
 
       expect(commentsService.getComments).toHaveBeenCalledWith(
         'org_123',

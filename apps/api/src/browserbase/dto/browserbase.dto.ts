@@ -86,17 +86,6 @@ export class AnalyzeLoginDto {
   url: string;
 }
 
-class LoginRecommendationDto {
-  @ApiProperty({ enum: ['ready', 'works_with_checkins', 'manual'] })
-  category: string;
-
-  @ApiProperty()
-  headline: string;
-
-  @ApiProperty()
-  detail: string;
-}
-
 export class AnalyzeLoginResponseDto {
   @ApiProperty({
     description: 'Local trigger run id for the background analysis',

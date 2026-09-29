@@ -7,6 +7,8 @@ import { GeistMono } from 'geist/font/mono';
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import { headers } from 'next/headers';
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getMessages } from 'next-intl/server';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import { Suspense } from 'react';
 import { Toaster } from 'sonner';
@@ -86,21 +88,26 @@ export default async function Layout(props: { children: React.ReactNode }) {
     headers: await headers(),
   });
 
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body
         className={cn(
           `${GeistMono.variable} ${font.variable}`,
           'overscroll-none whitespace-pre-line antialiased',
         )}
       >
-        <Suspense>
-          <NuqsAdapter>
-            <Providers session={session}>
-              <main>{children}</main>
-            </Providers>
-          </NuqsAdapter>
-        </Suspense>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <Suspense>
+            <NuqsAdapter>
+              <Providers session={session}>
+                <main>{children}</main>
+              </Providers>
+            </NuqsAdapter>
+          </Suspense>
+        </NextIntlClientProvider>
         <Toaster richColors />
       </body>
     </html>

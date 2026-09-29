@@ -158,10 +158,10 @@ export async function deepScrapeTrustPortal(
   // 1. Initial scrape
   let initial: ScrapeResponse;
   try {
-    initial = (await firecrawlClient.scrape(
+    initial = await firecrawlClient.scrape(
       sourceUrl,
       buildInitialScrapeOptions() as unknown as Record<string, unknown>,
-    )) as ScrapeResponse;
+    );
   } catch (error) {
     logger.warn('Trust portal deep-scrape: initial scrape failed', {
       vendorName,

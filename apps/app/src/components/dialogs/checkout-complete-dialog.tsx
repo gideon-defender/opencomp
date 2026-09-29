@@ -37,19 +37,24 @@ export function CheckoutCompleteDialog({ orgId }: { orgId: string }) {
   const [planType, setPlanType] = useState<PlanType | null>('done-for-you');
   const posthog = usePostHog();
 
+  // Capture the detected plan type and open the dialog during render so the
+  // effect below only handles side effects (tracking, confetti, URL cleanup).
+  const [prevCheckoutComplete, setPrevCheckoutComplete] = useState(checkoutComplete);
+  if (prevCheckoutComplete !== checkoutComplete) {
+    setPrevCheckoutComplete(checkoutComplete);
+    if (checkoutComplete === 'starter' || checkoutComplete === 'done-for-you') {
+      setPlanType(checkoutComplete as PlanType);
+      setOpen(true);
+    }
+  }
+
   useEffect(() => {
     if (checkoutComplete === 'starter' || checkoutComplete === 'done-for-you') {
       const detectedPlanType = checkoutComplete as PlanType;
 
-      // Store the plan type before clearing the query param
-      setPlanType(detectedPlanType);
-
       // Track the checkout completion event
       zaraz.track('checkout_completed', { plan_type: detectedPlanType });
       posthog?.capture('checkout_completed', { plan_type: detectedPlanType, orgId });
-
-      // Show the dialog
-      setOpen(true);
 
       // Trigger confetti animation
       const duration = 3 * 1000;

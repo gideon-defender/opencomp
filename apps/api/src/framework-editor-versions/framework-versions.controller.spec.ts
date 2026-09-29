@@ -14,7 +14,6 @@ jest.mock('../auth/auth.server', () => ({
   auth: { api: { getSession: jest.fn() } },
 }));
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 import { Test, type TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { PlatformAdminGuard } from '../auth/platform-admin.guard';

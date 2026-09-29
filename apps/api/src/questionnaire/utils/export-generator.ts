@@ -11,6 +11,16 @@ interface ExportResult {
 }
 
 /**
+ * `splitTextToSize` is typed `any` by jspdf; narrow its result to `string[]`
+ * (its documented runtime shape) so wrapped lines are never `any`.
+ */
+function toTextLines(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map((line: unknown) => String(line));
+  if (typeof value === 'string') return [value];
+  return [String(value)];
+}
+
+/**
  * Generates an export file in the specified format
  */
 export async function generateExportFile(
@@ -133,16 +143,17 @@ export function generatePDF(
     // Question
     doc.setFont('helvetica', 'bold');
     const questionText = `Q${index + 1}: ${qa.question}`;
-    const questionLines = doc.splitTextToSize(questionText, contentWidth);
+    const questionLines = toTextLines(
+      doc.splitTextToSize(questionText, contentWidth),
+    );
     doc.text(questionLines, margin, yPosition);
     yPosition += questionLines.length * lineHeight + 2;
 
     // Answer
     doc.setFont('helvetica', 'normal');
     const answerText = qa.answer || 'No answer provided';
-    const answerLines = doc.splitTextToSize(
-      `A${index + 1}: ${answerText}`,
-      contentWidth,
+    const answerLines = toTextLines(
+      doc.splitTextToSize(`A${index + 1}: ${answerText}`, contentWidth),
     );
     doc.text(answerLines, margin, yPosition);
     yPosition += answerLines.length * lineHeight + 4;

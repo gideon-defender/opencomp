@@ -85,8 +85,17 @@ export function VendorsTab({ orgId }: { orgId: string }) {
   }, [orgId]);
 
   useEffect(() => {
-    void fetchVendors();
-  }, [fetchVendors]);
+    let cancelled = false;
+    (async () => {
+      const res = await api.get<Vendor[]>(`/v1/admin/organizations/${orgId}/vendors`);
+      if (cancelled) return;
+      if (res.data) setVendors(res.data);
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [orgId]);
 
   const handleFieldChange = async (vendorId: string, field: string, value: string | null) => {
     setUpdatingId(vendorId);

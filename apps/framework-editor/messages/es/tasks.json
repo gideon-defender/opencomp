@@ -1,0 +1,24 @@
+{
+  "addTask": "Añadir tarea",
+  "addExistingTask": "Añadir tarea existente",
+  "newTask": "Nueva tarea",
+  "cancel": "Cancelar",
+  "commitChanges": "Confirmar cambios",
+  "emptyMessage": "Aún no hay tareas. Haz clic en «Añadir tarea» para crear una.",
+  "deleteTask": "Eliminar tarea",
+  "automated": "Automatizada",
+  "manual": "Manual",
+  "selectFrequency": "Seleccionar frecuencia...",
+  "selectDepartment": "Seleccionar departamento...",
+  "columns": {
+    "automation": "Automatización",
+    "name": "Nombre",
+    "description": "Descripción",
+    "frequency": "Frecuencia",
+    "department": "Departamento",
+    "linkedControls": "Controles vinculados",
+    "createdAt": "Creada el",
+    "updatedAt": "Actualizada el",
+    "id": "ID"
+  }
+}

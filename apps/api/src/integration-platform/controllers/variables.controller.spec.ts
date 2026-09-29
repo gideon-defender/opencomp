@@ -124,12 +124,12 @@ describe('VariablesController', () => {
       expect(result.variables[1].id).toBe('repo_name');
     });
 
-    it('should throw NOT_FOUND when provider does not exist', async () => {
-      mockedGetManifest.mockReturnValue(undefined as never);
+    it('should throw NOT_FOUND when provider does not exist', () => {
+      mockedGetManifest.mockReturnValue(undefined);
 
-      await expect(
-        controller.getProviderVariables('nonexistent'),
-      ).rejects.toThrow(HttpException);
+      expect(() => controller.getProviderVariables('nonexistent')).toThrow(
+        HttpException,
+      );
     });
 
     it('should deduplicate variables by id', async () => {
@@ -257,7 +257,7 @@ describe('VariablesController', () => {
         id: 'prov_1',
         slug: 'missing',
       });
-      mockedGetManifest.mockReturnValue(undefined as never);
+      mockedGetManifest.mockReturnValue(undefined);
 
       await expect(
         controller.getConnectionVariables('conn_1', 'org_123'),

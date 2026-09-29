@@ -120,7 +120,7 @@ describe('timelines-template-resolver', () => {
             groupLabel: null,
             orderIndex: 0,
             defaultDurationWeeks: 4,
-            completionType: 'MANUAL' as any,
+            completionType: 'MANUAL',
             locksTimelineOnComplete: true,
           },
           {
@@ -130,7 +130,7 @@ describe('timelines-template-resolver', () => {
             groupLabel: null,
             orderIndex: 1,
             defaultDurationWeeks: 4,
-            completionType: 'MANUAL' as any,
+            completionType: 'MANUAL',
             locksTimelineOnComplete: false,
           },
         ],

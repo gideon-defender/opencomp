@@ -166,7 +166,7 @@ describe('AdminPoliciesController', () => {
         description: 'A test policy',
         status: 'published' as never,
         frequency: 'yearly' as never,
-        department: 'it' as never,
+        department: 'it',
       });
 
       expect(mockService.create).toHaveBeenCalledWith('org_1', {

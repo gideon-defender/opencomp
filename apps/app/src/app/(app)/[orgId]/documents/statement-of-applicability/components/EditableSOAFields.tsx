@@ -60,10 +60,14 @@ export function EditableSOAFields({
   const [isJustificationDialogOpen, setJustificationDialogOpen] = useState(false);
   const dialogSavedRef = useRef(false);
 
-  useEffect(() => {
+  const [prevIsApplicable, setPrevIsApplicable] = useState(initialIsApplicable);
+  const [prevJustificationProp, setPrevJustificationProp] = useState(initialJustification);
+  if (prevIsApplicable !== initialIsApplicable || prevJustificationProp !== initialJustification) {
+    setPrevIsApplicable(initialIsApplicable);
+    setPrevJustificationProp(initialJustification);
     setIsApplicable(initialIsApplicable);
     setJustification(initialJustification);
-  }, [initialIsApplicable, initialJustification]);
+  }
 
   // Editing is only locked while the document is pending approval. Physical-
   // security (7.x) controls on a fully remote org are auto-filled to Not

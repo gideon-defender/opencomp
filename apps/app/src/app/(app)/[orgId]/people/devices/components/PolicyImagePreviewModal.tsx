@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@gideon-defender/ui/dialog';
 import { CarouselControls } from './CarouselControls';
@@ -19,11 +19,16 @@ export function PolicyImagePreviewModal({
 }: PolicyImagePreviewModalProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  useEffect(() => {
+  // Reset to the first image whenever the modal opens or the image list
+  // changes. Adjust-during-render instead of an effect.
+  const resetKey = `${open}:${images.length}`;
+  const [prevResetKey, setPrevResetKey] = useState(resetKey);
+  if (prevResetKey !== resetKey) {
+    setPrevResetKey(resetKey);
     if (open) {
       setCurrentIndex(0);
     }
-  }, [open, images.length]);
+  }
 
   const hasImages = images.length > 0;
   const hasValidImage = hasImages && currentIndex >= 0 && currentIndex < images.length;

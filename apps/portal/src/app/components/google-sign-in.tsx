@@ -5,6 +5,7 @@ import { authClient } from '@/app/lib/auth-client';
 import { Button } from '@gideon-defender/ui/button';
 import { Icons } from '@gideon-defender/ui/icons';
 import { Spinner } from '@trycompai/design-system';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 export function GoogleSignIn({
@@ -15,6 +16,7 @@ export function GoogleSignIn({
   searchParams?: URLSearchParams;
 }) {
   const [isLoading, setLoading] = useState(false);
+  const t = useTranslations('auth');
 
   const handleSignIn = async () => {
     setLoading(true);
@@ -46,7 +48,7 @@ export function GoogleSignIn({
       ) : (
         <>
           <Icons.Google className="h-4 w-4" />
-          Continue with Google
+          {t('continueWithGoogle')}
         </>
       )}
     </Button>

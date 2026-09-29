@@ -3,7 +3,7 @@
 import { formatDateLocale } from '@/lib/format';
 
 import { Badge, Button, Text } from '@trycompai/design-system';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import type {
   AdminBillingCreditBalance,
   AdminBillingInvoice,
@@ -63,8 +63,8 @@ function formatDate(value: string | null, notAvailableLabel: string): string {
   return formatDateLocale(value) || notAvailableLabel;
 }
 
-function formatAmount(amount: number, currency: string) {
-  return new Intl.NumberFormat('en-US', {
+function formatAmount(amount: number, currency: string, locale = 'en-US') {
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: currency.toUpperCase(),
   }).format(amount / 100);
@@ -195,6 +195,7 @@ export function InvoiceRows({
   loadingId: string | null;
 }) {
   const t = useTranslations('admin');
+  const locale = useLocale();
 
   if (invoices.length === 0) {
     return <Text variant="muted">{t('organizations.billingTables.emptyInvoices')}</Text>;
@@ -220,7 +221,7 @@ export function InvoiceRows({
                   {invoiceStatusLabel(t, invoice.status)}
                 </Badge>
               </td>
-              <td className="px-4 py-3">{formatAmount(invoice.amountDue, invoice.currency)}</td>
+              <td className="px-4 py-3">{formatAmount(invoice.amountDue, invoice.currency, locale)}</td>
               <td className="px-4 py-3">
                 {formatDate(invoice.createdAt, t('organizations.billingTables.notAvailable'))}
               </td>

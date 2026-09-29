@@ -316,7 +316,7 @@ export class SOAController {
   })
   async createDocument(
     @Body() dto: CreateSOADocumentDto,
-    @OrganizationId() organizationId: string,
+    @OrganizationId() _organizationId: string,
   ) {
     return this.soaService.createDocument(dto);
   }
@@ -331,7 +331,7 @@ export class SOAController {
   })
   async ensureSetup(
     @Body() dto: EnsureSOASetupDto,
-    @OrganizationId() organizationId: string,
+    @OrganizationId() _organizationId: string,
   ) {
     return this.soaService.ensureSetup(dto);
   }
@@ -404,7 +404,7 @@ export class SOAController {
   })
   async submitForApproval(
     @Body() dto: SubmitSOAForApprovalDto,
-    @OrganizationId() organizationId: string,
+    @OrganizationId() _organizationId: string,
   ) {
     return this.soaService.submitForApproval(dto);
   }

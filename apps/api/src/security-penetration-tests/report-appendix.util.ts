@@ -56,7 +56,7 @@ function sanitizePdfText(text: string): string {
     .replace(/[“”]/g, '"')
     .replace(/[–—]/g, '-')
     .replace(/…/g, '...')
-    .replace(/ /g, ' ')
+    .replace(/\u00A0/g, ' ')
     .replace(/\r\n?/g, '\n')
     .replace(/[\t\v\f]/g, ' ')
     .replace(/[^\n\x20-\x7E¡-ÿ]/g, '?');

@@ -6,7 +6,7 @@ import type { Member, Policy, PolicyVersion, User } from '@db';
 import type { JSONContent } from '@tiptap/react';
 import { Stack, Tabs, TabsContent, TabsList, TabsTrigger } from '@trycompai/design-system';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Comments } from '../../../../../../components/comments/Comments';
 import { PolicyContentManager } from '../editor/components/PolicyDetails';
 import { useAuditLogs } from '../hooks/useAuditLogs';
@@ -139,10 +139,13 @@ export function PolicyPageTabs({
   const versionIdFromUrl = searchParams.get('versionId');
   const [activeTab, setActiveTab] = useState(tabFromUrl);
 
-  // Sync activeTab with URL param
-  useEffect(() => {
+  // Sync activeTab with URL param. Adjust-during-render keyed on the tab
+  // value instead of an effect to avoid setState-in-effect.
+  const [prevTabFromUrl, setPrevTabFromUrl] = useState<string | null>(null);
+  if (prevTabFromUrl !== tabFromUrl) {
+    setPrevTabFromUrl(tabFromUrl);
     setActiveTab(tabFromUrl);
-  }, [tabFromUrl]);
+  }
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);

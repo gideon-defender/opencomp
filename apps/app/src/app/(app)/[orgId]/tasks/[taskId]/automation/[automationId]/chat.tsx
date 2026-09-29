@@ -26,7 +26,7 @@ import {
   ConversationScrollButton,
 } from './components/ai-elements/conversation';
 import { ChatBreadcrumb } from './components/chat/ChatBreadcrumb';
-import { EmptyState } from './components/chat/EmptyState';
+import { saveChatHistory } from './actions/task-automation-actions';import { EmptyState } from './components/chat/EmptyState';
 import { Message } from './components/chat/message';
 import type { ChatUIMessage } from './components/chat/types';
 import { PanelHeader } from './components/panels/panels';
@@ -214,7 +214,8 @@ export function Chat({
 }: Props) {
   const searchParams = useSearchParams();
   const initialPrompt = searchParams.get('prompt') || '';
-  const { chat, updateAutomationId, automationIdRef } = useSharedChatContext();
+  const { chat, updateAutomationId, automationIdRef, resolvedAutomationId } =
+    useSharedChatContext();
   const { messages, sendMessage, status } = useChat<ChatUIMessage>({
     chat,
   });
@@ -228,21 +229,25 @@ export function Chat({
     setInput: setInputValue,
   };
 
-  // Update shared ref when automation is loaded from hook
-  if (automation?.id && automationIdRef.current === 'new') {
-    automationIdRef.current = automation.id;
-  }
+  // Keep the shared ref in sync outside of render; render from derived state below.
+  useEffect(() => {
+    if (automation?.id && automationIdRef.current === 'new') {
+      automationIdRef.current = automation.id;
+    }
+  }, [automation?.id, automationIdRef]);
+
+  // Derive the render value without reading the ref during render.
+  const resolvedId = automation?.id ?? resolvedAutomationId ?? automationId;
 
   // Ephemeral mode - automation not created yet
-  // Check the shared ref, not the URL param
-  const isEphemeral = automationIdRef.current === 'new';
+  const isEphemeral = resolvedId === 'new';
 
   const { validateAndSubmitMessage, handleSecretAdded, handleInfoProvided } = useChatHandlers({
     sendMessage,
     setInput: setInputValue,
     orgId,
     taskId,
-    automationId: automationIdRef.current,
+    automationId: resolvedId,
     isEphemeral,
     updateAutomationId,
   });
@@ -250,6 +255,27 @@ export function Chat({
   useEffect(() => {
     setChatStatus(status);
   }, [status, setChatStatus]);
+
+  // Persist chat history when a generation settles. External sync only:
+  // no React setState here, refs are read/written inside the effect.
+  const prevChatStatusRef = useRef<string | null>(null);
+  const isSavingHistoryRef = useRef(false);
+  useEffect(() => {
+    const prevStatus = prevChatStatusRef.current;
+    prevChatStatusRef.current = status;
+    const justFinished =
+      (prevStatus === 'streaming' || prevStatus === 'submitted') && status === 'ready';
+    if (!justFinished || resolvedId === 'new' || messages.length === 0) {
+      return;
+    }
+    if (isSavingHistoryRef.current) {
+      return;
+    }
+    isSavingHistoryRef.current = true;
+    saveChatHistory(resolvedId, messages).finally(() => {
+      isSavingHistoryRef.current = false;
+    });
+  }, [status, messages, resolvedId]);
 
   const hasMessages = messages.length > 0;
 
@@ -275,7 +301,7 @@ export function Chat({
             orgId={orgId}
             taskId={taskId}
             taskName={taskName}
-            automationId={automationIdRef.current}
+            automationId={resolvedId}
             automationName={automation?.name}
             isEphemeral={isEphemeral}
           />

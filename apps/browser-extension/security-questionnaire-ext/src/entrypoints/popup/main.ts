@@ -1,5 +1,6 @@
 import { browser } from 'wxt/browser';
 import { compMarkSvg } from '../../lib/brand';
+import { t } from '../../lib/i18n';
 import { getResponseError, isOkResponse, isPanelStateResponse } from '../../lib/response-guards';
 import type { PanelState } from '../../lib/types';
 import { getHost } from '../sidepanel/active-tab';
@@ -13,10 +14,10 @@ let panelState: PanelState | null = null;
 
 void render();
 browser.runtime.onMessage.addListener((message) => {
-  if (isAuthUpdate(message)) void render('Signed in.');
+  if (isAuthUpdate(message)) void render(t('popupSignedIn'));
 });
 
-async function render(statusText = 'Checking session...'): Promise<void> {
+async function render(statusText = t('popupCheckingSession')): Promise<void> {
   appRoot.innerHTML = shell(`<div class="status">${escapeHtml(statusText)}</div>`);
   activeTab = await getActiveTab();
   if (activeTab?.id) await collectQuestions(activeTab.id);
@@ -35,7 +36,7 @@ async function render(statusText = 'Checking session...'): Promise<void> {
 
   panelState = response.panelState;
   if (panelState.auth.status !== 'authenticated') {
-    appRoot.innerHTML = shell(unauthenticatedHtml('Sign in to use Comp answers.'));
+    appRoot.innerHTML = shell(unauthenticatedHtml(t('popupSignInToUse')));
     bindSignIn();
     return;
   }
@@ -50,10 +51,10 @@ function shell(body: string): string {
       <div class="header">
         <span class="brand-mark" aria-hidden="true">${compMarkSvg()}</span>
         <div>
-          <h1 class="title">OpenComp Questionnaire</h1>
-          <p class="subtitle">Review answers before anything is inserted.</p>
+          <h1 class="title">${escapeHtml(t('popupTitle'))}</h1>
+          <p class="subtitle">${escapeHtml(t('popupSubtitle'))}</p>
         </div>
-        <span class="connected">Connected</span>
+        <span class="connected">${escapeHtml(t('popupConnected'))}</span>
       </div>
       ${body}
     </div>
@@ -64,8 +65,8 @@ function unauthenticatedHtml(message: string): string {
   return `
     <div class="section">
       <div class="status">${escapeHtml(message)}</div>
-      <button class="button button-primary" data-action="sign-in">Sign in to Comp</button>
-      <button class="button button-secondary" data-action="refresh">Refresh</button>
+      <button class="button button-primary" data-action="sign-in">${escapeHtml(t('popupSignIn'))}</button>
+      <button class="button button-secondary" data-action="refresh">${escapeHtml(t('popupRefresh'))}</button>
     </div>
   `;
 }
@@ -85,23 +86,23 @@ function authenticatedHtml(state: PanelState): string {
 
   return `
     <div class="section">
-      <label class="label" for="org-select">Active workspace</label>
+      <label class="label" for="org-select">${escapeHtml(t('orgActiveWorkspace'))}</label>
       <select class="select" id="org-select">${orgOptions}</select>
       <p class="muted">${escapeHtml(state.auth.user?.email ?? '')}</p>
     </div>
     <div class="section">
       <div class="toggle-row">
         <div>
-          <div class="label no-margin">Detect questions</div>
-          <p class="muted">${state.queue.items.length} found on this page</p>
+          <div class="label no-margin">${escapeHtml(t('popupDetectQuestions'))}</div>
+          <p class="muted">${escapeHtml(t('popupFoundOnPage', String(state.queue.items.length)))}</p>
         </div>
-        <button class="${detectClass}" data-action="toggle-detection" aria-label="Toggle detection"></button>
+        <button class="${detectClass}" data-action="toggle-detection" aria-label="${escapeHtml(t('popupToggleDetection'))}"></button>
       </div>
-      <button class="button button-primary block" data-action="open-panel" ${actionDisabled}>Open review panel</button>
-      <p class="helper">Answers preview before they're inserted. Nothing is written automatically.</p>
+      <button class="button button-primary block" data-action="open-panel" ${actionDisabled}>${escapeHtml(t('popupOpenPanel'))}</button>
+      <p class="helper">${escapeHtml(t('popupHelper'))}</p>
     </div>
     <div class="actions">
-      <button class="button button-secondary" data-action="refresh">Refresh</button>
+      <button class="button button-secondary" data-action="refresh">${escapeHtml(t('popupRefresh'))}</button>
     </div>
   `;
 }
@@ -131,7 +132,7 @@ function bindAuthenticatedControls(): void {
 
 function bindRefresh(): void {
   appRoot.querySelector('[data-action="refresh"]')?.addEventListener('click', () => {
-    void render('Refreshing...');
+    void render(t('popupRefreshing'));
   });
 }
 
@@ -147,7 +148,7 @@ async function handleOrgChange(organizationId: string): Promise<void> {
     );
     return;
   }
-  await render('Workspace updated.');
+  await render(t('popupWorkspaceUpdated'));
 }
 
 async function handleOpenPanel(): Promise<void> {
@@ -174,7 +175,7 @@ async function handleDetectionToggle(): Promise<void> {
       enabled,
     })
     .catch(() => undefined);
-  await render(enabled ? 'Detection enabled.' : 'Detection disabled.');
+  await render(enabled ? t('popupDetectionEnabled') : t('popupDetectionDisabled'));
 }
 
 async function collectQuestions(tabId: number): Promise<void> {

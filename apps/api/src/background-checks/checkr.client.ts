@@ -10,6 +10,7 @@ import {
 import { CheckrReportsReader } from './checkr-reports';
 import { toCreateStatus } from './checkr-create-status';
 import { isRecord, splitName } from './checkr.utils';
+import { withErrorCode } from '../common/i18n/error-messages';
 
 @Injectable()
 export class CheckrClient extends CheckrReportsReader {
@@ -122,7 +123,10 @@ export class CheckrClient extends CheckrReportsReader {
         this.logger.error('Checkr candidate creation rejected', {
           status: candidateRes.status,
         });
-        throw new UnauthorizedException('Checkr credentials are invalid.');
+        throw withErrorCode(
+          new UnauthorizedException('Checkr credentials are invalid.'),
+          'CHECKR_CREDENTIALS_INVALID',
+        );
       }
       this.logger.error('Checkr create candidate failed', {
         status: candidateRes.status,
@@ -223,7 +227,10 @@ export class CheckrClient extends CheckrReportsReader {
       this.logger.error('Checkr invitation rejected', {
         status: invitationRes.status,
       });
-      throw new UnauthorizedException('Checkr credentials are invalid.');
+      throw withErrorCode(
+        new UnauthorizedException('Checkr credentials are invalid.'),
+        'CHECKR_CREDENTIALS_INVALID',
+      );
     }
 
     // Fall back to direct report creation only when the invitations endpoint

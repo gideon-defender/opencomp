@@ -13,6 +13,7 @@ import {
 import { Footer } from '../components/footer';
 import { Logo } from '../components/logo';
 import { UnsubscribeLink } from '../components/unsubscribe-link';
+import type { Locale } from '../lib/locale';
 import { getUnsubscribeUrl } from '../lib/unsubscribe';
 
 export interface PolicyAcknowledgmentDigestPolicy {
@@ -31,9 +32,13 @@ export interface PolicyAcknowledgmentDigestEmailProps {
   email: string;
   userName: string;
   orgs: PolicyAcknowledgmentDigestOrg[];
+  locale?: Locale;
 }
 
-const pluralizePolicies = (count: number) => (count === 1 ? '1 policy' : `${count} policies`);
+const pluralizePolicies = (count: number, locale: Locale) => {
+  if (locale === 'es') return count === 1 ? '1 política' : `${count} políticas`;
+  return count === 1 ? '1 policy' : `${count} policies`;
+};
 
 /**
  * Shared subject-line builder so the trigger task and the email Preview
@@ -41,19 +46,27 @@ const pluralizePolicies = (count: number) => (count === 1 ? '1 policy' : `${coun
  */
 export const computePolicyAcknowledgmentDigestSubject = (
   orgs: PolicyAcknowledgmentDigestOrg[],
+  locale: Locale = 'en',
 ): string => {
   const totalPolicies = orgs.reduce((sum, o) => sum + o.policies.length, 0);
   const [firstOrg] = orgs;
-  if (orgs.length === 1 && firstOrg) {
-    return `You have ${pluralizePolicies(totalPolicies)} to review at ${firstOrg.name}`;
+  if (locale === 'es') {
+    if (orgs.length === 1 && firstOrg) {
+      return `Tienes ${pluralizePolicies(totalPolicies, locale)} para revisar en ${firstOrg.name}`;
+    }
+    return `Tienes ${pluralizePolicies(totalPolicies, locale)} para revisar en ${orgs.length} organizaciones`;
   }
-  return `You have ${pluralizePolicies(totalPolicies)} to review across ${orgs.length} organizations`;
+  if (orgs.length === 1 && firstOrg) {
+    return `You have ${pluralizePolicies(totalPolicies, locale)} to review at ${firstOrg.name}`;
+  }
+  return `You have ${pluralizePolicies(totalPolicies, locale)} to review across ${orgs.length} organizations`;
 };
 
 export const PolicyAcknowledgmentDigestEmail = ({
   email,
   userName,
   orgs,
+  locale = 'en',
 }: PolicyAcknowledgmentDigestEmailProps) => {
   const orgsWithPolicies = orgs.filter((o) => o.policies.length > 0);
   const [firstOrg] = orgsWithPolicies;
@@ -62,11 +75,13 @@ export const PolicyAcknowledgmentDigestEmail = ({
   const portalBase = (
     process.env.NEXT_PUBLIC_PORTAL_URL ?? 'https://portal.gideondefender.com'
   ).replace(/\/+$/, '');
-  const subjectText = computePolicyAcknowledgmentDigestSubject(orgsWithPolicies);
+  const subjectText = computePolicyAcknowledgmentDigestSubject(orgsWithPolicies, locale);
   const isMultiOrg = orgsWithPolicies.length > 1;
+  const greeting = locale === 'es' ? 'Hola' : 'Hi';
+  const footer = locale === 'es' ? 'Esta notificación estaba destinada a' : 'This notification was intended for';
 
   return (
-    <Html>
+    <Html lang={locale}>
       <Tailwind>
         <head />
         <Preview>{subjectText}</Preview>
@@ -82,18 +97,30 @@ export const PolicyAcknowledgmentDigestEmail = ({
             </Heading>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              Hi {userName || 'there'},
+              {greeting} {userName || 'there'},
             </Text>
 
             {isMultiOrg ? (
               <Text className="text-[14px] leading-[24px] text-[#121212]">
-                The following organizations have policies awaiting your review and acknowledgment:
+                {locale === 'es'
+                  ? 'Las siguientes organizaciones tienen políticas pendientes de tu revisión y aceptación:'
+                  : 'The following organizations have policies awaiting your review and acknowledgment:'}
               </Text>
             ) : (
               <Text className="text-[14px] leading-[24px] text-[#121212]">
-                Your organization <strong>{firstOrg.name}</strong> has{' '}
-                {pluralizePolicies(firstOrg.policies.length)} awaiting your review and
-                acknowledgment:
+                {locale === 'es' ? (
+                  <>
+                    Tu organización <strong>{firstOrg.name}</strong> tiene{' '}
+                    {pluralizePolicies(firstOrg.policies.length, locale)} pendientes de tu revisión
+                    y aceptación:
+                  </>
+                ) : (
+                  <>
+                    Your organization <strong>{firstOrg.name}</strong> has{' '}
+                    {pluralizePolicies(firstOrg.policies.length, locale)} awaiting your review and
+                    acknowledgment:
+                  </>
+                )}
               </Text>
             )}
 
@@ -119,7 +146,13 @@ export const PolicyAcknowledgmentDigestEmail = ({
                       className="border border-solid border-[#121212] bg-transparent px-6 py-3 text-center text-[14px] font-medium text-[#121212] no-underline"
                       href={orgPortalLink}
                     >
-                      {isMultiOrg ? `Review in ${org.name}` : 'Review in portal'}
+                      {isMultiOrg
+                        ? locale === 'es'
+                          ? `Revisar en ${org.name}`
+                          : `Review in ${org.name}`
+                        : locale === 'es'
+                          ? 'Revisar en el portal'
+                          : 'Review in portal'}
                     </Button>
                   </Section>
                 </Section>
@@ -129,15 +162,19 @@ export const PolicyAcknowledgmentDigestEmail = ({
             <br />
             <Section>
               <Text className="text-[12px] leading-[24px] text-[#666666]">
-                This notification was intended for <span className="text-[#121212]">{email}</span>.
+                {footer} <span className="text-[#121212]">{email}</span>.
               </Text>
             </Section>
 
-            <UnsubscribeLink email={email} unsubscribeUrl={getUnsubscribeUrl(email)} />
+            <UnsubscribeLink
+              email={email}
+              unsubscribeUrl={getUnsubscribeUrl(email)}
+              locale={locale}
+            />
 
             <br />
 
-            <Footer />
+            <Footer locale={locale} />
           </Container>
         </Body>
       </Tailwind>

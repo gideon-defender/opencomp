@@ -13,6 +13,7 @@ import {
 } from '@gideon-defender/ui/form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button, Input, Stack, Textarea } from '@trycompai/design-system';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -25,6 +26,7 @@ interface UpdateRiskFormProps {
 }
 
 export function UpdateRiskForm({ risk, onSuccess }: UpdateRiskFormProps) {
+  const t = useTranslations('toasts');
   const { updateRisk } = useRiskActions();
   const { mutate: globalMutate } = useSWRConfig();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -53,13 +55,13 @@ export function UpdateRiskForm({ risk, onSuccess }: UpdateRiskFormProps) {
         status: data.status,
         assigneeId: data.assigneeId,
       });
-      toast.success('Risk updated successfully');
+      toast.success(t('riskUpdated'));
       globalMutate((key) => Array.isArray(key) && key[0]?.includes('/v1/risks'), undefined, {
         revalidate: true,
       });
       onSuccess?.();
     } catch {
-      toast.error('Failed to update risk');
+      toast.error(t('riskUpdateFailed'));
     } finally {
       setIsSubmitting(false);
     }

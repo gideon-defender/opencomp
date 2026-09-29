@@ -264,11 +264,7 @@ describe('RisksController', () => {
     ];
 
     it('should call getStatsByDepartment with organizationId', async () => {
-      risksService.getStatsByDepartment.mockResolvedValue(
-        deptStats as unknown as Awaited<
-          ReturnType<typeof risksService.getStatsByDepartment>
-        >,
-      );
+      risksService.getStatsByDepartment.mockResolvedValue(deptStats);
 
       await controller.getStatsByDepartment(orgId, authContext);
 
@@ -276,11 +272,7 @@ describe('RisksController', () => {
     });
 
     it('should return data with auth info', async () => {
-      risksService.getStatsByDepartment.mockResolvedValue(
-        deptStats as unknown as Awaited<
-          ReturnType<typeof risksService.getStatsByDepartment>
-        >,
-      );
+      risksService.getStatsByDepartment.mockResolvedValue(deptStats);
 
       const result = await controller.getStatsByDepartment(orgId, authContext);
 

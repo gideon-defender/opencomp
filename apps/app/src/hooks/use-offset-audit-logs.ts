@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import useSWR from 'swr';
 
 import type { AuditLogWithRelations } from '@/hooks/use-audit-logs';
@@ -50,13 +50,15 @@ export function useOffsetAuditLogs({
 
   // Reset the accumulated window whenever the filter identity changes (e.g. a
   // vendor's task-item ids finish loading), so batches from a prior filter
-  // can't bleed into the new one.
+  // can't bleed into the new one. Adjusted during render.
   const filterKey = JSON.stringify(cacheKey);
-  useEffect(() => {
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+  if (prevFilterKey !== filterKey) {
+    setPrevFilterKey(filterKey);
     setLogs([]);
     setOffset(0);
     setTotal(0);
-  }, [filterKey]);
+  }
 
   const { isLoading, error } = useSWR(
     [...cacheKey, offset],

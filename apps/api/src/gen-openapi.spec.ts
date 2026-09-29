@@ -16,7 +16,6 @@ jest.mock('./auth/auth.server', () => ({
 }));
 
 jest.mock('@thallesp/nestjs-better-auth', () => {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { Module } = require('@nestjs/common');
   @Module({})
   class AuthModuleStub {
@@ -73,7 +72,6 @@ jest.mock('@gideon-defender/auth', () => {
 });
 
 jest.mock('@db', () => {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const prismaClient = require('@prisma/client');
   return {
     ...prismaClient,

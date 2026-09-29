@@ -1,5 +1,4 @@
 import { Logger, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@db';
 
 export type PaginationQuery = {
   page?: number;
@@ -48,8 +47,8 @@ export async function paginate<T>(params: {
   const take = perPage;
 
   const [data, totalCount] = await Promise.all([
-    model.findMany({ where, skip, take, orderBy, include, select } as never),
-    model.count({ where } as never),
+    model.findMany({ where, skip, take, orderBy, include, select }),
+    model.count({ where }),
   ]);
 
   const pageCount = Math.ceil(totalCount / perPage);

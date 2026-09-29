@@ -470,8 +470,8 @@ export class FindingsService {
   async delete(
     organizationId: string,
     findingId: string,
-    userId: string,
-    memberId: string | null,
+    _userId: string,
+    _memberId: string | null,
   ) {
     const finding = await this.findById(organizationId, findingId);
 

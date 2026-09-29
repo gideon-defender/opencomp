@@ -4,7 +4,6 @@ import {
   createOidcService,
   ENV,
   mockAuthorizationCodeGrant,
-  mockDiscovery,
   mockFetchUserInfo,
   mockOidc,
   mockOrgFindFirst,

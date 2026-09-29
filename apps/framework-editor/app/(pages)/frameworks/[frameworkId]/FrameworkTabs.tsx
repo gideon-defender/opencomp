@@ -2,26 +2,49 @@
 
 import { confirmDiscardUnsavedChanges } from '@/app/lib/unsaved-changes';
 import { Tabs, TabsList, TabsTrigger } from '@gideon-defender/ui';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useParams, useSelectedLayoutSegment } from 'next/navigation';
+import { useMemo } from 'react';
 
 export function FrameworkTabs() {
   const { frameworkId } = useParams<{ frameworkId: string }>();
   const segment = useSelectedLayoutSegment();
+  const t = useTranslations('frameworks');
+  const tUnsaved = useTranslations('unsavedChanges');
 
-  const tabs = [
-    { name: 'Requirements', href: `/frameworks/${frameworkId}`, segment: null },
-    { name: 'Controls', href: `/frameworks/${frameworkId}/controls`, segment: 'controls' },
-    { name: 'Policies', href: `/frameworks/${frameworkId}/policies`, segment: 'policies' },
-    { name: 'Tasks', href: `/frameworks/${frameworkId}/tasks`, segment: 'tasks' },
-    { name: 'Documents', href: `/frameworks/${frameworkId}/documents`, segment: 'documents' },
-    {
-      name: 'ISMS Documents',
-      href: `/frameworks/${frameworkId}/isms-documents`,
-      segment: 'isms-documents',
-    },
-    { name: 'Versions', href: `/frameworks/${frameworkId}/versions`, segment: 'versions' },
-  ];
+  const tabs = useMemo(
+    () => [
+      { name: t('tabs.requirements'), href: `/frameworks/${frameworkId}`, segment: null },
+      {
+        name: t('tabs.controls'),
+        href: `/frameworks/${frameworkId}/controls`,
+        segment: 'controls',
+      },
+      {
+        name: t('tabs.policies'),
+        href: `/frameworks/${frameworkId}/policies`,
+        segment: 'policies',
+      },
+      { name: t('tabs.tasks'), href: `/frameworks/${frameworkId}/tasks`, segment: 'tasks' },
+      {
+        name: t('tabs.documents'),
+        href: `/frameworks/${frameworkId}/documents`,
+        segment: 'documents',
+      },
+      {
+        name: t('tabs.ismsDocuments'),
+        href: `/frameworks/${frameworkId}/isms-documents`,
+        segment: 'isms-documents',
+      },
+      {
+        name: t('tabs.versions'),
+        href: `/frameworks/${frameworkId}/versions`,
+        segment: 'versions',
+      },
+    ],
+    [frameworkId, t],
+  );
 
   const activeValue = segment ?? 'requirements';
 
@@ -38,7 +61,8 @@ export function FrameworkTabs() {
             <Link
               href={tab.href}
               onClick={(event) => {
-                if (!confirmDiscardUnsavedChanges()) event.preventDefault();
+                if (!confirmDiscardUnsavedChanges(tUnsaved('confirmMessage')))
+                  event.preventDefault();
               }}
             >
               {tab.name}

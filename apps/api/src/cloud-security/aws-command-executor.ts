@@ -338,7 +338,10 @@ export function normalizeMetricFilterTransformations(
       transform.metricValue != null &&
       typeof transform.metricValue !== 'string'
     ) {
-      return { ...transform, metricValue: String(transform.metricValue) };
+      return {
+        ...transform,
+        metricValue: JSON.stringify(transform.metricValue),
+      };
     }
     return transform;
   });

@@ -19,6 +19,7 @@ import {
   User as UserIcon,
 } from '@trycompai/design-system/icons';
 import { toast } from 'sonner';
+import { createElement } from 'react';
 import {
   PRIORITY_OPTIONS,
   STATUS_OPTIONS,
@@ -69,9 +70,6 @@ export function TaskItemFocusSidebar({
   onAssigneeChange,
   onStatusOrPriorityChange,
 }: TaskItemFocusSidebarProps) {
-  const StatusIcon = getStatusIcon(taskItem.status);
-  const PriorityIcon = getPriorityIcon(taskItem.priority);
-
   if (isCollapsed) {
     return (
       <div className="w-12 shrink-0 relative flex flex-col items-center -mr-6 transition-all duration-300 ease-in-out overflow-hidden">
@@ -101,13 +99,14 @@ export function TaskItemFocusSidebar({
                 title={`Status: ${taskItem.status.replace('_', ' ')}`}
                 disabled={readOnly}
               >
-                <StatusIcon className="h-3.5 w-3.5 stroke-[2]" />
+                {createElement(getStatusIcon(taskItem.status), {
+                  className: 'h-3.5 w-3.5 stroke-[2]',
+                })}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent side="left" className="w-44">
               {STATUS_OPTIONS.map((option) => {
                 const isSelected = taskItem.status === option.value;
-                const OptionIcon = getStatusIcon(option.value);
                 return (
                   <DropdownMenuItem
                     key={option.value}
@@ -115,9 +114,9 @@ export function TaskItemFocusSidebar({
                     className={`cursor-pointer ${isSelected ? 'bg-accent font-medium' : ''}`}
                   >
                     <div className="flex items-center gap-2.5 w-full">
-                      <OptionIcon
-                        className={`h-3.5 w-3.5 stroke-[2] shrink-0 ${getStatusColor(option.value)}`}
-                      />
+                      {createElement(getStatusIcon(option.value), {
+                        className: `h-3.5 w-3.5 stroke-[2] shrink-0 ${getStatusColor(option.value)}`,
+                      })}
                       <span>{option.label}</span>
                       {isSelected && <span className="ml-auto text-xs">✓</span>}
                     </div>
@@ -137,13 +136,14 @@ export function TaskItemFocusSidebar({
                 title={`Priority: ${taskItem.priority}`}
                 disabled={readOnly}
               >
-                <PriorityIcon className="h-3.5 w-3.5 stroke-[2]" />
+                {createElement(getPriorityIcon(taskItem.priority), {
+                  className: 'h-3.5 w-3.5 stroke-[2]',
+                })}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent side="left" className="w-44">
               {PRIORITY_OPTIONS.map((option) => {
                 const isSelected = taskItem.priority === option.value;
-                const OptionIcon = getPriorityIcon(option.value);
                 return (
                   <DropdownMenuItem
                     key={option.value}
@@ -151,9 +151,9 @@ export function TaskItemFocusSidebar({
                     className={`cursor-pointer ${isSelected ? 'bg-accent font-medium' : ''}`}
                   >
                     <div className="flex items-center gap-2.5 w-full">
-                      <OptionIcon
-                        className={`h-3.5 w-3.5 stroke-[2] shrink-0 ${getPriorityColor(option.value)}`}
-                      />
+                      {createElement(getPriorityIcon(option.value), {
+                        className: `h-3.5 w-3.5 stroke-[2] shrink-0 ${getPriorityColor(option.value)}`,
+                      })}
                       <span>{option.label}</span>
                       {isSelected && <span className="ml-auto text-xs">✓</span>}
                     </div>
@@ -308,9 +308,11 @@ export function TaskItemFocusSidebar({
             <button
               type="button"
               className={`w-full h-7 rounded-md select-none transition-all duration-200 focus:outline-none flex items-center gap-2 group ${readOnly ? 'cursor-default opacity-70' : 'cursor-pointer hover:bg-accent/50 active:bg-accent'} ${getStatusColor(taskItem.status)}`}
-              aria-label={`Status: ${taskItem.status.replace('_', ' ')}`}
-            >
-              <StatusIcon className="h-3.5 w-3.5 stroke-[2] shrink-0" />
+                aria-label={`Status: ${taskItem.status.replace('_', ' ')}`}
+              >
+                {createElement(getStatusIcon(taskItem.status), {
+                  className: 'h-3.5 w-3.5 stroke-[2] shrink-0',
+                })}
               <span className="text-xs font-medium capitalize flex-1 text-left">
                 {taskItem.status.replace('_', ' ')}
               </span>
@@ -319,7 +321,6 @@ export function TaskItemFocusSidebar({
           <DropdownMenuContent align="end" className="w-44">
             {STATUS_OPTIONS.map((option) => {
               const isSelected = taskItem.status === option.value;
-              const OptionIcon = getStatusIcon(option.value);
               return (
                 <DropdownMenuItem
                   key={option.value}
@@ -327,9 +328,9 @@ export function TaskItemFocusSidebar({
                   className={`cursor-pointer ${isSelected ? 'bg-accent font-medium' : ''}`}
                 >
                   <div className="flex items-center gap-2.5 w-full">
-                    <OptionIcon
-                      className={`h-3.5 w-3.5 stroke-[2] shrink-0 ${getStatusColor(option.value)}`}
-                    />
+                    {createElement(getStatusIcon(option.value), {
+                      className: `h-3.5 w-3.5 stroke-[2] shrink-0 ${getStatusColor(option.value)}`,
+                    })}
                     <span>{option.label}</span>
                     {isSelected && <span className="ml-auto text-xs">✓</span>}
                   </div>
@@ -347,9 +348,11 @@ export function TaskItemFocusSidebar({
             <button
               type="button"
               className={`w-full h-7 rounded-md select-none transition-all duration-200 focus:outline-none flex items-center gap-2 group ${readOnly ? 'cursor-default opacity-70' : 'cursor-pointer hover:bg-accent/50 active:bg-accent'} ${getPriorityColor(taskItem.priority)}`}
-              aria-label={`Priority: ${taskItem.priority}`}
-            >
-              <PriorityIcon className="h-3.5 w-3.5 stroke-[2] shrink-0" />
+                aria-label={`Priority: ${taskItem.priority}`}
+              >
+                {createElement(getPriorityIcon(taskItem.priority), {
+                  className: 'h-3.5 w-3.5 stroke-[2] shrink-0',
+                })}
               <span className="text-xs font-medium capitalize flex-1 text-left">
                 {taskItem.priority}
               </span>
@@ -358,7 +361,6 @@ export function TaskItemFocusSidebar({
           <DropdownMenuContent align="end" className="w-44">
             {PRIORITY_OPTIONS.map((option) => {
               const isSelected = taskItem.priority === option.value;
-              const OptionIcon = getPriorityIcon(option.value);
               return (
                 <DropdownMenuItem
                   key={option.value}
@@ -366,9 +368,9 @@ export function TaskItemFocusSidebar({
                   className={`cursor-pointer ${isSelected ? 'bg-accent font-medium' : ''}`}
                 >
                   <div className="flex items-center gap-2.5 w-full">
-                    <OptionIcon
-                      className={`h-3.5 w-3.5 stroke-[2] shrink-0 ${getPriorityColor(option.value)}`}
-                    />
+                    {createElement(getPriorityIcon(option.value), {
+                      className: `h-3.5 w-3.5 stroke-[2] shrink-0 ${getPriorityColor(option.value)}`,
+                    })}
                     <span>{option.label}</span>
                     {isSelected && <span className="ml-auto text-xs">✓</span>}
                   </div>

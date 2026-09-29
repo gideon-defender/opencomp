@@ -13,6 +13,7 @@ import {
 import { Footer } from '../components/footer';
 import { Logo } from '../components/logo';
 import { UnsubscribeLink } from '../components/unsubscribe-link';
+import type { Locale } from '../lib/locale';
 import { getUnsubscribeUrl } from '../lib/unsubscribe';
 
 interface Props {
@@ -22,7 +23,43 @@ interface Props {
   organizationName: string;
   organizationId: string;
   notificationType: 'new' | 'updated' | 're-acceptance';
+  locale?: Locale;
 }
+
+const copy: Record<
+  Locale,
+  {
+    subject: string;
+    greeting: string;
+    created: string;
+    updated: string;
+    requires: string;
+    button: string;
+    copyPaste: string;
+    footer: string;
+  }
+> = {
+  en: {
+    subject: 'Please review and accept this policy',
+    greeting: 'Hi',
+    created: 'policy has been created.',
+    updated: 'policy has been updated.',
+    requires: 'requires all employees to review and accept this policy.',
+    button: 'Review & Accept Policy',
+    copyPaste: 'or copy and paste this URL into your browser',
+    footer: 'This notification was intended for',
+  },
+  es: {
+    subject: 'Revisa y acepta esta política',
+    greeting: 'Hola',
+    created: 'ha sido creada.',
+    updated: 'ha sido actualizada.',
+    requires: 'requiere que todos los empleados revisen y acepten esta política.',
+    button: 'Revisar y aceptar la política',
+    copyPaste: 'o copia y pega esta URL en tu navegador',
+    footer: 'Esta notificación estaba destinada a',
+  },
+};
 
 export const PolicyNotificationEmail = ({
   email,
@@ -31,27 +68,28 @@ export const PolicyNotificationEmail = ({
   organizationName,
   organizationId,
   notificationType,
+  locale = 'en',
 }: Props) => {
+  const t = copy[locale];
   const link = `${process.env.NEXT_PUBLIC_PORTAL_URL ?? 'https://portal.gideondefender.com'}/${organizationId}`;
-  const subjectText = 'Please review and accept this policy';
 
   const getBodyText = () => {
     switch (notificationType) {
       case 'new':
-        return `The "${policyName}" policy has been created.`;
+        return `The "${policyName}" ${t.created}`;
       case 'updated':
       case 're-acceptance':
-        return `The "${policyName}" policy has been updated.`;
+        return `The "${policyName}" ${t.updated}`;
       default:
         return `Please review and accept the policy "${policyName}".`;
     }
   };
 
   return (
-    <Html>
+    <Html lang={locale}>
       <Tailwind>
         <head />
-        <Preview>{subjectText}</Preview>
+        <Preview>{t.subject}</Preview>
 
         <Body className="mx-auto my-auto bg-[#fff] font-sans">
           <Container
@@ -60,16 +98,25 @@ export const PolicyNotificationEmail = ({
           >
             <Logo />
             <Heading className="mx-0 my-[30px] p-0 text-center text-[24px] font-normal text-[#121212]">
-              {subjectText}
+              {t.subject}
             </Heading>
 
-            <Text className="text-[14px] leading-[24px] text-[#121212]">Hi {userName},</Text>
+            <Text className="text-[14px] leading-[24px] text-[#121212]">
+              {t.greeting} {userName},
+            </Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">{getBodyText()}</Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              Your organization <strong>{organizationName}</strong> requires all employees to review
-              and accept this policy.
+              {locale === 'es' ? (
+                <>
+                  Tu organización <strong>{organizationName}</strong> {t.requires}
+                </>
+              ) : (
+                <>
+                  Your organization <strong>{organizationName}</strong> {t.requires}
+                </>
+              )}
             </Text>
 
             <Section className="mt-[32px] mb-[42px] text-center">
@@ -77,12 +124,12 @@ export const PolicyNotificationEmail = ({
                 className="text-primary border border-solid border-[#121212] bg-transparent px-6 py-3 text-center text-[14px] font-medium text-[#121212] no-underline"
                 href={link}
               >
-                Review & Accept Policy
+                {t.button}
               </Button>
             </Section>
 
             <Text className="text-[14px] leading-[24px] break-all text-[#707070]">
-              or copy and paste this URL into your browser{' '}
+              {t.copyPaste}{' '}
               <Link href={link} className="text-[#707070] underline">
                 {link}
               </Link>
@@ -91,15 +138,19 @@ export const PolicyNotificationEmail = ({
             <br />
             <Section>
               <Text className="text-[12px] leading-[24px] text-[#666666]">
-                This notification was intended for <span className="text-[#121212]">{email}</span>.
+                {t.footer} <span className="text-[#121212]">{email}</span>.
               </Text>
             </Section>
 
-            <UnsubscribeLink email={email} unsubscribeUrl={getUnsubscribeUrl(email)} />
+            <UnsubscribeLink
+              email={email}
+              unsubscribeUrl={getUnsubscribeUrl(email)}
+              locale={locale}
+            />
 
             <br />
 
-            <Footer />
+            <Footer locale={locale} />
           </Container>
         </Body>
       </Tailwind>

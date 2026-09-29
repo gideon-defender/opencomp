@@ -31,6 +31,16 @@ interface SOAExportResult {
   filename: string;
 }
 
+/**
+ * `splitTextToSize` is typed `any` by jspdf; narrow its result to `string[]`
+ * (its documented runtime shape) so wrapped lines are never `any`.
+ */
+function toTextLines(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map((line: unknown) => String(line));
+  if (typeof value === 'string') return [value];
+  return [String(value)];
+}
+
 export function generateSOAExportFile(
   questions: SOAExportQuestion[],
   frameworkName: string,
@@ -160,17 +170,18 @@ function generateSOAPDF(
     const applicability = `Applicable: ${isApplicableLabel}`;
     const justificationText = `Justification: ${justification}`;
 
-    const titleLines = pdf.splitTextToSize(title, contentWidth);
+    const titleLines = toTextLines(pdf.splitTextToSize(title, contentWidth));
     const closureLines = closure
-      ? pdf.splitTextToSize(closure, contentWidth)
+      ? toTextLines(pdf.splitTextToSize(closure, contentWidth))
       : [];
     const objectiveLines = objective
-      ? pdf.splitTextToSize(objective, contentWidth)
+      ? toTextLines(pdf.splitTextToSize(objective, contentWidth))
       : [];
-    const applicabilityLines = pdf.splitTextToSize(applicability, contentWidth);
-    const justificationLines = pdf.splitTextToSize(
-      justificationText,
-      contentWidth,
+    const applicabilityLines = toTextLines(
+      pdf.splitTextToSize(applicability, contentWidth),
+    );
+    const justificationLines = toTextLines(
+      pdf.splitTextToSize(justificationText, contentWidth),
     );
     writeLines(titleLines, 'bold');
     writeLines(closureLines);

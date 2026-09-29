@@ -11,6 +11,7 @@ import {
 import { CheckmarkFilled, CircleDash, Document } from '@trycompai/design-system/icons';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -25,6 +26,8 @@ interface PoliciesAccordionItemProps {
 
 export function PoliciesAccordionItem({ policies, member }: PoliciesAccordionItemProps) {
   const router = useRouter();
+  const t = useTranslations('tasks');
+  const tPolicies = useTranslations('policies');
   const [acceptedPolicies, setAcceptedPolicies] = useState<string[]>(
     policies.filter((p) => p.signedBy.includes(member.id)).map((p) => p.id),
   );
@@ -48,15 +51,15 @@ export function PoliciesAccordionItem({ policies, member }: PoliciesAccordionIte
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Failed to accept policies');
+        throw new Error(data.error || tPolicies('acceptPoliciesFailed'));
       }
 
       setAcceptedPolicies([...acceptedPolicies, ...unacceptedPolicyIds]);
-      toast.success('All policies accepted successfully');
+      toast.success(tPolicies('allAcceptedToast'));
       router.refresh();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : 'An error occurred while accepting policies',
+        error instanceof Error ? error.message : tPolicies('acceptPoliciesErrorGeneric'),
       );
     } finally {
       setIsAcceptingAll(false);
@@ -84,7 +87,7 @@ export function PoliciesAccordionItem({ policies, member }: PoliciesAccordionIte
                   hasAcceptedPolicies && 'text-muted-foreground line-through',
                 )}
               >
-                Security Policies
+                {t('securityPolicies')}
               </span>
             </div>
           </AccordionTrigger>
@@ -93,9 +96,7 @@ export function PoliciesAccordionItem({ policies, member }: PoliciesAccordionIte
           <div className="px-4 pb-4 space-y-4">
             {policies.length > 0 ? (
               <>
-                <p className="text-muted-foreground text-sm">
-                  Please review and accept the following policies:
-                </p>
+                <p className="text-muted-foreground text-sm">{t('reviewAndAccept')}</p>
                 <div>
                   {policies.map((policy) => {
                     const isAccepted = acceptedPolicies.includes(policy.id);
@@ -126,20 +127,20 @@ export function PoliciesAccordionItem({ policies, member }: PoliciesAccordionIte
                     disabled={hasAcceptedPolicies || isAcceptingAll}
                   >
                     {isAcceptingAll
-                      ? 'Accepting...'
+                      ? t('accepting')
                       : hasAcceptedPolicies
-                        ? 'All Policies Accepted'
-                        : 'Accept All'}
+                        ? t('allAccepted')
+                        : t('acceptAll')}
                   </Button>
                   {hasAcceptedPolicies && (
                     <Link href={`/${member.organizationId}/policies`}>
-                      <Button variant="outline">View Signed Policies</Button>
+                      <Button variant="outline">{t('viewSigned')}</Button>
                     </Link>
                   )}
                 </div>
               </>
             ) : (
-              <p className="text-muted-foreground text-sm">No policies ready to be signed.</p>
+              <p className="text-muted-foreground text-sm">{t('noPolicies')}</p>
             )}
           </div>
         </AccordionContent>

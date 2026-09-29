@@ -12,6 +12,7 @@ import {
 } from '@react-email/components';
 import { Footer } from '../components/footer';
 import { Logo } from '../components/logo';
+import type { EmailLocale } from '../locale';
 
 interface Props {
   organizationName: string;
@@ -22,7 +23,47 @@ interface Props {
   purpose?: string | null;
   requestedDurationDays?: number | null;
   reviewUrl: string;
+  locale?: EmailLocale;
 }
+
+const copy = {
+  en: {
+    previewFrom: "New Trust Portal Access Request from",
+    heading: "New Access Request",
+    introPrefix: "A new request to access",
+    introSuffix: "'s trust portal has been submitted and is awaiting your review.",
+    requesterDetails: "Requester Details",
+    nameLabel: "Name:",
+    emailLabel: "Email:",
+    companyLabel: "Company:",
+    jobTitleLabel: "Job Title:",
+    purposeTitle: "Purpose",
+    durationLabel: "Requested Access Duration:",
+    days: "days",
+    reviewButton: "Review Request",
+    actionRequired: "Action Required",
+    actionBody:
+      "Please review this request and either approve or deny access. Approved requests will require the requester to sign an NDA before accessing your trust portal.",
+  },
+  es: {
+    previewFrom: "Nueva solicitud de acceso al Portal de Confianza de",
+    heading: "Nueva solicitud de acceso",
+    introPrefix: "Se ha enviado una nueva solicitud de acceso al portal de confianza de",
+    introSuffix: " y está pendiente de tu revisión.",
+    requesterDetails: "Datos del solicitante",
+    nameLabel: "Nombre:",
+    emailLabel: "Correo electrónico:",
+    companyLabel: "Empresa:",
+    jobTitleLabel: "Cargo:",
+    purposeTitle: "Motivo",
+    durationLabel: "Duración de acceso solicitada:",
+    days: "días",
+    reviewButton: "Revisar solicitud",
+    actionRequired: "Acción requerida",
+    actionBody:
+      "Revisa esta solicitud y aprueba o deniega el acceso. Las solicitudes aprobadas requerirán que el solicitante firme un NDA antes de acceder a tu portal de confianza.",
+  },
+};
 
 export const AccessRequestNotificationEmail = ({
   organizationName,
@@ -33,9 +74,12 @@ export const AccessRequestNotificationEmail = ({
   purpose,
   requestedDurationDays,
   reviewUrl,
+  locale = 'en',
 }: Props) => {
+  const t = copy[locale];
+
   return (
-    <Html>
+    <Html lang={locale}>
       <Tailwind>
         <head>
           <Font
@@ -51,7 +95,7 @@ export const AccessRequestNotificationEmail = ({
             fontStyle="normal"
           />
         </head>
-        <Preview>New Trust Portal Access Request from {requesterName}</Preview>
+        <Preview>{t.previewFrom} {requesterName}</Preview>
 
         <Body className="mx-auto my-auto bg-[#fff] font-sans">
           <Container
@@ -60,12 +104,11 @@ export const AccessRequestNotificationEmail = ({
           >
             <Logo />
             <Heading className="mx-0 my-[30px] p-0 text-center text-[24px] font-normal text-[#121212]">
-              New Access Request
+              {t.heading}
             </Heading>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              A new request to access <strong>{organizationName}</strong>'s
-              trust portal has been submitted and is awaiting your review.
+              {t.introPrefix} <strong>{organizationName}</strong>{t.introSuffix}
             </Text>
 
             <Section
@@ -73,22 +116,22 @@ export const AccessRequestNotificationEmail = ({
               style={{ backgroundColor: '#f8f9fa' }}
             >
               <Text className="m-0 mb-[10px] text-[14px] font-semibold text-[#121212]">
-                Requester Details
+                {t.requesterDetails}
               </Text>
               <Text className="m-0 text-[14px] leading-[20px] text-[#121212]">
-                <strong>Name:</strong> {requesterName}
+                <strong>{t.nameLabel}</strong> {requesterName}
                 <br />
-                <strong>Email:</strong> {requesterEmail}
+                <strong>{t.emailLabel}</strong> {requesterEmail}
                 {requesterCompany && (
                   <>
                     <br />
-                    <strong>Company:</strong> {requesterCompany}
+                    <strong>{t.companyLabel}</strong> {requesterCompany}
                   </>
                 )}
                 {requesterJobTitle && (
                   <>
                     <br />
-                    <strong>Job Title:</strong> {requesterJobTitle}
+                    <strong>{t.jobTitleLabel}</strong> {requesterJobTitle}
                   </>
                 )}
               </Text>
@@ -97,7 +140,7 @@ export const AccessRequestNotificationEmail = ({
             {purpose && (
               <Section className="mb-[20px]">
                 <Text className="m-0 mb-[8px] text-[14px] font-semibold text-[#121212]">
-                  Purpose
+                  {t.purposeTitle}
                 </Text>
                 <Text className="m-0 text-[14px] leading-[20px] text-[#121212]">
                   {purpose}
@@ -107,8 +150,8 @@ export const AccessRequestNotificationEmail = ({
 
             {requestedDurationDays && (
               <Text className="text-[14px] leading-[24px] text-[#121212]">
-                <strong>Requested Access Duration:</strong>{' '}
-                {requestedDurationDays} days
+                <strong>{t.durationLabel}</strong>{' '}
+                {requestedDurationDays} {t.days}
               </Text>
             )}
 
@@ -117,7 +160,7 @@ export const AccessRequestNotificationEmail = ({
                 className="rounded-[3px] bg-[#121212] px-[20px] py-[12px] text-center text-[14px] font-semibold text-white no-underline"
                 href={reviewUrl}
               >
-                Review Request
+                {t.reviewButton}
               </Button>
             </Section>
 
@@ -126,17 +169,15 @@ export const AccessRequestNotificationEmail = ({
               style={{ backgroundColor: '#fff4e6', borderColor: '#f59e0b' }}
             >
               <Text className="m-0 text-[14px] leading-[24px] text-[#121212]">
-                <strong>Action Required</strong>
+                <strong>{t.actionRequired}</strong>
                 <br />
-                Please review this request and either approve or deny access.
-                Approved requests will require the requester to sign an NDA
-                before accessing your trust portal.
+                {t.actionBody}
               </Text>
             </Section>
 
             <br />
 
-            <Footer />
+            <Footer locale={locale} />
           </Container>
         </Body>
       </Tailwind>

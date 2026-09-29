@@ -35,11 +35,7 @@ export const testVendorInstruction = task({
       // Live activity timeline — surfaced to the composer via realtime metadata.
       // Steps are plain JSON; cast to the SDK's value type (named interfaces lack
       // the index signature DeserializedJson structurally requires).
-      onSteps: (steps) =>
-        metadata.set(
-          'testSteps',
-          steps as unknown as Parameters<typeof metadata.set>[1],
-        ),
+      onSteps: (steps) => metadata.set('testSteps', steps),
       // Follow the agent across tabs so the composer's live view tracks the
       // page it's actually working on, not the stale starting tab.
       onLiveView: (liveViewUrl) => metadata.set('testLiveViewUrl', liveViewUrl),

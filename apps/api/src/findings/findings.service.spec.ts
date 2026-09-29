@@ -147,7 +147,7 @@ describe('FindingsService.create (target validator)', () => {
 
     await svc.create('org_1', 'mem_1', 'usr_1', {
       ...baseDto,
-      area: 'people' as never,
+      area: 'people',
     });
 
     const createArgs = mockDb.finding.create.mock.calls[0][0];
@@ -212,7 +212,7 @@ describe('FindingsService.update (status transition rules)', () => {
     await svc.update(
       'org_1',
       'fnd_1',
-      { status: 'ready_for_review' as never },
+      { status: 'ready_for_review' },
       false,
       false,
       'usr_1',
@@ -226,7 +226,7 @@ describe('FindingsService.update (status transition rules)', () => {
       svc.update(
         'org_1',
         'fnd_1',
-        { status: 'needs_revision' as never },
+        { status: 'needs_revision' },
         false,
         false,
         'usr_1',
@@ -239,7 +239,7 @@ describe('FindingsService.update (status transition rules)', () => {
     await svc.update(
       'org_1',
       'fnd_1',
-      { status: 'needs_revision' as never },
+      { status: 'needs_revision' },
       true,
       false,
       'usr_1',
@@ -253,7 +253,7 @@ describe('FindingsService.update (status transition rules)', () => {
       svc.update(
         'org_1',
         'fnd_1',
-        { status: 'closed' as never },
+        { status: 'closed' },
         false,
         false,
         'usr_1',
@@ -266,7 +266,7 @@ describe('FindingsService.update (status transition rules)', () => {
     await svc.update(
       'org_1',
       'fnd_1',
-      { status: 'closed' as never },
+      { status: 'closed' },
       true,
       false,
       'usr_1',
@@ -279,7 +279,7 @@ describe('FindingsService.update (status transition rules)', () => {
     await svc.update(
       'org_1',
       'fnd_1',
-      { status: 'closed' as never },
+      { status: 'closed' },
       false,
       true,
       'usr_1',

@@ -14,6 +14,7 @@ import {
 } from '@react-email/components';
 import { Footer } from '../components/footer';
 import { Logo } from '../components/logo';
+import type { EmailLocale } from '../locale';
 import { getUnsubscribeUrl } from '@gideon-defender/email';
 
 interface Props {
@@ -24,7 +25,41 @@ interface Props {
   changedByName: string;
   organizationName: string;
   tasksUrl: string;
+  locale?: EmailLocale;
 }
+
+const copy = {
+  en: {
+    previewReassigned: "reassigned to",
+    task: "task",
+    tasks: "tasks",
+    heading: "Tasks Reassigned",
+    hello: "Hello",
+    bodyReassigned: "reassigned",
+    bodyTo: "to",
+    bodyIn: "in",
+    viewTasks: "View Tasks",
+    copyPaste: "or copy and paste this URL into your browser:",
+    unsubscribeQuestion:
+      "Don't want to receive task assignment notifications?",
+    managePrefs: "Manage your email preferences",
+  },
+  es: {
+    previewReassigned: "reasignados a",
+    task: "tarea",
+    tasks: "tareas",
+    heading: "Tareas reasignadas",
+    hello: "Hola",
+    bodyReassigned: "reasignó",
+    bodyTo: "a",
+    bodyIn: "en",
+    viewTasks: "Ver tareas",
+    copyPaste: "o copia y pega esta URL en tu navegador:",
+    unsubscribeQuestion:
+      "¿No quieres recibir notificaciones de asignación de tareas?",
+    managePrefs: "Gestionar tus preferencias de correo electrónico",
+  },
+};
 
 export const TaskBulkAssigneeChangedEmail = ({
   toName,
@@ -34,12 +69,15 @@ export const TaskBulkAssigneeChangedEmail = ({
   changedByName,
   organizationName,
   tasksUrl,
+  locale = 'en',
 }: Props) => {
+  const t = copy[locale];
+
   const unsubscribeUrl = getUnsubscribeUrl(toEmail);
-  const taskText = taskCount === 1 ? 'task' : 'tasks';
+  const taskText = taskCount === 1 ? t.task : t.tasks;
 
   return (
-    <Html>
+    <Html lang={locale}>
       <Tailwind>
         <head>
           <Font
@@ -56,7 +94,7 @@ export const TaskBulkAssigneeChangedEmail = ({
           />
         </head>
         <Preview>
-          {`${taskCount} ${taskText} reassigned to ${newAssigneeName}`}
+          {`${taskCount} ${taskText} ${t.previewReassigned} ${newAssigneeName}`}
         </Preview>
 
         <Body className="mx-auto my-auto bg-[#fff] font-sans">
@@ -66,20 +104,15 @@ export const TaskBulkAssigneeChangedEmail = ({
           >
             <Logo />
             <Heading className="mx-0 my-[30px] p-0 text-center text-[24px] font-normal text-[#121212]">
-              Tasks Reassigned
+              {t.heading}
             </Heading>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              Hello {toName},
+              {t.hello} {toName},
             </Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              <strong>{changedByName}</strong> reassigned{' '}
-              <strong>
-                {taskCount} {taskText}
-              </strong>{' '}
-              to <strong>{newAssigneeName}</strong> in{' '}
-              <strong>{organizationName}</strong>.
+              <strong>{changedByName}</strong> {t.bodyReassigned} <strong>{taskCount} {taskText}</strong> {t.bodyTo} <strong>{newAssigneeName}</strong> {t.bodyIn} <strong>{organizationName}</strong>.
             </Text>
 
             <Section className="mt-[32px] mb-[32px] text-center">
@@ -87,12 +120,12 @@ export const TaskBulkAssigneeChangedEmail = ({
                 className="rounded-[3px] bg-[#121212] px-[20px] py-[12px] text-center text-[14px] font-semibold text-white no-underline"
                 href={tasksUrl}
               >
-                View Tasks
+                {t.viewTasks}
               </Button>
             </Section>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              or copy and paste this URL into your browser:{' '}
+              {t.copyPaste}{' '}
               <a href={tasksUrl} className="text-[#121212] underline">
                 {tasksUrl}
               </a>
@@ -100,12 +133,12 @@ export const TaskBulkAssigneeChangedEmail = ({
 
             <Section className="mt-[30px] mb-[20px]">
               <Text className="text-[12px] leading-[20px] text-[#666666]">
-                Don't want to receive task assignment notifications?{' '}
+                {t.unsubscribeQuestion}{' '}
                 <Link
                   href={unsubscribeUrl}
                   className="text-[#121212] underline"
                 >
-                  Manage your email preferences
+                  {t.managePrefs}
                 </Link>
                 .
               </Text>
@@ -113,7 +146,7 @@ export const TaskBulkAssigneeChangedEmail = ({
 
             <br />
 
-            <Footer />
+            <Footer locale={locale} />
           </Container>
         </Body>
       </Tailwind>

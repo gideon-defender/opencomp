@@ -94,11 +94,11 @@ describe('GideonJwtService', () => {
       // No issuer set — should fail closed before any decode/verify
       mockDecodeJwt.mockReturnValue({
         iss: 'https://auth.example.com',
-      } as never);
+      });
       mockDecodeProtectedHeader.mockReturnValue({
         kid: 'k1',
         alg: 'ES256',
-      } as never);
+      });
 
       const result = await service.verify('header.payload.sig');
       expect(result).toBeNull();
@@ -113,11 +113,11 @@ describe('GideonJwtService', () => {
       // No audience set — should fail closed before any decode/verify
       mockDecodeJwt.mockReturnValue({
         iss: 'https://auth.example.com',
-      } as never);
+      });
       mockDecodeProtectedHeader.mockReturnValue({
         kid: 'k1',
         alg: 'ES256',
-      } as never);
+      });
 
       const result = await service.verify('header.payload.sig');
       expect(result).toBeNull();
@@ -132,7 +132,7 @@ describe('GideonJwtService', () => {
       process.env.GIDEON_JWT_AUDIENCE = 'https://api.example.com';
       mockDecodeJwt.mockReturnValue({
         iss: 'https://other.example.com',
-      } as never);
+      });
 
       const result = await service.verify('header.payload.sig');
       expect(result).toBeNull();
@@ -146,7 +146,7 @@ describe('GideonJwtService', () => {
       process.env.GIDEON_JWT_AUDIENCE = 'https://api.example.com';
       mockDecodeJwt.mockReturnValue({
         iss: 'https://auth.example.com',
-      } as never);
+      });
       mockDecodeProtectedHeader.mockImplementation(() => {
         throw new Error('Invalid token');
       });
@@ -162,8 +162,8 @@ describe('GideonJwtService', () => {
       process.env.GIDEON_JWT_AUDIENCE = 'https://api.example.com';
       mockDecodeJwt.mockReturnValue({
         iss: 'https://auth.example.com',
-      } as never);
-      mockDecodeProtectedHeader.mockReturnValue({ alg: 'ES256' } as never);
+      });
+      mockDecodeProtectedHeader.mockReturnValue({ alg: 'ES256' });
 
       const result = await service.verify('header.payload.sig');
       expect(result).toBeNull();
@@ -189,11 +189,11 @@ describe('GideonJwtService', () => {
       process.env.GIDEON_JWT_AUDIENCE = 'https://api.example.com';
       mockDecodeJwt.mockReturnValue({
         iss: 'https://auth.example.com',
-      } as never);
+      });
       mockDecodeProtectedHeader.mockReturnValue({
         kid: 'kid1',
         alg: 'ES256',
-      } as never);
+      });
       mockJwtVerify.mockResolvedValue({
         payload: { sub: 'usr_1', tid: 'org_1', aal: 2 } as never,
         protectedHeader: { kid: 'kid1' } as never,
@@ -218,8 +218,8 @@ describe('GideonJwtService', () => {
       process.env.GIDEON_JWT_AUDIENCE = 'https://api.example.com';
       mockDecodeJwt.mockReturnValue({
         iss: 'https://auth.example.com',
-      } as never);
-      mockDecodeProtectedHeader.mockReturnValue({ kid: 'k1' } as never);
+      });
+      mockDecodeProtectedHeader.mockReturnValue({ kid: 'k1' });
       mockJwtVerify.mockResolvedValue({
         payload: { sub: 'usr_1', tid: 'org_1', aal: 1 } as never,
         protectedHeader: {} as never,
@@ -241,7 +241,7 @@ describe('GideonJwtService', () => {
       process.env.GIDEON_JWT_ISSUER = 'https://auth.example.com';
       mockDecodeJwt.mockReturnValue({
         iss: 'https://other.example.com',
-      } as never);
+      });
 
       expect(service.isGideonToken('header.payload.sig')).toBe(false);
       expect(mockDecodeJwt).toHaveBeenCalledWith('header.payload.sig');
@@ -251,7 +251,7 @@ describe('GideonJwtService', () => {
       process.env.GIDEON_JWT_ISSUER = 'https://auth.example.com';
       mockDecodeJwt.mockReturnValue({
         iss: 'https://auth.example.com',
-      } as never);
+      });
 
       expect(service.isGideonToken('header.payload.sig')).toBe(true);
     });
@@ -268,7 +268,7 @@ describe('GideonJwtService', () => {
     it('false when no issuer is configured', () => {
       mockDecodeJwt.mockReturnValue({
         iss: 'https://auth.example.com',
-      } as never);
+      });
 
       expect(service.isGideonToken('header.payload.sig')).toBe(false);
     });
@@ -276,24 +276,18 @@ describe('GideonJwtService', () => {
 
   describe('resolveTenantId / resolveUserId', () => {
     it('prefers tid over tenant_id over organizationId', () => {
-      expect(service.resolveTenantId({ sub: 'u', tid: 'tid1' } as never)).toBe(
-        'tid1',
+      expect(service.resolveTenantId({ sub: 'u', tid: 'tid1' })).toBe('tid1');
+      expect(service.resolveTenantId({ sub: 'u', tenant_id: 't2' })).toBe('t2');
+      expect(service.resolveTenantId({ sub: 'u', organizationId: 'o3' })).toBe(
+        'o3',
       );
-      expect(
-        service.resolveTenantId({ sub: 'u', tenant_id: 't2' } as never),
-      ).toBe('t2');
-      expect(
-        service.resolveTenantId({ sub: 'u', organizationId: 'o3' } as never),
-      ).toBe('o3');
-      expect(
-        service.resolveTenantId({ sub: 'u', tenantId: 't4' } as never),
-      ).toBe('t4');
-      expect(service.resolveTenantId({ sub: 'u' } as never)).toBeNull();
+      expect(service.resolveTenantId({ sub: 'u', tenantId: 't4' })).toBe('t4');
+      expect(service.resolveTenantId({ sub: 'u' })).toBeNull();
     });
 
     it('resolveUserId returns sub or null', () => {
-      expect(service.resolveUserId({ sub: 'usr_1' } as never)).toBe('usr_1');
-      expect(service.resolveUserId({ sub: '' } as never)).toBeNull();
+      expect(service.resolveUserId({ sub: 'usr_1' })).toBe('usr_1');
+      expect(service.resolveUserId({ sub: '' })).toBeNull();
       expect(service.resolveUserId({} as never)).toBeNull();
     });
   });

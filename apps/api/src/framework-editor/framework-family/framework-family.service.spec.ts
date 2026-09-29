@@ -60,7 +60,7 @@ describe('FrameworkFamilyService', () => {
   describe('create', () => {
     it('defaults description to "" and status to hidden when omitted', async () => {
       familyDb.create.mockResolvedValue({ id: 'frk_fam_new', name: 'X' });
-      await service.create({ name: 'X' } as never);
+      await service.create({ name: 'X' });
       expect(familyDb.create.mock.calls[0][0].data).toEqual({
         name: 'X',
         description: '',
@@ -87,7 +87,7 @@ describe('FrameworkFamilyService', () => {
     it('throws NotFound when the family does not exist', async () => {
       familyDb.findUnique.mockResolvedValue(null);
       await expect(
-        service.update('missing', { name: 'Y' } as never),
+        service.update('missing', { name: 'Y' }),
       ).rejects.toBeInstanceOf(NotFoundException);
     });
 
@@ -97,7 +97,7 @@ describe('FrameworkFamilyService', () => {
         _count: { frameworks: 0 },
       });
       familyDb.update.mockResolvedValue({ id: 'frk_fam_1', name: 'Y' });
-      await service.update('frk_fam_1', { name: 'Y' } as never);
+      await service.update('frk_fam_1', { name: 'Y' });
       expect(familyDb.update.mock.calls[0][0].data).toEqual({ name: 'Y' });
     });
 

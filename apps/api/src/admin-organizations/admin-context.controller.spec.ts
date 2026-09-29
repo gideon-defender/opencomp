@@ -97,7 +97,7 @@ describe('AdminContextController', () => {
       const created = { id: 'ctx_1', ...dto };
       mockService.create.mockResolvedValue(created);
 
-      const result = await controller.create('org_1', dto as never);
+      const result = await controller.create('org_1', dto);
 
       expect(mockService.create).toHaveBeenCalledWith('org_1', dto);
       expect(result).toEqual(created);
@@ -110,7 +110,7 @@ describe('AdminContextController', () => {
       const updated = { id: 'ctx_1', answer: 'Updated answer' };
       mockService.updateById.mockResolvedValue(updated);
 
-      const result = await controller.update('org_1', 'ctx_1', dto as never);
+      const result = await controller.update('org_1', 'ctx_1', dto);
 
       expect(mockService.updateById).toHaveBeenCalledWith(
         'ctx_1',

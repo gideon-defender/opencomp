@@ -16,6 +16,7 @@ import {
 } from '../auth/permission.guard';
 import { resolveServiceByName } from '../auth/service-token.config';
 import type { AuthenticatedRequest } from '../auth/types';
+import { withErrorCode } from '../common/i18n/error-messages';
 
 /**
  * Local request shape — combines the express-side fields we need
@@ -95,7 +96,10 @@ export class CommentsPermissionGuard implements CanActivate {
         this.logger.warn(
           `[CommentsPermissionGuard] API key lacks scope ${requiredScope}`,
         );
-        throw new ForbiddenException('API key lacks required permission scope');
+        throw withErrorCode(
+          new ForbiddenException('API key lacks required permission scope'),
+          'API_KEY_SCOPE',
+        );
       }
       return true;
     }
@@ -122,7 +126,10 @@ export class CommentsPermissionGuard implements CanActivate {
         this.logger.warn(
           `[CommentsPermissionGuard] Denied ${request.method} ${request.url}. Required: ${requiredScope}`,
         );
-        throw new ForbiddenException('Access denied');
+        throw withErrorCode(
+          new ForbiddenException('Access denied'),
+          'ACCESS_DENIED',
+        );
       }
       return true;
     } catch (error) {

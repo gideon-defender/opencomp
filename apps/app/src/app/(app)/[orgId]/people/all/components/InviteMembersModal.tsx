@@ -103,15 +103,19 @@ export function InviteMembersModal({
     return res.data?.customRoles ?? [];
   });
   const customRoles = customRolesData ?? [];
-  const customRoleNames = customRoles.map((r) => r.name);
 
-  const normalizedAllowedRoles = [
-    ...(allowedBuiltInRoles.length > 0 ? allowedBuiltInRoles : BUILT_IN_SELECTABLE_ROLES),
-    ...customRoleNames,
-  ];
+  // Memoize so downstream useMemo deps stay referentially stable instead of
+  // changing on every render.
+  const normalizedAllowedRoles = useMemo(
+    () => [
+      ...(allowedBuiltInRoles.length > 0 ? allowedBuiltInRoles : BUILT_IN_SELECTABLE_ROLES),
+      ...customRoles.map((r) => r.name),
+    ],
+    [allowedBuiltInRoles, customRoles],
+  );
   const formSchema = useMemo(
     () => createFormSchema(normalizedAllowedRoles, t),
-    [normalizedAllowedRoles.join(','), t],
+    [normalizedAllowedRoles, t],
   );
 
   const form = useForm<FormData>({

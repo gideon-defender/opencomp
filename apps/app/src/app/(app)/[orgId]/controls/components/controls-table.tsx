@@ -51,9 +51,11 @@ export function ControlsTable({ promises }: ControlsTableProps) {
   const [pageSize, setPageSize] = React.useState(DEFAULT_PAGE_SIZE);
 
   // Reset to page 1 when search changes
-  React.useEffect(() => {
+  const [prevSearch, setPrevSearch] = React.useState(search);
+  if (prevSearch !== search) {
+    setPrevSearch(search);
     setPage(1);
-  }, [search]);
+  }
 
   const filteredControls = React.useMemo(() => {
     const lowerSearch = search.toLowerCase().trim();
@@ -73,11 +75,9 @@ export function ControlsTable({ promises }: ControlsTableProps) {
   const paginatedControls = filteredControls.slice(startIndex, startIndex + pageSize);
 
   // Keep page in bounds when pageCount changes
-  React.useEffect(() => {
-    if (page > pageCount) {
-      setPage(pageCount);
-    }
-  }, [page, pageCount]);
+  if (page > pageCount) {
+    setPage(pageCount);
+  }
 
   const handleSortByName = React.useCallback(() => {
     setSortDirection((current) => (current === 'asc' ? 'desc' : 'asc'));

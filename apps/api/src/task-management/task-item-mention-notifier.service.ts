@@ -3,6 +3,7 @@ import { db } from '@db';
 import { orgParticipantMemberWhere } from '../utils/org-participation';
 import { isUserUnsubscribed } from '@gideon-defender/email';
 import { triggerEmail } from '../email/trigger-email';
+import { resolveEmailLocale, type EmailLocale } from '../email/locale';
 import { TaskItemMentionedEmail } from '../email/templates/task-item-mentioned';
 import { NovuService } from '../notifications/novu.service';
 
@@ -23,7 +24,9 @@ export class TaskItemMentionNotifierService {
     entityId: string;
     mentionedUserIds: string[];
     mentionedByUserId: string;
+    locale?: EmailLocale;
   }): Promise<void> {
+    const emailLocale = resolveEmailLocale(params.locale);
     const {
       organizationId,
       taskItemId,
@@ -139,8 +142,12 @@ export class TaskItemMentionNotifierService {
         try {
           const { id } = await triggerEmail({
             to: user.email,
-            subject: `${mentionedByName} mentioned you in a task`,
+            subject:
+              emailLocale === 'es'
+                ? `${mentionedByName} te mencionó en una tarea`
+                : `${mentionedByName} mentioned you in a task`,
             react: TaskItemMentionedEmail({
+              locale: emailLocale,
               toName: userName,
               toEmail: user.email,
               taskTitle,

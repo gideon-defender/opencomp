@@ -16,7 +16,7 @@ import {
 import { Link as LinkIcon } from '@trycompai/design-system/icons';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 export function LinkExistingControlSheet({
@@ -44,9 +44,11 @@ export function LinkExistingControlSheet({
     [controls, mappedSet],
   );
 
-  useEffect(() => {
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (prevIsOpen !== isOpen) {
+    setPrevIsOpen(isOpen);
     if (!isOpen) setSelected(new Set());
-  }, [isOpen]);
+  }
 
   if (!hasPermission('framework', 'update')) return null;
 

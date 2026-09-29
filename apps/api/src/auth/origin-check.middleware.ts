@@ -37,9 +37,14 @@ export function originCheckMiddleware(
   res: Response,
   next: NextFunction,
 ): void {
-  const origin = Array.isArray(req.headers.origin)
-    ? req.headers.origin[0]
-    : req.headers.origin;
+  const rawOrigin: unknown = req.headers.origin;
+  const origin: string | undefined = Array.isArray(rawOrigin)
+    ? typeof rawOrigin[0] === 'string'
+      ? rawOrigin[0]
+      : undefined
+    : typeof rawOrigin === 'string'
+      ? rawOrigin
+      : undefined;
 
   // Chrome extension origins are intentionally route-scoped.
   if (origin && isChromeExtensionOrigin(origin)) {

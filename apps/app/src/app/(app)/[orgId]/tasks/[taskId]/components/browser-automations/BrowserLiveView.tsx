@@ -2,7 +2,7 @@
 
 import { Button, Spinner } from '@trycompai/design-system';
 import { Play, Renew, Screen } from '@trycompai/design-system/icons';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { BrowserRunLivePhase } from '../../hooks/types';
 import { LiveActivityBorder } from './LiveActivityBorder';
 import { StepList, type SignInStep } from './StepList';
@@ -38,7 +38,11 @@ export function BrowserLiveView({
 
   // Gate the ring on the iframe's load so it appears with the page, not before.
   const [loaded, setLoaded] = useState(false);
-  useEffect(() => setLoaded(false), [liveViewUrl]);
+  const [prevLiveViewUrl, setPrevLiveViewUrl] = useState(liveViewUrl);
+  if (prevLiveViewUrl !== liveViewUrl) {
+    setPrevLiveViewUrl(liveViewUrl);
+    setLoaded(false);
+  }
 
   // Between vendors and while wrapping up, the current browser session is torn
   // down and Browserbase's iframe would flash its own "disconnected" notice —

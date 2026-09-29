@@ -307,7 +307,7 @@ function formatSingleRequirement(requirement: string): string {
   // never produce structured `standard version (control)` output for
   // the compliance chips.
   const standardMatch = normalized.match(
-    /^([A-Za-z][A-Za-z0-9 .\-]+?)\s+v?([\d.]+(?:[a-z]\d*)?)\s+([A-Za-z0-9.\-]+)$/,
+    /^([A-Za-z][A-Za-z0-9 .-]+?)\s+v?([\d.]+(?:[a-z]\d*)?)\s+([A-Za-z0-9.-]+)$/,
   );
   if (standardMatch) {
     const [, rawStandard, version, control] = standardMatch;

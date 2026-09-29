@@ -249,19 +249,13 @@ export class PurgeOrganizationService {
       manualAnswerIdCount: params.snapshot.manualAnswerIds.length,
     };
     if (params.externalCleanup) {
-      data.externalCleanup = params.externalCleanup as unknown as Record<
-        string,
-        unknown
-      >;
+      data.externalCleanup = params.externalCleanup;
     }
     if (params.failureReason) {
       data.failureReason = params.failureReason;
     }
     if (params.verification) {
-      data.verification = params.verification as unknown as Record<
-        string,
-        unknown
-      >;
+      data.verification = params.verification;
     }
 
     await db.auditLog.create({

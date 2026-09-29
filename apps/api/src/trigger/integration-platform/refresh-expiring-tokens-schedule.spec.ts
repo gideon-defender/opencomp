@@ -35,7 +35,6 @@ const runRefreshSchedule = (
 
 describe('refreshExpiringTokensSchedule', () => {
   const nowMs = Date.parse('2026-04-24T00:00:00.000Z');
-  const lookaheadMs = 24 * 60 * 60 * 1000;
 
   beforeEach(() => {
     process.env.API_URL = 'http://api.test';

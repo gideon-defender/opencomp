@@ -86,8 +86,8 @@ describe('GideonDevicesProxyController', () => {
       status: 200,
       headers: { get: () => 'application/json' },
       text: async () => JSON.stringify({ data: [] }),
-    } as never);
-    global.fetch = fetchMock as unknown as typeof fetch;
+    });
+    global.fetch = fetchMock;
 
     const req = mockReq({ headers: { authorization: 'Bearer tok' } });
     const res = mockRes();
@@ -107,8 +107,8 @@ describe('GideonDevicesProxyController', () => {
       status: 200,
       headers: { get: () => 'application/json' },
       text: async () => '{}',
-    } as never);
-    global.fetch = fetchMock as unknown as typeof fetch;
+    });
+    global.fetch = fetchMock;
 
     const req = mockReq({
       headers: {
@@ -135,9 +135,7 @@ describe('GideonDevicesProxyController', () => {
 
   it('returns 502 on upstream failure', async () => {
     process.env.GIDEON_DEVICES_PROXY_ENABLED = 'true';
-    global.fetch = jest
-      .fn()
-      .mockRejectedValue(new Error('upstream down')) as unknown as typeof fetch;
+    global.fetch = jest.fn().mockRejectedValue(new Error('upstream down'));
 
     const req = mockReq({ headers: { authorization: 'Bearer tok' } });
     const res = mockRes();
@@ -159,7 +157,7 @@ describe('GideonDevicesProxyController', () => {
         get: (k: string) => (k === 'content-type' ? 'application/json' : null),
       },
       text: async () => JSON.stringify({ ok: true }),
-    } as never) as unknown as typeof fetch;
+    });
 
     const req = mockReq({ headers: { authorization: 'Bearer tok' } });
     const res = mockRes();

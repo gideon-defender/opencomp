@@ -114,29 +114,37 @@ export function ConnectVendorLoginFlow({
   });
 
   useEffect(() => {
-    if (!analyzeRun) return;
-    // Ignore a stale emission from a previous run before the subscription
-    // catches up to the current one.
-    if (analyzeRunState && analyzeRunState.id !== analyzeRun.runId) return;
-    if (analyzeError) {
-      setAnalyzeRun(null);
-      setStep('error');
-      return;
-    }
-    if (!analyzeRunState) return;
+    let cancelled = false;
+    (async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      if (!analyzeRun) return;
+      // Ignore a stale emission from a previous run before the subscription
+      // catches up to the current one.
+      if (analyzeRunState && analyzeRunState.id !== analyzeRun.runId) return;
+      if (analyzeError) {
+        setAnalyzeRun(null);
+        setStep('error');
+        return;
+      }
+      if (!analyzeRunState) return;
 
-    if (analyzeRunState.status === 'COMPLETED') {
-      setAnalyzeRun(null);
-      if (analyzeRunState.output) {
-        setAnalysis(analyzeRunState.output as LoginAnalysis);
-        setStep('choose');
-      } else {
+      if (analyzeRunState.status === 'COMPLETED') {
+        setAnalyzeRun(null);
+        if (analyzeRunState.output) {
+          setAnalysis(analyzeRunState.output as LoginAnalysis);
+          setStep('choose');
+        } else {
+          setStep('error');
+        }
+      } else if (FAILED_RUN_STATUSES.has(analyzeRunState.status)) {
+        setAnalyzeRun(null);
         setStep('error');
       }
-    } else if (FAILED_RUN_STATUSES.has(analyzeRunState.status)) {
-      setAnalyzeRun(null);
-      setStep('error');
-    }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [analyzeRun, analyzeRunState, analyzeError]);
 
   // The automated sign-in runs as a background task on a session we show the
@@ -147,47 +155,66 @@ export function ConnectVendorLoginFlow({
   });
 
   useEffect(() => {
-    if (!signinRun) return;
-    // Ignore stale emissions from the previous run before the subscription
-    // catches up — acting on them would close the new session and mis-route.
-    if (signinRunState && signinRunState.id !== signinRun.runId) return;
-    if (signinError) return goToTakeover();
-    if (!signinRunState) return;
-
-    if (signinRunState.status === 'COMPLETED') {
-      const output = signinRunState.output as
-        | {
-            isLoggedIn?: boolean;
-            failure?: string;
-            homeUrl?: string;
-            twoFactorMethod?: TwoFactorMethod;
-          }
-        | undefined;
-
-      if (output?.isLoggedIn) {
-        // Keep the session open for a brief success beat; the effect below
-        // closes it and advances to the connected screen.
-        if (output.homeUrl) setConnectedUrl(output.homeUrl);
-        setSigninRun(null);
-        setStep('signed-in');
-      } else if (output?.failure === 'invalid_credentials') {
-        setSigninRun(null);
-        endSession();
-        toast.error("That username or password wasn't accepted — check and try again.");
-        setStep('capture');
-      } else {
-        goToTakeover(output?.failure, output?.twoFactorMethod);
+    let cancelled = false;
+    (async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      if (!signinRun) return;
+      // Ignore stale emissions from the previous run before the subscription
+      // catches up — acting on them would close the new session and mis-route.
+      if (signinRunState && signinRunState.id !== signinRun.runId) return;
+      if (signinError) {
+        goToTakeover();
+        return;
       }
-    } else if (FAILED_RUN_STATUSES.has(signinRunState.status)) {
-      goToTakeover();
-    }
+      if (!signinRunState) return;
+
+      if (signinRunState.status === 'COMPLETED') {
+        const output = signinRunState.output as
+          | {
+              isLoggedIn?: boolean;
+              failure?: string;
+              homeUrl?: string;
+              twoFactorMethod?: TwoFactorMethod;
+            }
+          | undefined;
+
+        if (output?.isLoggedIn) {
+          // Keep the session open for a brief success beat; the effect below
+          // closes it and advances to the connected screen.
+          if (output.homeUrl) setConnectedUrl(output.homeUrl);
+          setSigninRun(null);
+          setStep('signed-in');
+        } else if (output?.failure === 'invalid_credentials') {
+          setSigninRun(null);
+          endSession();
+          toast.error("That username or password wasn't accepted — check and try again.");
+          setStep('capture');
+        } else {
+          goToTakeover(output?.failure, output?.twoFactorMethod);
+        }
+      } else if (FAILED_RUN_STATUSES.has(signinRunState.status)) {
+        goToTakeover();
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [signinRun, signinRunState, signinError, endSession, goToTakeover]);
 
   // Mirror the live activity timeline into state so it stays visible after the
   // run completes and we hand over.
   useEffect(() => {
-    const steps = signinRunState?.metadata?.signinSteps as SignInStep[] | undefined;
-    if (steps) setSigninSteps(steps);
+    let cancelled = false;
+    (async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      const steps = signinRunState?.metadata?.signinSteps as SignInStep[] | undefined;
+      if (steps) setSigninSteps(steps);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [signinRunState]);
 
   // Follow the AI's tab: when the run reports the live-view moved to another tab
@@ -225,9 +252,7 @@ export function ConnectVendorLoginFlow({
   }, [taskId, step, url, urlInput, analysis]);
 
   // Manual/SSO live sign-in verified → success beat.
-  useEffect(() => {
-    if (step === 'signin' && context.status === 'has-context') setStep('signed-in');
-  }, [step, context.status]);
+  if (step === 'signin' && context.status === 'has-context') setStep('signed-in');
 
   // Gentle hand-off: hold a brief "Signed in" confirmation over the live browser,
   // then release the session and continue straight into the instruction composer

@@ -402,7 +402,7 @@ export class CloudSecurityService {
                 ...currentVars,
                 detectedServices: [...existingDetected],
                 disabledServices: [...disabledSet],
-              } as unknown as Prisma.InputJsonValue,
+              },
             },
           });
           this.logger.log(
@@ -877,7 +877,7 @@ export class CloudSecurityService {
       new Set(
         findings
           .map((f) => {
-            const evidence = f.evidence as Record<string, unknown> | undefined;
+            const evidence = f.evidence;
             const serviceId = evidence?.serviceId;
             return typeof serviceId === 'string' ? serviceId : null;
           })
@@ -916,7 +916,8 @@ export class CloudSecurityService {
             description: finding.description ?? '',
             severity: finding.passed ? 'info' : finding.severity,
             remediation: finding.remediation ?? null,
-            evidence: (finding.evidence || {}) as object,
+            evidence: (finding.evidence ||
+              {}) as unknown as Prisma.InputJsonValue,
             collectedAt: new Date(finding.createdAt),
           })),
         });

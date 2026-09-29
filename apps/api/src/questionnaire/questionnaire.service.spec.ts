@@ -262,7 +262,7 @@ describe('QuestionnaireService', () => {
     it('should return error when questionnaire not found', async () => {
       (mockDb.questionnaire.findUnique as jest.Mock).mockResolvedValue(null);
 
-      const result = await service.saveAnswer(baseSaveDto as any);
+      const result = await service.saveAnswer(baseSaveDto);
 
       expect(result).toEqual({
         success: false,
@@ -279,7 +279,7 @@ describe('QuestionnaireService', () => {
         mockDb.questionnaireQuestionAnswer.findFirst as jest.Mock
       ).mockResolvedValue(null);
 
-      const result = await service.saveAnswer(baseSaveDto as any);
+      const result = await service.saveAnswer(baseSaveDto);
 
       expect(result).toEqual({
         success: false,
@@ -306,7 +306,7 @@ describe('QuestionnaireService', () => {
       (syncManualAnswerToVector as jest.Mock).mockResolvedValue(undefined);
       (updateAnsweredCount as jest.Mock).mockResolvedValue(undefined);
 
-      const result = await service.saveAnswer(baseSaveDto as any);
+      const result = await service.saveAnswer(baseSaveDto);
 
       expect(result).toEqual({ success: true });
       expect(mockDb.questionnaireQuestionAnswer.update).toHaveBeenCalledWith(
@@ -360,7 +360,7 @@ describe('QuestionnaireService', () => {
         questionnaireId: 'q1',
         organizationId: 'org_1',
         questionAnswerId: 'qa1',
-      } as any);
+      });
 
       expect(result).toEqual({
         success: false,
@@ -380,7 +380,7 @@ describe('QuestionnaireService', () => {
         questionnaireId: 'q1',
         organizationId: 'org_1',
         questionAnswerId: 'qa1',
-      } as any);
+      });
 
       expect(result).toEqual({
         success: false,
@@ -404,7 +404,7 @@ describe('QuestionnaireService', () => {
         questionnaireId: 'q1',
         organizationId: 'org_1',
         questionAnswerId: 'qa1',
-      } as any);
+      });
 
       expect(result).toEqual({ success: true });
       expect(mockDb.questionnaireQuestionAnswer.update).toHaveBeenCalledWith({
@@ -583,7 +583,7 @@ describe('QuestionnaireService', () => {
         questionIndex: 0,
         totalQuestions: 5,
         questionnaireId: 'q1',
-      } as any);
+      });
 
       expect(result.success).toBe(true);
       expect(result.answer).toBe('A1');
@@ -610,7 +610,7 @@ describe('QuestionnaireService', () => {
         organizationId: 'org_1',
         questionIndex: 0,
         totalQuestions: 5,
-      } as any);
+      });
 
       expect(result.success).toBe(true);
       expect(saveGeneratedAnswer).not.toHaveBeenCalled();
@@ -631,7 +631,7 @@ describe('QuestionnaireService', () => {
         questionIndex: 0,
         totalQuestions: 5,
         questionnaireId: 'q1',
-      } as any);
+      });
 
       expect(result.success).toBe(false);
       expect(saveGeneratedAnswer).not.toHaveBeenCalled();

@@ -25,11 +25,13 @@ export function ResearchActivity({
   const [duration, setDuration] = useState<number | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Track actual timing
+  // Snapshot the elapsed time once research finishes (deferred out of the effect body).
   useEffect(() => {
     if ((isComplete || isError) && duration === null) {
-      const elapsed = Math.round((Date.now() - startTime) / 1000);
-      setDuration(elapsed);
+      // Defer so no setState happens synchronously within the effect.
+      queueMicrotask(() => {
+        setDuration(Math.round((Date.now() - startTime) / 1000));
+      });
     }
   }, [isComplete, isError, startTime, duration]);
 

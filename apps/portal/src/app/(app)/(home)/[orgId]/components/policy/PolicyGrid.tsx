@@ -2,6 +2,7 @@
 
 import type { Member, Policy, PolicyVersion } from '@db';
 import { Card, CardContent, CardHeader, CardTitle, Text } from '@trycompai/design-system';
+import { useTranslations } from 'next-intl';
 
 type PolicyWithVersion = Policy & {
   currentVersion?: Pick<PolicyVersion, 'id' | 'content' | 'pdfUrl' | 'version'> | null;
@@ -17,18 +18,19 @@ export function PolicyGrid({ policies, onPolicyClick, member }: PolicyGridProps)
   const allPoliciesCompleted = policies.every((policy) => policy.signedBy.includes(member.id));
 
   const noPoliciesFound = policies.length === 0;
+  const t = useTranslations('policies');
 
   return (
     <div className="space-y-6">
       {!noPoliciesFound && allPoliciesCompleted && (
         <div className="flex w-full flex-col items-center justify-center space-y-2 py-8">
-          <Text weight="medium">All Policies Completed!</Text>
-          <Text variant="muted">You're all done, now your manager won't pester you!</Text>
+          <Text weight="medium">{t('allCompletedTitle')}</Text>
+          <Text variant="muted">{t('allCompletedBody')}</Text>
         </div>
       )}
       {noPoliciesFound && (
         <div className="flex w-full flex-col items-center justify-center space-y-2 py-8">
-          <Text variant="muted">You don't have any policies to sign!</Text>
+          <Text variant="muted">{t('noPoliciesToSign')}</Text>
         </div>
       )}
       {!noPoliciesFound && (
@@ -44,7 +46,7 @@ export function PolicyGrid({ policies, onPolicyClick, member }: PolicyGridProps)
                 <Card>
                   {isCompleted && (
                     <div className="bg-background/60 absolute inset-0 z-10 flex items-center justify-center backdrop-blur-[2px]">
-                      <Text weight="medium">Completed</Text>
+                      <Text weight="medium">{t('completed')}</Text>
                     </div>
                   )}
                   <CardHeader>
@@ -55,10 +57,10 @@ export function PolicyGrid({ policies, onPolicyClick, member }: PolicyGridProps)
                       <p className="text-muted-foreground line-clamp-4">{policy.description}</p>
                       <div>
                         <Text variant="muted" size="sm">
-                          Status: {policy.status}
+                          {t('statusLabel', { status: policy.status })}
                           {policy.updatedAt && (
                             <span className="ml-2">
-                              (Updated: {new Date(policy.updatedAt).toLocaleDateString()})
+                              ({t('updatedLabel', { date: new Date(policy.updatedAt).toLocaleDateString() })})
                             </span>
                           )}
                         </Text>

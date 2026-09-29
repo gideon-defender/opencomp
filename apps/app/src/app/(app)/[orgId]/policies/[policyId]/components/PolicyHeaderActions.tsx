@@ -80,29 +80,37 @@ export function PolicyHeaderActions({
     globalMutate(auditLogsKey('policy', policy.id));
   };
 
-  // Handle run completion
+  // Handle run completion. Async IIFE with setState only after await (plus a
+  // cancellation flag) so no setState runs synchronously in the effect body.
   useEffect(() => {
     if (!run) return;
-
-    if (run.status === 'COMPLETED') {
-      if (toastIdRef.current) {
-        toast.dismiss(toastIdRef.current);
+    let cancelled = false;
+    (async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      if (run.status === 'COMPLETED') {
+        if (toastIdRef.current) {
+          toast.dismiss(toastIdRef.current);
+        }
+        toast.success(t('headerActions.newDraftCreatedToast'));
+        setIsRegenerating(false);
+        setRunInfo(null);
+        toastIdRef.current = null;
+        revalidateAll();
+      } else if (run.status === 'FAILED' || run.status === 'CRASHED' || run.status === 'CANCELED') {
+        if (toastIdRef.current) {
+          toast.dismiss(toastIdRef.current);
+        }
+        toast.error(t('headerActions.regenerateFailedToast'));
+        setIsRegenerating(false);
+        setRunInfo(null);
+        toastIdRef.current = null;
       }
-      toast.success(t('headerActions.newDraftCreatedToast'));
-      setIsRegenerating(false);
-      setRunInfo(null);
-      toastIdRef.current = null;
-      revalidateAll();
-    } else if (run.status === 'FAILED' || run.status === 'CRASHED' || run.status === 'CANCELED') {
-      if (toastIdRef.current) {
-        toast.dismiss(toastIdRef.current);
-      }
-      toast.error(t('headerActions.regenerateFailedToast'));
-      setIsRegenerating(false);
-      setRunInfo(null);
-      toastIdRef.current = null;
-    }
-  }, [run]); // eslint-disable-line react-hooks/exhaustive-deps
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [run]);
 
   const handleRegenerate = async () => {
     if (!policy) return;

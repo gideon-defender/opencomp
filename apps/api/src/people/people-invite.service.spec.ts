@@ -111,6 +111,7 @@ const mockInvitePortalEmail = jest
   .mockReturnValue('mocked-portal-element');
 jest.mock('@gideon-defender/email', () => ({
   InvitePortalEmail: (...args: unknown[]) => mockInvitePortalEmail(...args),
+  resolveLocale: (input: unknown) => (input === 'es' ? 'es' : 'en'),
 }));
 
 import { db } from '@db';

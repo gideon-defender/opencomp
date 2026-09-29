@@ -27,7 +27,7 @@ import {
 import { Add } from '@trycompai/design-system/icons';
 import { Loader2 } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { TaskItemCreateDialog } from './TaskItemCreateDialog';
 import { TaskItemFocusView } from './TaskItemFocusView';
 import { TaskItemList } from './TaskItemList';
@@ -63,7 +63,13 @@ export const TaskItems = ({
   const [selectedTaskItemId, setSelectedTaskItemId] = useState<string | null>(
     () => searchParams.get('taskItemId') ?? null,
   );
-  const previousDataRef = useRef<typeof taskItemsResponse>(undefined);
+  // Stay in sync with the URL param, adjusted during render.
+  const taskItemIdFromUrl = searchParams.get('taskItemId');
+  const [prevTaskItemIdFromUrl, setPrevTaskItemIdFromUrl] = useState(taskItemIdFromUrl);
+  if (prevTaskItemIdFromUrl !== taskItemIdFromUrl) {
+    setPrevTaskItemIdFromUrl(taskItemIdFromUrl);
+    setSelectedTaskItemId(taskItemIdFromUrl || null);
+  }
   const { hasPermission } = usePermissions();
   const canCreate = hasPermission('task', 'create');
 
@@ -105,11 +111,6 @@ export const TaskItems = ({
   };
 
   useEffect(() => {
-    const taskItemIdFromUrl = searchParams.get('taskItemId');
-    setSelectedTaskItemId(taskItemIdFromUrl || null);
-  }, [searchParams]);
-
-  useEffect(() => {
     onFocusModeChange?.(Boolean(selectedTaskItemId));
   }, [selectedTaskItemId, onFocusModeChange]);
 
@@ -125,11 +126,14 @@ export const TaskItems = ({
     router.replace(`${pathname}${qs ? `?${qs}` : ''}#${anchorId}`, { scroll: false });
   };
 
-  useEffect(() => {
-    if (taskItemsResponse) previousDataRef.current = taskItemsResponse;
-  }, [taskItemsResponse]);
+  // Keep the last successful response for display while refetching, held in
+  // state and synced during render instead of a ref read during render.
+  const [previousData, setPreviousData] = useState(taskItemsResponse);
+  if (taskItemsResponse && previousData !== taskItemsResponse) {
+    setPreviousData(taskItemsResponse);
+  }
 
-  const displayResponse = taskItemsResponse || previousDataRef.current;
+  const displayResponse = taskItemsResponse || previousData;
   const allTaskItems = displayResponse?.data?.data || [];
   const paginationMeta = displayResponse?.data?.meta;
   const isFocusMode = Boolean(selectedTaskItemId);

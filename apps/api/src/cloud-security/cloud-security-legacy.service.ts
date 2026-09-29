@@ -134,7 +134,7 @@ export class CloudSecurityLegacyService {
         integrationId: provider,
         organizationId,
         userSettings: encryptedCredentials as Prisma.JsonObject,
-        settings: settings as Prisma.JsonObject,
+        settings: settings,
       },
     });
 

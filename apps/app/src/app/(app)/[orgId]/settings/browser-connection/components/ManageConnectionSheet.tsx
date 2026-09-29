@@ -14,7 +14,7 @@ import {
 } from '@trycompai/design-system';
 import { Close, Locked } from '@trycompai/design-system/icons';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { MfaSetupHelp } from '../../../tasks/[taskId]/components/browser-automations/MfaSetupHelp';
 import { useTotpStatus } from '../../../tasks/[taskId]/hooks/useTotpStatus';
 import { methodOf, statusMeta, type Connection } from './connection-format';
@@ -90,8 +90,12 @@ export function ManageConnectionSheet({
 
   // Reset the forms each time the sheet opens (or a different connection loads).
   // Depending on `open` too clears any stale name/credentials/setup-key/confirm
-  // state when the SAME connection is reopened.
-  useEffect(() => {
+  // state when the SAME connection is reopened. Adjust-during-render instead
+  // of an effect; the sentinel initial key forces the mount sync.
+  const manageResetKey = open ? (connection?.id ?? 'open') : 'closed';
+  const [prevManageResetKey, setPrevManageResetKey] = useState<string | null>(null);
+  if (prevManageResetKey !== manageResetKey) {
+    setPrevManageResetKey(manageResetKey);
     setName(connection?.displayName ?? '');
     setShowCredForm(false);
     setUsername('');
@@ -99,7 +103,7 @@ export function ManageConnectionSheet({
     setTotpAdding(false);
     setTotpSeed('');
     setConfirmingRemove(false);
-  }, [connection, open]);
+  }
 
   if (!connection) return null;
 

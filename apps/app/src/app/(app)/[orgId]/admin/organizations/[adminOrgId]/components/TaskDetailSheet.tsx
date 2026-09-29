@@ -169,9 +169,27 @@ export function TaskDetailSheet({
     setLoading(false);
   }, [orgId, taskId]);
 
+  const [prevTaskId, setPrevTaskId] = useState(taskId);
+  if (prevTaskId !== taskId) {
+    setPrevTaskId(taskId);
+    if (taskId) setLoading(true);
+  }
+
   useEffect(() => {
-    void fetchDetails();
-  }, [fetchDetails]);
+    if (!taskId) return;
+    let cancelled = false;
+    (async () => {
+      const res = await api.get<TaskDetails>(
+        `/v1/admin/organizations/${orgId}/tasks/${taskId}/details`,
+      );
+      if (cancelled) return;
+      if (res.data) setDetails(res.data);
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [orgId, taskId]);
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {

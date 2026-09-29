@@ -12,22 +12,61 @@ import {
 } from '@react-email/components';
 import { Footer } from '../components/footer';
 import { Logo } from '../components/logo';
+import type { EmailLocale } from '../locale';
 
 interface Props {
   toName: string;
   organizationName: string;
   domain: string;
   settingsUrl: string;
+  locale?: EmailLocale;
 }
+
+const copy = {
+  en: {
+    previewPrefix: "Action required: Trust Portal custom domain",
+    previewSuffix: "is misconfigured",
+    heading: "Trust Portal Domain Needs Attention",
+    hello: "Hello",
+    bodyDetected: "We detected that the custom domain",
+    bodyConfigured: "configured for",
+    bodySuffix:
+      "'s Trust Portal is no longer resolving correctly. Visitors using this domain may be unable to access your Trust Portal until the DNS configuration is fixed.",
+    whatToDo: "What to do:",
+    dnsBody:
+      "Visit your Trust Portal settings to review the DNS records and re-verify your domain. Ensure your CNAME record points to the correct target and that all required verification records are in place.",
+    reviewButton: "Review Domain Settings",
+    supportNote: "If you need help, please contact our support team.",
+  },
+  es: {
+    previewPrefix:
+      "Acción requerida: el dominio personalizado del Portal de Confianza",
+    previewSuffix: "está mal configurado",
+    heading: "El dominio del Portal de Confianza necesita atención",
+    hello: "Hola",
+    bodyDetected: "Detectamos que el dominio personalizado",
+    bodyConfigured: "configurado para el Portal de Confianza de",
+    bodySuffix:
+      " ya no se resuelve correctamente. Los visitantes que usen este dominio podrían no poder acceder a tu Portal de Confianza hasta que se corrija la configuración DNS.",
+    whatToDo: "Qué hacer:",
+    dnsBody:
+      "Visita la configuración de tu Portal de Confianza para revisar los registros DNS y volver a verificar tu dominio. Asegúrate de que tu registro CNAME apunte al destino correcto y de que todos los registros de verificación requeridos estén en su lugar.",
+    reviewButton: "Revisar la configuración del dominio",
+    supportNote: "Si necesitas ayuda, contacta a nuestro equipo de soporte.",
+  },
+};
 
 export const TrustDomainMisconfiguredEmail = ({
   toName,
   organizationName,
   domain,
   settingsUrl,
+  locale = 'en',
 }: Props) => {
+  const t = copy[locale];
+
   return (
-    <Html>
+    <Html lang={locale}>
       <Tailwind>
         <head>
           <Font
@@ -43,9 +82,7 @@ export const TrustDomainMisconfiguredEmail = ({
             fontStyle="normal"
           />
         </head>
-        <Preview>
-          Action required: Trust Portal custom domain {domain} is misconfigured
-        </Preview>
+        <Preview>{t.previewPrefix} {domain} {t.previewSuffix}</Preview>
 
         <Body className="mx-auto my-auto bg-[#fff] font-sans">
           <Container
@@ -54,19 +91,15 @@ export const TrustDomainMisconfiguredEmail = ({
           >
             <Logo />
             <Heading className="mx-0 my-[30px] p-0 text-center text-[24px] font-normal text-[#121212]">
-              Trust Portal Domain Needs Attention
+              {t.heading}
             </Heading>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              Hello {toName},
+              {t.hello} {toName},
             </Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              We detected that the custom domain <strong>{domain}</strong>{' '}
-              configured for <strong>{organizationName}</strong>'s Trust Portal
-              is no longer resolving correctly. Visitors using this domain may
-              be unable to access your Trust Portal until the DNS configuration
-              is fixed.
+              {t.bodyDetected} <strong>{domain}</strong> {t.bodyConfigured} <strong>{organizationName}</strong>{t.bodySuffix}
             </Text>
 
             <Section
@@ -74,12 +107,9 @@ export const TrustDomainMisconfiguredEmail = ({
               style={{ backgroundColor: '#fff8f0', borderColor: '#f97316' }}
             >
               <Text className="m-0 text-[14px] leading-[24px] text-[#121212]">
-                <strong>What to do:</strong>
+                <strong>{t.whatToDo}</strong>
                 <br />
-                Visit your Trust Portal settings to review the DNS records and
-                re-verify your domain. Ensure your CNAME record points to the
-                correct target and that all required verification records are in
-                place.
+                {t.dnsBody}
               </Text>
             </Section>
 
@@ -88,17 +118,17 @@ export const TrustDomainMisconfiguredEmail = ({
                 className="rounded-[3px] bg-[#121212] px-[20px] py-[12px] text-center text-[14px] font-semibold text-white no-underline"
                 href={settingsUrl}
               >
-                Review Domain Settings
+                {t.reviewButton}
               </Button>
             </Section>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              If you need help, please contact our support team.
+              {t.supportNote}
             </Text>
 
             <br />
 
-            <Footer />
+            <Footer locale={locale} />
           </Container>
         </Body>
       </Tailwind>

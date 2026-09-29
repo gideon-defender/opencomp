@@ -131,7 +131,7 @@ export interface FindingHistoryEntry {
 
 const DEFAULT_FINDINGS_POLLING_INTERVAL = 10000;
 
-interface UseFindingsOptions extends UseApiSWROptions<Finding[]> {}
+type UseFindingsOptions = UseApiSWROptions<Finding[]>;
 
 interface OrganizationFindingsFilters {
   status?: FindingStatus;

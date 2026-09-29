@@ -4,6 +4,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { TaskStatus } from '@db';
 import { isUserUnsubscribed } from '@gideon-defender/email';
 import { triggerEmail } from '../email/trigger-email';
+import { resolveEmailLocale, type EmailLocale } from '../email/locale';
 import { TaskBulkStatusChangedEmail } from '../email/templates/task-bulk-status-changed';
 import { TaskBulkAssigneeChangedEmail } from '../email/templates/task-bulk-assignee-changed';
 import { TaskStatusChangedEmail } from '../email/templates/task-status-changed';
@@ -29,6 +30,33 @@ function toStatusRecipient(user: {
     name: user.name?.trim() || user.email?.trim() || 'User',
     email: user.email,
   };
+}
+
+/**
+ * Spanish labels for task statuses. Subjects and template bodies
+ * interpolate the label, so localizing it here keeps both monolingual.
+ * Future statuses fall back to the English label instead of breaking.
+ */
+const TASK_STATUS_ES: Partial<Record<TaskStatus, string>> = {
+  todo: 'por hacer',
+  in_progress: 'en curso',
+  in_review: 'en revisión',
+  done: 'completado',
+  not_relevant: 'no relevante',
+  failed: 'fallido',
+};
+
+function taskStatusLabel({
+  status,
+  locale,
+}: {
+  status: TaskStatus;
+  locale: EmailLocale;
+}): string {
+  if (locale === 'es') {
+    return TASK_STATUS_ES[status] ?? status.replace('_', ' ');
+  }
+  return status.replace('_', ' ');
 }
 
 @Injectable()
@@ -70,8 +98,10 @@ export class TaskNotifierService {
     taskIds: string[];
     newStatus: TaskStatus;
     changedByUserId: string;
+    locale?: EmailLocale;
   }): Promise<void> {
     const { organizationId, taskIds, newStatus, changedByUserId } = params;
+    const emailLocale = resolveEmailLocale(params.locale);
 
     try {
       const [organization, changedByUser, tasks] = await Promise.all([
@@ -157,7 +187,7 @@ export class TaskNotifierService {
       }
 
       const recipients = Array.from(recipientBuckets.values());
-      const statusLabel = newStatus.replace('_', ' ');
+      const statusLabel = taskStatusLabel({ status: newStatus, locale: emailLocale });
 
       const appUrl =
         process.env.NEXT_PUBLIC_APP_URL ??
@@ -190,8 +220,12 @@ export class TaskNotifierService {
           try {
             const { id } = await triggerEmail({
               to: recipient.email,
-              subject: `${taskCount} task${taskCount === 1 ? '' : 's'} status changed to ${statusLabel}`,
+              subject:
+                emailLocale === 'es'
+                  ? `${taskCount} ${taskCount === 1 ? 'tarea' : 'tareas'} estado cambiado a ${statusLabel}`
+                  : `${taskCount} task${taskCount === 1 ? '' : 's'} status changed to ${statusLabel}`,
               react: TaskBulkStatusChangedEmail({
+                locale: emailLocale,
                 toName: recipient.name,
                 toEmail: recipient.email,
                 taskCount,
@@ -253,8 +287,10 @@ export class TaskNotifierService {
     taskIds: string[];
     newAssigneeId: string | null;
     changedByUserId: string;
+    locale?: EmailLocale;
   }): Promise<void> {
     const { organizationId, taskIds, newAssigneeId, changedByUserId } = params;
+    const emailLocale = resolveEmailLocale(params.locale);
 
     try {
       const [organization, changedByUser, tasks, newAssigneeMember] =
@@ -352,8 +388,12 @@ export class TaskNotifierService {
           try {
             const { id } = await triggerEmail({
               to: recipient.email,
-              subject: `${taskCount} task${taskCount === 1 ? '' : 's'} reassigned to ${newAssigneeName}`,
+              subject:
+                emailLocale === 'es'
+                  ? `${taskCount} ${taskCount === 1 ? 'tarea reasignada a' : 'tareas reasignadas a'} ${newAssigneeName}`
+                  : `${taskCount} task${taskCount === 1 ? '' : 's'} reassigned to ${newAssigneeName}`,
               react: TaskBulkAssigneeChangedEmail({
+                locale: emailLocale,
                 toName: recipient.name,
                 toEmail: recipient.email,
                 taskCount,
@@ -417,6 +457,7 @@ export class TaskNotifierService {
     oldStatus: TaskStatus;
     newStatus: TaskStatus;
     changedByUserId?: string;
+    locale?: EmailLocale;
   }): Promise<void> {
     const {
       organizationId,
@@ -426,6 +467,7 @@ export class TaskNotifierService {
       newStatus,
       changedByUserId,
     } = params;
+    const emailLocale = resolveEmailLocale(params.locale);
 
     try {
       const [organization, changedByUser, task] = await Promise.all([
@@ -462,8 +504,8 @@ export class TaskNotifierService {
         changedByUser?.name?.trim() ||
         changedByUser?.email?.trim() ||
         (changedByUserId ? 'Someone' : 'Automation');
-      const oldStatusLabel = oldStatus.replace('_', ' ');
-      const newStatusLabel = newStatus.replace('_', ' ');
+      const oldStatusLabel = taskStatusLabel({ status: oldStatus, locale: emailLocale });
+      const newStatusLabel = taskStatusLabel({ status: newStatus, locale: emailLocale });
 
       // Recipients: the task's assignee (if any). If the task is unassigned,
       // fall back to owners/admins so someone who can act on it is notified.
@@ -517,8 +559,12 @@ export class TaskNotifierService {
           try {
             const { id } = await triggerEmail({
               to: recipient.email,
-              subject: `Task "${taskTitle}" status changed to ${newStatusLabel}`,
+              subject:
+                emailLocale === 'es'
+                  ? `Tarea "${taskTitle}" estado cambiado a ${newStatusLabel}`
+                  : `Task "${taskTitle}" status changed to ${newStatusLabel}`,
               react: TaskStatusChangedEmail({
+                locale: emailLocale,
                 toName: recipient.name,
                 toEmail: recipient.email,
                 taskTitle,
@@ -583,6 +629,7 @@ export class TaskNotifierService {
     oldAssigneeId: string | null;
     newAssigneeId: string | null;
     changedByUserId: string;
+    locale?: EmailLocale;
   }): Promise<void> {
     const {
       organizationId,
@@ -592,6 +639,7 @@ export class TaskNotifierService {
       newAssigneeId,
       changedByUserId,
     } = params;
+    const emailLocale = resolveEmailLocale(params.locale);
 
     try {
       const [
@@ -701,8 +749,12 @@ export class TaskNotifierService {
           try {
             const { id } = await triggerEmail({
               to: recipient.email,
-              subject: `Task "${taskTitle}" reassigned to ${newAssigneeName}`,
+              subject:
+                emailLocale === 'es'
+                  ? `Tarea "${taskTitle}" reasignada a ${newAssigneeName}`
+                  : `Task "${taskTitle}" reassigned to ${newAssigneeName}`,
               react: TaskAssigneeChangedEmail({
+                locale: emailLocale,
                 toName: recipient.name,
                 toEmail: recipient.email,
                 taskTitle,
@@ -766,6 +818,7 @@ export class TaskNotifierService {
     taskTitle: string;
     submittedByUserId: string;
     approverMemberId: string;
+    locale?: EmailLocale;
   }): Promise<void> {
     const {
       organizationId,
@@ -774,6 +827,7 @@ export class TaskNotifierService {
       submittedByUserId,
       approverMemberId,
     } = params;
+    const emailLocale = resolveEmailLocale(params.locale);
 
     try {
       const [organization, submittedByUser, approverMember] = await Promise.all(
@@ -851,8 +905,12 @@ export class TaskNotifierService {
       try {
         const { id } = await triggerEmail({
           to: recipient.email,
-          subject: `Evidence review requested: "${taskTitle}"`,
+          subject:
+            emailLocale === 'es'
+              ? `Revisión de evidencia solicitada: "${taskTitle}"`
+              : `Evidence review requested: "${taskTitle}"`,
           react: EvidenceReviewRequestedEmail({
+            locale: emailLocale,
             toName: recipient.name,
             toEmail: recipient.email,
             taskTitle,
@@ -912,6 +970,7 @@ export class TaskNotifierService {
     taskCount: number;
     submittedByUserId: string;
     approverMemberId: string;
+    locale?: EmailLocale;
   }): Promise<void> {
     const {
       organizationId,
@@ -920,6 +979,7 @@ export class TaskNotifierService {
       submittedByUserId,
       approverMemberId,
     } = params;
+    const emailLocale = resolveEmailLocale(params.locale);
 
     try {
       const [organization, submittedByUser, approverMember, tasks] =
@@ -1012,8 +1072,12 @@ export class TaskNotifierService {
       try {
         const { id } = await triggerEmail({
           to: recipient.email,
-          subject: `${taskCount} ${taskText} submitted for your review`,
+          subject:
+            emailLocale === 'es'
+              ? `${taskCount} ${taskCount === 1 ? 'tarea enviada para tu revisión' : 'tareas enviadas para tu revisión'}`
+              : `${taskCount} ${taskText} submitted for your review`,
           react: EvidenceBulkReviewRequestedEmail({
+            locale: emailLocale,
             toName: recipient.name,
             toEmail: recipient.email,
             taskCount,
@@ -1075,6 +1139,7 @@ export class TaskNotifierService {
     failedCount: number;
     totalCount: number;
     taskStatusChanged: boolean;
+    locale?: EmailLocale;
   }): Promise<void> {
     const {
       organizationId,
@@ -1084,6 +1149,7 @@ export class TaskNotifierService {
       totalCount,
       taskStatusChanged,
     } = params;
+    const emailLocale = resolveEmailLocale(params.locale);
 
     try {
       const organization = await db.organization.findUnique({
@@ -1142,7 +1208,6 @@ export class TaskNotifierService {
       );
 
       const organizationName = organization?.name ?? 'your organization';
-      const changedByName = 'Automation';
 
       // Build recipient list: assignee + admins
       const recipientMap = new Map<
@@ -1208,8 +1273,12 @@ export class TaskNotifierService {
           try {
             const { id } = await triggerEmail({
               to: recipient.email,
-              subject: `Automation failures on task "${taskTitle}"`,
+              subject:
+                emailLocale === 'es'
+                  ? `Fallos de automatización en la tarea "${taskTitle}"`
+                  : `Automation failures on task "${taskTitle}"`,
               react: AutomationFailuresEmail({
+                locale: emailLocale,
                 toName: recipient.name,
                 toEmail: recipient.email,
                 taskTitle,
@@ -1272,6 +1341,7 @@ export class TaskNotifierService {
 
   async notifyBulkAutomationFailures(params: {
     organizationId: string;
+    locale?: EmailLocale;
     tasks: Array<{
       taskId: string;
       taskTitle: string;
@@ -1280,6 +1350,7 @@ export class TaskNotifierService {
     }>;
   }): Promise<void> {
     const { organizationId, tasks: failedTasks } = params;
+    const emailLocale = resolveEmailLocale(params.locale);
 
     if (failedTasks.length === 0) {
       this.logger.log(
@@ -1428,8 +1499,12 @@ export class TaskNotifierService {
           try {
             const { id } = await triggerEmail({
               to: recipient.email,
-              subject: `${taskCount} ${taskText} with automation failures`,
+              subject:
+                emailLocale === 'es'
+                  ? `${taskCount} ${taskCount === 1 ? 'tarea con fallos de automatización' : 'tareas con fallos de automatización'}`
+                  : `${taskCount} ${taskText} with automation failures`,
               react: AutomationBulkFailuresEmail({
+                locale: emailLocale,
                 toName: recipient.name,
                 toEmail: recipient.email,
                 organizationName,

@@ -36,7 +36,7 @@ interface InstancePolicy {
   content: unknown;
   frequency: string | null;
   department: string | null;
-  status: 'draft' | 'published' | string;
+  status: string;
 }
 
 interface PolicyUpdatePreviewBuckets {

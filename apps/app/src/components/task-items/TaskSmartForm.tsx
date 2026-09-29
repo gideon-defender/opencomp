@@ -25,6 +25,7 @@ import {
 } from '@gideon-defender/ui/select';
 import type { JSONContent } from '@tiptap/react';
 import { Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { TaskRichDescriptionField } from './TaskRichDescriptionField';
@@ -49,20 +50,9 @@ interface TaskSmartFormProps {
   };
 }
 
-const STATUS_OPTIONS: { value: TaskItemStatus; label: string }[] = [
-  { value: 'todo', label: 'Todo' },
-  { value: 'in_progress', label: 'In Progress' },
-  { value: 'in_review', label: 'In Review' },
-  { value: 'done', label: 'Done' },
-  { value: 'canceled', label: 'Canceled' },
-];
+const STATUS_VALUES: TaskItemStatus[] = ['todo', 'in_progress', 'in_review', 'done', 'canceled'];
 
-const PRIORITY_OPTIONS: { value: TaskItemPriority; label: string }[] = [
-  { value: 'urgent', label: 'Urgent' },
-  { value: 'high', label: 'High' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'low', label: 'Low' },
-];
+const PRIORITY_VALUES: TaskItemPriority[] = ['urgent', 'high', 'medium', 'low'];
 
 export function TaskSmartForm({
   entityId,
@@ -76,6 +66,8 @@ export function TaskSmartForm({
   onCancel,
   initialValues,
 }: TaskSmartFormProps) {
+  const t = useTranslations('tasks');
+  const tt = useTranslations('toasts');
   const [title, setTitle] = useState(initialValues?.title || '');
   const [description, setDescription] = useState<JSONContent | null>(
     typeof initialValues?.description === 'object' ? initialValues.description : null,
@@ -103,6 +95,33 @@ export function TaskSmartForm({
     entityId,
     entityType,
   });
+
+  const statusOptions = useMemo(
+    () =>
+      STATUS_VALUES.map((value) => ({
+        value,
+        label:
+          value === 'todo'
+            ? t('todo')
+            : value === 'in_progress'
+              ? t('inProgress')
+              : value === 'in_review'
+                ? t('inReview')
+                : value === 'done'
+                  ? t('done')
+                  : t('canceled'),
+      })),
+    [t],
+  );
+
+  const priorityOptions = useMemo(
+    () =>
+      PRIORITY_VALUES.map((value) => ({
+        value,
+        label: t(`smartForm.${value}`),
+      })),
+    [t],
+  );
 
   // Filter members to only show owner and admin roles
   const assignableMembers = useMemo(() => {
@@ -147,25 +166,26 @@ export function TaskSmartForm({
               downloadUrl: result.downloadUrl,
               type: result.type,
             });
-            toast.success(`File "${file.name}" attached`);
+            toast.success(tt('fileAttached', { name: file.name }));
           }
         } catch (error) {
           console.error('Failed to upload file:', error);
           toast.error(
-            `Failed to upload "${file.name}": ${
-              error instanceof Error ? error.message : 'Unknown error'
-            }`,
+            tt('fileUploadFailed', {
+              name: file.name,
+              error: error instanceof Error ? error.message : tt('unknownError'),
+            }),
           );
         }
       }
       return results;
     },
-    [uploadAttachment],
+    [uploadAttachment, tt],
   );
 
   const handleSubmit = async () => {
     if (!title.trim()) {
-      toast.error('Title is required');
+      toast.error(tt('titleRequired'));
       return;
     }
 
@@ -184,7 +204,7 @@ export function TaskSmartForm({
         entityType,
         assigneeId: assigneeId || undefined,
       });
-      toast.success('Task created!');
+      toast.success(tt('taskCreated'));
 
       // Reset form
       setTitle('');
@@ -197,7 +217,7 @@ export function TaskSmartForm({
       onSuccess?.();
     } catch (error) {
       console.error('Error creating task item:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to create task');
+      toast.error(error instanceof Error ? error.message : tt('taskCreateFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -219,11 +239,11 @@ export function TaskSmartForm({
     <div className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="task-title" className="text-sm font-medium">
-          Title <span className="text-destructive">*</span>
+          {t('smartForm.titleLabel')} <span className="text-destructive">*</span>
         </Label>
         <Input
           id="task-title"
-          placeholder="Enter task title..."
+          placeholder={t('smartForm.titlePlaceholder')}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           disabled={isSubmitting}
@@ -234,7 +254,7 @@ export function TaskSmartForm({
 
       <div className="space-y-2">
         <Label htmlFor="task-description" className="text-sm font-medium">
-          Description
+          {t('smartForm.descriptionLabel')}
         </Label>
         <TaskRichDescriptionField
           value={description}
@@ -242,7 +262,7 @@ export function TaskSmartForm({
           onFileUpload={handleFileUpload}
           members={mentionMembers}
           disabled={isSubmitting}
-          placeholder="Enter task description... Mention users with @ or attach files"
+          placeholder={t('smartForm.descriptionPlaceholder')}
           entityId={entityId}
           entityType={entityType}
         />
@@ -251,14 +271,14 @@ export function TaskSmartForm({
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="task-status" className="text-sm font-medium">
-            Status
+            {t('smartForm.statusLabel')}
           </Label>
           <Select value={status} onValueChange={(value) => setStatus(value as TaskItemStatus)}>
             <SelectTrigger id="task-status" className="bg-background">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {STATUS_OPTIONS.map((option) => (
+              {statusOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
                 </SelectItem>
@@ -269,7 +289,7 @@ export function TaskSmartForm({
 
         <div className="space-y-2">
           <Label htmlFor="task-priority" className="text-sm font-medium">
-            Priority
+            {t('smartForm.priorityLabel')}
           </Label>
           <Select
             value={priority}
@@ -279,7 +299,7 @@ export function TaskSmartForm({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {PRIORITY_OPTIONS.map((option) => (
+              {priorityOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
                 </SelectItem>
@@ -310,7 +330,7 @@ export function TaskSmartForm({
             disabled={isSubmitting || isUploading}
             className="h-8 px-3"
           >
-            Cancel
+            {t('smartForm.cancel')}
           </Button>
         )}
         <Button
@@ -322,10 +342,10 @@ export function TaskSmartForm({
           {isSubmitting ? (
             <>
               <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-              {'Creating...'}
+              {t('smartForm.creating')}
             </>
           ) : (
-            'Create Task'
+            t('smartForm.createTask')
           )}
         </Button>
       </div>

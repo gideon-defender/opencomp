@@ -190,7 +190,7 @@ describe('QuestionnaireController', () => {
       };
       mockService.parseQuestionnaire.mockResolvedValue(expected);
 
-      const result = await controller.parseQuestionnaire(dto as any);
+      const result = await controller.parseQuestionnaire(dto);
 
       expect(result).toEqual(expected);
       expect(service.parseQuestionnaire).toHaveBeenCalledWith(dto);
@@ -214,7 +214,7 @@ describe('QuestionnaireController', () => {
         error: undefined,
       });
 
-      const result = await controller.answerSingleQuestion(dto as any, 'org_1');
+      const result = await controller.answerSingleQuestion(dto, 'org_1');
 
       expect(result.success).toBe(true);
       expect(result.data.answer).toBe('Our policy covers...');
@@ -238,7 +238,7 @@ describe('QuestionnaireController', () => {
         error: undefined,
       });
 
-      await controller.answerSingleQuestion(dto as any, 'org_1');
+      await controller.answerSingleQuestion(dto, 'org_1');
 
       expect(dto.organizationId).toBe('org_1');
       expect(service.answerSingleQuestion).toHaveBeenCalledWith(
@@ -288,7 +288,7 @@ describe('QuestionnaireController', () => {
       };
       mockService.deleteAnswer.mockResolvedValue({ success: true });
 
-      const result = await controller.deleteAnswer(dto as any, 'org_1');
+      const result = await controller.deleteAnswer(dto, 'org_1');
 
       expect(result).toEqual({ success: true });
     });
@@ -301,7 +301,7 @@ describe('QuestionnaireController', () => {
       };
       mockService.deleteAnswer.mockResolvedValue({ success: true });
 
-      await controller.deleteAnswer(dto as any, 'org_1');
+      await controller.deleteAnswer(dto, 'org_1');
 
       expect(dto.organizationId).toBe('org_1');
     });

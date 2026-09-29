@@ -323,7 +323,6 @@ describe('seedRolesIfMissing', () => {
   it('creates all four seeded roles on an empty document', async () => {
     const tx = makeTx([]);
     await seedRolesIfMissing({
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tx: tx as any,
       documentId: 'doc_1',
       memberCount: 10,
@@ -346,7 +345,6 @@ describe('seedRolesIfMissing', () => {
       'internal_auditor',
     ]);
     await seedRolesIfMissing({
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tx: tx as any,
       documentId: 'doc_1',
       memberCount: 10,
@@ -357,7 +355,6 @@ describe('seedRolesIfMissing', () => {
   it('defaults the Internal Auditor route to external for a small team', async () => {
     const tx = makeTx([]);
     await seedRolesIfMissing({
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tx: tx as any,
       documentId: 'doc_1',
       memberCount: 2,
@@ -373,7 +370,6 @@ describe('seedRolesIfMissing', () => {
   it('leaves the Internal Auditor route unset for a standard team', async () => {
     const tx = makeTx([]);
     await seedRolesIfMissing({
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tx: tx as any,
       documentId: 'doc_1',
       memberCount: 20,

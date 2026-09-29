@@ -264,19 +264,23 @@ interface OrbMeshProps {
 
 function OrbMesh({ uniforms }: OrbMeshProps) {
   const meshRef = useRef<THREE.Mesh>(null);
+  // useFrame runs outside render and mutates three.js objects every frame —
+  // funnel those writes through a ref (stable, mutable container) instead of
+  // the prop so render stays pure.
+  const uniformsRef = useRef(uniforms);
 
   useFrame((state) => {
     if (!meshRef.current) return;
 
     const time = state.clock.getElapsedTime();
-    uniforms.u_time.value = time;
+    uniformsRef.current.u_time.value = time;
 
     // Animate internal lights in orbital paths (swirling motion)
     const lightSpeeds = [0.015, 0.012, 0.018];
     const lightDistances = [0.2, 0.175, 0.15];
     const lightOffsets = [0.0, Math.PI * 0.7, Math.PI * 1.2];
 
-    uniforms.u_lightPositions.value.forEach((lightPos, i) => {
+    uniformsRef.current.u_lightPositions.value.forEach((lightPos, i) => {
       const angle = time * lightSpeeds[i] + lightOffsets[i];
       lightPos.set(
         Math.cos(angle) * lightDistances[i],

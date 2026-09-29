@@ -47,7 +47,7 @@ const DANGEROUS_CONTENT_PATTERNS = [
 export function validateFileContent(
   fileBuffer: Buffer,
   declaredMimeType: string,
-  fileName: string,
+  _fileName: string,
 ): void {
   const lowerMime = declaredMimeType.toLowerCase();
 

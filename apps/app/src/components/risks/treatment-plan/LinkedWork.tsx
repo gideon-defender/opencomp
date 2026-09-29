@@ -10,7 +10,7 @@ import {
   TrashCan,
 } from '@trycompai/design-system/icons';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 // Show 4 items per page in each list (Tasks + Controls). Long lists used
 // to stretch the column past the Strategy / Treatment-plan columns and
@@ -140,17 +140,13 @@ export function LinkedWork({ orgId, tasks, onUnlinkTask }: LinkedWorkProps) {
 
   // Per-list pagination (Tasks + Controls). Reset to page 1 when the
   // underlying list shrinks past the current page (e.g. after an unlink
-  // that drops the last task on the visible page).
+  // that drops the last task on the visible page). Adjusted during render.
   const [taskPage, setTaskPage] = useState(1);
   const [controlPage, setControlPage] = useState(1);
   const taskPageCount = Math.max(1, Math.ceil(tasks.length / PAGE_SIZE));
   const controlPageCount = Math.max(1, Math.ceil(controls.length / PAGE_SIZE));
-  useEffect(() => {
-    if (taskPage > taskPageCount) setTaskPage(taskPageCount);
-  }, [taskPage, taskPageCount]);
-  useEffect(() => {
-    if (controlPage > controlPageCount) setControlPage(controlPageCount);
-  }, [controlPage, controlPageCount]);
+  if (taskPage > taskPageCount) setTaskPage(taskPageCount);
+  if (controlPage > controlPageCount) setControlPage(controlPageCount);
   const visibleTasks = tasks.slice(
     (taskPage - 1) * PAGE_SIZE,
     (taskPage - 1) * PAGE_SIZE + PAGE_SIZE,

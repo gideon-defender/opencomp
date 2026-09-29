@@ -135,8 +135,8 @@ export const checkDomainHealthSchedule = schedules.task({
             .filter((m) => m.user?.email)
             .map((member) =>
               emailService.sendDomainMisconfiguredEmail({
-                toEmail: member.user!.email!,
-                toName: member.user!.name?.trim() || member.user!.email!,
+                toEmail: member.user.email,
+                toName: member.user.name?.trim() || member.user.email,
                 organizationName: trust.organization.name,
                 domain,
                 settingsUrl,

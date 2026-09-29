@@ -195,7 +195,12 @@ export class InternalIntegrationDebugService {
       variables: conn.variables ?? null,
       credential: conn.activeCredentialVersionId
         ? this.buildCredentialMetadata(
-            versionById.get(conn.activeCredentialVersionId) ?? null,
+            (versionById.get(conn.activeCredentialVersionId) as unknown as {
+              version: number;
+              createdAt: Date;
+              expiresAt: Date | null;
+              encryptedPayload: unknown;
+            } | null) ?? null,
           )
         : null,
       latestRun: latestRunByConn.get(conn.id) ?? null,

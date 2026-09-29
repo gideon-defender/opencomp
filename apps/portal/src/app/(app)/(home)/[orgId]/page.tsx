@@ -5,6 +5,7 @@ import type { FleetPolicyResult, Member } from '@db';
 import { db } from '@db/server';
 import { PageHeader, PageLayout } from '@trycompai/design-system';
 import { headers } from 'next/headers';
+import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { NoAccessMessage } from '../components/NoAccessMessage';
 import { OrganizationDashboard } from './components/OrganizationDashboard';
@@ -53,6 +54,8 @@ export default async function OrganizationPage({ params }: { params: Promise<{ o
     redirect('/');
   }
 
+  const tDashboard = await getTranslations('dashboard');
+  const tAccess = await getTranslations('access');
   const canAccessPortal = await hasPortalAccess({
     roleString: member.role,
     organizationId: orgId,
@@ -60,8 +63,8 @@ export default async function OrganizationPage({ params }: { params: Promise<{ o
   if (!canAccessPortal) {
     return (
       <PageLayout>
-        <PageHeader title="OpenComp - Employee Portal" />
-        <NoAccessMessage message="Your role does not include employee portal access. Ask your administrator to add the employee role to your account." />
+        <PageHeader title={tDashboard('title')} />
+        <NoAccessMessage message={tAccess('noRoleMessage')} />
       </PageLayout>
     );
   }
@@ -80,7 +83,7 @@ export default async function OrganizationPage({ params }: { params: Promise<{ o
 
   return (
     <PageLayout>
-      <PageHeader title="OpenComp - Employee Portal" />
+      <PageHeader title={tDashboard('title')} />
       <OrganizationDashboard
         key={orgId}
         organizationId={orgId}

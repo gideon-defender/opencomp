@@ -10,7 +10,6 @@ import {
   isAlignedPeriodStart,
   periodStartFor,
   toPeriodKey,
-  type MetricCadenceValue,
 } from './utils/metric-periods';
 import type {
   BulkCreateMeasurementInput,
@@ -234,7 +233,7 @@ export class IsmsMeasurementService {
         `Set a cadence on "${metric.name}" before recording measurements.`,
       );
     }
-    const cadence = metric.cadence as MetricCadenceValue;
+    const cadence = metric.cadence;
     const key = toPeriodKey(periodStart);
     if (!key || !isAlignedPeriodStart(cadence, key)) {
       throw new BadRequestException(

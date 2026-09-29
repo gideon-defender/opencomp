@@ -14,7 +14,7 @@ import {
 } from '@trycompai/design-system';
 import { useTranslations } from 'next-intl';
 import { useQueryState } from 'nuqs';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 export function CreateVendorTaskSheet() {
   const isDesktop = useMediaQuery('(min-width: 768px)');
@@ -22,9 +22,11 @@ export function CreateVendorTaskSheet() {
   const [isOpen, setIsOpen] = useState(false);
   const t = useTranslations('vendor');
 
-  useEffect(() => {
+  const [prevQueryOpen, setPrevQueryOpen] = useState(queryOpen);
+  if (prevQueryOpen !== queryOpen) {
+    setPrevQueryOpen(queryOpen);
     setIsOpen(Boolean(queryOpen));
-  }, [queryOpen]);
+  }
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);

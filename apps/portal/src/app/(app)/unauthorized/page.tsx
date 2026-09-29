@@ -5,16 +5,16 @@ import {
   EmptyTitle,
   PageLayout,
 } from '@trycompai/design-system';
+import { getTranslations } from 'next-intl/server';
 
 export default async function Unauthorized() {
+  const t = await getTranslations('errors');
   return (
     <PageLayout>
       <Empty>
         <EmptyHeader>
-          <EmptyTitle>Organization not found</EmptyTitle>
-          <EmptyDescription>
-            We couldn't find an organization for your account. Please contact your administrator.
-          </EmptyDescription>
+          <EmptyTitle>{t('unauthorizedTitle')}</EmptyTitle>
+          <EmptyDescription>{t('unauthorizedDescription')}</EmptyDescription>
         </EmptyHeader>
       </Empty>
     </PageLayout>

@@ -402,21 +402,25 @@ export function RemediationDialog({
     const progress = (previewRun?.metadata as { progress?: PreviewProgress } | undefined)?.progress;
     if (!progress || progress.phase === 'analyzing') return;
 
-    if (progress.phase === 'complete' && progress.preview) {
-      const previewData = progress.preview as unknown as PreviewData;
-      setPreview(previewData);
-      if (previewData.allRequiredPermissions) {
-        permissionsRef.current = previewData.allRequiredPermissions;
+    // Defer state updates out of the synchronous effect body — the realtime
+    // subscription delivers progress here, the microtask applies it.
+    queueMicrotask(() => {
+      if (progress.phase === 'complete' && progress.preview) {
+        const previewData = progress.preview as unknown as PreviewData;
+        setPreview(previewData);
+        if (previewData.allRequiredPermissions) {
+          permissionsRef.current = previewData.allRequiredPermissions;
+        }
+        setIsLoadingPreview(false);
+        setPreviewRunId(null);
+        setPreviewAccessToken(null);
+      } else if (progress.phase === 'failed') {
+        setError(progress.error || t('cloudTests_failedToLoadPreview'));
+        setIsLoadingPreview(false);
+        setPreviewRunId(null);
+        setPreviewAccessToken(null);
       }
-      setIsLoadingPreview(false);
-      setPreviewRunId(null);
-      setPreviewAccessToken(null);
-    } else if (progress.phase === 'failed') {
-      setError(progress.error || t('cloudTests_failedToLoadPreview'));
-      setIsLoadingPreview(false);
-      setPreviewRunId(null);
-      setPreviewAccessToken(null);
-    }
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [previewRun?.metadata]);
 
@@ -426,53 +430,57 @@ export function RemediationDialog({
       ?.progress;
     if (!progress || progress.phase === 'executing') return;
 
-    if (progress.phase === 'success') {
-      setIsExecuting(false);
-      setPreview(null);
-      setError(null);
-      setSucceeded(true);
-      toast.success(t('cloudTests_fixApplied'));
-      onComplete?.();
-      setTimeout(() => {
-        onOpenChange(false);
-        setSucceeded(false);
+    // Defer state updates out of the synchronous effect body — the realtime
+    // subscription delivers progress here, the microtask applies it.
+    queueMicrotask(() => {
+      if (progress.phase === 'success') {
+        setIsExecuting(false);
+        setPreview(null);
+        setError(null);
+        setSucceeded(true);
+        toast.success(t('cloudTests_fixApplied'));
+        onComplete?.();
+        setTimeout(() => {
+          onOpenChange(false);
+          setSucceeded(false);
+          setExecuteRunId(null);
+          setExecuteAccessToken(null);
+        }, 4000);
+      } else if (progress.phase === 'manual') {
+        // Auto-fix gave up but the API returned real manual steps.
+        // Switch the dialog into guided rendering instead of showing a
+        // raw error — same UI the preview flow already uses for
+        // canAutoFix:false plans.
+        setIsExecuting(false);
+        setError(null);
+        const steps = progress.guidedSteps ?? [];
+        setPreview({
+          currentState: {},
+          proposedState: {},
+          description: progress.error ?? description ?? '',
+          risk: risk ?? 'medium',
+          apiCalls: [],
+          guidedOnly: true,
+          guidedSteps: steps,
+          rollbackSupported: false,
+        });
         setExecuteRunId(null);
         setExecuteAccessToken(null);
-      }, 4000);
-    } else if (progress.phase === 'manual') {
-      // Auto-fix gave up but the API returned real manual steps.
-      // Switch the dialog into guided rendering instead of showing a
-      // raw error — same UI the preview flow already uses for
-      // canAutoFix:false plans.
-      setIsExecuting(false);
-      setError(null);
-      const steps = progress.guidedSteps ?? [];
-      setPreview({
-        currentState: {},
-        proposedState: {},
-        description: progress.error ?? description ?? '',
-        risk: risk ?? 'medium',
-        apiCalls: [],
-        guidedOnly: true,
-        guidedSteps: steps,
-        rollbackSupported: false,
-      });
-      setExecuteRunId(null);
-      setExecuteAccessToken(null);
-    } else if (progress.phase === 'failed') {
-      setIsExecuting(false);
-      setError(progress.error || t('cloudTests_remediationFailed'));
-      setExecuteRunId(null);
-      setExecuteAccessToken(null);
-    } else if (progress.phase === 'needs_permissions') {
-      setIsExecuting(false);
-      setError(progress.error || t('cloudTests_missingPermissions'));
-      if (progress.permissionError) {
-        setPermissionError(progress.permissionError);
+      } else if (progress.phase === 'failed') {
+        setIsExecuting(false);
+        setError(progress.error || t('cloudTests_remediationFailed'));
+        setExecuteRunId(null);
+        setExecuteAccessToken(null);
+      } else if (progress.phase === 'needs_permissions') {
+        setIsExecuting(false);
+        setError(progress.error || t('cloudTests_missingPermissions'));
+        if (progress.permissionError) {
+          setPermissionError(progress.permissionError);
+        }
+        setExecuteRunId(null);
+        setExecuteAccessToken(null);
       }
-      setExecuteRunId(null);
-      setExecuteAccessToken(null);
-    }
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [executeRun?.metadata]);
 
@@ -506,34 +514,72 @@ export function RemediationDialog({
     [connectionId, checkResultId, remediationKey],
   );
 
+  // Reset dialog state when a new remediation is opened — applied during render
+  // so the fresh state is in place before paint, without a cascading effect.
+  const [prevDialogReset, setPrevDialogReset] = useState({ open, remediationKey });
+  if (prevDialogReset.open !== open || prevDialogReset.remediationKey !== remediationKey) {
+    setPrevDialogReset({ open, remediationKey });
+    if (open) {
+      setError(null);
+      setPermissionError(null);
+      setAcknowledgment(null);
+      setPreviewRunId(null);
+      setPreviewAccessToken(null);
+      setExecuteRunId(null);
+      setExecuteAccessToken(null);
+      setSucceeded(false);
+
+      // Guided-only: skip API call, use local data
+      if (guidedOnly && guidedSteps) {
+        setPreview({
+          currentState: {},
+          proposedState: {},
+          description: description ?? '',
+          risk: risk ?? 'medium',
+          apiCalls: [],
+          guidedOnly: true,
+          guidedSteps,
+          rollbackSupported: false,
+        });
+      } else {
+        setPreview(null);
+        setIsLoadingPreview(true);
+      }
+    }
+  }
+
   useEffect(() => {
     if (!open) return;
-    setError(null);
-    setPermissionError(null);
-    setAcknowledgment(null);
-    setPreviewRunId(null);
-    setPreviewAccessToken(null);
-    setExecuteRunId(null);
-    setExecuteAccessToken(null);
-    setSucceeded(false);
 
-    // Guided-only: skip API call, use local data
-    if (guidedOnly && guidedSteps) {
-      setPreview({
-        currentState: {},
-        proposedState: {},
-        description: description ?? '',
-        risk: risk ?? 'medium',
-        apiCalls: [],
-        guidedOnly: true,
-        guidedSteps,
-        rollbackSupported: false,
-      });
-      return;
-    }
+    // Guided-only: skip API call, local data was already set during render
+    if (guidedOnly && guidedSteps) return;
 
-    setPreview(null);
-    loadPreview();
+    let cancelled = false;
+    (async () => {
+      try {
+        const result = await startPreview({
+          connectionId,
+          checkResultId,
+          remediationKey,
+        });
+        if (cancelled) return;
+        if (result.error || !result.data) {
+          setError(result.error || t('cloudTests_failedToLoadPreview'));
+          setIsLoadingPreview(false);
+          return;
+        }
+        // Task started — preview effect handles the rest
+        setPreviewRunId(result.data.runId);
+        setPreviewAccessToken(result.data.accessToken);
+      } catch {
+        if (cancelled) return;
+        setError(t('cloudTests_failedToLoadPreview'));
+        setIsLoadingPreview(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, remediationKey]);
 

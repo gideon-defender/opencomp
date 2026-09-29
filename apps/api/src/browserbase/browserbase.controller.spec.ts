@@ -49,7 +49,7 @@ describe('BrowserbaseController.redirectToScreenshot', () => {
   beforeEach(async () => {
     service = {
       getScreenshotRedirectUrl: jest.fn(),
-    } as jest.Mocked<Pick<BrowserbaseService, 'getScreenshotRedirectUrl'>>;
+    };
 
     const moduleRef = await Test.createTestingModule({
       controllers: [BrowserbaseController],

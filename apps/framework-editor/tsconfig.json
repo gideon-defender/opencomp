@@ -22,7 +22,9 @@
     "paths": {
       "@/*": ["./*"],
       "@/db": ["./prisma"],
-      "@/db/server": ["./prisma/server"]
+      "@/db/server": ["./prisma/server"],
+      "@gideon-defender/email": ["../../packages/email/index.ts"],
+      "@gideon-defender/email/*": ["../../packages/email/*"]
     }
   },
   "include": [

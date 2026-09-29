@@ -46,7 +46,7 @@ function makeRunner(
           stage: 'action',
           message: 'Running instruction',
         });
-        return { logs: [], ...result } as BrowserEvidenceRunResult;
+        return { logs: [], ...result };
       },
     ),
   };

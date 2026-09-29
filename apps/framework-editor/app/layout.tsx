@@ -1,5 +1,7 @@
 import { Toaster } from '@gideon-defender/ui/toaster';
 import type { Metadata } from 'next';
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getMessages } from 'next-intl/server';
 import { type ReactNode } from 'react';
 import { Toaster as SonnerToaster } from 'sonner';
 
@@ -23,22 +25,27 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const hasSession =
     !!session?.user && session.user.role === 'admin' && isInternalUser(session.user.email);
 
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="en" className="h-full" suppressHydrationWarning>
+    <html lang={locale} className="h-full" suppressHydrationWarning>
       <body className="flex h-full flex-col">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {hasSession && <Header />}
-          <div className="flex min-h-0 flex-1 flex-col gap-2 p-4">
-            {children}
-            <Toaster />
-            <SonnerToaster richColors position="top-right" />
-          </div>
-        </ThemeProvider>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="light"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {hasSession && <Header />}
+            <div className="flex min-h-0 flex-1 flex-col gap-2 p-4">
+              {children}
+              <Toaster />
+              <SonnerToaster richColors position="top-right" />
+            </div>
+          </ThemeProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

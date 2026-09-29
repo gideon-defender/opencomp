@@ -94,7 +94,17 @@ export function BrowserConnectionClient({
   }, []);
 
   useEffect(() => {
-    void fetchProfiles();
+    let cancelled = false;
+    // Await first so the refresh below never counts as a synchronous
+    // setState-in-effect; fetchProfiles itself only sets state after awaits.
+    (async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      await fetchProfiles();
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [fetchProfiles]);
 
   // After the shared flow connects or reconnects, refresh the list and return.

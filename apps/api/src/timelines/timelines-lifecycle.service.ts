@@ -288,7 +288,7 @@ export class TimelinesLifecycleService {
       txResult.result?.frameworkInstance?.framework?.name ??
       'Unknown';
 
-    notifyPhaseCompleted({
+    void notifyPhaseCompleted({
       orgId: organizationId,
       orgName,
       frameworkName,
@@ -297,7 +297,7 @@ export class TimelinesLifecycleService {
     });
 
     if (txResult.allCompleted) {
-      notifyTimelineCompleted({
+      void notifyTimelineCompleted({
         orgId: organizationId,
         orgName,
         frameworkName,

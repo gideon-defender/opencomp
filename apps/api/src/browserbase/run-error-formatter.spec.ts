@@ -60,7 +60,7 @@ describe('isNoPageError', () => {
   });
 
   it('returns false for non-Error values', () => {
-    expect(isNoPageError('no page available' as unknown)).toBe(false);
+    expect(isNoPageError('no page available')).toBe(false);
     expect(isNoPageError(null)).toBe(false);
   });
 });

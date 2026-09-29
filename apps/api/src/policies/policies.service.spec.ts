@@ -80,7 +80,6 @@ jest.mock('../app/s3', () => ({
   ),
 }));
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { db } = require('@db') as {
   db: {
     policy: {
@@ -102,13 +101,11 @@ const { db } = require('@db') as {
   };
 };
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { filterComplianceMembers: mockedFilterComplianceMembers } =
   require('../utils/compliance-filters') as {
     filterComplianceMembers: jest.Mock;
   };
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { s3Client: mockedS3Client, getSignedUrl: mockedGetSignedUrl } =
   require('../app/s3') as {
     s3Client: { send: jest.Mock };
@@ -293,7 +290,7 @@ describe('PoliciesService', () => {
 
       await service.updateById('pol_1', orgId, {
         description: 'new desc',
-      } as never);
+      });
 
       const updateArg = db.policy.update.mock.calls[0][0];
       expect(updateArg.data.signedBy).toBeUndefined();
@@ -433,7 +430,7 @@ describe('PoliciesService', () => {
 
       await service.updateById('pol_1', orgId, {
         content: newContent,
-      } as never);
+      });
 
       const updateArg = db.policy.update.mock.calls[0][0];
       expect(updateArg.data.content).toEqual(newContent);
@@ -497,7 +494,7 @@ describe('PoliciesService', () => {
 
       await service.updateById('pol_1', orgId, {
         content: newContent,
-      } as never);
+      });
 
       // Round-trip the row the update just wrote into the publish call.
       const written = db.policy.update.mock.calls[0][0].data;
@@ -579,7 +576,7 @@ describe('PoliciesService', () => {
 
         await service.updateById(policyId, orgId, {
           content: newContent,
-        } as never);
+        });
 
         // A new PolicyVersion was created with the new content + next version number
         expect(db.policyVersion.create).toHaveBeenCalledTimes(1);
@@ -623,7 +620,7 @@ describe('PoliciesService', () => {
 
         await service.updateById(policyId, orgId, {
           content: newContent,
-        } as never);
+        });
 
         expect(db.policyVersion.create).toHaveBeenCalledTimes(1);
         const policyUpdateArg = db.policy.update.mock.calls[0][0];
@@ -643,7 +640,7 @@ describe('PoliciesService', () => {
         mockAutoRouteTx();
 
         await expect(
-          service.updateById(policyId, orgId, { content: newContent } as never),
+          service.updateById(policyId, orgId, { content: newContent }),
         ).rejects.toThrow(/approval is pending/);
         expect(db.policyVersion.create).not.toHaveBeenCalled();
         expect(db.policy.update).not.toHaveBeenCalled();
@@ -690,7 +687,7 @@ describe('PoliciesService', () => {
 
         await service.updateById(policyId, orgId, {
           description: 'tweak',
-        } as never);
+        });
 
         // No new version created — just a normal Policy update
         expect(db.policyVersion.create).not.toHaveBeenCalled();

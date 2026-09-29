@@ -1,0 +1,40 @@
+{
+  "title": "Marcos",
+  "searchPlaceholder": "Buscar marcos...",
+  "import": "Importar",
+  "moveFramework": "Mover marco",
+  "createFamily": "Crear nueva familia de marcos",
+  "createFramework": "Crear nuevo marco",
+  "emptyMessage": "Aún no hay marcos.",
+  "columns": {
+    "name": "Nombre",
+    "version": "Versión",
+    "status": "Estado",
+    "requirements": "Requisitos",
+    "controls": "Controles"
+  },
+  "family": {
+    "empty": "Vacía",
+    "frameworkCount": "{count, plural, one {# marco} other {# marcos}}",
+    "expandFamily": "Expandir familia",
+    "collapseFamily": "Contraer familia",
+    "editFamily": "Editar familia",
+    "deleteFamily": "Eliminar familia",
+    "deleteDisabledHint": "La familia debe estar vacía para eliminarla"
+  },
+  "status": {
+    "visible": "Visible",
+    "hidden": "Oculto",
+    "underConstruction": "En construcción",
+    "partial": "Parcial"
+  },
+  "tabs": {
+    "requirements": "Requisitos",
+    "controls": "Controles",
+    "policies": "Políticas",
+    "tasks": "Tareas",
+    "documents": "Documentos",
+    "ismsDocuments": "Documentos del SGSI",
+    "versions": "Versiones"
+  }
+}

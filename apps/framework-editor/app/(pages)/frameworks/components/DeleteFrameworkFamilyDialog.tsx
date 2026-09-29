@@ -12,6 +12,7 @@ import {
   AlertDialogTitle,
 } from '@gideon-defender/ui/alert-dialog';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -29,17 +30,19 @@ export function DeleteFrameworkFamilyDialog({
   familyName,
 }: DeleteFrameworkFamilyDialogProps) {
   const router = useRouter();
+  const t = useTranslations('dialogs');
+  const tToasts = useTranslations('toasts');
   const [isDeleting, setIsDeleting] = useState(false);
 
   async function handleDelete() {
     setIsDeleting(true);
     try {
       await apiClient(`/framework-family/${familyId}`, { method: 'DELETE' });
-      toast.success('Framework family deleted');
+      toast.success(tToasts('familyDeleted'));
       onOpenChange(false);
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to delete framework family.');
+      toast.error(error instanceof Error ? error.message : tToasts('familyDeleteFailed'));
     } finally {
       setIsDeleting(false);
     }
@@ -49,11 +52,13 @@ export function DeleteFrameworkFamilyDialog({
     <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete &ldquo;{familyName}&rdquo;?</AlertDialogTitle>
-          <AlertDialogDescription>Are you sure? This cannot be undone.</AlertDialogDescription>
+          <AlertDialogTitle>{t('familyDialog.deleteConfirmTitle', { name: familyName })}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {t('familyDialog.deleteConfirmDescription')}
+          </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={isDeleting}>{t('familyDialog.cancel')}</AlertDialogCancel>
           <AlertDialogAction
             onClick={(event) => {
               event.preventDefault();
@@ -61,7 +66,7 @@ export function DeleteFrameworkFamilyDialog({
             }}
             disabled={isDeleting}
           >
-            {isDeleting ? 'Deleting...' : 'Delete'}
+            {isDeleting ? t('familyDialog.deleting') : t('familyDialog.delete')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

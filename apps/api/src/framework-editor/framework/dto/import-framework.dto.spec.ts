@@ -22,8 +22,8 @@ function collectMessages(errors: ValidationError[]): string[] {
   return out;
 }
 
-const FREQUENCY = Object.values(Frequency)[0] as Frequency;
-const DEPARTMENT = Object.values(Departments)[0] as Departments;
+const FREQUENCY = Object.values(Frequency)[0];
+const DEPARTMENT = Object.values(Departments)[0];
 
 function basePayload(
   overrides: { requirementDescription?: string; policyContent?: unknown } = {},

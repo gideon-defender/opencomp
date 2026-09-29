@@ -1,19 +1,18 @@
 import { Alert, AlertDescription, AlertTitle } from '@gideon-defender/ui/alert';
 import { WarningAlt } from '@trycompai/design-system/icons';
+import { getTranslations } from 'next-intl/server';
 
 interface NoAccessMessageProps {
   message?: string;
 }
 
-export function NoAccessMessage({ message }: NoAccessMessageProps) {
+export async function NoAccessMessage({ message }: NoAccessMessageProps) {
+  const t = await getTranslations('access');
   return (
     <Alert variant="destructive" className="mx-auto max-w-md">
       <WarningAlt size={16} />
-      <AlertTitle>Access Denied</AlertTitle>
-      <AlertDescription>
-        {message ??
-          'You do not have access to the employee portal with this account, or you are not currently assigned to an organization. Please contact your administrator if you believe this is an error.'}
-      </AlertDescription>
+      <AlertTitle>{t('deniedTitle')}</AlertTitle>
+      <AlertDescription>{message ?? t('defaultMessage')}</AlertDescription>
     </Alert>
   );
 }

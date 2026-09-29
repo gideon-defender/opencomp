@@ -4,7 +4,7 @@ import { Button } from '@gideon-defender/ui/button';
 import { Textarea } from '@gideon-defender/ui/textarea';
 import { Save } from 'lucide-react';
 import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { updateEvaluationCriteria } from '../../actions/task-automation-actions';
 import { useTaskAutomation } from '../../hooks/use-task-automation';
@@ -25,12 +25,16 @@ export function EvaluationCriteriaCard({
   const [criteria, setCriteria] = useState(initialCriteria || '');
   const [isSaving, setIsSaving] = useState(false);
 
-  // Update local state when automation data changes
-  useEffect(() => {
+  // Sync local state when automation data changes (adjust-during-render).
+  const [prevEvaluationCriteria, setPrevEvaluationCriteria] = useState(
+    automation?.evaluationCriteria,
+  );
+  if (prevEvaluationCriteria !== automation?.evaluationCriteria) {
+    setPrevEvaluationCriteria(automation?.evaluationCriteria);
     if (automation?.evaluationCriteria) {
       setCriteria(automation.evaluationCriteria);
     }
-  }, [automation?.evaluationCriteria]);
+  }
 
   const handleSave = async (e?: React.MouseEvent) => {
     e?.preventDefault();

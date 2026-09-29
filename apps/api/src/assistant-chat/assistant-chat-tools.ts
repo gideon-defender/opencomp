@@ -45,10 +45,11 @@ export function buildTools(ctx: ToolContext) {
   tools.getUser = {
     description: "Get the user's id and organization id",
     inputSchema: z.object({}),
-    execute: async () => ({
-      userId: ctx.userId,
-      organizationId: ctx.organizationId,
-    }),
+    execute: () =>
+      Promise.resolve({
+        userId: ctx.userId,
+        organizationId: ctx.organizationId,
+      }),
   };
 
   // Policy tools — require policy:read

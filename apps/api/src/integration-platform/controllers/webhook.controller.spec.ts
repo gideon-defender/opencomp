@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/unbound-method -- spec calls controller methods on a directly instantiated instance; `this` scoping is not a concern for mocks */
 import { HttpStatus } from '@nestjs/common';
 import { createHmac } from 'node:crypto';
 import { db } from '@db';

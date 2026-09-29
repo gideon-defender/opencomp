@@ -180,7 +180,7 @@ describe('OAuthController', () => {
 
   describe('startOAuth', () => {
     it('should throw NOT_FOUND when provider does not exist', async () => {
-      mockedGetManifest.mockReturnValue(undefined as never);
+      mockedGetManifest.mockReturnValue(undefined);
 
       await expect(
         controller.startOAuth('org_1', 'user_1', {
@@ -430,7 +430,7 @@ describe('OAuthController', () => {
         redirectUrl: null,
         expiresAt: futureDate,
       });
-      mockedGetManifest.mockReturnValue(undefined as never);
+      mockedGetManifest.mockReturnValue(undefined);
 
       await controller.oauthCallback(
         { code: 'auth_code', state: 'valid_state' },
@@ -922,7 +922,7 @@ describe('OAuthController', () => {
         // Session with userId match but no activeOrganizationId — still allowed,
         // since the state itself already binds the organization.
         setMatchingSession({ activeOrganizationId: null });
-        mockedGetManifest.mockReturnValue(undefined as never);
+        mockedGetManifest.mockReturnValue(undefined);
 
         await controller.oauthCallback(
           { code: 'auth_code', state: 'valid_state' },

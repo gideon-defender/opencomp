@@ -56,7 +56,7 @@ describe('TrainingController', () => {
 
       const result = await controller.sendTrainingCompletionEmail(
         'org_123',
-        dto as never,
+        dto,
       );
 
       expect(
@@ -77,7 +77,7 @@ describe('TrainingController', () => {
 
       const result = await controller.sendHipaaTrainingCompletionEmail(
         'org_123',
-        dto as never,
+        dto,
       );
 
       expect(
@@ -104,7 +104,7 @@ describe('TrainingController', () => {
 
       await controller.generateCertificate(
         'org_123',
-        dto as never,
+        dto,
         mockResponse as never,
       );
 

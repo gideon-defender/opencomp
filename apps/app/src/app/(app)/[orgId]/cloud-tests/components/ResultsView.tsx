@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from '@trycompai/design-system';
 import { AlertCircle, CheckCircle2, Loader2, RefreshCw, Settings, ShieldCheck } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { FindingsTable } from './FindingsTable';
 
@@ -41,6 +42,7 @@ export function ResultsView({
   onConfigure,
   canRunScan = true,
 }: ResultsViewProps) {
+  const t = useTranslations('cloudTests');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedSeverity, setSelectedSeverity] = useState<string>('all');
   const [scanCompleted, setScanCompleted] = useState(false);
@@ -91,10 +93,11 @@ export function ResultsView({
           <div className="flex items-start gap-3">
             <AlertCircle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-warning-foreground">Configuration Required</p>
+              <p className="text-sm font-medium text-warning-foreground">
+                {t('results.configurationRequired')}
+              </p>
               <p className="text-sm text-warning-foreground/80 mt-1">
-                Please configure the required variables (like region or organization ID) to enable
-                security scans.
+                {t('results.configurationDescription')}
               </p>
             </div>
           </div>
@@ -105,7 +108,7 @@ export function ResultsView({
               onClick={onConfigure}
               iconLeft={<Settings className="h-4 w-4" />}
             >
-              Configure
+              {t('results.configure')}
             </Button>
           </div>
         </div>
@@ -115,9 +118,11 @@ export function ResultsView({
         <div className="bg-primary/10 flex items-center gap-3 rounded-lg border border-primary/20 p-4">
           <Loader2 className="text-primary h-5 w-5 animate-spin flex-shrink-0" />
           <div className="flex-1">
-            <p className="text-primary text-sm font-medium">Scanning in progress...</p>
+            <p className="text-primary text-sm font-medium">
+              {t('results.scanningInProgress')}
+            </p>
             <p className="text-muted-foreground text-xs">
-              Checking your cloud infrastructure for security issues
+              {t('results.scanningDescription')}
             </p>
           </div>
         </div>
@@ -127,8 +132,8 @@ export function ResultsView({
         <div className="bg-primary/10 flex items-center gap-3 rounded-lg border border-primary/20 p-4">
           <CheckCircle2 className="text-primary h-5 w-5 flex-shrink-0" />
           <div className="flex-1">
-            <p className="text-primary text-sm font-medium">Scan completed</p>
-            <p className="text-muted-foreground text-xs">Results updated successfully</p>
+            <p className="text-primary text-sm font-medium">{t('results.scanCompleted')}</p>
+            <p className="text-muted-foreground text-xs">{t('results.resultsUpdated')}</p>
           </div>
         </div>
       )}
@@ -138,11 +143,10 @@ export function ResultsView({
           <ShieldCheck className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
           <div className="flex-1">
             <p className="text-sm font-medium text-green-800 dark:text-green-300">
-              All checks passed
+              {t('results.allChecksPassed')}
             </p>
             <p className="text-xs text-green-700/80 dark:text-green-400/80">
-              No security issues found across {findings.length} check
-              {findings.length !== 1 ? 's' : ''}
+              {t('results.noIssuesAcrossChecks', { count: findings.length })}
             </p>
           </div>
         </div>
@@ -159,10 +163,10 @@ export function ResultsView({
                 }}
               >
                 <SelectTrigger size="sm">
-                  <SelectValue placeholder="All Severities" />
+                  <SelectValue placeholder={t('allSeverities')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Severities</SelectItem>
+                  <SelectItem value="all">{t('allSeverities')}</SelectItem>
                   {uniqueSeverities.map((severity) => (
                     <SelectItem key={severity} value={severity}>
                       {severity}
@@ -180,10 +184,10 @@ export function ResultsView({
                 }}
               >
                 <SelectTrigger size="sm">
-                  <SelectValue placeholder="All Statuses" />
+                  <SelectValue placeholder={t('allStatuses')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="all">{t('allStatuses')}</SelectItem>
                   {uniqueStatuses.map((status) => (
                     <SelectItem key={status} value={status}>
                       {status}
@@ -195,7 +199,10 @@ export function ResultsView({
 
             {(selectedSeverity !== 'all' || selectedStatus !== 'all') && (
               <p className="text-muted-foreground ml-2 text-sm">
-                {sortedFindings.length} of {findings.length} findings
+                {t('results.findingsCount', {
+                  filtered: sortedFindings.length,
+                  total: findings.length,
+                })}
               </p>
             )}
           </div>
@@ -210,7 +217,7 @@ export function ResultsView({
             loading={isScanning}
             iconLeft={!isScanning ? <RefreshCw className="h-4 w-4" /> : undefined}
           >
-            {isScanning ? 'Scanning...' : 'Run Scan'}
+            {isScanning ? t('scanning') : t('runScan')}
           </Button>
         )}
       </div>
@@ -219,15 +226,13 @@ export function ResultsView({
         <FindingsTable findings={sortedFindings} />
       ) : findings.length > 0 ? (
         <div className="text-muted-foreground rounded-xs border p-12 text-center">
-          <p className="text-lg">No results match the selected filters</p>
-          <p className="mt-2 text-sm">Try adjusting your filters</p>
+          <p className="text-lg">{t('results.noFilterMatch')}</p>
+          <p className="mt-2 text-sm">{t('results.adjustFilters')}</p>
         </div>
       ) : (
         <div className="rounded-lg border-2 border-dashed p-12 text-center">
-          <p className="text-muted-foreground text-lg">No results yet</p>
-          <p className="text-muted-foreground mt-2 text-sm">
-            Click "Run Scan" above to check for security issues
-          </p>
+          <p className="text-muted-foreground text-lg">{t('results.noResultsYet')}</p>
+          <p className="text-muted-foreground mt-2 text-sm">{t('runScanHint')}</p>
         </div>
       )}
     </div>

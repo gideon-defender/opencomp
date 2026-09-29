@@ -149,7 +149,7 @@ export async function getAutomationHeaders({
     });
     appRuns.push(...batch);
     if (batch.length < HEADER_BATCH) break;
-    appCursor = batch[batch.length - 1]!.id;
+    appCursor = batch[batch.length - 1].id;
   }
 
   const customRuns: CustomRunHeader[] = [];
@@ -173,7 +173,7 @@ export async function getAutomationHeaders({
     });
     customRuns.push(...batch);
     if (batch.length < HEADER_BATCH) break;
-    customCursor = batch[batch.length - 1]!.id;
+    customCursor = batch[batch.length - 1].id;
   }
 
   return {

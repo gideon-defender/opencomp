@@ -3,6 +3,7 @@
 import { ColumnResizeHandle, useResizableColumns } from '@/app/components/table/resizable-columns';
 import { Button } from '@gideon-defender/ui/button';
 import { ChevronDown, ChevronRight, FileText, Folder, Pencil, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import type { FrameworkFamilyWithCount, FrameworkWithCounts } from '../FrameworksClientPage';
 import { FamilyStatusBadge, FrameworkVisibilityBadge } from './family-status';
@@ -22,25 +23,24 @@ interface FrameworksTreeTableProps {
 
 // FRAME-17: resizable columns, persisted to a cookie.
 const COOKIE_NAME = 'fwk-frameworks-list-col-widths';
+type ColumnKey = 'name' | 'version' | 'status' | 'requirements' | 'controls' | 'actions';
 const COLUMNS: {
-  key: string;
-  label: string;
+  key: ColumnKey;
   defaultWidth: number;
   align: 'left' | 'center';
   resizable: boolean;
 }[] = [
-  { key: 'name', label: 'Name', defaultWidth: 360, align: 'left', resizable: true },
-  { key: 'version', label: 'Version', defaultWidth: 120, align: 'center', resizable: true },
-  { key: 'status', label: 'Status', defaultWidth: 140, align: 'center', resizable: true },
+  { key: 'name', defaultWidth: 360, align: 'left', resizable: true },
+  { key: 'version', defaultWidth: 120, align: 'center', resizable: true },
+  { key: 'status', defaultWidth: 140, align: 'center', resizable: true },
   {
     key: 'requirements',
-    label: 'Requirements',
     defaultWidth: 150,
     align: 'center',
     resizable: true,
   },
-  { key: 'controls', label: 'Controls', defaultWidth: 120, align: 'center', resizable: true },
-  { key: 'actions', label: '', defaultWidth: 88, align: 'center', resizable: false },
+  { key: 'controls', defaultWidth: 120, align: 'center', resizable: true },
+  { key: 'actions', defaultWidth: 88, align: 'center', resizable: false },
 ];
 const DEFAULT_WIDTHS = Object.fromEntries(COLUMNS.map((c) => [c.key, c.defaultWidth]));
 
@@ -57,6 +57,12 @@ export function FrameworksTreeTable({
 }: FrameworksTreeTableProps) {
   const { widths, startResize } = useResizableColumns(COOKIE_NAME, DEFAULT_WIDTHS);
   const totalWidth = COLUMNS.reduce((sum, c) => sum + (widths[c.key] ?? c.defaultWidth), 0);
+  const t = useTranslations('frameworks');
+
+  const columnLabel = (key: ColumnKey): string => {
+    if (key === 'actions') return '';
+    return t(`columns.${key}`);
+  };
 
   return (
     <div className="scrollbar-primary border-border overflow-x-auto rounded-xs border">
@@ -78,7 +84,7 @@ export function FrameworksTreeTable({
                   c.align === 'center' ? 'text-center' : 'text-left'
                 }`}
               >
-                {c.label}
+                {columnLabel(c.key)}
                 {c.resizable && <ColumnResizeHandle onResizeStart={(e) => startResize(c.key, e)} />}
               </th>
             ))}
@@ -88,7 +94,7 @@ export function FrameworksTreeTable({
           {rows.length === 0 && (
             <tr>
               <td colSpan={COLUMNS.length} className="text-muted-foreground py-8 text-center">
-                No frameworks yet.
+                {t('emptyMessage')}
               </td>
             </tr>
           )}
@@ -129,10 +135,11 @@ function FamilyRow({
   onEdit: (family: FrameworkFamilyWithCount) => void;
   onDelete: (family: FrameworkFamilyWithCount) => void;
 }) {
+  const t = useTranslations('frameworks');
   const countLabel =
     family.frameworksCount === 0
-      ? 'Empty'
-      : `${family.frameworksCount} framework${family.frameworksCount === 1 ? '' : 's'}`;
+      ? t('family.empty')
+      : t('family.frameworkCount', { count: family.frameworksCount });
   const empty = family.frameworksCount === 0;
 
   return (
@@ -143,7 +150,7 @@ function FamilyRow({
             type="button"
             onClick={() => onToggle(family.id)}
             className="text-muted-foreground hover:text-foreground shrink-0"
-            aria-label={expanded ? 'Collapse family' : 'Expand family'}
+            aria-label={expanded ? t('family.collapseFamily') : t('family.expandFamily')}
           >
             {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           </button>
@@ -164,7 +171,7 @@ function FamilyRow({
             size="icon"
             className="h-7 w-7"
             onClick={() => onEdit(family)}
-            aria-label="Edit family"
+            aria-label={t('family.editFamily')}
           >
             <Pencil className="h-4 w-4" />
           </Button>
@@ -174,8 +181,8 @@ function FamilyRow({
             className="text-muted-foreground hover:text-destructive h-7 w-7"
             onClick={() => onDelete(family)}
             disabled={!empty}
-            title={empty ? 'Delete family' : 'Family must be empty to delete'}
-            aria-label="Delete family"
+            title={empty ? t('family.deleteFamily') : t('family.deleteDisabledHint')}
+            aria-label={t('family.deleteFamily')}
           >
             <Trash2 className="h-4 w-4" />
           </Button>

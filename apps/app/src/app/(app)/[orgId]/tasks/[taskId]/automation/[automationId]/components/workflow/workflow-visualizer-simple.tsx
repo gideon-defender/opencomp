@@ -60,7 +60,7 @@ export function WorkflowVisualizerSimple({ className }: Props) {
     taskId: string;
     automationId: string;
   }>();
-  const { chat, automationIdRef } = useSharedChatContext();
+  const { chat, automationIdRef, resolvedAutomationId } = useSharedChatContext();
   const { sendMessage } = useChat<ChatUIMessage>({ chat });
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
@@ -72,10 +72,15 @@ export function WorkflowVisualizerSimple({ className }: Props) {
   } = useTaskAutomation();
   const { versions } = useAutomationVersions();
 
-  // Update shared ref when automation is loaded from hook
-  if (automation?.id && automationIdRef.current === 'new') {
-    automationIdRef.current = automation.id;
-  }
+  // Keep the shared ref in sync outside of render; render from derived state below.
+  useEffect(() => {
+    if (automation?.id && automationIdRef.current === 'new') {
+      automationIdRef.current = automation.id;
+    }
+  }, [automation?.id, automationIdRef]);
+
+  // Derive the render value without reading the ref during render.
+  const resolvedId = automation?.id ?? resolvedAutomationId ?? automationId;
 
   const {
     script,
@@ -84,8 +89,8 @@ export function WorkflowVisualizerSimple({ className }: Props) {
   } = useTaskAutomationScript({
     orgId: orgId,
     taskId: taskId,
-    automationId: automationIdRef.current,
-    enabled: !!orgId && !!taskId && automationIdRef.current !== 'new',
+    automationId: resolvedId,
+    enabled: !!orgId && !!taskId && resolvedId !== 'new',
   });
 
   const handleRestoreVersion = async (version: EvidenceAutomationVersion) => {

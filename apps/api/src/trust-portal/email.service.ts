@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { triggerEmail } from '../email/trigger-email';
+import { resolveEmailLocale, type EmailLocale } from '../email/locale';
 import { AccessGrantedEmail } from '../email/templates/access-granted';
 import { AccessReclaimEmail } from '../email/templates/access-reclaim';
 import { NdaSigningEmail } from '../email/templates/nda-signing';
@@ -15,13 +16,19 @@ export class TrustEmailService {
     toName: string;
     organizationName: string;
     ndaSigningLink: string;
+    locale?: EmailLocale;
   }): Promise<void> {
     const { toEmail, toName, organizationName, ndaSigningLink } = params;
+    const emailLocale = resolveEmailLocale(params.locale);
 
     const { id } = await triggerEmail({
       to: toEmail,
-      subject: `NDA Signature Required - ${organizationName}`,
+      subject:
+        emailLocale === 'es'
+          ? `Firma del NDA requerida - ${organizationName}`
+          : `NDA Signature Required - ${organizationName}`,
       react: NdaSigningEmail({
+        locale: emailLocale,
         toName,
         organizationName,
         ndaSigningLink,
@@ -39,6 +46,7 @@ export class TrustEmailService {
     expiresAt: Date;
     portalUrl: string;
     ndaBypassed?: boolean;
+    locale?: EmailLocale;
   }): Promise<void> {
     const {
       toEmail,
@@ -48,11 +56,16 @@ export class TrustEmailService {
       portalUrl,
       ndaBypassed,
     } = params;
+    const emailLocale = resolveEmailLocale(params.locale);
 
     const { id } = await triggerEmail({
       to: toEmail,
-      subject: `Access Granted - ${organizationName}`,
+      subject:
+        emailLocale === 'es'
+          ? `Acceso concedido - ${organizationName}`
+          : `Access Granted - ${organizationName}`,
       react: AccessGrantedEmail({
+        locale: emailLocale,
         toName,
         organizationName,
         expiresAt,
@@ -71,13 +84,19 @@ export class TrustEmailService {
     organizationName: string;
     accessLink: string;
     expiresAt: Date;
+    locale?: EmailLocale;
   }): Promise<void> {
     const { toEmail, toName, organizationName, accessLink, expiresAt } = params;
+    const emailLocale = resolveEmailLocale(params.locale);
 
     const { id } = await triggerEmail({
       to: toEmail,
-      subject: `Access Your Compliance Data - ${organizationName}`,
+      subject:
+        emailLocale === 'es'
+          ? `Accede a tus datos de cumplimiento - ${organizationName}`
+          : `Access Your Compliance Data - ${organizationName}`,
       react: AccessReclaimEmail({
+        locale: emailLocale,
         toName,
         organizationName,
         accessLink,
@@ -99,6 +118,7 @@ export class TrustEmailService {
     purpose?: string | null;
     requestedDurationDays?: number | null;
     reviewUrl: string;
+    locale?: EmailLocale;
   }): Promise<void> {
     const {
       toEmail,
@@ -111,11 +131,16 @@ export class TrustEmailService {
       requestedDurationDays,
       reviewUrl,
     } = params;
+    const emailLocale = resolveEmailLocale(params.locale);
 
     const { id } = await triggerEmail({
       to: toEmail,
-      subject: `New Trust Portal Access Request - ${organizationName}`,
+      subject:
+        emailLocale === 'es'
+          ? `Nueva solicitud de acceso al Portal de Confianza - ${organizationName}`
+          : `New Trust Portal Access Request - ${organizationName}`,
       react: AccessRequestNotificationEmail({
+        locale: emailLocale,
         organizationName,
         requesterName,
         requesterEmail,
@@ -139,13 +164,19 @@ export class TrustEmailService {
     organizationName: string;
     domain: string;
     settingsUrl: string;
+    locale?: EmailLocale;
   }): Promise<void> {
     const { toEmail, toName, organizationName, domain, settingsUrl } = params;
+    const emailLocale = resolveEmailLocale(params.locale);
 
     const { id } = await triggerEmail({
       to: toEmail,
-      subject: `Action required: Trust Portal domain ${domain} is misconfigured`,
+      subject:
+        emailLocale === 'es'
+          ? `Acción requerida: el dominio ${domain} del Portal de Confianza está mal configurado`
+          : `Action required: Trust Portal domain ${domain} is misconfigured`,
       react: TrustDomainMisconfiguredEmail({
+        locale: emailLocale,
         toName,
         organizationName,
         domain,

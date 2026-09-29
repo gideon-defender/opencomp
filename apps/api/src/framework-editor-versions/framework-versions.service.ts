@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { db } from '@db';
+import { db, Prisma } from '@db';
 import { buildManifestForFramework } from './framework-manifest-builder';
 import { diffManifests } from '../frameworks/framework-versioning/framework-diff';
 import type { FrameworkManifest } from '../frameworks/framework-versioning/manifest.types';
@@ -48,7 +48,7 @@ export class FrameworkVersionsService {
         frameworkId,
         version,
         releaseNotes: releaseNotes ?? null,
-        manifest: manifest as unknown as object,
+        manifest: manifest as unknown as Prisma.InputJsonValue,
         publishedById,
       },
     });

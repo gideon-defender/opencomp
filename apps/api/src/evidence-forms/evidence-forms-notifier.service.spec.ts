@@ -10,6 +10,7 @@ jest.mock('@gideon-defender/email', () => ({
   getUnsubscribeUrl: jest
     .fn()
     .mockReturnValue('https://app.gideondefender.com/unsubscribe'),
+  resolveLocale: (input: unknown) => (input === 'es' ? 'es' : 'en'),
 }));
 
 jest.mock('../email/trigger-email', () => ({

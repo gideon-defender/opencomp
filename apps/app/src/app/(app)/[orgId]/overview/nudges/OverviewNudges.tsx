@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useFrameworkUpdatesNudge } from './FrameworkUpdatesNudge';
 import { NudgeCenter } from './NudgeCenter';
 import { useOffboardingNudge } from './OffboardingNudge';
@@ -8,6 +8,19 @@ import { useTrustPortalSetupNudge } from './TrustPortalSetupNudge';
 import type { NudgeState, ServerNudgeData } from './types';
 
 const dismissKey = (id: string, orgId: string) => `overview-nudge-dismissed:${id}:${orgId}`;
+
+// Read synchronously (SSR-guarded) so a returning visitor never flashes a
+// previously dismissed nudge, and tests see mount output without awaiting.
+function readPersistedDismissals(persistableIds: string, orgId: string): Set<string> {
+  const next = new Set<string>();
+  if (typeof window === 'undefined') return next;
+  for (const id of persistableIds.split(',').filter(Boolean)) {
+    if (window.localStorage.getItem(dismissKey(id, orgId)) === '1') {
+      next.add(id);
+    }
+  }
+  return next;
+}
 
 export function OverviewNudges({ orgId, server }: { orgId: string; server: ServerNudgeData }) {
   // Hooks called unconditionally, in stable priority order.
@@ -22,31 +35,32 @@ export function OverviewNudges({ orgId, server }: { orgId: string; server: Serve
     .map((c) => c.id)
     .join(',');
 
-  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const [dismissed, setDismissed] = useState<Set<string>>(() =>
+    readPersistedDismissals(persistableIds, orgId),
+  );
   const [expanded, setExpanded] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-    const next = new Set<string>();
-    for (const id of persistableIds.split(',').filter(Boolean)) {
-      if (window.localStorage.getItem(dismissKey(id, orgId)) === '1') {
-        next.add(id);
-      }
-    }
-    setDismissed(next);
-  }, [orgId, persistableIds]);
+  // Reload persisted dismissals when the persistable set changes (e.g. data
+  // finishing loading reveals a new persistable nudge). Adjust-during-render
+  // instead of an effect to avoid setState-in-effect.
+  const persistKey = `${orgId}:${persistableIds}`;
+  const [prevPersistKey, setPrevPersistKey] = useState(persistKey);
+  if (prevPersistKey !== persistKey) {
+    setPrevPersistKey(persistKey);
+    setDismissed(readPersistedDismissals(persistableIds, orgId));
+  }
 
   const visible = candidates
     .filter((c) => c.ready && c.eligible && !dismissed.has(c.id))
     .sort((a, b) => a.priority - b.priority);
 
   // Collapse the tray whenever there's no longer more than one to fan out.
-  useEffect(() => {
-    if (visible.length <= 1 && expanded) setExpanded(false);
-  }, [visible.length, expanded]);
+  // Adjust-during-render instead of an effect to avoid setState-in-effect.
+  if (visible.length <= 1 && expanded) {
+    setExpanded(false);
+  }
 
-  if (!mounted || visible.length === 0) return null;
+  if (visible.length === 0) return null;
 
   const dismiss = (nudge: NudgeState) => () => {
     if (nudge.persistDismissal) {

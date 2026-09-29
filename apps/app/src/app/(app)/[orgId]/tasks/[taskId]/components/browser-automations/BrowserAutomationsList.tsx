@@ -3,7 +3,7 @@
 import { usePermissions } from '@/hooks/use-permissions';
 import { TaskFrequency } from '@db';
 import { Renew } from '@trycompai/design-system/icons';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type {
   BrowserAuthProfile,
   BrowserAutomation,
@@ -82,9 +82,11 @@ export function BrowserAutomationsList({
   // Auto-expand a just-finished manual run so its results (screenshots +
   // verdict) show without a second click. `autoExpand` is a fresh object per
   // completion, so re-running the same automation re-expands it too.
-  useEffect(() => {
+  const [prevAutoExpand, setPrevAutoExpand] = useState(autoExpand);
+  if (prevAutoExpand !== autoExpand) {
+    setPrevAutoExpand(autoExpand);
     if (autoExpand?.id) setExpandedId(autoExpand.id);
-  }, [autoExpand]);
+  }
   // Browser evidence shares one cadence per task; the automations are kept in
   // sync, so any one of them reflects the task's current schedule.
   const currentCadence: TaskFrequency = automations[0]?.scheduleFrequency ?? 'daily';

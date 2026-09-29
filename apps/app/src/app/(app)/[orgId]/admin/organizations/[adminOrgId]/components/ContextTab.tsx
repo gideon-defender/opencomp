@@ -54,8 +54,17 @@ export function ContextTab({ orgId }: { orgId: string }) {
   }, [orgId]);
 
   useEffect(() => {
-    void fetchContext();
-  }, [fetchContext]);
+    let cancelled = false;
+    (async () => {
+      const res = await api.get<ContextResponse>(`/v1/admin/organizations/${orgId}/context`);
+      if (cancelled) return;
+      if (res.data) setEntries(res.data.data);
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [orgId]);
 
   const handleSaved = () => {
     setEditingEntry(null);

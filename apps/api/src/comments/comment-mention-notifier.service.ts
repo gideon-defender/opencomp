@@ -3,32 +3,9 @@ import { db } from '@db';
 import { orgParticipantMemberWhere } from '../utils/org-participation';
 import { isUserUnsubscribed } from '@gideon-defender/email';
 import { triggerEmail } from '../email/trigger-email';
+import { resolveEmailLocale, type EmailLocale } from '../email/locale';
 import { CommentMentionedEmail } from '../email/templates/comment-mentioned';
 import { NovuService } from '../notifications/novu.service';
-// Reuse the extract mentions utility
-function extractMentionedUserIds(content: string | null): string[] {
-  if (!content) return [];
-
-  try {
-    const parsed = typeof content === 'string' ? JSON.parse(content) : content;
-    if (!parsed || typeof parsed !== 'object') return [];
-
-    const mentionedUserIds: string[] = [];
-    function traverse(node: any) {
-      if (!node || typeof node !== 'object') return;
-      if (node.type === 'mention' && node.attrs?.id) {
-        mentionedUserIds.push(node.attrs.id);
-      }
-      if (Array.isArray(node.content)) {
-        node.content.forEach(traverse);
-      }
-    }
-    traverse(parsed);
-    return [...new Set(mentionedUserIds)];
-  } catch {
-    return [];
-  }
-}
 import { CommentEntityType } from '@db';
 
 function getAppBaseUrl(): string {
@@ -233,7 +210,9 @@ export class CommentMentionNotifierService {
     contextUrl?: string;
     mentionedUserIds: string[];
     mentionedByUserId: string;
+    locale?: EmailLocale;
   }): Promise<void> {
+    const emailLocale = resolveEmailLocale(params.locale);
     const {
       organizationId,
       commentId,
@@ -342,8 +321,12 @@ export class CommentMentionNotifierService {
         try {
           const { id } = await triggerEmail({
             to: user.email,
-            subject: `${mentionedByName} mentioned you in a comment`,
+            subject:
+              emailLocale === 'es'
+                ? `${mentionedByName} te mencionó en un comentario`
+                : `${mentionedByName} mentioned you in a comment`,
             react: CommentMentionedEmail({
+              locale: emailLocale,
               toName: userName,
               toEmail: user.email,
               commentContent,

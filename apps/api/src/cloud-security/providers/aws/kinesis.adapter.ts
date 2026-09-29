@@ -24,8 +24,9 @@ export class KinesisAdapter implements AwsServiceAdapter {
     try {
       const streamNames: string[] = [];
       let exclusiveStartStreamName: string | undefined;
+      let hasMoreStreams = true;
 
-      do {
+      while (hasMoreStreams) {
         const listRes = await client.send(
           new ListStreamsCommand({
             ExclusiveStartStreamName: exclusiveStartStreamName,
@@ -38,9 +39,9 @@ export class KinesisAdapter implements AwsServiceAdapter {
         if (listRes.HasMoreStreams && names.length > 0) {
           exclusiveStartStreamName = names[names.length - 1];
         } else {
-          break;
+          hasMoreStreams = false;
         }
-      } while (true);
+      }
 
       if (streamNames.length === 0) return findings;
 

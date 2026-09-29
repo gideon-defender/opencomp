@@ -757,8 +757,8 @@ export async function applySync(
       kind: 'SYNC',
       performedById: ctx.memberId,
       rollbackExpiresAt: addDays(new Date(), ROLLBACK_WINDOW_DAYS),
-      undoPayload: undo as unknown as object,
-      summary: summary as unknown as object,
+      undoPayload: undo as unknown as Prisma.InputJsonValue,
+      summary: summary as unknown as Prisma.InputJsonValue,
     },
   });
 
@@ -778,7 +778,7 @@ export async function applySync(
 function toJsonArray(value: unknown): Prisma.InputJsonValue[] {
   if (value == null) return [];
   if (Array.isArray(value)) return value as Prisma.InputJsonValue[];
-  return [value as Prisma.InputJsonValue];
+  return [value];
 }
 
 function addDays(d: Date, days: number): Date {

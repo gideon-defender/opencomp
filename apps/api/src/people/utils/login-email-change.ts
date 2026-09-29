@@ -1,6 +1,7 @@
 import { ConflictException, Logger } from '@nestjs/common';
 import { db } from '@db';
 import { triggerEmail } from '../../email/trigger-email';
+import { resolveEmailLocale, type EmailLocale } from '../../email/locale';
 import { LoginEmailChangedEmail } from '../../email/templates/login-email-changed';
 
 export interface LoginEmailChange {
@@ -73,8 +74,10 @@ export async function notifyLoginEmailChanged(params: {
   organizationId: string;
   change: LoginEmailChange;
   logger: Logger;
+  locale?: EmailLocale;
 }): Promise<void> {
   const { organizationId, change, logger } = params;
+  const emailLocale = resolveEmailLocale(params.locale);
 
   try {
     const organization = await db.organization.findUniqueOrThrow({
@@ -86,8 +89,12 @@ export async function notifyLoginEmailChanged(params: {
       [change.oldEmail, change.newEmail].map((to) =>
         triggerEmail({
           to,
-          subject: 'Your OpenComp login email was changed',
+          subject:
+            emailLocale === 'es'
+              ? 'Tu correo de inicio de sesión de OpenComp ha cambiado'
+              : 'Your OpenComp login email was changed',
           react: LoginEmailChangedEmail({
+            locale: emailLocale,
             organizationName: organization.name,
             oldEmail: change.oldEmail,
             newEmail: change.newEmail,

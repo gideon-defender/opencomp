@@ -87,18 +87,29 @@ function EditableAnswerCell({ context }: { context: Context }) {
     [context.answer, router],
   );
 
-  // Parse structured data when entering edit mode
+  // Parse structured data when entering edit mode. Async IIFE with setState
+  // only after await (plus a cancellation flag) so no setState runs
+  // synchronously in the effect body.
   useEffect(() => {
-    if (isEditing && isJSON(context.answer)) {
-      const parsed = JSON.parse(context.answer);
-      if (Array.isArray(parsed)) {
-        setArrayValue(parsed);
-        setStructuredValue(null);
-      } else if (typeof parsed === 'object') {
-        setStructuredValue(parsed);
-        setArrayValue(null);
+    let cancelled = false;
+    (async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      if (isEditing && isJSON(context.answer)) {
+        const parsed = JSON.parse(context.answer);
+        if (cancelled) return;
+        if (Array.isArray(parsed)) {
+          setArrayValue(parsed);
+          setStructuredValue(null);
+        } else if (typeof parsed === 'object') {
+          setStructuredValue(parsed);
+          setArrayValue(null);
+        }
       }
-    }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [isEditing, context.answer]);
 
   useEffect(() => {
@@ -108,10 +119,13 @@ function EditableAnswerCell({ context }: { context: Context }) {
     }
   }, [isEditing, structuredValue, arrayValue]);
 
-  // Reset value when context changes
-  useEffect(() => {
+  // Reset value when context changes. Adjust-during-render instead of an
+  // effect to avoid setState-in-effect.
+  const [prevContextAnswer, setPrevContextAnswer] = useState(context.answer);
+  if (prevContextAnswer !== context.answer) {
+    setPrevContextAnswer(context.answer);
     setValue(context.answer);
-  }, [context.answer]);
+  }
 
   const handleSave = useCallback(() => {
     let finalValue = value;

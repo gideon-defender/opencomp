@@ -2,6 +2,7 @@
 
 import type { Table } from '@tanstack/react-table';
 import { Check, ChevronsUpDown, Settings2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { Button } from '@gideon-defender/ui/button';
 import { cn } from '@gideon-defender/ui/cn';
@@ -21,6 +22,7 @@ interface DataTableViewOptionsProps<TData> {
 }
 
 export function DataTableViewOptions<TData>({ table }: DataTableViewOptionsProps<TData>) {
+  const t = useTranslations('dataTable');
   const columns = React.useMemo(
     () =>
       table
@@ -33,21 +35,21 @@ export function DataTableViewOptions<TData>({ table }: DataTableViewOptionsProps
     <Popover>
       <PopoverTrigger asChild>
         <Button
-          aria-label="Toggle columns"
+          aria-label={t('toggleColumns')}
           variant="outline"
           size="sm"
           className="ml-auto hidden h-8 gap-1.5 lg:flex"
         >
           <Settings2 className="size-4" />
-          View
+          {t('view')}
           <ChevronsUpDown className="ml-auto size-4 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-44 p-0">
         <Command>
-          <CommandInput placeholder="Search columns..." />
+          <CommandInput placeholder={t('searchColumns')} />
           <CommandList>
-            <CommandEmpty>No columns found.</CommandEmpty>
+            <CommandEmpty>{t('noColumnsFound')}</CommandEmpty>
             <CommandGroup>
               {columns.map((column) => (
                 <CommandItem

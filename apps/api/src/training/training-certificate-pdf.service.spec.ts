@@ -3,7 +3,7 @@ import { TrainingCertificatePdfService } from './training-certificate-pdf.servic
 // Mock fetch for logo download
 global.fetch = jest.fn().mockResolvedValue({
   ok: false,
-}) as unknown as typeof fetch;
+});
 
 describe('TrainingCertificatePdfService', () => {
   let service: TrainingCertificatePdfService;

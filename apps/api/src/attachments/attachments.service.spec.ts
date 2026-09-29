@@ -54,12 +54,12 @@ describe('AttachmentsService — presigned s3Key uploads', () => {
     const result = await service.uploadAttachment(
       'org_1',
       'tsk_1',
-      'task' as never,
+      'task',
       {
         fileName: 'rbac.pdf',
         fileType: 'application/pdf',
         s3Key: 'org_1/uploads/attachment/123-rbac.pdf',
-      } as never,
+      },
       'usr_1',
     );
 
@@ -77,8 +77,8 @@ describe('AttachmentsService — presigned s3Key uploads', () => {
       service.uploadAttachment(
         'org_1',
         'tsk_1',
-        'task' as never,
-        { fileName: 'rbac.pdf', fileType: 'application/pdf' } as never,
+        'task',
+        { fileName: 'rbac.pdf', fileType: 'application/pdf' },
         'usr_1',
       ),
     ).rejects.toBeInstanceOf(BadRequestException);

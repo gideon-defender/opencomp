@@ -24,6 +24,7 @@ import {
   Upload,
 } from '@trycompai/design-system/icons';
 import type { FleetPolicy } from '../../types';
+import { useTranslations } from 'next-intl';
 import { PolicyImagePreviewModal } from './PolicyImagePreviewModal';
 import { PolicyImageResetModal } from './PolicyImageResetModal';
 import { PolicyImageUploadModal } from './PolicyImageUploadModal';
@@ -39,13 +40,14 @@ export function FleetPolicyItem({ policy, organizationId, onRefresh }: FleetPoli
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isRemoveOpen, setIsRemoveOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const t = useTranslations('fleet');
 
   const actions = useMemo(() => {
     if (policy.response === 'pass') {
       if ((policy?.attachments || []).length > 0) {
         return [
           {
-            label: 'Preview images',
+            label: t('previewImages'),
             renderIcon: () => (
               <span className="mr-2">
                 <ImageIcon size={16} />
@@ -54,7 +56,7 @@ export function FleetPolicyItem({ policy, organizationId, onRefresh }: FleetPoli
             onClick: () => setIsPreviewOpen(true),
           },
           {
-            label: 'Remove images',
+            label: t('removeImages'),
             renderIcon: () => (
               <span className="mr-2">
                 <TrashCan size={16} />
@@ -70,7 +72,7 @@ export function FleetPolicyItem({ policy, organizationId, onRefresh }: FleetPoli
 
     return [
       {
-        label: 'Upload images',
+        label: t('uploadImages'),
         renderIcon: () => (
           <span className="mr-2">
             <Upload size={16} />
@@ -79,7 +81,7 @@ export function FleetPolicyItem({ policy, organizationId, onRefresh }: FleetPoli
         onClick: () => setIsUploadOpen(true),
       },
     ];
-  }, [policy]);
+  }, [policy, t]);
 
   const hasActions = useMemo(() => actions.length > 0, [actions]);
 
@@ -104,14 +106,14 @@ export function FleetPolicyItem({ policy, organizationId, onRefresh }: FleetPoli
                 <TooltipContent>
                   <div className="max-w-xs">
                     <p>
-                      There are additional steps required to enable MDM. Please check{' '}
+                      {t('mdmHelp')}{' '}
                       <a
                         href="https://gideondefender.com/docs/device-agent#mdm-user-guide"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-600 dark:text-blue-400 hover:underline"
                       >
-                        this documentation
+                        {t('mdmDocLink')}
                       </a>
                       .
                     </p>
@@ -125,12 +127,12 @@ export function FleetPolicyItem({ policy, organizationId, onRefresh }: FleetPoli
           {policy.response === 'pass' ? (
             <div className="flex items-center gap-1 text-primary">
               <CheckmarkFilled size={16} />
-              <span className="text-sm">Pass</span>
+              <span className="text-sm">{t('pass')}</span>
             </div>
           ) : (
             <div className="flex items-center gap-1 text-red-600 dark:text-red-400">
               <CloseOutline size={16} />
-              <span className="text-sm">Fail</span>
+              <span className="text-sm">{t('fail')}</span>
             </div>
           )}
           <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
@@ -140,7 +142,7 @@ export function FleetPolicyItem({ policy, organizationId, onRefresh }: FleetPoli
                 disabled={!hasActions}
                 iconLeft={<OverflowMenuVertical size={16} />}
               >
-                Actions
+                {t('actions')}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">

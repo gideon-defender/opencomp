@@ -18,6 +18,7 @@ import {
 import { corsOriginMiddleware } from './auth/cors-origin.middleware';
 import { adminAuthRateLimiter } from './auth/admin-rate-limit.middleware';
 import { originCheckMiddleware } from './auth/origin-check.middleware';
+import { LocalizedErrorsInterceptor } from './common/i18n/localized-errors.interceptor';
 import { mkdirSync, writeFileSync, existsSync } from 'fs';
 
 declare module 'express-serve-static-core' {
@@ -167,6 +168,10 @@ async function bootstrap(): Promise<void> {
     type: VersioningType.URI,
     defaultVersion: '1',
   });
+
+  // Translate known error-code messages per Accept-Language (en/es).
+  // Preserves exception classes, statuses, and response shapes.
+  app.useGlobalInterceptors(new LocalizedErrorsInterceptor());
 
   // Get server configuration from environment variables
   const port = process.env.PORT ?? 3333;

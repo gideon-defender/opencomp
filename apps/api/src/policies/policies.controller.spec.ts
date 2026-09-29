@@ -177,9 +177,7 @@ describe('PoliciesController', () => {
 
     controller = module.get<PoliciesController>(PoliciesController);
     policiesService = module.get(PoliciesService);
-    actingUser = module.get(
-      ActingUserResolver,
-    ) as jest.Mocked<ActingUserResolver>;
+    actingUser = module.get(ActingUserResolver);
 
     jest.clearAllMocks();
   });
@@ -512,7 +510,7 @@ describe('PoliciesController', () => {
 
       const result = await controller.updatePolicy(
         'pol_1',
-        updateData as never,
+        updateData,
         orgId,
         mockAuthContext,
       );
@@ -960,7 +958,7 @@ describe('PoliciesController', () => {
 
       const result = await controller.publishPolicyVersion(
         'pol_1',
-        body as never,
+        body,
         orgId,
         mockAuthContext,
       );
@@ -1005,7 +1003,7 @@ describe('PoliciesController', () => {
       const result = await controller.submitVersionForApproval(
         'pol_1',
         'ver_1',
-        body as never,
+        body,
         orgId,
         mockAuthContext,
       );

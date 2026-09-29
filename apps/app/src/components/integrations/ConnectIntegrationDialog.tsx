@@ -23,7 +23,7 @@ import { Button, Label } from '@trycompai/design-system';
 import { ArrowLeft, Loader2, Plus, Settings, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import { CloudShellSetup, SectionDivider } from './CloudShellSetup';
@@ -139,35 +139,28 @@ export function ConnectIntegrationDialog({
       });
   }, [allConnections, integrationId, integrationName]);
 
-  const didInitializeOnOpen = useRef(false);
-
-  // Determine initial view based on existing connections (only when opening)
-  useEffect(() => {
-    if (open && !didInitializeOnOpen.current) {
-      // Wait until data has finished loading before determining view
-      if (isDataLoading) {
-        return;
-      }
-      if (initialView) {
-        setView(initialView);
-      } else if (supportsMultipleConnections && existingConnections.length > 0) {
-        setView('list');
-      } else if (existingConnections.length === 0) {
-        setView('form');
-      } else {
-        // Non-multi connection provider with existing connection - show list (configure only)
-        setView('list');
-      }
-      setCredentials({});
-      setErrors({});
-      setConfigureConnectionId(null);
-      didInitializeOnOpen.current = true;
+  // Determine initial view based on existing connections (only when opening).
+  // Synced during render once data has loaded instead of in an effect.
+  const [didInitializeOnOpen, setDidInitializeOnOpen] = useState(false);
+  if (!open && didInitializeOnOpen) {
+    setDidInitializeOnOpen(false);
+  }
+  if (open && !didInitializeOnOpen && !isDataLoading) {
+    setDidInitializeOnOpen(true);
+    if (initialView) {
+      setView(initialView);
+    } else if (supportsMultipleConnections && existingConnections.length > 0) {
+      setView('list');
+    } else if (existingConnections.length === 0) {
+      setView('form');
+    } else {
+      // Non-multi connection provider with existing connection - show list (configure only)
+      setView('list');
     }
-
-    if (!open) {
-      didInitializeOnOpen.current = false;
-    }
-  }, [open, isDataLoading, existingConnections.length, supportsMultipleConnections]);
+    setCredentials({});
+    setErrors({});
+    setConfigureConnectionId(null);
+  }
 
   const allFields = useMemo(() => {
     if (authType === 'basic') {

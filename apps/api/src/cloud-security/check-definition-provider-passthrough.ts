@@ -10,7 +10,7 @@
 import type { ResolvedCheckDescription } from './check-definition.service';
 
 interface PassthroughInput {
-  provider: 'gcp' | 'azure' | string;
+  provider: string;
   title: string;
   description: string | null;
   evidence: Record<string, unknown> | null;
@@ -63,7 +63,7 @@ function fromAzureEvidence(
     input.evidence && typeof input.evidence.alertType === 'string'
       ? input.evidence.alertType
       : input.evidence && typeof input.evidence.serviceName === 'string'
-        ? (input.evidence.serviceName as string)
+        ? input.evidence.serviceName
         : null;
 
   const subject = alertType ?? 'this configuration';

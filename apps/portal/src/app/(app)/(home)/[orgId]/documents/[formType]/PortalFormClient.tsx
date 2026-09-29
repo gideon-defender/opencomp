@@ -18,6 +18,7 @@ import {
   Textarea,
 } from '@trycompai/design-system';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 
@@ -51,6 +52,7 @@ export function PortalFormClient({
 }: PortalFormClientProps) {
   const params = useParams<{ orgId: string }>();
   const [selectedFiles, setSelectedFiles] = useState<Record<string, string>>({});
+  const t = useTranslations('forms');
 
   const isCompact = (f: FieldDef) => f.type === 'text' || f.type === 'date' || f.type === 'select';
 
@@ -66,12 +68,12 @@ export function PortalFormClient({
 
   return (
     <Stack gap="lg">
-      <PageHeader title={`New ${formTitle} Submission`} />
+      <PageHeader title={t('newSubmission', { title: formTitle })} />
       <Text variant="muted">{formDescription}</Text>
 
       {successMessage && (
         <div className="rounded-md border border-green-300 bg-green-50 p-3 text-sm text-green-700 dark:border-green-800 dark:bg-green-950/30 dark:text-green-400">
-          Submission saved successfully.
+          {t('savedSuccess')}
         </div>
       )}
 
@@ -117,7 +119,7 @@ export function PortalFormClient({
                     {field.type === 'select' && (
                       <Select name={field.key} required={field.required}>
                         <SelectTrigger>
-                          <SelectValue placeholder={`Select ${field.label.toLowerCase()}`} />
+                          <SelectValue placeholder={t('selectPlaceholder', { label: field.label.toLowerCase() })} />
                         </SelectTrigger>
                         <SelectContent>
                           {(field.options ?? []).map((option) => (
@@ -162,7 +164,7 @@ export function PortalFormClient({
                         rows={12}
                       />
                       <p className="text-xs text-muted-foreground">
-                        10,000 character limit &bull; Markdown supported
+                        {t('charLimit')}
                       </p>
                     </div>
                   )}
@@ -172,10 +174,10 @@ export function PortalFormClient({
                       <label htmlFor={field.key} className="block cursor-pointer">
                         <div className="rounded-md border-2 border-dashed border-border bg-muted/20 p-6 text-center transition hover:bg-muted/40">
                           <p className="text-sm font-medium text-foreground">
-                            Drop file here or click to upload
+                            {t('dropFile')}
                           </p>
                           <p className="mt-1 text-xs text-muted-foreground">
-                            Maximum file size: 100 MB
+                            {t('maxFileSize')}
                           </p>
                         </div>
                       </label>
@@ -196,11 +198,11 @@ export function PortalFormClient({
                       />
                       {selectedFiles[field.key] && (
                         <Text size="sm" variant="muted">
-                          Selected: {selectedFiles[field.key]}
+                          {t('selectedFile', { name: selectedFiles[field.key] })}
                         </Text>
                       )}
                       <Text size="sm" variant="muted">
-                        Accepted: {field.accept ?? 'all file types'}
+                        {t('acceptedTypes', { types: field.accept ?? t('allFileTypes') })}
                       </Text>
                     </div>
                   )}
@@ -212,10 +214,10 @@ export function PortalFormClient({
           <div className="flex items-center justify-between">
             <Link href={`/${params.orgId}`}>
               <Button type="button" variant="ghost">
-                Cancel
+                {t('cancel')}
               </Button>
             </Link>
-            <Button type="submit">Submit form</Button>
+            <Button type="submit">{t('submitForm')}</Button>
           </div>
         </form>
       </Section>

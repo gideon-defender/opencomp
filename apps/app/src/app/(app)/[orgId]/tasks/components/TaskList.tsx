@@ -105,10 +105,11 @@ export function TaskList({
   const [automationStatusFilter, setAutomationStatusFilter] = useQueryState('automationStatus');
   const [currentTab, setCurrentTab] = useState<'categories' | 'list'>(activeTab);
 
-  // Sync activeTab prop with state when it changes
-  useEffect(() => {
+  const [prevActiveTab, setPrevActiveTab] = useState(activeTab);
+  if (prevActiveTab !== activeTab) {
+    setPrevActiveTab(activeTab);
     setCurrentTab(activeTab);
-  }, [activeTab]);
+  }
 
   // Clear frameworkFilter when it's invalid or frameworks are empty.
   // Prevents invisible filter (no dropdown when empty) and stale bookmarked URLs.
@@ -183,6 +184,7 @@ export function TaskList({
   });
 
   // Calculate overall stats from all tasks (not filtered)
+  const [statsNow] = useState(() => Date.now());
   const overallStats = useMemo(() => {
     const total = initialTasks.length;
     const done = initialTasks.filter(
@@ -211,7 +213,7 @@ export function TaskList({
     let totalRunDuration = 0;
     let runsWithDuration = 0;
     let recentRuns24h = 0;
-    const now = Date.now();
+    const now = statsNow;
     const oneDayAgo = now - 24 * 60 * 60 * 1000;
 
     let recentRuns: Array<{
@@ -338,7 +340,7 @@ export function TaskList({
       recentRuns24h,
       activeAutomations,
     };
-  }, [initialTasks]);
+  }, [initialTasks, statsNow]);
 
   return (
     <Stack gap="lg">

@@ -128,9 +128,7 @@ export function ReviewCard({
   // If the review becomes signed while the details form is open (another
   // user signs, SWR refreshes), close the form — the server would reject the
   // save and the lock notice explains why.
-  useEffect(() => {
-    if (!canEditContent && isEditing) setIsEditing(false);
-  }, [canEditContent, isEditing]);
+  if (!canEditContent && isEditing) setIsEditing(false);
 
   const handleSave = handleSubmit(async (values) => {
     try {

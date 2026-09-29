@@ -1,5 +1,7 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+
 interface Phase {
   id: string;
   name: string;
@@ -28,9 +30,9 @@ function getProgressPercent(phase: Phase): number {
   return Math.round(((now - start) / (end - start)) * 100);
 }
 
-function formatShortDate(date: string | null | undefined): string {
+function formatShortDate(date: string | null | undefined, locale: string): string {
   if (!date) return '';
-  return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return new Date(date).toLocaleDateString(locale, { month: 'short', day: 'numeric' });
 }
 
 interface PhaseGroup {
@@ -78,6 +80,7 @@ export function TimelinePhaseBar({
   height = 36,
   showDates = false,
 }: TimelinePhaseBarProps) {
+  const locale = useLocale();
   const sorted = [...phases].sort((a, b) => a.orderIndex - b.orderIndex);
 
   if (sorted.length === 0) return null;
@@ -298,8 +301,8 @@ export function TimelinePhaseBar({
                 className="flex justify-between text-[10px] text-muted-foreground"
                 style={{ flex: group.totalWeeks }}
               >
-                <span>{formatShortDate(first.startDate)}</span>
-                {isLastGroup && <span>{formatShortDate(last.endDate)}</span>}
+                <span>{formatShortDate(first.startDate, locale)}</span>
+                {isLastGroup && <span>{formatShortDate(last.endDate, locale)}</span>}
               </div>
             );
           })}

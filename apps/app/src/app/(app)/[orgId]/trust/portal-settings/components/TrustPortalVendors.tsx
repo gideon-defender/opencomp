@@ -4,7 +4,7 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { useTrustPortalSettings } from '@/hooks/use-trust-portal-settings';
 import { Button, Switch } from '@trycompai/design-system';
 import { ChevronLeft, ChevronRight } from '@trycompai/design-system/icons';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { GDPR, HIPAA, ISO27001, ISO42001, ISO9001, NEN7510, PCIDSS, SOC2Type2 } from './logos';
 
@@ -104,9 +104,11 @@ function VendorLogo({
   const logoUrl = storedLogoUrl || getVendorLogoUrl(website);
 
   // Reset error state when URL changes
-  useEffect(() => {
+  const [prevLogoUrl, setPrevLogoUrl] = useState(logoUrl);
+  if (prevLogoUrl !== logoUrl) {
+    setPrevLogoUrl(logoUrl);
     setHasError(false);
-  }, [logoUrl]);
+  }
 
   // Fallback to initials
   const initials = name

@@ -1,3 +1,4 @@
+import { mockNextIntl } from '@/test-utils/mocks/next-intl';
 import {
   ADMIN_PERMISSIONS,
   AUDITOR_PERMISSIONS,
@@ -50,6 +51,8 @@ vi.mock('@trycompai/design-system', () => ({
   Stack: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   Textarea: (props: any) => <textarea {...props} />,
 }));
+
+mockNextIntl();
 
 import { UpdatePolicyForm } from './update-policy-form';
 

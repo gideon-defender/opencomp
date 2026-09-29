@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from '@gideon-defender/ui';
 import { Search as SearchIcon, SortAsc, SortDesc } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type React from 'react';
 // Import types from the common types definition file
 import type { SortDirection, SortableColumnOption } from '../types/common';
@@ -50,21 +51,25 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
   commitButtonDetailText = '',
   children,
 }) => {
-  let commitButtonLabelText = 'No Changes';
+  const t = useTranslations('toolbar');
+
+  let commitButtonLabelText = t('noChanges');
   if (isDirty) {
     if (commitButtonDetailText && commitButtonDetailText.length > 0) {
-      commitButtonLabelText = `Commit ${commitButtonDetailText}`;
+      commitButtonLabelText = t('commitWithDetail', { detail: commitButtonDetailText });
     } else {
       // Fallback if isDirty is true but commitButtonDetailText is empty (e.g. hook logic yields empty for some reason)
-      commitButtonLabelText = 'Commit Changes';
+      commitButtonLabelText = t('commitChanges');
     }
   }
+
+  const directionLabel = sortDirection === 'asc' ? t('ascending') : t('descending');
 
   return (
     <div className="flex flex-col items-center gap-2 sm:flex-row">
       <Input
         type="text"
-        placeholder="Search..."
+        placeholder={t('searchPlaceholder')}
         value={searchTerm}
         onChange={(e) => onSearchTermChange(e.target.value)}
         className="flex-grow sm:w-full sm:grow-0" // Adjust based on Input component needs
@@ -76,10 +81,10 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
           onValueChange={(value) => onSortColumnKeyChange(value === '__NONE__' ? null : value)}
         >
           <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Sort by..." />
+            <SelectValue placeholder={t('sortBy')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="__NONE__">None</SelectItem>
+            <SelectItem value="__NONE__">{t('sortNone')}</SelectItem>
             {sortableColumnOptions.map((opt) => (
               <SelectItem key={opt.value} value={opt.value}>
                 {opt.label}
@@ -92,7 +97,7 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
           size="icon"
           onClick={onSortDirectionChange}
           disabled={!sortColumnKey}
-          title={`Sort direction: ${sortDirection === 'asc' ? 'Ascending' : 'Descending'}`}
+          title={t('sortDirection', { direction: directionLabel })}
         >
           {sortDirection === 'asc' ? (
             <SortAsc className="h-4 w-4" />
@@ -105,7 +110,7 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
         <>
           {isDirty && (
             <Button onClick={onCancel} disabled={!isDirty} variant="outline">
-              Discard Changes
+              {t('discardChanges')}
             </Button>
           )}
           <Button onClick={onCommit} disabled={!isDirty} variant="default">

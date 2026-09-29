@@ -348,7 +348,7 @@ const SortableItem = React.forwardRef<HTMLDivElement, SortableItemProps>((props,
     isDragging,
   } = useSortable({ id: value, disabled });
 
-  const composedRef = useComposedRefs(forwardedRef, (node) => {
+  const composedRef = useComposedRefs(forwardedRef, (node: HTMLDivElement | null) => {
     if (disabled) return;
     setNodeRef(node);
     if (asHandle) setActivatorNodeRef(node);
@@ -385,7 +385,6 @@ const SortableItem = React.forwardRef<HTMLDivElement, SortableItemProps>((props,
         {...(asHandle ? attributes : {})}
         {...(asHandle ? listeners : {})}
         tabIndex={disabled ? undefined : 0}
-        //@ts-ignore
         ref={composedRef}
         style={composedStyle}
         className={cn(
@@ -421,7 +420,7 @@ const SortableItemHandle = React.forwardRef<HTMLButtonElement, SortableItemHandl
 
     const isDisabled = disabled ?? itemContext.disabled;
 
-    const composedRef = useComposedRefs(forwardedRef, (node) => {
+    const composedRef = useComposedRefs(forwardedRef, (node: HTMLButtonElement | null) => {
       if (!isDisabled) return;
       itemContext.setActivatorNodeRef(node);
     });
@@ -436,7 +435,6 @@ const SortableItemHandle = React.forwardRef<HTMLButtonElement, SortableItemHandl
         {...itemHandleProps}
         {...itemContext.attributes}
         {...itemContext.listeners}
-        //@ts-ignore
         ref={composedRef}
         className={cn(
           'select-none disabled:pointer-events-none disabled:opacity-50',
@@ -476,7 +474,10 @@ function SortableOverlay(props: SortableOverlayProps) {
   const context = useSortableContext(OVERLAY_NAME);
 
   const [mounted, setMounted] = React.useState(false);
-  React.useLayoutEffect(() => setMounted(true), []);
+  // Deferred out of the effect body; still flushes before paint.
+  React.useLayoutEffect(() => {
+    queueMicrotask(() => setMounted(true));
+  }, []);
 
   const container = containerProp ?? (mounted ? globalThis.document?.body : null);
 

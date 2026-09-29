@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 const HUES = ['#1a1e22', '#0b6bcb', '#b7791f', '#5f4b8b', '#3d2f6b', '#2f6b4b', '#6b2f3d'];
 
@@ -27,7 +27,11 @@ interface VendorLogoProps {
 export function VendorLogo({ hostname, size = 28 }: VendorLogoProps) {
   const [failed, setFailed] = useState(false);
   // Reset when the host changes so a new vendor re-attempts its logo.
-  useEffect(() => setFailed(false), [hostname]);
+  const [prevHostname, setPrevHostname] = useState(hostname);
+  if (prevHostname !== hostname) {
+    setPrevHostname(hostname);
+    setFailed(false);
+  }
 
   const radius = Math.max(4, Math.round(size * 0.22));
 

@@ -139,7 +139,7 @@ describe('mapAudits', () => {
         {
           ...baseAudit,
           conclusionVerdict: null,
-        } as unknown as AuditWithExportIncludes,
+        },
       ],
       extras,
     );

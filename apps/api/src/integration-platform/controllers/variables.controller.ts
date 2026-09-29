@@ -97,7 +97,7 @@ export class VariablesController {
   @Get('providers/:providerSlug')
   @ApiOperation({ summary: 'List variable definitions for a provider' })
   @RequirePermission('integration', 'read')
-  async getProviderVariables(
+  getProviderVariables(
     @Param('providerSlug') providerSlug: string,
   ): Promise<{ variables: VariableDefinition[] }> {
     const manifest = getManifest(providerSlug);
@@ -139,7 +139,7 @@ export class VariablesController {
       hasDynamicOptions: !!v.fetchOptions,
     }));
 
-    return { variables };
+    return Promise.resolve({ variables });
   }
 
   /**
@@ -353,18 +353,18 @@ export class VariablesController {
             throw new Error(`HTTP ${response.status}: ${errorText}`);
           }
 
-          const data = await response.json();
+          const data: unknown = await response.json();
 
           // Handle both direct array responses and wrapped responses
           // e.g., some APIs return { items: [...] } instead of [...]
           let items: T[];
           if (Array.isArray(data)) {
-            items = data;
+            items = data as T[];
           } else if (data && typeof data === 'object') {
             // Find the first array property in the response
-            const arrayValue = Object.values(data).find((v) =>
-              Array.isArray(v),
-            ) as T[] | undefined;
+            const arrayValue = Object.values(data).find(
+              (v: unknown): v is T[] => Array.isArray(v),
+            );
             items = arrayValue ?? [];
           } else {
             items = [];

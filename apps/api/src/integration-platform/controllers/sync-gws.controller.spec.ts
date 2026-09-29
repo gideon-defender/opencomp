@@ -679,7 +679,6 @@ describe('SyncController - Google Workspace employees', () => {
         ],
       });
 
-      const callCount = 0;
       (mockedDb.user.findUnique as jest.Mock).mockImplementation(
         ({ where }: { where: { email: string } }) => {
           const map: Record<string, unknown> = {

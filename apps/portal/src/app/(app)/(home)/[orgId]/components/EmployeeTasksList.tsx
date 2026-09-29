@@ -5,6 +5,7 @@ import { HIPAA_TRAINING_ID } from '@/lib/data/hipaa-training-content';
 import { trainingVideos } from '@/lib/data/training-videos';
 import type { Device, EmployeeTrainingVideoCompletion, Member, Policy, PolicyVersion } from '@db';
 import { Accordion, Button } from '@trycompai/design-system';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import useSWR from 'swr';
 import type { FleetPolicy, Host } from '../types';
@@ -54,6 +55,8 @@ export const EmployeeTasksList = ({
   accessRequestFormEnabled,
   portalForms,
 }: EmployeeTasksListProps) => {
+  const t = useTranslations('dashboard');
+  const tTasks = useTranslations('tasks');
   const { completions: trainingCompletions } = useTrainingCompletions({
     fallbackData: trainingVideoCompletions,
   });
@@ -143,13 +146,13 @@ export const EmployeeTasksList = ({
 
   const accordionItems = [
     {
-      title: 'Security Policies',
+      title: tTasks('securityPolicies'),
       content: <PoliciesAccordionItem policies={policies} member={member} />,
     },
     ...(deviceAgentStepEnabled
       ? [
           {
-            title: 'Download and install OpenComp Device Agent',
+            title: tTasks('downloadAndInstall'),
             content: (
               <DeviceAgentAccordionItem
                 member={member}
@@ -166,7 +169,7 @@ export const EmployeeTasksList = ({
     ...(securityTrainingStepEnabled
       ? [
           {
-            title: 'Complete general security awareness training',
+            title: tTasks('completeGeneralTraining'),
             content: <GeneralTrainingAccordionItem />,
           },
         ]
@@ -174,7 +177,7 @@ export const EmployeeTasksList = ({
     ...(hasHipaaFramework
       ? [
           {
-            title: 'Complete HIPAA security awareness training',
+            title: tTasks('completeHipaaTraining'),
             content: <HipaaTrainingAccordionItem />,
           },
         ]
@@ -190,7 +193,7 @@ export const EmployeeTasksList = ({
     <div className="space-y-4">
       <div>
         <div className="text-muted-foreground text-sm">
-          {completedCount} of {accordionItems.length} tasks completed
+          {t('tasksCompleted', { completed: completedCount, total: accordionItems.length })}
         </div>
         <div className="w-full bg-muted rounded-full h-2.5">
           <div
@@ -212,7 +215,7 @@ export const EmployeeTasksList = ({
       {visiblePortalForms.length > 0 && (
         <div className="space-y-2">
           <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Company Forms
+            {t('companyForms')}
           </div>
           {visiblePortalForms.map((form) => (
             <div
@@ -226,11 +229,11 @@ export const EmployeeTasksList = ({
               <div className="flex items-center gap-2 shrink-0 ml-4">
                 {form.type === 'access-request' && (
                   <Link href={`/${organizationId}/documents/${form.type}/submissions`}>
-                    <Button variant="ghost">My requests</Button>
+                    <Button variant="ghost">{t('myRequests')}</Button>
                   </Link>
                 )}
                 <Link href={`/${organizationId}/documents/${form.type}`}>
-                  <Button>Submit</Button>
+                  <Button>{t('submit')}</Button>
                 </Link>
               </div>
             </div>

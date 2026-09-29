@@ -356,6 +356,9 @@ function combineSentencesWithCitations({
   );
   return [
     `Treatment plan (${treatmentStrategy})`,
+    // No org language preference exists in the DB yet, so the heading stays
+    // English. When a preference ships, resolve it per org here and pass
+    // `locale` — buildCitationsHeading already renders full Spanish copy.
     buildCitationsHeading({ citations, linkedTotals }),
     ...bullets,
   ].join('\n');

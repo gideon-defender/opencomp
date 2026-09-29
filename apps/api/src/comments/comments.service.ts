@@ -15,21 +15,33 @@ import { CreateCommentDto } from './dto/create-comment.dto';
 import { CommentMentionNotifierService } from './comment-mention-notifier.service';
 
 // Reuse the extract mentions utility
+interface MentionNodeAttrs {
+  id?: unknown;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
 function extractMentionedUserIds(content: string | null): string[] {
   if (!content) return [];
 
   try {
-    const parsed = typeof content === 'string' ? JSON.parse(content) : content;
-    if (!parsed || typeof parsed !== 'object') return [];
+    const parsed: unknown =
+      typeof content === 'string' ? JSON.parse(content) : content;
+    if (!isRecord(parsed)) return [];
 
     const mentionedUserIds: string[] = [];
-    function traverse(node: any) {
-      if (!node || typeof node !== 'object') return;
-      if (node.type === 'mention' && node.attrs?.id) {
-        mentionedUserIds.push(node.attrs.id);
+    function traverse(node: unknown) {
+      if (!isRecord(node)) return;
+      if (node.type === 'mention' && isRecord(node.attrs)) {
+        const id: unknown = (node.attrs as MentionNodeAttrs).id;
+        if (typeof id === 'string') {
+          mentionedUserIds.push(id);
+        }
       }
       if (Array.isArray(node.content)) {
-        node.content.forEach(traverse);
+        node.content.forEach((child: unknown) => traverse(child));
       }
     }
     traverse(parsed);

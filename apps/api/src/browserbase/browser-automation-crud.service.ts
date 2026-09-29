@@ -277,7 +277,7 @@ export class BrowserAutomationCrudService {
           )
         : Promise.resolve(run.stepRuns),
     ]);
-    return { ...run, screenshotUrl, focusScreenshotUrl, stepRuns } as T;
+    return { ...run, screenshotUrl, focusScreenshotUrl, stepRuns };
   }
 
   async getRunWithPresignedUrl(runId: string, organizationId?: string) {

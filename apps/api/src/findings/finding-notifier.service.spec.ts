@@ -35,6 +35,7 @@ jest.mock('@db', () => ({
 
 jest.mock('@gideon-defender/email', () => ({
   isUserUnsubscribed: jest.fn().mockResolvedValue(false),
+  resolveLocale: (input: unknown) => (input === 'es' ? 'es' : 'en'),
 }));
 
 jest.mock('../email/trigger-email', () => ({

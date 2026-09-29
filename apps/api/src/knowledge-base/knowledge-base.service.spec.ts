@@ -209,7 +209,7 @@ describe('KnowledgeBaseService', () => {
         fileName: 'doc.pdf',
         fileType: 'application/pdf',
         fileData: 'base64data',
-      } as any);
+      });
 
       expect(result).toEqual({
         id: 'd1',
@@ -241,7 +241,7 @@ describe('KnowledgeBaseService', () => {
         fileName: 'doc.pdf',
         fileType: 'application/pdf',
         s3Key: 'org_1/uploads/document/123-doc.pdf',
-      } as any);
+      });
 
       // Fetched the bytes from the presigned key (org-scoped, no base64 via LLM)
       expect(mockUploadsService.readUploadAsBase64).toHaveBeenCalledWith(

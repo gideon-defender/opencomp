@@ -198,7 +198,7 @@ export async function loadFrameworkSources({
           department: (t.department as unknown as Departments | null) ?? null,
           // Resolved from live template below; AUTOMATED is the schema default
           // and a safe fallback if the live template has been deleted.
-          automationStatus: 'AUTOMATED' as TaskAutomationStatus,
+          automationStatus: 'AUTOMATED',
         });
       }
     }

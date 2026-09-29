@@ -71,42 +71,50 @@ export function useQuestionnaireParse({
     enabled: Boolean(runId && runToken),
   });
 
-  // Handle task completion
+  // Handle task completion. Async IIFE with setState only after await (plus a
+  // cancellation flag) so no setState runs synchronously in the effect body.
   useEffect(() => {
     if (!parseRun?.status) return;
+    const status = parseRun.status;
+    const output = parseRun.output as
+      | {
+          success: boolean;
+          questionnaireId: string;
+          questionsAndAnswers: { question: string; answer: string | null }[];
+        }
+      | undefined;
+    let cancelled = false;
+    (async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      if (status === 'COMPLETED') {
+        if (output?.success && output.questionnaireId) {
+          setQuestionnaireId(output.questionnaireId);
+          toast.success(`Successfully parsed ${output.questionsAndAnswers?.length ?? 0} questions`);
+          router.push(`/${orgId}/questionnaire/${output.questionnaireId}`);
+        } else {
+          setIsParseProcessStarted(false);
+          toast.error('Failed to parse questionnaire');
+        }
 
-    if (parseRun.status === 'COMPLETED') {
-      const output = parseRun.output as
-        | {
-            success: boolean;
-            questionnaireId: string;
-            questionsAndAnswers: { question: string; answer: string | null }[];
-          }
-        | undefined;
-
-      if (output?.success && output.questionnaireId) {
-        setQuestionnaireId(output.questionnaireId);
-        toast.success(`Successfully parsed ${output.questionsAndAnswers?.length ?? 0} questions`);
-        router.push(`/${orgId}/questionnaire/${output.questionnaireId}`);
-      } else {
-        setIsParseProcessStarted(false);
-        toast.error('Failed to parse questionnaire');
+        setRunId(null);
+        setRunToken(null);
+        setUploadStatus('idle');
+        setParseStatus('idle');
       }
 
-      setRunId(null);
-      setRunToken(null);
-      setUploadStatus('idle');
-      setParseStatus('idle');
-    }
-
-    if (isFailureRunStatus(parseRun.status)) {
-      setIsParseProcessStarted(false);
-      setRunId(null);
-      setRunToken(null);
-      setUploadStatus('idle');
-      setParseStatus('idle');
-      toast.error('Questionnaire parsing failed. Please try again.');
-    }
+      if (isFailureRunStatus(status)) {
+        setIsParseProcessStarted(false);
+        setRunId(null);
+        setRunToken(null);
+        setUploadStatus('idle');
+        setParseStatus('idle');
+        toast.error('Questionnaire parsing failed. Please try again.');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [
     parseRun?.status,
     parseRun?.output,

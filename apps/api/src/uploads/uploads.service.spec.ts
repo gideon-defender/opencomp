@@ -13,7 +13,6 @@ jest.mock('../app/s3', () => ({
   getObjectContentLength: jest.fn(),
 }));
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const s3 = require('../app/s3') as {
   getSignedUrl: jest.Mock;
   getObjectAsBuffer: jest.Mock;

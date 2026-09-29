@@ -50,7 +50,6 @@ import {
   getActiveManifests,
   TASK_TEMPLATE_INFO,
   type TaskTemplateId,
-  type IntegrationCredentials,
 } from '@gideon-defender/integration-platform';
 import {
   getAwsBaseCredentials,
@@ -360,7 +359,7 @@ export class ConnectionsController {
   @Get('providers/:slug')
   @ApiOperation({ summary: 'Get an integration provider by slug' })
   @RequirePermission('integration', 'read')
-  async getProvider(@Param('slug') slug: string) {
+  getProvider(@Param('slug') slug: string) {
     const manifest = getManifest(slug);
     if (!manifest) {
       throw new HttpException(
@@ -950,9 +949,7 @@ export class ConnectionsController {
     }
 
     try {
-      const isValid = await manifest.handler.testConnection(
-        credentials as IntegrationCredentials,
-      );
+      const isValid = await manifest.handler.testConnection(credentials);
 
       if (isValid) {
         await this.connectionService.activateConnection(connection.id);
@@ -1299,9 +1296,7 @@ export class ConnectionsController {
 
     const raw = connection.variables;
     const existingVariables: Record<string, unknown> =
-      raw && typeof raw === 'object' && !Array.isArray(raw)
-        ? (raw as Record<string, unknown>)
-        : {};
+      raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
 
     // Get ALL possible services from the manifest
     const provider = await db.integrationProvider.findUnique({

@@ -14,6 +14,7 @@ import {
 } from '@react-email/components';
 import { Footer } from '../components/footer';
 import { Logo } from '../components/logo';
+import type { EmailLocale } from '../locale';
 import { getUnsubscribeUrl } from '@gideon-defender/email';
 
 interface TaskItem {
@@ -29,7 +30,41 @@ interface Props {
   organizationName: string;
   tasksUrl: string;
   tasks: TaskItem[];
+  locale?: EmailLocale;
 }
+
+const copy = {
+  en: {
+    previewSuffix: "submitted for your review",
+    task: "task",
+    tasks: "tasks",
+    heading: "Evidence Review Requested",
+    hello: "Hello",
+    bodySubmitted: "has submitted",
+    bodyForReview: "for your review in",
+    reviewHint: "Please review the evidence and approve or reject each task:",
+    reviewTasks: "Review Tasks",
+    copyPaste: "or copy and paste this URL into your browser:",
+    unsubscribeQuestion:
+      "Don't want to receive task assignment notifications?",
+    managePrefs: "Manage your email preferences",
+  },
+  es: {
+    previewSuffix: "enviados para tu revisión",
+    task: "tarea",
+    tasks: "tareas",
+    heading: "Revisión de evidencia solicitada",
+    hello: "Hola",
+    bodySubmitted: "ha enviado",
+    bodyForReview: "para tu revisión en",
+    reviewHint: "Revisa la evidencia y aprueba o rechaza cada tarea:",
+    reviewTasks: "Revisar tareas",
+    copyPaste: "o copia y pega esta URL en tu navegador:",
+    unsubscribeQuestion:
+      "¿No quieres recibir notificaciones de asignación de tareas?",
+    managePrefs: "Gestionar tus preferencias de correo electrónico",
+  },
+};
 
 export const EvidenceBulkReviewRequestedEmail = ({
   toName,
@@ -39,12 +74,15 @@ export const EvidenceBulkReviewRequestedEmail = ({
   organizationName,
   tasksUrl,
   tasks,
+  locale = 'en',
 }: Props) => {
+  const t = copy[locale];
+
   const unsubscribeUrl = getUnsubscribeUrl(toEmail);
-  const taskText = taskCount === 1 ? 'task' : 'tasks';
+  const taskText = taskCount === 1 ? t.task : t.tasks;
 
   return (
-    <Html>
+    <Html lang={locale}>
       <Tailwind>
         <head>
           <Font
@@ -61,7 +99,7 @@ export const EvidenceBulkReviewRequestedEmail = ({
           />
         </head>
         <Preview>
-          {`${taskCount} ${taskText} submitted for your review`}
+          {`${taskCount} ${taskText} ${t.previewSuffix}`}
         </Preview>
 
         <Body className="mx-auto my-auto bg-[#fff] font-sans">
@@ -71,20 +109,19 @@ export const EvidenceBulkReviewRequestedEmail = ({
           >
             <Logo />
             <Heading className="mx-0 my-[30px] p-0 text-center text-[24px] font-normal text-[#121212]">
-              Evidence Review Requested
+              {t.heading}
             </Heading>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              Hello {toName},
+              {t.hello} {toName},
             </Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              <strong>{submittedByName}</strong> has submitted {taskCount}{' '}
-              {taskText} for your review in <strong>{organizationName}</strong>.
+              <strong>{submittedByName}</strong> {t.bodySubmitted} {taskCount} {taskText} {t.bodyForReview} <strong>{organizationName}</strong>.
             </Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              Please review the evidence and approve or reject each task:
+              {t.reviewHint}
             </Text>
 
             <Section className="mt-[16px] mb-[16px]">
@@ -106,12 +143,12 @@ export const EvidenceBulkReviewRequestedEmail = ({
                 className="rounded-[3px] bg-[#121212] px-[20px] py-[12px] text-center text-[14px] font-semibold text-white no-underline"
                 href={tasksUrl}
               >
-                Review Tasks
+                {t.reviewTasks}
               </Button>
             </Section>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              or copy and paste this URL into your browser:{' '}
+              {t.copyPaste}{' '}
               <a href={tasksUrl} className="text-[#121212] underline">
                 {tasksUrl}
               </a>
@@ -119,12 +156,12 @@ export const EvidenceBulkReviewRequestedEmail = ({
 
             <Section className="mt-[30px] mb-[20px]">
               <Text className="text-[12px] leading-[20px] text-[#666666]">
-                Don't want to receive task assignment notifications?{' '}
+                {t.unsubscribeQuestion}{' '}
                 <Link
                   href={unsubscribeUrl}
                   className="text-[#121212] underline"
                 >
-                  Manage your email preferences
+                  {t.managePrefs}
                 </Link>
                 .
               </Text>
@@ -132,7 +169,7 @@ export const EvidenceBulkReviewRequestedEmail = ({
 
             <br />
 
-            <Footer />
+            <Footer locale={locale} />
           </Container>
         </Body>
       </Tailwind>

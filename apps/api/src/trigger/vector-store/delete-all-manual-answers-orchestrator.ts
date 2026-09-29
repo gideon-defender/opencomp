@@ -126,7 +126,9 @@ export const deleteAllManualAnswersOrchestratorTask = task({
               run.ok === false && run.error
                 ? run.error instanceof Error
                   ? run.error.message
-                  : String(run.error)
+                  : typeof run.error === 'string'
+                    ? run.error
+                    : JSON.stringify(run.error)
                 : 'Unknown error';
             logger.error('Task failed to delete manual answer', {
               manualAnswerId: ma.id,

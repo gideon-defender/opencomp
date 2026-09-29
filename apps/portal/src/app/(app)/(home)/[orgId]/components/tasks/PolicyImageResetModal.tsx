@@ -11,6 +11,7 @@ import {
   DialogTitle,
   Spinner,
 } from '@trycompai/design-system';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 
 interface PolicyImageResetModalProps {
@@ -29,6 +30,8 @@ export function PolicyImageResetModal({
   onRefresh,
 }: PolicyImageResetModalProps) {
   const [isDeleting, setIsDeleting] = useState(false);
+  const t = useTranslations('modals');
+  const tToasts = useTranslations('toasts');
 
   const handleConfirm = async () => {
     setIsDeleting(true);
@@ -40,13 +43,13 @@ export function PolicyImageResetModal({
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data?.error ?? 'Failed to remove images');
+        throw new Error(data?.error ?? tToasts('imagesRemoveFailed'));
       }
       onRefresh();
       onOpenChange(false);
-      toast.success('Images removed');
+      toast.success(tToasts('imagesRemoved'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to remove images');
+      toast.error(err instanceof Error ? err.message : tToasts('imagesRemoveFailed'));
     } finally {
       setIsDeleting(false);
     }
@@ -61,9 +64,9 @@ export function PolicyImageResetModal({
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Remove all images</DialogTitle>
+          <DialogTitle>{t('removeTitle')}</DialogTitle>
         </DialogHeader>
-        <p className="text-sm text-muted-foreground">Are you sure you want to remove all images?</p>
+        <p className="text-sm text-muted-foreground">{t('removeConfirm')}</p>
         <DialogFooter>
           <Button
             variant="ghost"
@@ -71,10 +74,10 @@ export function PolicyImageResetModal({
             onClick={() => onOpenChange(false)}
             disabled={isDeleting}
           >
-            No
+            {t('no')}
           </Button>
           <Button type="button" onClick={handleConfirm} disabled={isDeleting}>
-            {isDeleting ? <Spinner size="sm" /> : 'Yes'}
+            {isDeleting ? <Spinner size="sm" /> : t('yes')}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -8,7 +8,8 @@ export function AnimatedPricingBanner() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    // Defer mount flag past render to avoid cascading renders.
+    queueMicrotask(() => setMounted(true));
   }, []);
 
   const messages = [

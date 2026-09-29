@@ -61,13 +61,10 @@ export const OnboardingTracker = ({ onboarding }: { onboarding: Onboarding }) =>
   const [isPoliciesExpanded, setIsPoliciesExpanded] = useState(false);
   const [isVendorsExpanded, setIsVendorsExpanded] = useState(false);
   const [isRisksExpanded, setIsRisksExpanded] = useState(false);
-  const spinnerStyle = useMemo(
-    () => ({
-      animation: 'spin 1s linear infinite',
-      animationDelay: `${-(Date.now() % 1000)}ms`,
-    }),
-    [],
-  );
+  const [spinnerStyle] = useState(() => ({
+    animation: 'spin 1s linear infinite',
+    animationDelay: `${-(Date.now() % 1000)}ms`,
+  }));
 
   const { run, error } = useRun(triggerJobId || '', {
     refreshInterval: 1000,
@@ -106,42 +103,26 @@ export const OnboardingTracker = ({ onboarding }: { onboarding: Onboarding }) =>
   }, [organizationId, isRetrying, executeRetry]);
 
   useEffect(() => {
-    setMounted(true);
-    // Always reflect the stored state for THIS triggerJobId. If the key
-    // changes (new onboarding run), this resets isDismissed to false when
-    // no dismissal exists for the new key — otherwise a dismissed prior
-    // run could leave the tracker hidden forever.
+    // Mark client mount outside the synchronous effect body.
+    queueMicrotask(() => setMounted(true));
+  }, []);
+
+  // Always reflect the stored state for THIS triggerJobId. If the key
+  // changes (new onboarding run), this resets isDismissed to false when
+  // no dismissal exists for the new key — otherwise a dismissed prior
+  // run could leave the tracker hidden forever.
+  const [prevDismissKey, setPrevDismissKey] = useState(dismissKey);
+  if (prevDismissKey !== dismissKey) {
+    setPrevDismissKey(dismissKey);
     if (dismissKey && typeof window !== 'undefined') {
       setIsDismissed(window.localStorage.getItem(dismissKey) === '1');
     } else {
       setIsDismissed(false);
     }
-  }, [dismissKey]);
+  }
 
-  // Auto-minimize when completed AND all background work is done.
-  // The main task completes before policies/mitigations finish (they
-  // run as fire-and-forget children), so also check the counters.
-  useEffect(() => {
-    if (run?.status !== 'COMPLETED' || isMinimized) return;
-    const meta = run?.metadata as Record<string, unknown> | undefined;
-    if (!meta) return;
-
-    const policiesTotal = (meta.policiesTotal as number) || 0;
-    const policiesCompleted = (meta.policiesCompleted as number) || 0;
-    const policiesDone = policiesTotal === 0 || policiesCompleted >= policiesTotal;
-
-    const vendorsTotal = (meta.vendorsTotal as number) || 0;
-    const vendorsCompleted = (meta.vendorsCompleted as number) || 0;
-    const vendorsDone = vendorsTotal === 0 || vendorsCompleted >= vendorsTotal;
-
-    const risksTotal = (meta.risksTotal as number) || 0;
-    const risksCompleted = (meta.risksCompleted as number) || 0;
-    const risksDone = risksTotal === 0 || risksCompleted >= risksTotal;
-
-    if (policiesDone && vendorsDone && risksDone) {
-      setIsMinimized(true);
-    }
-  }, [run?.status, run?.metadata, isMinimized]);
+  // Auto-minimize is derived during render below (after stepStatus), once the
+  // run completes and all background work counters reach zero.
 
   // Items deferred by transient LLM failures (quota/network) keep their
   // "remaining" counters above zero after the run completes; they finish via
@@ -158,6 +139,7 @@ export const OnboardingTracker = ({ onboarding }: { onboarding: Onboarding }) =>
   }, [run?.status, run?.metadata]);
 
   // Extract step completion from metadata (real-time updates)
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization -- `run` gets a fresh identity on every poll tick; this memo only reads `metadata`.
   const stepStatus = useMemo(() => {
     if (!run?.metadata) {
       return {
@@ -252,6 +234,19 @@ export const OnboardingTracker = ({ onboarding }: { onboarding: Onboarding }) =>
     };
   }, [run?.metadata]);
 
+  // Auto-minimize when completed AND all background work is done.
+  // The main task completes before policies/mitigations finish (they
+  // run as fire-and-forget children), so also check the counters.
+  if (
+    run?.status === 'COMPLETED' &&
+    !isMinimized &&
+    stepStatus.policies &&
+    stepStatus.vendorMitigations &&
+    stepStatus.riskMitigations
+  ) {
+    setIsMinimized(true);
+  }
+
   // Calculate current step from metadata
   const currentStep = useMemo(() => {
     if (stepStatus.currentStep) {
@@ -266,29 +261,32 @@ export const OnboardingTracker = ({ onboarding }: { onboarding: Onboarding }) =>
   }, [stepStatus]);
 
   // Auto-expand current step and collapse others
-  useEffect(() => {
-    if (!currentStep) return;
+  const expandKey = `${currentStep?.key ?? 'none'}|${stepStatus.vendorsTotal}|${stepStatus.risksTotal}|${stepStatus.policiesTotal}`;
+  const [prevExpandKey, setPrevExpandKey] = useState(expandKey);
+  if (prevExpandKey !== expandKey) {
+    setPrevExpandKey(expandKey);
+    if (currentStep) {
+      const stepKey = currentStep.key;
 
-    const stepKey = currentStep.key;
-
-    if (stepKey === 'vendorMitigations' && stepStatus.vendorsTotal > 0) {
-      setIsVendorsExpanded(true);
-      setIsRisksExpanded(false);
-      setIsPoliciesExpanded(false);
-    } else if (stepKey === 'riskMitigations' && stepStatus.risksTotal > 0) {
-      setIsVendorsExpanded(false);
-      setIsRisksExpanded(true);
-      setIsPoliciesExpanded(false);
-    } else if (stepKey === 'policies' && stepStatus.policiesTotal > 0) {
-      setIsVendorsExpanded(false);
-      setIsRisksExpanded(false);
-      setIsPoliciesExpanded(true);
-    } else {
-      setIsVendorsExpanded(false);
-      setIsRisksExpanded(false);
-      setIsPoliciesExpanded(false);
+      if (stepKey === 'vendorMitigations' && stepStatus.vendorsTotal > 0) {
+        setIsVendorsExpanded(true);
+        setIsRisksExpanded(false);
+        setIsPoliciesExpanded(false);
+      } else if (stepKey === 'riskMitigations' && stepStatus.risksTotal > 0) {
+        setIsVendorsExpanded(false);
+        setIsRisksExpanded(true);
+        setIsPoliciesExpanded(false);
+      } else if (stepKey === 'policies' && stepStatus.policiesTotal > 0) {
+        setIsVendorsExpanded(false);
+        setIsRisksExpanded(false);
+        setIsPoliciesExpanded(true);
+      } else {
+        setIsVendorsExpanded(false);
+        setIsRisksExpanded(false);
+        setIsPoliciesExpanded(false);
+      }
     }
-  }, [currentStep, stepStatus.vendorsTotal, stepStatus.risksTotal, stepStatus.policiesTotal]);
+  }
 
   // Build dynamic current step message with progress
   const currentStepMessage = useMemo(() => {

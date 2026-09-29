@@ -26,7 +26,8 @@ function DataTableActionBar<TData>({
   const [mounted, setMounted] = React.useState(false);
 
   React.useLayoutEffect(() => {
-    setMounted(true);
+    // Defer past the layout effect body so this mount guard doesn't setState synchronously.
+    queueMicrotask(() => setMounted(true));
   }, []);
 
   React.useEffect(() => {

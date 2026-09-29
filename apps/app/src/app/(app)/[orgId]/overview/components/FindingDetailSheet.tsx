@@ -39,7 +39,7 @@ import {
 import { Copy } from '@trycompai/design-system/icons';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 interface FindingDetailSheetProps {
@@ -180,14 +180,19 @@ export function FindingDetailSheet({
   const [deleting, setDeleting] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
-  useEffect(() => {
+  // Reset the editable fields whenever a different finding is opened (including
+  // the initial mount with a finding). Adjust-during-render instead of an
+  // effect to avoid a synchronous setState-in-effect cascade.
+  const [prevFinding, setPrevFinding] = useState<Finding | null>(null);
+  if (prevFinding !== finding) {
+    setPrevFinding(finding);
     if (finding) {
       setContent(finding.content);
       setStatus(finding.status);
       setSeverity(finding.severity);
       setRevisionNote(finding.revisionNote ?? '');
     }
-  }, [finding]);
+  }
 
   if (!finding) return null;
 

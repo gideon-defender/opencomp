@@ -8,15 +8,12 @@ import { Input } from '@gideon-defender/ui/input';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Spinner } from '@trycompai/design-system';
 import { ArrowRight } from '@trycompai/design-system/icons';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { OtpForm } from './otp-form';
-
-const formSchema = z.object({
-  email: z.string().email(),
-});
 
 type Props = {
   className?: string;
@@ -27,6 +24,12 @@ export function OtpSignIn({ className, deviceAuthRedirect }: Props) {
   const [isLoading, setLoading] = useState(false);
   const [isSent, setSent] = useState(false);
   const [_email, setEmail] = useState<string>();
+  const t = useTranslations('auth');
+  const tValidation = useTranslations('validation');
+
+  const formSchema = z.object({
+    email: z.string().email(tValidation('emailInvalid')),
+  });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -35,18 +38,21 @@ export function OtpSignIn({ className, deviceAuthRedirect }: Props) {
     },
   });
 
-  async function onSubmit({ email }: z.infer<typeof formSchema>) {
+  async function handleSubmit({ email }: z.infer<typeof formSchema>) {
     setLoading(true);
     setEmail(email);
 
-    const { data, error } = await authClient.emailOtp.sendVerificationOtp({
+    const { error } = await authClient.emailOtp.sendVerificationOtp({
       email: email,
       type: 'sign-in',
     });
 
     if (error) {
       setLoading(false);
-      toast.error(error.message);
+      // Never surface the raw server message: it is English-only and may
+      // carry internal details. The sibling OtpForm maps failures to the
+      // same dictionary key.
+      toast.error(t('unexpectedError'));
       setSent(false);
     } else {
       setSent(true);
@@ -65,7 +71,7 @@ export function OtpSignIn({ className, deviceAuthRedirect }: Props) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
+      <form onSubmit={form.handleSubmit(handleSubmit)}>
         <div className={cn('flex flex-col space-y-4', className)}>
           <FormField
             control={form.control}
@@ -74,7 +80,7 @@ export function OtpSignIn({ className, deviceAuthRedirect }: Props) {
               <FormItem>
                 <FormControl>
                   <Input
-                    placeholder="Your work email"
+                    placeholder={t('workEmailPlaceholder')}
                     {...field}
                     autoFocus
                     className="h-[40px]"
@@ -96,7 +102,7 @@ export function OtpSignIn({ className, deviceAuthRedirect }: Props) {
               <Spinner size="sm" />
             ) : (
               <>
-                <span>Continue</span>
+                <span>{t('continue')}</span>
                 <ArrowRight size={16} />
               </>
             )}

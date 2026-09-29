@@ -467,9 +467,7 @@ describe('deepScrapeTrustPortal — extraction', () => {
     expect(scrape).toHaveBeenCalledTimes(9);
 
     // Each section URL should have been requested exactly once.
-    const sectionCalls = scrape.mock.calls
-      .slice(1)
-      .map((call) => call[0] as string);
+    const sectionCalls = scrape.mock.calls.slice(1).map((call) => call[0]);
     expect(new Set(sectionCalls).size).toBe(8);
     for (const anchor of anchors) {
       expect(sectionCalls).toContain(`${sourceUrl}${anchor}`);

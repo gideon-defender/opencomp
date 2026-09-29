@@ -55,8 +55,9 @@ export class RemediationService {
     }
     // If still over limit, delete oldest
     while (this.planCache.size > this.PLAN_CACHE_MAX) {
-      const firstKey = this.planCache.keys().next().value;
-      if (firstKey) this.planCache.delete(firstKey);
+      const firstKey: unknown = this.planCache.keys().next().value;
+      if (typeof firstKey === 'string' && firstKey)
+        this.planCache.delete(firstKey);
       else break;
     }
   }

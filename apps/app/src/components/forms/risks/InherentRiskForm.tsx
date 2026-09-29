@@ -14,6 +14,7 @@ import {
 } from '@gideon-defender/ui/select';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useQueryState } from 'nuqs';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -50,6 +51,7 @@ export function InherentRiskForm({
   initialProbability,
   initialImpact,
 }: InherentRiskFormProps) {
+  const t = useTranslations('toasts');
   const { updateRisk } = useRiskActions();
   const { mutate: globalMutate } = useSWRConfig();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -71,13 +73,13 @@ export function InherentRiskForm({
         likelihood: values.probability,
         impact: values.impact,
       });
-      toast.success('Inherent risk updated successfully');
+      toast.success(t('inherentRiskUpdated'));
       globalMutate((key) => Array.isArray(key) && key[0]?.includes('/v1/risks'), undefined, {
         revalidate: true,
       });
       setOpen(null);
     } catch {
-      toast.error('Failed to update inherent risk');
+      toast.error(t('inherentRiskUpdateFailed'));
     } finally {
       setIsSubmitting(false);
     }

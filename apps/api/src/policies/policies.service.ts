@@ -4,6 +4,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { withErrorCode } from '../common/i18n/error-messages';
 import { db, Frequency, PolicyStatus, Prisma } from '@db';
 import { HeadObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
@@ -13,6 +14,7 @@ import { filterComplianceMembers } from '../utils/compliance-filters';
 import { isMemberOrgParticipant } from '../utils/org-participation';
 import { BUCKET_NAME, getSignedUrl, s3Client } from '../app/s3';
 import type { CreatePolicyDto } from './dto/create-policy.dto';
+import { PolicyStatus as DtoPolicyStatus } from './dto/create-policy.dto';
 import type { UpdatePolicyDto } from './dto/update-policy.dto';
 import type {
   ConfirmPolicyPdfUploadedDto,
@@ -455,11 +457,11 @@ export class PoliciesService {
         //   - the caller isn't explicitly changing status to anything other
         //     than 'published' in the same call (status=undefined or 'published').
         const isContentUpdateOnNonDraft =
-          contentValue !== null && existingPolicy.status !== 'draft';
+          contentValue !== null && existingPolicy.status !== PolicyStatus.draft;
         const shouldAutoPublishNewVersion =
           isContentUpdateOnNonDraft &&
           (updateData.status === undefined ||
-            updateData.status === 'published');
+            updateData.status === DtoPolicyStatus.PUBLISHED);
 
         // Mixed intent (e.g., demote-to-draft while changing content) is
         // ambiguous and historically blocked — keep blocking it.
@@ -520,8 +522,8 @@ export class PoliciesService {
         // Only clear signatures when actually transitioning to published.
         // Re-sending the full object for an already-published policy must not wipe acknowledgments.
         if (
-          updateData.status === 'published' &&
-          existingPolicy.status !== 'published'
+          updateData.status === DtoPolicyStatus.PUBLISHED &&
+          existingPolicy.status !== PolicyStatus.published
         ) {
           updatePayload.lastPublishedAt = new Date();
 
@@ -1861,7 +1863,11 @@ export class PoliciesService {
         pendingVersionId: true,
       },
     });
-    if (!policy) throw new NotFoundException('Policy not found');
+    if (!policy)
+      throw withErrorCode(
+        new NotFoundException('Policy not found'),
+        'POLICY_NOT_FOUND',
+      );
 
     if (policy.status === 'published' && !body.versionId) {
       throw new BadRequestException(
@@ -1936,7 +1942,11 @@ export class PoliciesService {
         currentVersionId: true,
       },
     });
-    if (!policy) throw new NotFoundException('Policy not found');
+    if (!policy)
+      throw withErrorCode(
+        new NotFoundException('Policy not found'),
+        'POLICY_NOT_FOUND',
+      );
 
     if (policy.status === 'published' && !body.versionId) {
       throw new BadRequestException(

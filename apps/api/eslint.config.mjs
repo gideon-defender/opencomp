@@ -34,6 +34,30 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-return': 'off',
       '@typescript-eslint/restrict-template-expressions': 'off',
+      // `_`-prefixed args/vars are intentionally unused (interface
+      // implementations, placeholder params). This is the
+      // typescript-eslint documented convention.
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
+    },
+  },
+  {
+    // Jest specs constantly reference mock methods as values
+    // (expect(mock.x).toHaveBeenCalledWith(...)), use async test fns
+    // without await, and pass `any` mocks around. The type-checked
+    // rules below are noise in that context — mocks don't use `this`.
+    files: ['**/*.spec.ts'],
+    rules: {
+      '@typescript-eslint/unbound-method': 'off',
+      '@typescript-eslint/require-await': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
     },
   },
 );

@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@gideon-defender/ui/dropdown-menu';
 import { Check, ChevronsUpDown, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 interface MinimalOrganizationSwitcherProps {
@@ -22,13 +23,14 @@ export function MinimalOrganizationSwitcher({
   currentOrganization,
 }: MinimalOrganizationSwitcherProps) {
   const [isSwitching, setIsSwitching] = useState(false);
+  const router = useRouter();
 
   const handleOrgChange = async (org: Organization) => {
     if (org.id !== currentOrganization?.id) {
       setIsSwitching(true);
       try {
         await authClient.organization.setActive({ organizationId: org.id });
-        window.location.href = `/${org.id}/`;
+        router.push(`/${org.id}/`);
       } catch {
         setIsSwitching(false);
       }

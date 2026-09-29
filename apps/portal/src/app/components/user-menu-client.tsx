@@ -8,6 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@gideon-defender/ui/dropdown-menu';
+import { useTranslations } from 'next-intl';
 import { Logout } from './logout';
 
 type UserMenuClientProps = {
@@ -18,11 +19,12 @@ type UserMenuClientProps = {
 };
 
 export function UserMenuClient({ name, email, image, userInitials }: UserMenuClientProps) {
+  const t = useTranslations('header');
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Avatar className="h-8 w-8 cursor-pointer rounded-full">
-          {image ? <AvatarImage src={image} alt={name ?? 'User Avatar'} /> : null}
+          {image ? <AvatarImage src={image} alt={name ?? t('userAvatar')} /> : null}
           <AvatarFallback>
             <span className="text-xs font-semibold">{userInitials}</span>
           </AvatarFallback>
@@ -35,7 +37,7 @@ export function UserMenuClient({ name, email, image, userInitials }: UserMenuCli
               <span className="line-clamp-1 block max-w-[155px] truncate">{name}</span>
               <span className="text-muted-foreground truncate text-xs font-normal">{email}</span>
             </div>
-            <div className="rounded-full border px-3 py-0.5 text-[11px] font-normal">Beta</div>
+            <div className="rounded-full border px-3 py-0.5 text-[11px] font-normal">{t('beta')}</div>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
