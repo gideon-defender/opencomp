@@ -10,6 +10,11 @@ const ComplianceBadgeSchema = z.object({
     'pci_dss',
     'nen7510',
     'iso9001',
+    'dora',
+    'nis2',
+    'hitrust',
+    'nistcsf',
+    'nist80053',
   ]),
   verified: z.boolean(),
 });

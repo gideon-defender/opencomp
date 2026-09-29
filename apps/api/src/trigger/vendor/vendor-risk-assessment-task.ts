@@ -26,6 +26,22 @@ import {
 } from './vendor-risk-assessment/frameworks';
 import { vendorRiskAssessmentPayloadSchema } from './vendor-risk-assessment/schema';
 
+/**
+ * High-resolution vendor logo overrides. Kept in sync with the copies in
+ * trust-portal.service.ts and TrustPortalVendors.tsx.
+ */
+const HIGH_RES_LOGO_OVERRIDES: Record<string, string> = {
+  'github.com':
+    'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png',
+  'google.com':
+    'https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png',
+};
+
+function registrableDomain(domain: string): string {
+  const parts = domain.toLowerCase().split('.');
+  return parts.length > 2 ? parts.slice(-2).join('.') : domain.toLowerCase();
+}
+
 const VERIFY_RISK_ASSESSMENT_TASK_TITLE = 'Verify risk assessment' as const;
 
 type VendorRiskAssessmentResult = {
@@ -291,7 +307,11 @@ function generateLogoUrl(website: string | null): string | null {
       : `https://${website}`;
     const parsed = new URL(urlWithProtocol);
     const domain = parsed.hostname.replace(/^www\./, '');
-    return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+    return (
+      HIGH_RES_LOGO_OVERRIDES[domain.toLowerCase()] ??
+      HIGH_RES_LOGO_OVERRIDES[registrableDomain(domain)] ??
+      `https://www.google.com/s2/favicons?domain=${domain}&sz=128`
+    );
   } catch {
     return null;
   }

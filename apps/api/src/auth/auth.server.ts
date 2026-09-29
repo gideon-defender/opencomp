@@ -99,7 +99,7 @@ async function getCustomDomains(): Promise<Set<string>> {
 /**
  * Check if an origin is trusted. Checks (in order):
  * 1. Static trusted origins list
- * 2. *.gideondefender.com / *.trust.inc subdomains
+ * 2. *.gideondefender.com subdomains
  * 3. Published custom domains from the DB (cached in Redis, TTL 5 min)
  */
 export async function isTrustedOrigin(origin: string): Promise<boolean> {

@@ -15,9 +15,7 @@ jest.mock('./auth.server', () => ({
       const url = new URL(origin);
       return (
         url.hostname.endsWith('.gideondefender.com') ||
-        url.hostname.endsWith('.staging.gideondefender.com') ||
-        url.hostname.endsWith('.trust.inc') ||
-        url.hostname === 'trust.inc'
+        url.hostname.endsWith('.staging.gideondefender.com')
       );
     } catch {
       return false;

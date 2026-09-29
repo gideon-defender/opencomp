@@ -8,7 +8,7 @@ interface TrustPortalConfiguredInput {
   /**
    * Raw Trust framework "enabled" boolean columns (soc2, soc2type1, soc2type2,
    * soc3, iso27001, iso42001, nen7510, gdpr, hipaa, pci_dss, iso9001, pipeda,
-   * ccpa). Order is irrelevant — any `true` counts as configured. The caller is
+   * ccpa, dora, nis_2, hitrust_csf, nist_csf, nist_800_53). Order is irrelevant — any `true` counts as configured. The caller is
    * responsible for passing all of them; a dropped column silently weakens the
    * signal. Distinct from `resourceCount` (uploaded certificate files).
    */

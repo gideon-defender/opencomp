@@ -39,6 +39,14 @@ describe('mapCertificationToBadgeType', () => {
     expect(mapCertificationToBadgeType('CCPA')).toBe('ccpa');
   });
 
+  it('maps DORA / NIS 2 / HITRUST / NIST CSF / NIST 800-53 to distinct badge types', () => {
+    expect(mapCertificationToBadgeType('DORA')).toBe('dora');
+    expect(mapCertificationToBadgeType('NIS 2')).toBe('nis2');
+    expect(mapCertificationToBadgeType('HITRUST CSF')).toBe('hitrust');
+    expect(mapCertificationToBadgeType('NIST CSF 2.0')).toBe('nistcsf');
+    expect(mapCertificationToBadgeType('NIST SP 800-53')).toBe('nist80053');
+  });
+
   // The digits alone must not classify an unrelated identifier.
   it('does not misclassify ids that merely contain the standard digits', () => {
     expect(mapCertificationToBadgeType('Catalog 19001')).toBeNull();

@@ -143,9 +143,9 @@ describe('isStaticTrustedOrigin', () => {
     ).toBe(true);
   });
 
-  it('should allow trust.inc and its subdomains', () => {
-    expect(isStaticTrustedOrigin('https://trust.inc')).toBe(true);
-    expect(isStaticTrustedOrigin('https://acme.trust.inc')).toBe(true);
+  it('should reject trust.inc and its subdomains', () => {
+    expect(isStaticTrustedOrigin('https://trust.inc')).toBe(false);
+    expect(isStaticTrustedOrigin('https://acme.trust.inc')).toBe(false);
   });
 
   it('should reject unknown origins', () => {

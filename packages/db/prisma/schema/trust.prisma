@@ -30,6 +30,11 @@ model Trust {
   iso9001       Boolean @default(false)
   pipeda        Boolean @default(false)
   ccpa          Boolean @default(false)
+  dora          Boolean @default(false)
+  nis_2         Boolean @default(false)
+  hitrust_csf   Boolean @default(false)
+  nist_csf      Boolean @default(false)
+  nist_800_53   Boolean @default(false)
 
   soc2_status      FrameworkStatus @default(started)
   soc2type1_status FrameworkStatus @default(started)
@@ -44,6 +49,11 @@ model Trust {
   iso9001_status   FrameworkStatus @default(started)
   pipeda_status    FrameworkStatus @default(started)
   ccpa_status      FrameworkStatus @default(started)
+  dora_status      FrameworkStatus @default(started)
+  nis_2_status     FrameworkStatus @default(started)
+  hitrust_csf_status FrameworkStatus @default(started)
+  nist_csf_status  FrameworkStatus @default(started)
+  nist_800_53_status FrameworkStatus @default(started)
 
   // Overview section for public trust portal
   overviewTitle   String?
@@ -88,6 +98,11 @@ enum TrustFramework {
   iso_9001
   pipeda
   ccpa
+  dora
+  nis_2
+  hitrust_csf
+  nist_csf
+  nist_800_53
 }
 
 model TrustResource {

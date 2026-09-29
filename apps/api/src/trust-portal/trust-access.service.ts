@@ -2090,6 +2090,11 @@ export class TrustAccessService {
       | 'iso9001'
       | 'pipeda'
       | 'ccpa'
+      | 'dora'
+      | 'nis_2'
+      | 'hitrust_csf'
+      | 'nist_csf'
+      | 'nist_800_53'
     > = {
       [TrustFramework.iso_27001]: 'iso27001',
       [TrustFramework.iso_42001]: 'iso42001',
@@ -2103,6 +2108,11 @@ export class TrustAccessService {
       [TrustFramework.iso_9001]: 'iso9001',
       [TrustFramework.pipeda]: 'pipeda',
       [TrustFramework.ccpa]: 'ccpa',
+      [TrustFramework.dora]: 'dora',
+      [TrustFramework.nis_2]: 'nis_2',
+      [TrustFramework.hitrust_csf]: 'hitrust_csf',
+      [TrustFramework.nist_csf]: 'nist_csf',
+      [TrustFramework.nist_800_53]: 'nist_800_53',
     };
 
     const enabledField = frameworkFieldMap[framework];
@@ -2925,6 +2935,11 @@ export class TrustAccessService {
       nen7510: 'NEN 7510',
       pipeda: 'PIPEDA',
       ccpa: 'CCPA',
+      dora: 'DORA',
+      nis2: 'NIS 2',
+      hitrust: 'HITRUST CSF',
+      nistcsf: 'NIST CSF',
+      nist80053: 'NIST 800-53',
     };
 
     return badges.map((badge: { type: string }) => ({

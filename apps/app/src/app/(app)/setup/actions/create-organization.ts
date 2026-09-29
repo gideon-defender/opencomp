@@ -143,7 +143,7 @@ export const createOrganization = authActionClientWithoutOrg
         );
       }
 
-      // Publish the trust portal so trust.inc/{slug} is live immediately, even
+      // Publish the trust portal so trust.gideondefender.com/{slug} is live immediately, even
       // while empty. Goes through the guarded API (GET settings lazily creates a
       // published Trust row with a slug). Non-fatal — onboarding must still run.
       const trustPortalResponse = await serverApi.get('/v1/trust-portal/settings');

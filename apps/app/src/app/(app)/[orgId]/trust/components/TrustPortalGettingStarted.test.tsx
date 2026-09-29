@@ -17,17 +17,17 @@ import { TrustPortalGettingStarted } from './TrustPortalGettingStarted';
 
 describe('TrustPortalGettingStarted', () => {
   it('renders the live shared portal URL', () => {
-    render(<TrustPortalGettingStarted portalUrl="https://trust.inc/org_123" />);
-    expect(screen.getByText(/trust.inc\/org_123/)).toBeInTheDocument();
+    render(<TrustPortalGettingStarted portalUrl="https://trust.gideondefender.com/org_123" />);
+    expect(screen.getByText(/trust.gideondefender.com\/org_123/)).toBeInTheDocument();
   });
 
   it('renders the getting-started heading', () => {
-    render(<TrustPortalGettingStarted portalUrl="https://trust.inc/org_123" />);
+    render(<TrustPortalGettingStarted portalUrl="https://trust.gideondefender.com/org_123" />);
     expect(screen.getByText(/finish setting up your trust portal/i)).toBeInTheDocument();
   });
 
   it('renders the setup steps', () => {
-    render(<TrustPortalGettingStarted portalUrl="https://trust.inc/org_123" />);
+    render(<TrustPortalGettingStarted portalUrl="https://trust.gideondefender.com/org_123" />);
     expect(screen.getByText(/frameworks you/i)).toBeInTheDocument();
     expect(screen.getByText(/published policies show automatically/i)).toBeInTheDocument();
   });

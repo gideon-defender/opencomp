@@ -39,6 +39,23 @@ import {
 } from './dto/trust-document.dto';
 import { isTrustPortalConfigured } from './is-trust-portal-configured';
 
+/**
+ * High-resolution vendor logo overrides. Kept in sync with the frontend copy
+ * in TrustPortalVendors.tsx and the scan-time copy in
+ * trigger/vendor/vendor-risk-assessment-task.ts.
+ */
+const HIGH_RES_LOGO_OVERRIDES: Record<string, string> = {
+  'github.com':
+    'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png',
+  'google.com':
+    'https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png',
+};
+
+function registrableDomain(domain: string): string {
+  const parts = domain.toLowerCase().split('.');
+  return parts.length > 2 ? parts.slice(-2).join('.') : domain.toLowerCase();
+}
+
 interface VercelDomainVerification {
   type: string;
   domain: string;
@@ -150,7 +167,12 @@ export class TrustPortalService {
         | 'nen7510_status'
         | 'iso9001_status'
         | 'pipeda_status'
-        | 'ccpa_status';
+        | 'ccpa_status'
+        | 'dora_status'
+        | 'nis_2_status'
+        | 'hitrust_csf_status'
+        | 'nist_csf_status'
+        | 'nist_800_53_status';
       enabledField:
         | 'iso27001'
         | 'iso42001'
@@ -163,7 +185,12 @@ export class TrustPortalService {
         | 'nen7510'
         | 'iso9001'
         | 'pipeda'
-        | 'ccpa';
+        | 'ccpa'
+        | 'dora'
+        | 'nis_2'
+        | 'hitrust_csf'
+        | 'nist_csf'
+        | 'nist_800_53';
       slug: string;
     }
   > = {
@@ -226,6 +253,31 @@ export class TrustPortalService {
       statusField: 'ccpa_status',
       enabledField: 'ccpa',
       slug: 'ccpa',
+    },
+    [TrustFramework.dora]: {
+      statusField: 'dora_status',
+      enabledField: 'dora',
+      slug: 'dora',
+    },
+    [TrustFramework.nis_2]: {
+      statusField: 'nis_2_status',
+      enabledField: 'nis_2',
+      slug: 'nis_2',
+    },
+    [TrustFramework.hitrust_csf]: {
+      statusField: 'hitrust_csf_status',
+      enabledField: 'hitrust_csf',
+      slug: 'hitrust_csf',
+    },
+    [TrustFramework.nist_csf]: {
+      statusField: 'nist_csf_status',
+      enabledField: 'nist_csf',
+      slug: 'nist_csf',
+    },
+    [TrustFramework.nist_800_53]: {
+      statusField: 'nist_800_53_status',
+      enabledField: 'nist_800_53',
+      slug: 'nist_800_53',
     },
   };
 
@@ -693,6 +745,11 @@ export class TrustPortalService {
       iso9001: 'iso9001',
       pipeda: 'pipeda',
       ccpa: 'ccpa',
+      dora: 'dora',
+      nis2: 'nis_2',
+      hitrust: 'hitrust_csf',
+      nistcsf: 'nist_csf',
+      nist80053: 'nist_800_53',
     };
 
     // Map framework status fields (frontend sends camelCase like "iso27001Status", DB uses "iso27001_status")
@@ -709,6 +766,11 @@ export class TrustPortalService {
       iso9001Status: 'iso9001_status',
       pipedaStatus: 'pipeda_status',
       ccpaStatus: 'ccpa_status',
+      doraStatus: 'dora_status',
+      nis2Status: 'nis_2_status',
+      hitrustStatus: 'hitrust_csf_status',
+      nistcsfStatus: 'nist_csf_status',
+      nist80053Status: 'nist_800_53_status',
       // Also support snake_case input (from other callers)
       soc2type1_status: 'soc2type1_status',
       soc2type2_status: 'soc2type2_status',
@@ -722,6 +784,11 @@ export class TrustPortalService {
       iso9001_status: 'iso9001_status',
       pipeda_status: 'pipeda_status',
       ccpa_status: 'ccpa_status',
+      dora_status: 'dora_status',
+      nis_2_status: 'nis_2_status',
+      hitrust_csf_status: 'hitrust_csf_status',
+      nist_csf_status: 'nist_csf_status',
+      nist_800_53_status: 'nist_800_53_status',
     };
 
     for (const [inputKey, dbField] of Object.entries(boolFieldMap)) {
@@ -1717,6 +1784,11 @@ export class TrustPortalService {
         trust.iso9001,
         trust.pipeda,
         trust.ccpa,
+        trust.dora,
+        trust.nis_2,
+        trust.hitrust_csf,
+        trust.nist_csf,
+        trust.nist_800_53,
       ],
       documentCount: trustDocumentCount,
       resourceCount: trustResourceCount,
@@ -1747,6 +1819,11 @@ export class TrustPortalService {
       iso9001: trust.iso9001 ?? false,
       pipeda: trust.pipeda ?? false,
       ccpa: trust.ccpa ?? false,
+      dora: trust.dora ?? false,
+      nis2: trust.nis_2 ?? false,
+      hitrust: trust.hitrust_csf ?? false,
+      nistcsf: trust.nist_csf ?? false,
+      nist80053: trust.nist_800_53 ?? false,
       // Framework statuses
       soc2type1Status: trust.soc2type1_status ?? 'started',
       soc2type2Status:
@@ -1763,6 +1840,11 @@ export class TrustPortalService {
       iso9001Status: trust.iso9001_status ?? 'started',
       pipedaStatus: trust.pipeda_status ?? 'started',
       ccpaStatus: trust.ccpa_status ?? 'started',
+      doraStatus: trust.dora_status ?? 'started',
+      nis2Status: trust.nis_2_status ?? 'started',
+      hitrustStatus: trust.hitrust_csf_status ?? 'started',
+      nistcsfStatus: trust.nist_csf_status ?? 'started',
+      nist80053Status: trust.nist_800_53_status ?? 'started',
       // Overview
       overviewTitle: trust.overviewTitle ?? null,
       overviewContent: trust.overviewContent ?? defaultOverviewContent,
@@ -1960,7 +2042,16 @@ export class TrustPortalService {
         : `https://${website}`;
       const parsed = new URL(urlWithProtocol);
       const domain = parsed.hostname.replace(/^www\./, '');
-      return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+      // Google's favicon service serves some domains at tiny sizes no matter
+      // the `sz` param (github.com comes back 32x32) — use official high-res
+      // assets for those cases. Keyed by registrable domain so subdomains
+      // match too.
+      const override =
+        HIGH_RES_LOGO_OVERRIDES[domain.toLowerCase()] ??
+        HIGH_RES_LOGO_OVERRIDES[registrableDomain(domain)];
+      return (
+        override ?? `https://www.google.com/s2/favicons?domain=${domain}&sz=128`
+      );
     } catch {
       return null;
     }

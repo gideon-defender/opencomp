@@ -49,12 +49,17 @@ vi.mock('@trycompai/design-system/icons', () => ({
 }));
 
 vi.mock('./logos', () => ({
+  DORA: () => <span />,
   GDPR: () => <span />,
   HIPAA: () => <span />,
+  HITRUST: () => <span />,
   ISO27001: () => <span />,
   ISO42001: () => <span />,
   ISO9001: () => <span />,
   NEN7510: () => <span />,
+  NIS2: () => <span />,
+  NIST80053: () => <span />,
+  NISTCSF: () => <span />,
   PCIDSS: () => <span />,
   SOC2Type2: () => <span />,
 }));
@@ -139,5 +144,77 @@ describe('TrustPortalVendors permission gating', () => {
     setMockPermissions({});
     render(<TrustPortalVendors initialVendors={[]} orgId="org-1" />);
     expect(screen.getByText(/no vendors found/i)).toBeInTheDocument();
+  });
+});
+
+describe('TrustPortalVendors vendor logos', () => {
+  const logoVendors = [
+    {
+      id: 'vendor-gh',
+      name: 'GitHub',
+      description: 'Code hosting',
+      website: 'https://github.com',
+      showOnTrustPortal: true,
+      logoUrl: null,
+      complianceBadges: [],
+    },
+    {
+      id: 'vendor-google',
+      name: 'Google',
+      description: 'Cloud',
+      website: 'https://cloud.google.com',
+      showOnTrustPortal: true,
+      logoUrl: null,
+      complianceBadges: [],
+    },
+    {
+      id: 'vendor-stored-favicon',
+      name: 'Stored Favicon',
+      description: 'Previously synced low-res favicon',
+      website: 'https://github.com',
+      showOnTrustPortal: true,
+      logoUrl: 'https://www.google.com/s2/favicons?domain=github.com&sz=128',
+      complianceBadges: [],
+    },
+    {
+      id: 'vendor-manual',
+      name: 'Manual Logo',
+      description: 'Manually uploaded logo',
+      website: 'https://github.com',
+      showOnTrustPortal: true,
+      logoUrl: 'https://example.com/custom-logo.png',
+      complianceBadges: [],
+    },
+  ];
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('uses high-res assets for known-bad favicon domains', () => {
+    setMockPermissions({});
+    render(<TrustPortalVendors initialVendors={logoVendors} orgId="org-1" />);
+    expect(screen.getByAltText('GitHub logo')).toHaveAttribute(
+      'src',
+      'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png',
+    );
+    // Subdomains resolve through the registrable domain.
+    expect(screen.getByAltText('Google logo')).toHaveAttribute(
+      'src',
+      'https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png',
+    );
+  });
+
+  it('upgrades stored Google favicon URLs but leaves manual uploads alone', () => {
+    setMockPermissions({});
+    render(<TrustPortalVendors initialVendors={logoVendors} orgId="org-1" />);
+    expect(screen.getByAltText('Stored Favicon logo')).toHaveAttribute(
+      'src',
+      'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png',
+    );
+    expect(screen.getByAltText('Manual Logo logo')).toHaveAttribute(
+      'src',
+      'https://example.com/custom-logo.png',
+    );
   });
 });

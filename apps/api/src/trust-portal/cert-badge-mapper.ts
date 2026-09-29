@@ -69,6 +69,17 @@ export function mapCertificationToBadgeType(certType: string): string | null {
   // admin UI safely skips badge types it has no icon for.
   if (normalized.includes('pipeda')) return 'pipeda';
   if (normalized.includes('ccpa')) return 'ccpa';
+  // DORA / NIS 2 / HITRUST / NIST frameworks, kept in sync with the native
+  // Trust Portal frameworks. The public portal renders them via label text
+  // (see LABEL_MAP in trust-access.service.ts).
+  if (normalized.includes('dora')) return 'dora';
+  if (normalized.includes('nis2')) return 'nis2';
+  if (normalized.includes('hitrust')) return 'hitrust';
+  // Checked before any generic "nist" handling: "nistcsf" and "nist80053"
+  // must resolve to distinct badge types.
+  if (normalized.includes('80053') || normalized.includes('nist80053'))
+    return 'nist80053';
+  if (normalized.includes('nistcsf')) return 'nistcsf';
 
   return null;
 }
