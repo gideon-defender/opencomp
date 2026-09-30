@@ -1,4 +1,4 @@
-import { useAccessRequests, usePreviewNda, useResendNda } from '@/hooks/use-access-requests';
+import { fetchPreviewNdaPdf, useAccessRequests, useResendNda } from '@/hooks/use-access-requests';
 import {
   Input,
   Select,
@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   Stack,
 } from '@trycompai/design-system';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { ApproveDialog } from './approve-dialog';
 import { DenyDialog } from './deny-dialog';
@@ -16,12 +16,14 @@ import { RequestDataTable } from './request-data-table';
 export function RequestsTab({ orgId }: { orgId: string }) {
   const { data, isLoading } = useAccessRequests(orgId);
   const { mutateAsync: resendNda } = useResendNda(orgId);
-  const { mutateAsync: previewNda } = usePreviewNda(orgId);
   const [approveId, setApproveId] = useState<string | null>(null);
   const [denyId, setDenyId] = useState<string | null>(null);
 
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<string | 'all'>('all');
+  // One preview fetch per request: a second click while the first is still
+  // running would open a second tab and mint a second PDF for the same key.
+  const previewInFlight = useRef(new Set<string>());
 
   const statusOptions = [
     { value: 'all', label: 'All statuses' },
@@ -41,16 +43,45 @@ export function RequestsTab({ orgId }: { orgId: string }) {
     });
   };
 
-  const handlePreviewNda = async (requestId: string) => {
+  const handlePreviewNda = (requestId: string) => {
+    // Open synchronously in the click handler so popup blockers don't
+    // intercept the tab, then fill it with the fetched PDF bytes. Fetching
+    // through the API (instead of navigating straight to the URL) surfaces
+    // 404/401/403/500 as toasts instead of a blank tab or raw JSON.
+    if (previewInFlight.current.has(requestId)) {
+      return;
+    }
+    const opened = window.open('about:blank', '_blank');
+    if (!opened) {
+      toast.error('Popup blocked — allow popups to preview the NDA');
+      return;
+    }
+    opened.opener = null;
+    previewInFlight.current.add(requestId);
+    const cleanupPreview = () => {
+      previewInFlight.current.delete(requestId);
+    };
+
     toast.promise(
-      previewNda(requestId).then((result) => {
-        window.open(result.pdfDownloadUrl, '_blank');
-        return result;
-      }),
+      fetchPreviewNdaPdf(requestId)
+        .then((blob) => {
+          const objectUrl = URL.createObjectURL(blob);
+          opened.location.href = objectUrl;
+          // The blob URL is owned by this document, so revoke it once the
+          // new tab finishes loading. Keep a timeout fallback in case the
+          // load event never fires.
+          const revokeObjectUrl = () => URL.revokeObjectURL(objectUrl);
+          opened.addEventListener('load', revokeObjectUrl, { once: true });
+          window.setTimeout(revokeObjectUrl, 60_000);
+        })
+        .finally(cleanupPreview),
       {
         loading: 'Generating preview...',
         success: 'Preview NDA generated',
-        error: 'Failed to generate preview',
+        error: (error: unknown) => {
+          opened.close();
+          return error instanceof Error ? error.message : 'Failed to generate preview';
+        },
       },
     );
   };

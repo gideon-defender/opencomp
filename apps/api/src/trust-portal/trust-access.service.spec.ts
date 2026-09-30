@@ -15,6 +15,7 @@ import { TrustResourceDownloadService } from './trust-resource-download.service'
 import { TrustPolicyDownloadService } from './trust-policy-download.service';
 import { TrustPolicyFileDownloadService } from './trust-policy-file-download.service';
 import { TrustNdaService } from './trust-nda.service';
+import { TrustNdaPreviewService } from './trust-nda-preview.service';
 import { TrustNdaSignService } from './trust-nda-sign.service';
 import { TrustRequestIntakeService } from './trust-request-intake.service';
 import { TrustRequestApprovalService } from './trust-request-approval.service';
@@ -204,11 +205,15 @@ function createAccessService(input: {
     ndaPdfService,
     grantReads,
   );
-  const ndaService = new TrustNdaService(
+  const previewService = new TrustNdaPreviewService(
     ndaPdfService,
     attachmentsService,
+  );
+  const ndaService = new TrustNdaService(
+    ndaPdfService,
     trustPublicService,
     grantTokens,
+    previewService,
   );
   const ndaSignService = new TrustNdaSignService(
     ndaPdfService,
@@ -1456,9 +1461,8 @@ describe('TrustAccessService getNdaByToken signed-branch rotation', () => {
       favicon: null,
       securityQuestionnaireEnabled: true,
     });
-    mockDb.trustAccessGrant.updateMany.mockImplementation(
-      ({ data }: { data: { accessToken: string } }) =>
-        Promise.resolve({ count: 1 }),
+    mockDb.trustAccessGrant.updateMany.mockImplementation(() =>
+      Promise.resolve({ count: 1 }),
     );
 
     const result = await service.getNdaByToken('sign-token');

@@ -36,6 +36,7 @@ export class TrustResourceDownloadService {
     recipientName: string;
     recipientEmail: string;
     organizationId: string;
+    organizationName: string;
     grantId: string;
     docId: string;
     downloadFileName: string;
@@ -65,6 +66,7 @@ export class TrustResourceDownloadService {
     const watermarked = await this.ndaPdfService.watermarkExistingPdf(
       originalPdfBuffer,
       {
+        organizationName: params.organizationName,
         name: params.recipientName,
         email: params.recipientEmail,
         docId: params.docId,
@@ -184,6 +186,7 @@ export class TrustResourceDownloadService {
       recipientName: grant.accessRequest.name,
       recipientEmail: grant.subjectEmail,
       organizationId: grant.accessRequest.organizationId,
+      organizationName: grant.accessRequest.organization.name,
       grantId: `${grant.id}`,
       docId: `compliance-${grant.id}-${framework}-${Date.now()}`,
       downloadFileName: `compliance-${framework}-grant-${grant.id}-${Date.now()}.pdf`,
@@ -230,6 +233,7 @@ export class TrustResourceDownloadService {
       recipientName: grant.accessRequest.name,
       recipientEmail: grant.subjectEmail,
       organizationId: grant.accessRequest.organizationId,
+      organizationName: grant.accessRequest.organization.name,
       grantId: `${grant.id}`,
       docId: `compliance-${grant.id}-custom-${customFrameworkId}-${Date.now()}`,
       downloadFileName: `compliance-custom-${customFrameworkId}-grant-${grant.id}-${Date.now()}.pdf`,

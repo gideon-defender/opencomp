@@ -148,6 +148,10 @@ export class TrustAccessService {
     return this.ndaService.previewNda(organizationId, requestId);
   }
 
+  async getPreviewNdaPdfBuffer(organizationId: string, requestId: string) {
+    return this.ndaService.getPreviewNdaPdfBuffer(organizationId, requestId);
+  }
+
   async previewNdaByToken(token: string) {
     return this.ndaService.previewNdaByToken(token);
   }

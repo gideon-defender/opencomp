@@ -271,6 +271,7 @@ export class TrustPolicyDownloadService {
     const watermarked = await this.ndaPdfService.watermarkExistingPdf(
       pdfBuffer,
       {
+        organizationName,
         name: grant.accessRequest.name,
         email: grant.subjectEmail,
         docId: bundleDocId,
