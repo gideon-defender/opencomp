@@ -61,6 +61,27 @@ export default defineConfig({
       // rather than index.ts — index.ts re-exports server.ts and would drag the
       // full better-auth server + adapters into every test graph.
       '@gideon-defender/auth': resolve(__dirname, '../../packages/auth/src/permissions.ts'),
+      '@gideon-defender/utils/devices': resolve(
+        __dirname,
+        '../../packages/utils/src/devices.ts',
+      ),
+      '@gideon-defender/utils/encryption': resolve(
+        __dirname,
+        '../../packages/utils/src/encryption.ts',
+      ),
+      '@gideon-defender/utils/envs': resolve(__dirname, '../../packages/utils/src/envs.ts'),
+      '@gideon-defender/utils/file': resolve(__dirname, '../../packages/utils/src/file.ts'),
+      '@gideon-defender/utils/fleet': resolve(__dirname, '../../packages/utils/src/fleet.ts'),
+      '@gideon-defender/utils/format': resolve(
+        __dirname,
+        '../../packages/utils/src/format.ts',
+      ),
+      '@gideon-defender/utils/s3': resolve(__dirname, '../../packages/utils/src/s3.ts'),
+      '@gideon-defender/utils/vendor-logo': resolve(
+        __dirname,
+        '../../packages/utils/src/vendor-logo.ts',
+      ),
+      '@gideon-defender/utils': resolve(__dirname, '../../packages/utils/src/index.ts'),
       '@gideon-defender/db': resolve(__dirname, '../../packages/db/src/index.ts'),
       '@gideon-defender/company': resolve(__dirname, '../../packages/company/src/index.ts'),
     },

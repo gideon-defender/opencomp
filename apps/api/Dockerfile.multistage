@@ -81,6 +81,7 @@ RUN cd packages/auth && pnpm run build \
   && cd ../email && pnpm run build \
   && cd ../company && pnpm run build \
   && cd ../billing && pnpm run build \
+  && cd ../utils && pnpm run build \
   && cd ../kv && pnpm run build
 
 # Copy model files to api schema dir, then build NestJS app
@@ -168,6 +169,7 @@ COPY --from=builder --chown=nestjs:nestjs /app/packages/integration-platform/dis
 COPY --from=builder --chown=nestjs:nestjs /app/packages/email/dist ./packages/email/dist
 COPY --from=builder --chown=nestjs:nestjs /app/packages/company/dist ./packages/company/dist
 COPY --from=builder --chown=nestjs:nestjs /app/packages/billing/dist ./packages/billing/dist
+COPY --from=builder --chown=nestjs:nestjs /app/packages/utils/dist ./packages/utils/dist
 COPY --from=builder --chown=nestjs:nestjs /app/packages/kv/dist ./packages/kv/dist
 
 # Generate the Prisma client into the fresh prod node_modules. The prisma

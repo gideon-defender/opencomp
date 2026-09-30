@@ -184,7 +184,10 @@ describe('TrustCustomFrameworkService', () => {
     });
 
     it('returns only enabled frameworks with certificate flags', async () => {
-      mockDb.trust.findUnique.mockResolvedValue({ organizationId: 'org_1' });
+      mockDb.trust.findUnique.mockResolvedValue({
+        organizationId: 'org_1',
+        status: 'published',
+      });
       mockDb.trustCustomFramework.findMany.mockResolvedValue([
         {
           status: 'compliant',
@@ -223,19 +226,34 @@ describe('TrustCustomFrameworkService', () => {
     it('falls back to resolving the route id as an organizationId', async () => {
       mockDb.trust.findUnique
         .mockResolvedValueOnce(null) // friendlyUrl miss
-        .mockResolvedValueOnce({ organizationId: 'org_1' }); // org id hit
+        .mockResolvedValueOnce({
+          organizationId: 'org_1',
+          status: 'published',
+        }); // org id hit
       mockDb.trustCustomFramework.findMany.mockResolvedValue([]);
 
       await service.getPublicCustomFrameworks('org_1');
 
       expect(mockDb.trust.findUnique).toHaveBeenNthCalledWith(1, {
         where: { friendlyUrl: 'org_1' },
-        select: { organizationId: true },
+        select: { organizationId: true, status: true },
       });
       expect(mockDb.trust.findUnique).toHaveBeenNthCalledWith(2, {
         where: { organizationId: 'org_1' },
-        select: { organizationId: true },
+        select: { organizationId: true, status: true },
       });
+    });
+
+    it('returns [] for a draft portal instead of exposing selections', async () => {
+      mockDb.trust.findUnique.mockResolvedValue({
+        organizationId: 'org_1',
+        status: 'draft',
+      });
+
+      await expect(service.getPublicCustomFrameworks('acme')).resolves.toEqual(
+        [],
+      );
+      expect(mockDb.trustCustomFramework.findMany).not.toHaveBeenCalled();
     });
   });
 });

@@ -37,9 +37,10 @@ git branch --no-color | cat
 Then query the DB for `compdev_*` databases. The management URL is the main worktree's `DATABASE_URL` with the database path swapped to `postgres`:
 
 ```sh
-bun -e '
+node --input-type=module -e '
   import { Client } from "pg";
-  const raw = require("fs").readFileSync("packages/db/.env", "utf8");
+  import { readFileSync } from "fs";
+  const raw = readFileSync("packages/db/.env", "utf8");
   const url = raw.match(/^DATABASE_URL=(.*)$/m)[1].replace(/^["\x27]|["\x27]$/g, "");
   const mgmt = url.replace(/\/[^/?]+(\?|$)/, "/postgres$1");
   const c = new Client({ connectionString: mgmt });
@@ -96,9 +97,10 @@ git worktree remove --force "<path>"   # only after explicit user OK
 
 # 2. Derive the slug and drop the database
 slug=$(basename "<path>" | tr '[:upper:]' '[:lower:]' | tr '-' '_' | tr -cd 'a-z0-9_')
-bun -e '
+node --input-type=module -e '
   import { Client } from "pg";
-  const raw = require("fs").readFileSync("packages/db/.env", "utf8");
+  import { readFileSync } from "fs";
+  const raw = readFileSync("packages/db/.env", "utf8");
   const url = raw.match(/^DATABASE_URL=(.*)$/m)[1].replace(/^["\x27]|["\x27]$/g, "");
   const mgmt = url.replace(/\/[^/?]+(\?|$)/, "/postgres$1");
   const c = new Client({ connectionString: mgmt });
@@ -172,5 +174,5 @@ git worktree remove <path>
 git worktree remove --force <path>
 
 # Database drop (run from main worktree)
-# See the bun -e snippets above for the exact invocation
+# See the node -e snippets above for the exact invocation
 ```

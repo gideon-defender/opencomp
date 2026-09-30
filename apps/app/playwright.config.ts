@@ -99,7 +99,7 @@ export default defineConfig({
   webServer: process.env.CI
     ? undefined
     : {
-        command: 'E2E_TEST_MODE=true bun run dev',
+        command: 'E2E_TEST_MODE=true pnpm run dev',
         url: 'http://localhost:3000',
         reuseExistingServer: !process.env.CI,
         timeout: 120 * 1000,

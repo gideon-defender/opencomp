@@ -1,3 +1,7 @@
+export * from './safe-url';
+export * from './trust-frameworks';
+export * from './vendor-logo';
+
 export function stripSpecialCharacters(inputString: string) {
   // Remove special characters and spaces, keep alphanumeric, hyphens/underscores, and dots
   return inputString
@@ -14,10 +18,11 @@ export function shuffle<T>(array: T[]) {
   return array;
 }
 
-export enum FileType {
-  Pdf = 'application/pdf',
-  Heic = 'image/heic',
-}
+export const FileType = {
+  Pdf: 'application/pdf',
+  Heic: 'image/heic',
+} as const;
+export type FileType = (typeof FileType)[keyof typeof FileType];
 
 export const isSupportedFilePreview = (type: FileType) => {
   if (!type) {

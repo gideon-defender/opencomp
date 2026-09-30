@@ -5,10 +5,10 @@
  *
  * Usage:
  *   # Backfill all organizations
- *   bun run scripts/backfill-training-videos.ts
+ *   pnpm exec tsx scripts/backfill-training-videos.ts
  *
  *   # Backfill specific organization
- *   bun run scripts/backfill-training-videos.ts --org <organizationId>
+ *   pnpm exec tsx scripts/backfill-training-videos.ts --org <organizationId>
  *
  * This script is useful for:
  * - Running the backfill manually

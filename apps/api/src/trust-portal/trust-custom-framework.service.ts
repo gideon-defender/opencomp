@@ -183,16 +183,17 @@ export class TrustCustomFrameworkService {
   ): Promise<string | null> {
     const byFriendlyUrl = await db.trust.findUnique({
       where: { friendlyUrl },
-      select: { organizationId: true },
+      select: { organizationId: true, status: true },
     });
-    if (byFriendlyUrl) {
+    // Draft portals stay hidden: only published portals expose selections.
+    if (byFriendlyUrl?.status === 'published') {
       return byFriendlyUrl.organizationId;
     }
 
     const byOrgId = await db.trust.findUnique({
       where: { organizationId: friendlyUrl },
-      select: { organizationId: true },
+      select: { organizationId: true, status: true },
     });
-    return byOrgId?.organizationId ?? null;
+    return byOrgId?.status === 'published' ? byOrgId.organizationId : null;
   }
 }

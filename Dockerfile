@@ -1,5 +1,5 @@
 # =============================================================================
-# Multi-stage build: migrator/seeder, app, portal.
+# Multi-stage build: migrator/seeder, app, portal, trust-center.
 # Uses pnpm workspaces + node:22. Built for linux/arm64.
 # =============================================================================
 
@@ -20,6 +20,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY packages ./packages
 COPY apps/app/package.json ./apps/app/package.json
 COPY apps/portal/package.json ./apps/portal/package.json
+COPY apps/trust-center/package.json ./apps/trust-center/package.json
 
 # Install all dependencies (lifecycle scripts skipped; prisma + workspace
 # package builds are run explicitly in later stages).
@@ -81,6 +82,7 @@ RUN cd packages/db && pnpm run build \
   && cd ../integration-platform && pnpm run build \
   && cd ../email && pnpm run build \
   && cd ../analytics && pnpm run build \
+  && cd ../utils && pnpm run build \
   && cd ../kv && pnpm run build \
   && cd ../ui && pnpm run build
 
@@ -142,6 +144,7 @@ RUN cd packages/db && pnpm run build \
   && cd ../company && pnpm run build \
   && cd ../email && pnpm run build \
   && cd ../analytics && pnpm run build \
+  && cd ../utils && pnpm run build \
   && cd ../kv && pnpm run build \
   && cd ../ui && pnpm run build
 
@@ -179,3 +182,48 @@ EXPOSE 3000
 CMD ["node", "apps/portal/server.js"]
 
 # (Tasks run in-process via the local-trigger shim; no external runner.)
+
+# =============================================================================
+# STAGE 7: Trust-Center Builder (public trust portal, no auth/Prisma)
+# =============================================================================
+FROM deps AS trust-center-builder
+
+WORKDIR /app
+
+# Copy all source code needed for build
+COPY apps/trust-center ./apps/trust-center
+
+# @gideon-defender/utils resolves through its package `exports` (dist entry
+# points), so build it before the Next build.
+RUN cd packages/utils && pnpm run build
+
+# NEXT_PUBLIC_* values inline at build time — runtime env cannot change them.
+# Pass NEXT_PUBLIC_TRUST_API_URL as a build arg when building for non-local hosts.
+ARG NEXT_PUBLIC_TRUST_API_URL=http://localhost:3333
+ARG NEXT_PUBLIC_API_URL=http://localhost:3333
+ENV NEXT_PUBLIC_TRUST_API_URL=$NEXT_PUBLIC_TRUST_API_URL \
+    NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
+RUN cd apps/trust-center \
+  && NEXT_TELEMETRY_DISABLED=1 NODE_ENV=production \
+    NEXT_OUTPUT_STANDALONE=true \
+    NODE_OPTIONS=--max_old_space_size=4096 \
+    pnpm run build
+
+# =============================================================================
+# STAGE 8: Trust-Center Production
+# =============================================================================
+FROM node:22-slim AS trust-center
+
+WORKDIR /app
+
+# Copy Next standalone output for trust-center
+COPY --from=trust-center-builder /app/apps/trust-center/.next/standalone ./
+COPY --from=trust-center-builder /app/apps/trust-center/.next/static ./apps/trust-center/.next/static
+COPY --from=trust-center-builder /app/apps/trust-center/public ./apps/trust-center/public
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+EXPOSE 3000
+CMD ["node", "apps/trust-center/server.js"]

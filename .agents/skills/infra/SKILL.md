@@ -10,14 +10,14 @@ Original Cursor alwaysApply: `false`.
 
 ## Package Manager
 
-**Use `npm`, never bun/yarn/pnpm.**
+**Use `pnpm`, never npm/yarn/bun.**
 
 ```bash
-npm install              # Install deps
-npm install <pkg>        # Add package
-npm install -D <pkg>     # Add dev dependency
-npm run <script>         # Run script
-npx <cmd>                # Execute binary
+pnpm install --frozen-lockfile  # Install deps
+pnpm add <pkg>                   # Add package
+pnpm add -D <pkg>                # Add dev dependency
+pnpm run <script>                # Run script
+pnpm exec <cmd>                  # Execute binary
 ```
 
 ## Monorepo Structure

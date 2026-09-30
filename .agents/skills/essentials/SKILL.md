@@ -11,13 +11,13 @@ Original Cursor alwaysApply: `true`.
 
 ## Package Manager
 
-Use `npm`, never bun/yarn/pnpm.
+Use `pnpm`, never npm/yarn/bun.
 
 ```bash
-npm install          # Install deps
-npm install <pkg>    # Add package
-npm run <script>     # Run script
-npx <cmd>            # Execute binary
+pnpm install --frozen-lockfile  # Install deps
+pnpm add <pkg>                   # Add package
+pnpm run <script>                # Run script
+pnpm exec <cmd>                  # Execute binary
 ```
 
 ## Components

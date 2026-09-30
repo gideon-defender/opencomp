@@ -1,0 +1,40 @@
+{
+  "name": "@gideon-defender/trust-center",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev --port 3008",
+    "lint": "eslint .",
+    "start": "next start",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@gideon-defender/utils": "*",
+    "@hookform/resolvers": "^5.9.1",
+    "lucide-react": "^1.7.0",
+    "next": "^16.2.6",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "react-hook-form": "^7.88.0",
+    "sonner": "^2.0.5",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.10",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/jest-dom": "^6.10.0",
+    "@testing-library/react": "^16.3.3",
+    "@types/node": "^24.0.3",
+    "@types/react": "^19.1.6",
+    "@types/react-dom": "^19.1.1",
+    "eslint": "^9.18.0",
+    "eslint-config-next": "^16.3.6",
+    "jsdom": "^26.1.0",
+    "postcss": "^8.5.4",
+    "tailwindcss": "^4.1.8",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.7"
+  }
+}
