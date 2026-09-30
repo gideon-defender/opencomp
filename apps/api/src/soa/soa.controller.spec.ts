@@ -6,6 +6,7 @@ import { PermissionGuard } from '../auth/permission.guard';
 import type { AuthContext } from '../auth/types';
 import { SOAController } from './soa.controller';
 import { SOAService } from './soa.service';
+import { syncOrganizationEmbeddings } from '@/vector-store/lib';
 
 jest.mock('../auth/auth.server', () => ({
   auth: { api: { getSession: jest.fn() } },
@@ -89,7 +90,7 @@ describe('SOAController', () => {
     const dto = {
       documentId: 'doc_1',
       questionId: 'q_1',
-      organizationId: 'org_123',
+      organizationId: 'org_attacker', // attacker-supplied; must be overridden by session org
       isApplicable: true,
       justification: 'Applicable because...',
     };
@@ -107,6 +108,18 @@ describe('SOAController', () => {
       expect(result).toEqual({ success: true });
     });
 
+    it('overrides a tampered dto.organizationId with the session organization (cross-tenant guard)', async () => {
+      mockSOAService.saveAnswer.mockResolvedValue({ success: true });
+
+      await controller.saveAnswer(dto, 'org_123', mockAuthContext);
+
+      expect(dto.organizationId).toBe('org_123');
+      expect(soaService.saveAnswer).toHaveBeenCalledWith(
+        expect.objectContaining({ organizationId: 'org_123' }),
+        'usr_123',
+      );
+    });
+
     it('should throw BadRequestException when userId is missing', async () => {
       await expect(
         controller.saveAnswer(dto as never, 'org_123', noUserAuthContext),
@@ -114,9 +127,42 @@ describe('SOAController', () => {
     });
   });
 
+  describe('autoFill', () => {
+    const dto = {
+      documentId: 'doc_1',
+      organizationId: 'org_attacker', // attacker-supplied; must be overridden by session org
+    };
+
+    const buildRes = () =>
+      ({
+        setHeader: jest.fn(),
+        write: jest.fn(),
+        end: jest.fn(),
+      }) as unknown as Response;
+
+    it('overrides a tampered dto.organizationId with the session organization before use (cross-tenant guard)', async () => {
+      // getDocument resolving to null short-circuits the stream early, which
+      // is enough to prove the session org (not the attacker-supplied one)
+      // was already written into dto before any downstream call.
+      mockSOAService.getDocument.mockResolvedValue(null);
+
+      await controller.autoFill(dto as never, 'org_123', mockAuthContext, buildRes());
+
+      expect(dto.organizationId).toBe('org_123');
+      expect(syncOrganizationEmbeddings).toHaveBeenCalledWith('org_123');
+      expect(soaService.getDocument).toHaveBeenCalledWith('doc_1', 'org_123');
+    });
+
+    it('should throw BadRequestException when userId is missing', async () => {
+      await expect(
+        controller.autoFill(dto as never, 'org_123', noUserAuthContext, buildRes()),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
   describe('createDocument', () => {
     const dto = {
-      organizationId: 'org_123',
+      organizationId: 'org_attacker', // attacker-supplied; must be overridden by session org
       auditId: 'aud_1',
     };
 
@@ -129,11 +175,22 @@ describe('SOAController', () => {
       expect(soaService.createDocument).toHaveBeenCalledWith(dto);
       expect(result).toEqual(created);
     });
+
+    it('overrides a tampered dto.organizationId with the session organization (cross-tenant guard)', async () => {
+      mockSOAService.createDocument.mockResolvedValue({ id: 'doc_1' });
+
+      await controller.createDocument(dto as never, 'org_123');
+
+      expect(dto.organizationId).toBe('org_123');
+      expect(soaService.createDocument).toHaveBeenCalledWith(
+        expect.objectContaining({ organizationId: 'org_123' }),
+      );
+    });
   });
 
   describe('ensureSetup', () => {
     const dto = {
-      organizationId: 'org_123',
+      organizationId: 'org_attacker', // attacker-supplied; must be overridden by session org
       auditId: 'aud_1',
     };
 
@@ -145,6 +202,17 @@ describe('SOAController', () => {
 
       expect(soaService.ensureSetup).toHaveBeenCalledWith(dto);
       expect(result).toEqual(setupResult);
+    });
+
+    it('overrides a tampered dto.organizationId with the session organization (cross-tenant guard)', async () => {
+      mockSOAService.ensureSetup.mockResolvedValue({});
+
+      await controller.ensureSetup(dto as never, 'org_123');
+
+      expect(dto.organizationId).toBe('org_123');
+      expect(soaService.ensureSetup).toHaveBeenCalledWith(
+        expect.objectContaining({ organizationId: 'org_123' }),
+      );
     });
   });
 
@@ -172,7 +240,7 @@ describe('SOAController', () => {
   describe('approveDocument', () => {
     const dto = {
       documentId: 'doc_1',
-      organizationId: 'org_123',
+      organizationId: 'org_attacker', // attacker-supplied; must be overridden by session org
     };
 
     it('should call soaService.approveDocument with dto and userId', async () => {
@@ -189,6 +257,18 @@ describe('SOAController', () => {
       expect(result).toEqual(approved);
     });
 
+    it('overrides a tampered dto.organizationId with the session organization (cross-tenant guard)', async () => {
+      mockSOAService.approveDocument.mockResolvedValue({ success: true });
+
+      await controller.approveDocument(dto, 'org_123', mockAuthContext);
+
+      expect(dto.organizationId).toBe('org_123');
+      expect(soaService.approveDocument).toHaveBeenCalledWith(
+        expect.objectContaining({ organizationId: 'org_123' }),
+        'usr_123',
+      );
+    });
+
     it('should throw BadRequestException when userId is missing', async () => {
       await expect(
         controller.approveDocument(dto as never, 'org_123', noUserAuthContext),
@@ -199,7 +279,7 @@ describe('SOAController', () => {
   describe('declineDocument', () => {
     const dto = {
       documentId: 'doc_1',
-      organizationId: 'org_123',
+      organizationId: 'org_attacker', // attacker-supplied; must be overridden by session org
       reason: 'Needs more detail',
     };
 
@@ -217,6 +297,18 @@ describe('SOAController', () => {
       expect(result).toEqual(declined);
     });
 
+    it('overrides a tampered dto.organizationId with the session organization (cross-tenant guard)', async () => {
+      mockSOAService.declineDocument.mockResolvedValue({ success: true });
+
+      await controller.declineDocument(dto, 'org_123', mockAuthContext);
+
+      expect(dto.organizationId).toBe('org_123');
+      expect(soaService.declineDocument).toHaveBeenCalledWith(
+        expect.objectContaining({ organizationId: 'org_123' }),
+        'usr_123',
+      );
+    });
+
     it('should throw BadRequestException when userId is missing', async () => {
       await expect(
         controller.declineDocument(dto as never, 'org_123', noUserAuthContext),
@@ -227,7 +319,7 @@ describe('SOAController', () => {
   describe('submitForApproval', () => {
     const dto = {
       documentId: 'doc_1',
-      organizationId: 'org_123',
+      organizationId: 'org_attacker', // attacker-supplied; must be overridden by session org
     };
 
     it('should call soaService.submitForApproval with dto', async () => {
@@ -241,6 +333,17 @@ describe('SOAController', () => {
 
       expect(soaService.submitForApproval).toHaveBeenCalledWith(dto);
       expect(result).toEqual(submitted);
+    });
+
+    it('overrides a tampered dto.organizationId with the session organization (cross-tenant guard)', async () => {
+      mockSOAService.submitForApproval.mockResolvedValue({ success: true });
+
+      await controller.submitForApproval(dto as never, 'org_123');
+
+      expect(dto.organizationId).toBe('org_123');
+      expect(soaService.submitForApproval).toHaveBeenCalledWith(
+        expect.objectContaining({ organizationId: 'org_123' }),
+      );
     });
   });
 
