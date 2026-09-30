@@ -23,6 +23,12 @@ export function getCookieDomain(): string | undefined {
       return '.staging.gideondefender.com';
     }
     if (
+      hostname === 'dev.gideondefender.com' ||
+      hostname.endsWith('.dev.gideondefender.com')
+    ) {
+      return '.dev.gideondefender.com';
+    }
+    if (
       hostname === 'gideondefender.com' ||
       hostname.endsWith('.gideondefender.com')
     ) {
@@ -66,7 +72,7 @@ export function shouldUseSecureCookies(): boolean {
  * Session cookie name mirroring better-auth's `advanced.cookiePrefix` config
  * in `auth.server.ts` plus its secure-context `__Secure-` prefix:
  * production keeps the default `better-auth` prefix, staging uses `staging`,
- * local/dev uses `local`.
+ * the `dev.gideondefender.com` env uses `dev`, local/other uses `local`.
  */
 export function getSessionCookieName(): string {
   const baseUrl = process.env.BASE_URL || '';
@@ -78,6 +84,11 @@ export function getSessionCookieName(): string {
       hostname.endsWith('.staging.gideondefender.com')
     ) {
       prefix = 'staging';
+    } else if (
+      hostname === 'dev.gideondefender.com' ||
+      hostname.endsWith('.dev.gideondefender.com')
+    ) {
+      prefix = 'dev';
     } else if (
       hostname === 'gideondefender.com' ||
       hostname.endsWith('.gideondefender.com')

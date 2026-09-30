@@ -33,6 +33,9 @@ export async function proxy(request: NextRequest) {
       request.cookies.get('better-auth.session_token')?.value ||
       request.cookies.get('__Secure-staging.session_token')?.value ||
       request.cookies.get('staging.session_token')?.value ||
+      request.cookies.get('__Secure-dev.session_token')?.value ||
+      request.cookies.get('dev.session_token')?.value ||
+      request.cookies.get('__Secure-local.session_token')?.value ||
       request.cookies.get('local.session_token')?.value;
     const hasToken = Boolean(sessionToken);
     const nextUrl = request.nextUrl;

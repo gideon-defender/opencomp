@@ -5,6 +5,7 @@ const allowedHosts = new Set([
   '127.0.0.1',
   'app.gideondefender.com',
   'app.staging.gideondefender.com',
+  'opencomp.dev.gideondefender.com',
 ]);
 const localDevelopmentHosts = new Set(['localhost', '127.0.0.1']);
 

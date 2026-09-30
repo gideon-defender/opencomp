@@ -358,6 +358,25 @@ Services: `localstack` (S3/SES emulation), `postgres` (pgvector), `migrator` (Pr
 
 Steps to deploy OpenComp on Docker are coming soon.
 
+### AWS
+
+Gideon hosted production and dev environments run on AWS
+
+Dev domains (`*.dev.gideondefender.com`): `opencomp.dev` → app, `trust.dev/{friendlyUrl}` → trust-center, `api.dev` → API.
+
+Key env/config for a dev deploy:
+
+```env
+BASE_URL=https://api.dev.gideondefender.com
+NEXT_PUBLIC_APP_URL=https://opencomp.dev.gideondefender.com
+NEXT_PUBLIC_API_URL=https://api.dev.gideondefender.com
+NEXT_PUBLIC_TRUST_API_URL=https://trust.dev.gideondefender.com
+TRUST_APP_URL=https://trust.dev.gideondefender.com  # build-time for trust-center
+LOCAL_TRIGGER_DATABASE_URL=postgresql://...?options=-c%20search_path%3Dopencomp_trigger%2Cpublic
+```
+
+Notes: session cookies are isolated per env (`dev` prefix / `.dev.gideondefender.com` domain, mirroring the staging carve-out); `opencomp.dev.gideondefender.com` must be in the billing-redirect allowlist; leave `TRUST_PORTAL_PROJECT_ID` / Vercel vars unset in dev (custom domains stay on the shared-domain path until a separate dev Vercel project exists); run `prisma migrate deploy` (includes the `opencomp_trigger` schema) as a CI deploy job before `aws ecs update-service --force-new-deployment` per service.
+
 ## 📦 Package Publishing
 
 This repository uses semantic-release to automatically publish packages to npm when merging to the `release` branch. The following packages are published:
