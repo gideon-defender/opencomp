@@ -21366,48 +21366,6 @@
         }
       }
     },
-    "/v1/knowledge-base/runs/{runId}/token": {
-      "post": {
-        "operationId": "KnowledgeBaseController_createRunToken_v1",
-        "parameters": [
-          {
-            "name": "runId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Public access token created"
-          }
-        },
-        "security": [
-          {
-            "apikey": []
-          }
-        ],
-        "summary": "Create a public access token for a run",
-        "tags": [
-          "Knowledge Base"
-        ],
-        "description": "Create a public access token for a run in OpenComp. Upload source documents, process them for retrieval, and manage reusable manual answers that power questionnaires and AI policy workflows.",
-        "x-mint": {
-          "metadata": {
-            "title": "Create a public access token for a run | OpenComp API",
-            "sidebarTitle": "Create a public access token for a run",
-            "description": "Create a public access token for a run in OpenComp. Upload source documents, process them for retrieval, and manage reusable manual answers that power.",
-            "og:title": "Create a public access token for a run | OpenComp API",
-            "og:description": "Create a public access token for a run in OpenComp. Upload source documents, process them for retrieval, and manage reusable manual answers that power."
-          }
-        },
-        "x-speakeasy-mcp": {
-          "name": "create-run-token"
-        }
-      }
-    },
     "/v1/knowledge-base/manual-answers/{manualAnswerId}/delete": {
       "post": {
         "operationId": "KnowledgeBaseController_deleteManualAnswer_v1",

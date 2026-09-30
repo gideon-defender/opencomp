@@ -90,9 +90,9 @@ describe('KnowledgeBaseController', () => {
   });
 
   describe('uploadDocument', () => {
-    it('should delegate to service', async () => {
+    it('should derive organizationId from the session and delegate to service', async () => {
       const dto = {
-        organizationId: 'org_1',
+        organizationId: 'org_attacker', // attacker-supplied; must be overridden by session org
         fileName: 'doc.pdf',
         fileType: 'application/pdf',
         fileData: 'base64',
@@ -103,50 +103,76 @@ describe('KnowledgeBaseController', () => {
         s3Key: 'key',
       });
 
-      const result = await controller.uploadDocument(dto);
+      const result = await controller.uploadDocument('org_1', dto);
 
       expect(result.id).toBe('d1');
-      expect(service.uploadDocument).toHaveBeenCalledWith(dto);
+      expect(service.uploadDocument).toHaveBeenCalledWith({
+        ...dto,
+        organizationId: 'org_1',
+      });
     });
   });
 
   describe('getDownloadUrl', () => {
-    it('should merge documentId param with dto', async () => {
-      const dto = { organizationId: 'org_1' };
+    it('should merge documentId and session organizationId with dto', async () => {
+      const dto = { organizationId: 'org_attacker' };
       mockService.getDownloadUrl.mockResolvedValue({
         signedUrl: 'https://example.com/signed',
         fileName: 'doc.pdf',
       });
 
-      const result = await controller.getDownloadUrl('d1', dto);
+      const result = await controller.getDownloadUrl('d1', 'org_1', dto);
 
       expect(result.signedUrl).toBe('https://example.com/signed');
       expect(service.getDownloadUrl).toHaveBeenCalledWith({
         ...dto,
         documentId: 'd1',
+        organizationId: 'org_1',
+      });
+    });
+  });
+
+  describe('getViewUrl', () => {
+    it('should merge documentId and session organizationId with dto', async () => {
+      const dto = { organizationId: 'org_attacker' };
+      mockService.getViewUrl.mockResolvedValue({
+        signedUrl: 'https://example.com/signed',
+        fileName: 'doc.pdf',
+        fileType: 'application/pdf',
+        viewableInBrowser: true,
+      });
+
+      const result = await controller.getViewUrl('d1', 'org_1', dto);
+
+      expect(result.signedUrl).toBe('https://example.com/signed');
+      expect(service.getViewUrl).toHaveBeenCalledWith({
+        ...dto,
+        documentId: 'd1',
+        organizationId: 'org_1',
       });
     });
   });
 
   describe('deleteDocument', () => {
-    it('should merge documentId param with dto', async () => {
-      const dto = { organizationId: 'org_1' };
+    it('should merge documentId and session organizationId with dto', async () => {
+      const dto = { organizationId: 'org_attacker' };
       mockService.deleteDocument.mockResolvedValue({ success: true });
 
-      const result = await controller.deleteDocument('d1', dto);
+      const result = await controller.deleteDocument('d1', 'org_1', dto);
 
       expect(result).toEqual({ success: true });
       expect(service.deleteDocument).toHaveBeenCalledWith({
         ...dto,
         documentId: 'd1',
+        organizationId: 'org_1',
       });
     });
   });
 
   describe('processDocuments', () => {
-    it('should delegate to service', async () => {
+    it('should derive organizationId from the session and delegate to service', async () => {
       const dto = {
-        organizationId: 'org_1',
+        organizationId: 'org_attacker', // attacker-supplied; must be overridden by session org
         documentIds: ['d1', 'd2'],
       };
       mockService.processDocuments.mockResolvedValue({
@@ -155,56 +181,44 @@ describe('KnowledgeBaseController', () => {
         message: 'Processing 2 documents in parallel...',
       });
 
-      const result = await controller.processDocuments(dto);
+      const result = await controller.processDocuments('org_1', dto);
 
       expect(result.success).toBe(true);
-      expect(service.processDocuments).toHaveBeenCalledWith(dto);
-    });
-  });
-
-  describe('createRunToken', () => {
-    it('should return token when created', async () => {
-      mockService.createRunReadToken.mockResolvedValue('token_123');
-
-      const result = await controller.createRunToken('run_1');
-
-      expect(result).toEqual({ success: true, token: 'token_123' });
-      expect(service.createRunReadToken).toHaveBeenCalledWith('run_1');
-    });
-
-    it('should return success false when token creation fails', async () => {
-      mockService.createRunReadToken.mockResolvedValue(undefined);
-
-      const result = await controller.createRunToken('run_1');
-
-      expect(result).toEqual({ success: false, token: undefined });
+      expect(service.processDocuments).toHaveBeenCalledWith({
+        ...dto,
+        organizationId: 'org_1',
+      });
     });
   });
 
   describe('deleteManualAnswer', () => {
-    it('should merge manualAnswerId param with dto', async () => {
-      const dto = { organizationId: 'org_1' };
+    it('should merge manualAnswerId and session organizationId with dto', async () => {
+      const dto = { organizationId: 'org_attacker' };
       mockService.deleteManualAnswer.mockResolvedValue({ success: true });
 
-      const result = await controller.deleteManualAnswer('ma1', dto);
+      const result = await controller.deleteManualAnswer('ma1', 'org_1', dto);
 
       expect(result).toEqual({ success: true });
       expect(service.deleteManualAnswer).toHaveBeenCalledWith({
         ...dto,
         manualAnswerId: 'ma1',
+        organizationId: 'org_1',
       });
     });
   });
 
   describe('deleteAllManualAnswers', () => {
-    it('should delegate to service', async () => {
-      const dto = { organizationId: 'org_1' };
+    it('should derive organizationId from the session and delegate to service', async () => {
+      const dto = { organizationId: 'org_attacker' }; // attacker-supplied; must be overridden by session org
       mockService.deleteAllManualAnswers.mockResolvedValue({ success: true });
 
-      const result = await controller.deleteAllManualAnswers(dto);
+      const result = await controller.deleteAllManualAnswers('org_1', dto);
 
       expect(result).toEqual({ success: true });
-      expect(service.deleteAllManualAnswers).toHaveBeenCalledWith(dto);
+      expect(service.deleteAllManualAnswers).toHaveBeenCalledWith({
+        ...dto,
+        organizationId: 'org_1',
+      });
     });
   });
 });

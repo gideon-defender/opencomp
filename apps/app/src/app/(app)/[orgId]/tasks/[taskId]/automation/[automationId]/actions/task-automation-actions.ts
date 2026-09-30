@@ -7,6 +7,12 @@
 
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
+import {
+  getActiveOrganizationId,
+  isAutomationInOrganization,
+  isRunOwnedByOrganization,
+  recordAutomationRunOwner,
+} from './automation-run-auth';
 
 interface EnterpriseApiResponse<T = any> {
   success: boolean;
@@ -120,6 +126,11 @@ export async function uploadAutomationScript(data: {
   type?: string;
 }) {
   try {
+    const activeOrganizationId = await getActiveOrganizationId();
+    if (!activeOrganizationId || activeOrganizationId !== data.orgId) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
     const result = await callEnterpriseApi('/api/tasks-automations/s3/upload', {
       method: 'POST',
       body: data,
@@ -140,6 +151,15 @@ export async function uploadAutomationScript(data: {
  */
 export async function getAutomationScript(key: string) {
   try {
+    const activeOrganizationId = await getActiveOrganizationId();
+    if (!activeOrganizationId) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    if (!key.startsWith(`${activeOrganizationId}/`) || key.includes('..')) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
     const result = await callEnterpriseApi('/api/tasks-automations/s3/get', {
       params: { key },
     });
@@ -158,6 +178,11 @@ export async function getAutomationScript(key: string) {
  */
 export async function listAutomationScripts(orgId: string) {
   try {
+    const activeOrganizationId = await getActiveOrganizationId();
+    if (!activeOrganizationId || activeOrganizationId !== orgId) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
     const result = await callEnterpriseApi('/api/tasks-automations/s3/list', {
       params: { orgId },
     });
@@ -197,6 +222,11 @@ export async function executeAutomationScript(data: {
   version?: number; // Optional: test specific version
 }) {
   try {
+    const activeOrganizationId = await getActiveOrganizationId();
+    if (!activeOrganizationId || activeOrganizationId !== data.orgId) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
     const result = await callEnterpriseApi<{ runId: string }>(
       '/api/tasks-automations/trigger/execute',
       {
@@ -204,6 +234,10 @@ export async function executeAutomationScript(data: {
         body: data,
       },
     );
+
+    if (result?.runId) {
+      await recordAutomationRunOwner(result.runId, activeOrganizationId);
+    }
 
     // Don't revalidate - causes page refresh. Test results are handled via polling/state.
     return { success: true, data: result };
@@ -229,6 +263,11 @@ export async function executeAutomationScript(data: {
  */
 export async function analyzeAutomationWorkflow(scriptContent: string) {
   try {
+    const activeOrganizationId = await getActiveOrganizationId();
+    if (!activeOrganizationId) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
     const result = await callEnterpriseApi('/api/tasks-automations/workflow/analyze', {
       method: 'POST',
       body: { scriptContent },
@@ -254,6 +293,16 @@ export async function analyzeAutomationWorkflow(scriptContent: string) {
 
 export const getAutomationRunStatus = async (runId: string) => {
   try {
+    const activeOrganizationId = await getActiveOrganizationId();
+    if (!activeOrganizationId) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    const isOwned = await isRunOwnedByOrganization(runId, activeOrganizationId);
+    if (!isOwned) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
     const result = await callEnterpriseApi(
       `/api/tasks-automations/runs/${encodeURIComponent(runId)}`,
       {},
@@ -285,6 +334,19 @@ export const getAutomationRunStatus = async (runId: string) => {
  */
 export async function loadChatHistory(automationId: string, offset = 0, limit = 50) {
   try {
+    const activeOrganizationId = await getActiveOrganizationId();
+    if (!activeOrganizationId) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    const belongsToOrg = await isAutomationInOrganization({
+      automationId,
+      organizationId: activeOrganizationId,
+    });
+    if (!belongsToOrg) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
     const response = await callEnterpriseApi<{
       messages: any[];
       total: number;
@@ -316,6 +378,19 @@ export async function loadChatHistory(automationId: string, offset = 0, limit = 
  */
 export async function saveChatHistory(automationId: string, messages: any[]) {
   try {
+    const activeOrganizationId = await getActiveOrganizationId();
+    if (!activeOrganizationId) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    const belongsToOrg = await isAutomationInOrganization({
+      automationId,
+      organizationId: activeOrganizationId,
+    });
+    if (!belongsToOrg) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
     await callEnterpriseApi('/api/tasks-automations/chat/save', {
       method: 'POST',
       body: {
@@ -346,6 +421,11 @@ export async function publishAutomation(
   changelog?: string,
 ) {
   try {
+    const activeOrganizationId = await getActiveOrganizationId();
+    if (!activeOrganizationId || activeOrganizationId !== orgId) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
     // Call enterprise API to copy draft → versioned S3 key
     const response = await callEnterpriseApi<{
       success: boolean;
@@ -400,6 +480,11 @@ export async function restoreVersion(
   version: number,
 ) {
   try {
+    const activeOrganizationId = await getActiveOrganizationId();
+    if (!activeOrganizationId || activeOrganizationId !== orgId) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
     const response = await callEnterpriseApi<{ success: boolean }>(
       '/api/tasks-automations/restore-version',
       {
@@ -439,6 +524,11 @@ export async function updateEvaluationCriteria(
   evaluationCriteria: string,
 ) {
   try {
+    const activeOrganizationId = await getActiveOrganizationId();
+    if (!activeOrganizationId) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
     const { serverApi } = await import('@/lib/api-server');
     const response = await serverApi.patch(`/v1/tasks/${taskId}/automations/${automationId}`, {
       evaluationCriteria,
@@ -464,6 +554,11 @@ export async function toggleAutomationEnabled(
   isEnabled: boolean,
 ) {
   try {
+    const activeOrganizationId = await getActiveOrganizationId();
+    if (!activeOrganizationId) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
     const { serverApi } = await import('@/lib/api-server');
     const response = await serverApi.patch(`/v1/tasks/${taskId}/automations/${automationId}`, {
       isEnabled,
