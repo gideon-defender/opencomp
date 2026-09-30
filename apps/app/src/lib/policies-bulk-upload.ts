@@ -5,10 +5,10 @@ import type { ApiResponse } from '@/lib/api-client';
  * Injected so this orchestrator can run in the browser AND be unit-tested
  * without a live API.
  */
-type ApiPost = (endpoint: string, body?: unknown) => Promise<ApiResponse<unknown>>;
+export type ApiPost = (endpoint: string, body?: unknown) => Promise<ApiResponse<unknown>>;
 
 /** Reads a File's contents as base64 (without the `data:` URL prefix). */
-type ReadFileAsBase64 = (file: File) => Promise<string>;
+export type ReadFileAsBase64 = (file: File) => Promise<string>;
 
 interface PolicyBulkUploadItemResult {
   fileName: string;

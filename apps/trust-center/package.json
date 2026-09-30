@@ -14,7 +14,7 @@
     "@gideon-defender/utils": "*",
     "@hookform/resolvers": "^5.9.1",
     "lucide-react": "^1.7.0",
-    "next": "^16.2.6",
+    "next": "^16.3.8",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-hook-form": "^7.88.0",
@@ -35,6 +35,6 @@
     "postcss": "^8.5.4",
     "tailwindcss": "^4.1.8",
     "typescript": "^5.8.3",
-    "vitest": "^3.2.7"
+    "vitest": "^4.1.11"
   }
 }

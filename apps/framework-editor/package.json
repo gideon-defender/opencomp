@@ -1,18 +1,18 @@
 {
   "name": "@gideon-defender/framework-editor",
   "dependencies": {
+    "@gideon-defender/email": "*",
+    "@gideon-defender/ui": "*",
     "@hookform/resolvers": "^5.2.2",
     "@prisma/adapter-pg": "7.6.0",
     "@prisma/client": "7.6.0",
     "@tailwindcss/postcss": "^4.1.17",
     "@tanstack/react-table": "^8.21.3",
     "@tiptap/react": "3.31.3",
-    "@gideon-defender/ui": "*",
-    "@gideon-defender/email": "*",
     "better-auth": "^1.6.13",
     "framer-motion": "^12.23.9",
     "lucide-react": "^1.7.0",
-    "next": "^16.2.6",
+    "next": "^16.3.8",
     "next-intl": "^4.13.6",
     "next-themes": "^0.4.4",
     "react": "^19.0.0",
@@ -34,7 +34,7 @@
     "prisma": "7.9.1",
     "tailwindcss": "^4.1.8",
     "typescript": "^5.8.3",
-    "vitest": "^3.2.6"
+    "vitest": "^4.1.11"
   },
   "private": true,
   "scripts": {
