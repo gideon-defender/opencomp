@@ -5,31 +5,39 @@ import { NdaPdfService } from './nda-pdf.service';
 import { TrustPublicService } from './trust-public.service';
 import { TrustGrantTokenService } from './trust-grant-token.service';
 import { TrustNdaService } from './trust-nda.service';
+import { TrustNdaPreviewService } from './trust-nda-preview.service';
 
 jest.mock('@db', () => ({
   db: {
     trustNDAAgreement: { findUnique: jest.fn() },
+    trustAccessRequest: { findFirst: jest.fn() },
   },
 }));
 
 const mockDb = db as unknown as {
   trustNDAAgreement: { findUnique: jest.Mock };
+  trustAccessRequest: { findFirst: jest.Mock };
 };
-
-function createService() {
-  return new TrustNdaService(
-    {} as unknown as NdaPdfService,
-    {} as unknown as AttachmentsService,
-    {} as unknown as TrustPublicService,
-    {} as unknown as TrustGrantTokenService,
-  );
-}
 
 function ndaAgreement(status: string, expired: boolean) {
   const signTokenExpiresAt = expired
     ? new Date(Date.now() - 86_400_000)
     : new Date(Date.now() + 86_400_000);
   return { id: 'nda_1', status, signTokenExpiresAt };
+}
+
+function createService() {
+  const previewService = new TrustNdaPreviewService(
+    {} as unknown as NdaPdfService,
+    {} as unknown as AttachmentsService,
+  );
+  const service = new TrustNdaService(
+    {} as unknown as NdaPdfService,
+    {} as unknown as TrustPublicService,
+    {} as unknown as TrustGrantTokenService,
+    previewService,
+  );
+  return service;
 }
 
 describe('TrustNdaService.previewNdaByToken state ordering', () => {
@@ -39,9 +47,8 @@ describe('TrustNdaService.previewNdaByToken state ordering', () => {
 
   it('throws NotFound for an unknown token', async () => {
     mockDb.trustNDAAgreement.findUnique.mockResolvedValue(null);
-    const service = createService();
 
-    await expect(service.previewNdaByToken('bad')).rejects.toThrow(
+    await expect(createService().previewNdaByToken('bad')).rejects.toThrow(
       NotFoundException,
     );
   });
@@ -64,9 +71,8 @@ describe('TrustNdaService.previewNdaByToken state ordering', () => {
     mockDb.trustNDAAgreement.findUnique.mockResolvedValue(
       ndaAgreement('void', true),
     );
-    const service = createService();
 
-    await expect(service.previewNdaByToken('tok')).rejects.toThrow(
+    await expect(createService().previewNdaByToken('tok')).rejects.toThrow(
       'no longer valid',
     );
   });
@@ -75,9 +81,8 @@ describe('TrustNdaService.previewNdaByToken state ordering', () => {
     mockDb.trustNDAAgreement.findUnique.mockResolvedValue(
       ndaAgreement('pending', true),
     );
-    const service = createService();
 
-    await expect(service.previewNdaByToken('tok')).rejects.toThrow(
+    await expect(createService().previewNdaByToken('tok')).rejects.toThrow(
       'signing link has expired',
     );
   });

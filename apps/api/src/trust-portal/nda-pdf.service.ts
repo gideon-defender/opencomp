@@ -132,7 +132,13 @@ By signing below, the Receiving Party agrees to be bound by the terms of this Ag
       font: helvetica,
     });
 
-    await this.addWatermark(pdfDoc, signerName, signerEmail, agreementId);
+    await this.addWatermark(
+      pdfDoc,
+      organizationName,
+      signerName,
+      signerEmail,
+      agreementId,
+    );
 
     const pdfBytes = await pdfDoc.save();
     return Buffer.from(pdfBytes);
@@ -140,6 +146,7 @@ By signing below, the Receiving Party agrees to be bound by the terms of this Ag
 
   private async addWatermark(
     pdfDoc: PDFDocument,
+    organizationName: string,
     name: string,
     email: string,
     agreementId: string,
@@ -148,10 +155,20 @@ By signing below, the Receiving Party agrees to be bound by the terms of this Ag
     const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const pages = pdfDoc.getPages();
 
-    const watermarkText = 'CompAI';
+    // The tenant's organization name, not a product brand — each org's
+    // downloads carry its own name as the watermark.
+    const watermarkText = organizationName.trim() || 'Organization';
     const requestedByText = `Requested by: ${email}`;
     const fontSize = 48;
     const subTextSize = 12;
+    // Long org names ("Gideon Defender, Inc") would overflow the tile at
+    // full size, so shrink the text to fit the watermark tile instead.
+    const maxWatermarkWidth = 300;
+    const measuredWidth = fontBold.widthOfTextAtSize(watermarkText, fontSize);
+    const watermarkSize =
+      measuredWidth > maxWatermarkWidth
+        ? fontSize * (maxWatermarkWidth / measuredWidth)
+        : fontSize;
 
     for (const page of pages) {
       const { width, height } = page.getSize();
@@ -175,11 +192,11 @@ By signing below, the Receiving Party agrees to be bound by the terms of this Ag
           // Alternate between -45 and -35 degrees for visual interest
           const angle = (row + col) % 2 === 0 ? -45 : -35;
 
-          // Main "CompAI" watermark
+          // Main organization watermark
           page.drawText(watermarkText, {
             x,
             y,
-            size: fontSize,
+            size: watermarkSize,
             font: fontBold,
             color: rgb(0.85, 0.85, 0.85), // Darker gray
             opacity: 0.1, // Increased opacity for better visibility
@@ -276,12 +293,13 @@ By signing below, the Receiving Party agrees to be bound by the terms of this Ag
   async watermarkExistingPdf(
     pdfBuffer: Buffer,
     params: {
+      organizationName: string;
       name: string;
       email: string;
       docId: string;
     },
   ): Promise<Buffer> {
-    const { name, email, docId } = params;
+    const { organizationName, name, email, docId } = params;
 
     let pdfDoc: PDFDocument;
     try {
@@ -306,7 +324,7 @@ By signing below, the Receiving Party agrees to be bound by the terms of this Ag
       throw error;
     }
 
-    await this.addWatermark(pdfDoc, name, email, docId);
+    await this.addWatermark(pdfDoc, organizationName, name, email, docId);
     const pdfBytes = await pdfDoc.save();
     return Buffer.from(pdfBytes);
   }

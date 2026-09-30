@@ -112,3 +112,12 @@ actions:
     update:
       x-speakeasy-mcp:
         disabled: true
+
+  # 12. Disable the NDA preview stream for MCP: it returns a binary PDF that
+  #   a single JSON-RPC tool call cannot consume. Agents use POST
+  #   /v1/trust-access/admin/requests/{id}/preview-nda (JSON with s3Key) to
+  #   mint the preview instead. The HTTP endpoint stays live for the web UI.
+  - target: "$.paths['/v1/trust-access/admin/requests/{id}/preview-nda'].get"
+    update:
+      x-speakeasy-mcp:
+        disabled: true

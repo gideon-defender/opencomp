@@ -18454,48 +18454,6 @@
         }
       }
     },
-    "/v1/trust-access/admin/grants/{id}/resend-access-email": {
-      "post": {
-        "description": "Resend the access email for an active Trust Access grant so approved reviewers can reopen shared resources.",
-        "operationId": "TrustAccessController_resendAccessEmail_v1",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Access email resent"
-          }
-        },
-        "security": [
-          {
-            "apikey": []
-          }
-        ],
-        "summary": "Resend Trust Access email",
-        "tags": [
-          "Trust Access"
-        ],
-        "x-mint": {
-          "metadata": {
-            "title": "Resend Trust Access email | OpenComp API",
-            "sidebarTitle": "Resend Trust Access email",
-            "description": "Resend the access email for an active Trust Access grant so approved reviewers can reopen shared resources.",
-            "og:title": "Resend Trust Access email | OpenComp API",
-            "og:description": "Resend the access email for an active Trust Access grant so approved reviewers can reopen shared resources."
-          }
-        },
-        "x-speakeasy-mcp": {
-          "name": "resend-access-email"
-        }
-      }
-    },
     "/v1/trust-access/admin/requests/{id}/resend-nda": {
       "post": {
         "description": "Resend an NDA signing email for a Trust Access request that still requires reviewer signature.",
@@ -18578,6 +18536,52 @@
         "x-speakeasy-mcp": {
           "name": "preview-nda"
         }
+      },
+      "get": {
+        "description": "Stream the watermarked NDA preview PDF inline for browser viewing, generating it on first view for a Trust Access request.",
+        "operationId": "TrustAccessController_streamPreviewNda_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Preview PDF streamed inline",
+            "content": {
+              "application/pdf": {}
+            }
+          },
+          "404": {
+            "description": "Access request not found"
+          }
+        },
+        "security": [
+          {
+            "apikey": []
+          }
+        ],
+        "summary": "Stream Trust Access NDA preview",
+        "tags": [
+          "Trust Access"
+        ],
+        "x-mint": {
+          "metadata": {
+            "title": "Stream Trust Access NDA preview | OpenComp API",
+            "sidebarTitle": "Stream Trust Access NDA preview",
+            "description": "Stream the watermarked NDA preview PDF inline for browser viewing, generating it on first view for a Trust Access request.",
+            "og:title": "Stream Trust Access NDA preview | OpenComp API",
+            "og:description": "Stream the watermarked NDA preview PDF inline for browser viewing, generating it on first view for a Trust Access request."
+          }
+        },
+        "x-speakeasy-mcp": {
+          "name": "stream-preview-nda"
+        }
       }
     },
     "/v1/trust-access/{friendlyUrl}/reclaim": {
@@ -18635,6 +18639,48 @@
         },
         "x-speakeasy-mcp": {
           "name": "reclaim-access"
+        }
+      }
+    },
+    "/v1/trust-access/admin/grants/{id}/resend-access-email": {
+      "post": {
+        "description": "Resend the access email for an active Trust Access grant so approved reviewers can reopen shared resources.",
+        "operationId": "TrustAccessController_resendAccessEmail_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Access email resent"
+          }
+        },
+        "security": [
+          {
+            "apikey": []
+          }
+        ],
+        "summary": "Resend Trust Access email",
+        "tags": [
+          "Trust Access"
+        ],
+        "x-mint": {
+          "metadata": {
+            "title": "Resend Trust Access email | OpenComp API",
+            "sidebarTitle": "Resend Trust Access email",
+            "description": "Resend the access email for an active Trust Access grant so approved reviewers can reopen shared resources.",
+            "og:title": "Resend Trust Access email | OpenComp API",
+            "og:description": "Resend the access email for an active Trust Access grant so approved reviewers can reopen shared resources."
+          }
+        },
+        "x-speakeasy-mcp": {
+          "name": "resend-access-email"
         }
       }
     },

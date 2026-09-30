@@ -9,6 +9,7 @@ import { TrustResourceDownloadService } from './trust-resource-download.service'
 import { TrustPolicyDownloadService } from './trust-policy-download.service';
 import { TrustPolicyFileDownloadService } from './trust-policy-file-download.service';
 import { TrustNdaService } from './trust-nda.service';
+import { TrustNdaPreviewService } from './trust-nda-preview.service';
 import { TrustNdaSignService } from './trust-nda-sign.service';
 import { TrustRequestIntakeService } from './trust-request-intake.service';
 import { TrustRequestApprovalService } from './trust-request-approval.service';
@@ -112,9 +113,9 @@ function makeService(emailService?: { [key: string]: MockFn }) {
   const grantTokens = new TrustGrantTokenService(emailStub);
   const ndaService = new TrustNdaService(
     ndaPdfService,
-    attachmentsService,
     trustPublicService,
     grantTokens,
+    new TrustNdaPreviewService(ndaPdfService, attachmentsService),
   );
   const service = new TrustAccessService(
     grantReads,

@@ -64,6 +64,7 @@ export class TrustPolicyFileDownloadService {
       policy,
       recipientName: grant.accessRequest.name,
       recipientEmail: grant.subjectEmail,
+      organizationName: grant.accessRequest.organization.name,
       primaryColor: grant.accessRequest.organization.primaryColor,
       docId: `policy-${policy.id}-${Date.now()}`,
     });
@@ -185,6 +186,7 @@ export class TrustPolicyFileDownloadService {
           policy,
           recipientName: grant.accessRequest.name,
           recipientEmail: grant.subjectEmail,
+          organizationName,
           primaryColor: grant.accessRequest.organization.primaryColor,
           docId: `policy-${policy.id}-${Date.now()}`,
         });
@@ -267,6 +269,7 @@ export class TrustPolicyFileDownloadService {
     };
     recipientName: string;
     recipientEmail: string;
+    organizationName: string;
     primaryColor: string | null;
     docId: string;
   }): Promise<Buffer> {
@@ -294,6 +297,7 @@ export class TrustPolicyFileDownloadService {
       );
     }
     return this.ndaPdfService.watermarkExistingPdf(buffer, {
+      organizationName: params.organizationName,
       name: params.recipientName,
       email: params.recipientEmail,
       docId: params.docId,

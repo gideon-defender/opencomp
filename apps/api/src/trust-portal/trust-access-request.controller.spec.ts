@@ -38,7 +38,6 @@ describe('TrustAccessRequestController', () => {
     revokeGrant: jest.fn(),
     resendAccessGrantEmail: jest.fn(),
     resendNda: jest.fn(),
-    previewNda: jest.fn(),
     getMemberIdFromUserId: jest.fn(),
   };
 
@@ -242,18 +241,6 @@ describe('TrustAccessRequestController', () => {
 
       expect(result).toEqual({ success: true });
       expect(service.resendNda).toHaveBeenCalledWith(orgId, 'req_1');
-    });
-  });
-
-  describe('previewNda', () => {
-    it('should call service.previewNda with organizationId and requestId', async () => {
-      const mockResult = { url: 'https://preview-url' };
-      mockService.previewNda.mockResolvedValue(mockResult);
-
-      const result = await controller.previewNda(orgId, 'req_1');
-
-      expect(result).toEqual(mockResult);
-      expect(service.previewNda).toHaveBeenCalledWith(orgId, 'req_1');
     });
   });
 });

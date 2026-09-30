@@ -52,6 +52,11 @@ export const TRUST_OPERATION_METADATA: Record<string, PublicOperationMetadata> =
       description:
         'Generate a preview NDA PDF for a Trust Access request before the reviewer signs and receives access.',
     },
+    TrustAccessController_streamPreviewNda_v1: {
+      summary: 'Stream Trust Access NDA preview',
+      description:
+        'Stream the watermarked NDA preview PDF inline for browser viewing, generating it on first view for a Trust Access request.',
+    },
     TrustAccessController_reclaimAccess_v1: {
       summary: 'Reclaim Trust Access link',
       description:

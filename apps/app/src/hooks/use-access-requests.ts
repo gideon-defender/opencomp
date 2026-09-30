@@ -1,5 +1,6 @@
 'use client';
 
+import { apiClient } from '@/lib/api-client';
 import { useApi } from '@/hooks/use-api';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -212,23 +213,27 @@ export function useResendNda(orgId: string) {
   });
 }
 
-export function usePreviewNda(orgId: string) {
-  const api = useApi();
+/**
+ * Fetch the watermarked NDA preview PDF bytes through the API.
+ * Uses the raw client (cookies authenticate the GET) so failures surface
+ * as thrown errors instead of a blank tab or raw JSON.
+ */
+export async function fetchPreviewNdaPdf(requestId: string): Promise<Blob> {
+  const endpoint = `/v1/trust-access/admin/requests/${encodeURIComponent(requestId)}/preview-nda`;
+  const response = await apiClient.raw(endpoint, { method: 'GET' });
 
-  return useMutation({
-    mutationFn: async (requestId: string) => {
-      const response = await api.post<{
-        message: string;
-        previewId: string;
-        s3Key: string;
-        pdfDownloadUrl: string;
-      }>(`/v1/trust-access/admin/requests/${requestId}/preview-nda`, {});
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error('Access request not found');
+    }
+    if (response.status === 401) {
+      throw new Error('Session expired — sign in again to preview');
+    }
+    if (response.status === 403) {
+      throw new Error('Missing permission to preview this NDA');
+    }
+    throw new Error('Failed to generate preview');
+  }
 
-      if (response.error) {
-        throw new Error(response.error);
-      }
-
-      return response.data!;
-    },
-  });
+  return response.blob();
 }

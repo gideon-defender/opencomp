@@ -1,35 +1,49 @@
 import {
-  BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { db } from '@db';
-import { generateTrustToken } from './trust-access-helpers';
 import {
   buildPublicPortalAccessUrl as buildPublicAccessUrl,
   buildPublicPortalBaseUrl as buildPublicBaseUrl,
   resolveTrustAppUrl,
 } from './trust-portal-urls';
 import { NdaPdfService } from './nda-pdf.service';
-import { AttachmentsService } from '../attachments/attachments.service';
 import { TrustPublicService } from './trust-public.service';
 import { TrustGrantTokenService } from './trust-grant-token.service';
+import { TrustNdaPreviewService } from './trust-nda-preview.service';
 
 /**
- * NDA agreement flows for trust-portal grants: token reads, previews,
- * resends share PDF recovery here; signing lives in TrustNdaSignService.
- * Split from TrustAccessService. Recovery helpers stay public for the
- * signing flow, which reuses them on replay.
+ * NDA agreement flows for trust-portal grants: token reads and signed-PDF
+ * recovery live here; watermarked previews live in TrustNdaPreviewService.
+ * Signing lives in TrustNdaSignService. Recovery helpers stay public for
+ * the signing flow, which reuses them on replay.
  */
 @Injectable()
 export class TrustNdaService {
   constructor(
     private readonly ndaPdfService: NdaPdfService,
-    private readonly attachmentsService: AttachmentsService,
     private readonly trustPublicService: TrustPublicService,
     private readonly grantTokens: TrustGrantTokenService,
+    private readonly previewService: TrustNdaPreviewService,
   ) {}
+
+  /** Preview flows live in TrustNdaPreviewService; kept here for callers. */
+  async previewNda(organizationId: string, requestId: string) {
+    return this.previewService.previewNda(organizationId, requestId);
+  }
+
+  async getPreviewNdaPdfBuffer(organizationId: string, requestId: string) {
+    return this.previewService.getPreviewNdaPdfBuffer(
+      organizationId,
+      requestId,
+    );
+  }
+
+  async previewNdaByToken(token: string) {
+    return this.previewService.previewNdaByToken(token);
+  }
 
   private buildPublicPortalBaseUrl(params: {
     organizationId: string;
@@ -134,109 +148,6 @@ export class TrustNdaService {
     return {
       ...baseResponse,
       status: 'pending',
-    };
-  }
-
-  async previewNda(organizationId: string, requestId: string) {
-    const request = await db.trustAccessRequest.findFirst({
-      where: {
-        id: requestId,
-        organizationId,
-      },
-      include: {
-        organization: true,
-      },
-    });
-
-    if (!request) {
-      throw new NotFoundException('Access request not found');
-    }
-
-    const previewId = generateTrustToken(16);
-    const pdfBuffer = await this.ndaPdfService.generateNdaPdf({
-      organizationName: request.organization.name,
-      signerName: request.name,
-      signerEmail: request.email,
-      agreementId: `preview-${previewId}`,
-    });
-
-    // Fixed key per request: repeated previews overwrite instead of
-    // accumulating one S3 object per call.
-    const s3Key = `${organizationId}/trust_nda/preview-${requestId}.pdf`;
-    await this.attachmentsService.uploadBuffer(
-      s3Key,
-      pdfBuffer,
-      'application/pdf',
-    );
-
-    const pdfUrl = await this.ndaPdfService.getSignedUrl(s3Key);
-
-    return {
-      message: 'Preview NDA generated',
-      previewId,
-      s3Key,
-      pdfDownloadUrl: pdfUrl,
-    };
-  }
-
-  async previewNdaByToken(token: string) {
-    const nda = await db.trustNDAAgreement.findUnique({
-      where: { signToken: token },
-      include: {
-        accessRequest: {
-          include: {
-            organization: true,
-          },
-        },
-      },
-    });
-
-    if (!nda) {
-      throw new NotFoundException('NDA not found or token expired');
-    }
-
-    // State before expiry (mirrors getNdaByToken): a signed or revoked
-    // agreement past the 7-day window must report its state, not expiry.
-    // A preview mints a PDF + S3 object per call — dead agreements must not
-    // reach generation.
-    if (nda.status === 'void') {
-      throw new BadRequestException(
-        'This NDA has been revoked and is no longer valid',
-      );
-    }
-
-    if (nda.status === 'signed') {
-      throw new BadRequestException('NDA has already been signed');
-    }
-
-    if (nda.signTokenExpiresAt < new Date()) {
-      throw new BadRequestException('NDA signing link has expired');
-    }
-
-    const previewId = generateTrustToken(16);
-    const pdfBuffer = await this.ndaPdfService.generateNdaPdf({
-      organizationName: nda.accessRequest.organization.name,
-      signerName: nda.accessRequest.name,
-      signerEmail: nda.accessRequest.email,
-      agreementId: `preview-${previewId}`,
-    });
-
-    // Fixed key per agreement: repeated previews overwrite instead of
-    // accumulating one S3 object per call.
-    const s3Key = `${nda.organizationId}/trust_nda/preview-nda-${nda.id}.pdf`;
-    await this.attachmentsService.uploadBuffer(
-      s3Key,
-      pdfBuffer,
-      'application/pdf',
-    );
-
-    const pdfUrl = await this.ndaPdfService.getSignedUrl(s3Key);
-
-    return {
-      message: 'Preview NDA generated',
-      previewId,
-      s3Key,
-      pdfDownloadUrl: pdfUrl,
     };
   }
 
