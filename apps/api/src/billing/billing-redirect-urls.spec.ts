@@ -11,4 +11,12 @@ describe('validateBillingRedirectUrl', () => {
       validateBillingRedirectUrl('http://app.gideondefender.com/org_1/billing'),
     ).toThrow(BadRequestException);
   });
+
+  it('allows the dev host over https', () => {
+    expect(() =>
+      validateBillingRedirectUrl(
+        'https://opencomp.dev.gideondefender.com/org_1/billing',
+      ),
+    ).not.toThrow();
+  });
 });

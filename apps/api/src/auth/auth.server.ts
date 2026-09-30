@@ -247,6 +247,9 @@ export const auth = betterAuth({
     ...(cookieDomain === '.staging.gideondefender.com' && {
       cookiePrefix: 'staging',
     }),
+    ...(cookieDomain === '.dev.gideondefender.com' && {
+      cookiePrefix: 'dev',
+    }),
     ...(!cookieDomain && {
       cookiePrefix: 'local',
     }),

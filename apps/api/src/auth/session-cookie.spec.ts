@@ -26,6 +26,11 @@ describe('session-cookie', () => {
       expect(getCookieDomain()).toBe('.gideondefender.com');
     });
 
+    it('returns the dev domain for dev hosts', () => {
+      process.env.BASE_URL = 'https://api.dev.gideondefender.com';
+      expect(getCookieDomain()).toBe('.dev.gideondefender.com');
+    });
+
     it('rejects suffix-crafted hosts', () => {
       process.env.BASE_URL = 'https://staging.gideondefender.com.evil.com';
       expect(getCookieDomain()).toBeUndefined();
@@ -86,6 +91,12 @@ describe('session-cookie', () => {
       expect(getSessionCookieName()).toBe('__Secure-staging.session_token');
       process.env.BASE_URL = 'https://api.gideondefender.com';
       expect(getSessionCookieName()).toBe('__Secure-better-auth.session_token');
+    });
+
+    it('prefixes dev names in secure contexts, distinct from production', () => {
+      process.env.BASE_URL = 'https://api.dev.gideondefender.com';
+      process.env.NODE_ENV = 'production';
+      expect(getSessionCookieName()).toBe('__Secure-dev.session_token');
     });
   });
 

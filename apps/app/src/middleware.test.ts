@@ -38,6 +38,18 @@ describe('Middleware', () => {
       );
     });
 
+    it.each(['__Secure-dev.session_token', 'dev.session_token', '__Secure-local.session_token'])(
+      'should allow a session using the %s cookie',
+      async (cookieName) => {
+        const request = await createMockRequest('/org_123/dashboard', {
+          headers: { cookie: `${cookieName}=mock_session_token` },
+        });
+        const response = await proxy(request);
+        expect(response.status).toBe(200);
+        expect(response.headers.get('location')).toBeNull();
+      },
+    );
+
     it('should allow authenticated users to access their org', async () => {
       // Arrange
       setupAuthMocks();

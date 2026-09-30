@@ -6,6 +6,7 @@ import { serverApi } from '@/lib/api-server';
 import { canAccessApp, canAccessAuditorView, parseRolesString } from '@/lib/permissions';
 import { resolveCustomRolePermissions, resolveUserPermissions } from '@/lib/permissions.server';
 import { getSignedUrl } from '@/lib/s3-presigner';
+import { getValidTriggerAccessToken } from '@/lib/trigger-access-token';
 import type { OrganizationFromMe } from '@/types';
 import { auth } from '@/utils/auth';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
@@ -31,7 +32,9 @@ export default async function Layout({
 
   const cookieStore = await cookies();
   const isCollapsed = cookieStore.get('sidebar-collapsed')?.value === 'true';
-  const publicAccessToken = cookieStore.get('publicAccessToken')?.value || undefined;
+  const publicAccessToken = await getValidTriggerAccessToken(
+    cookieStore.get('publicAccessToken')?.value,
+  );
 
   // Get headers once to avoid multiple async calls
   const requestHeaders = await headers();
