@@ -45,6 +45,26 @@ describe('ComplianceRail', () => {
   });
 });
 
+describe('OrgLogo', () => {
+  it('renders the saved logo when it is a safe image URL', async () => {
+    const { OrgLogo } = await import('./OrgLogo');
+    render(<OrgLogo name="Acme Security" logoUrl="https://cdn.example.com/logo.png" />);
+
+    expect(screen.getByRole('img', { name: 'Acme Security logo' })).toHaveAttribute(
+      'src',
+      'https://cdn.example.com/logo.png',
+    );
+  });
+
+  it('falls back to initials for unsafe or missing logo URLs', async () => {
+    const { OrgLogo } = await import('./OrgLogo');
+    render(<OrgLogo name="Acme Security" logoUrl="javascript:alert(1)" />);
+
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+    expect(screen.getByText('AS')).toBeInTheDocument();
+  });
+});
+
 describe('RequestAccessActions', () => {
   it('opens the dialog with a preset purpose from the questionnaire button', async () => {
     const { RequestAccessActions } = await import('./RequestAccessActions');

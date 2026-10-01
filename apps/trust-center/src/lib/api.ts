@@ -40,6 +40,8 @@ export interface PortalProfile {
   domainVerified: boolean;
   friendlyUrl: string | null;
   primaryColor: string | null;
+  logoUrl: string | null;
+  faviconUrl: string | null;
   contactEmail: string | null;
 }
 
@@ -107,6 +109,8 @@ export interface GrantInfo {
   organizationName: string;
   friendlyUrl: string;
   faviconUrl: string | null;
+  logoUrl: string | null;
+  primaryColor: string | null;
   securityQuestionnaireEnabled: boolean;
   expiresAt: string;
   subjectEmail: string;

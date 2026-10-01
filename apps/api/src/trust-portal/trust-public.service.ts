@@ -58,6 +58,7 @@ export class TrustPublicService {
       domain: true,
       domainVerified: true,
       contactEmail: true,
+      favicon: true,
       status: true,
     });
 
@@ -67,8 +68,13 @@ export class TrustPublicService {
 
     const org = await db.organization.findUnique({
       where: { id: trust.organizationId },
-      select: { name: true, primaryColor: true },
+      select: { name: true, primaryColor: true, logo: true },
     });
+
+    const [logoUrl, faviconUrl] = await Promise.all([
+      this.getAssetSignedUrl(org?.logo ?? null),
+      this.getAssetSignedUrl(trust.favicon ?? null),
+    ]);
 
     return {
       organizationName: org?.name ?? '',
@@ -76,6 +82,8 @@ export class TrustPublicService {
       domainVerified: trust.domainVerified,
       friendlyUrl: trust.friendlyUrl,
       primaryColor: org?.primaryColor ?? null,
+      logoUrl,
+      faviconUrl,
       contactEmail: trust.contactEmail,
     };
   }
@@ -242,25 +250,36 @@ export class TrustPublicService {
   async getTrustBrandingByOrganizationId(organizationId: string): Promise<{
     friendlyUrl: string;
     faviconUrl: string | null;
+    logoUrl: string | null;
+    primaryColor: string | null;
     securityQuestionnaireEnabled: boolean;
   }> {
-    const trust = await db.trust.findUnique({
-      where: { organizationId },
-      select: {
-        friendlyUrl: true,
-        favicon: true,
-        securityQuestionnaireEnabled: true,
-      },
-    });
+    const [trust, org] = await Promise.all([
+      db.trust.findUnique({
+        where: { organizationId },
+        select: {
+          friendlyUrl: true,
+          favicon: true,
+          securityQuestionnaireEnabled: true,
+        },
+      }),
+      db.organization.findUnique({
+        where: { id: organizationId },
+        select: { logo: true, primaryColor: true },
+      }),
+    ]);
 
     const friendlyUrl = trust?.friendlyUrl ?? organizationId;
-    const faviconUrl = trust?.favicon
-      ? await this.getFaviconSignedUrl(trust.favicon)
-      : null;
+    const [faviconUrl, logoUrl] = await Promise.all([
+      this.getAssetSignedUrl(trust?.favicon ?? null),
+      this.getAssetSignedUrl(org?.logo ?? null),
+    ]);
 
     return {
       friendlyUrl,
       faviconUrl,
+      logoUrl,
+      primaryColor: org?.primaryColor ?? null,
       securityQuestionnaireEnabled: trust?.securityQuestionnaireEnabled ?? true,
     };
   }
@@ -268,14 +287,24 @@ export class TrustPublicService {
   private async getFaviconSignedUrl(
     faviconKey: string,
   ): Promise<string | null> {
+    return this.getAssetSignedUrl(faviconKey);
+  }
+
+  private async getAssetSignedUrl(
+    assetKey: string | null | undefined,
+  ): Promise<string | null> {
     if (!s3Client || !APP_AWS_ORG_ASSETS_BUCKET) {
+      return null;
+    }
+
+    if (!assetKey) {
       return null;
     }
 
     try {
       const command = new GetObjectCommand({
         Bucket: APP_AWS_ORG_ASSETS_BUCKET,
-        Key: faviconKey,
+        Key: assetKey,
       });
       return await getSignedUrl(s3Client, command, { expiresIn: 86400 }); // 24 hours
     } catch {

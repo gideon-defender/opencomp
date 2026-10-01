@@ -33,13 +33,15 @@
 
 ### AI that handles compliance for you in hours.
 
-OpenComp is the fastest way to get compliant with frameworks like SOC 2, ISO 27001, HIPAA and GDPR. OpenComp automates evidence collection, policy management, and control implementation while keeping you in control of your data and infrastructure.
+OpenComp is the fastest way to get compliant with SOC 2, ISO 27001, HIPAA, GDPR and other regulatory frameworks. OpenComp automates evidence collection, policy management, and control implementation while keeping you in control of your data and infrastructure.
 
 ### Built With
 
-- [Next.js](https://nextjs.org/?ref=gideondefender.com)
 - [NestJS](https://nestjs.com/?ref=gideondefender.com)
+- [Next.js](https://nextjs.org/?ref=gideondefender.com)
+- [PostgreSQL](https://www.postgresql.org/)
 - [Prisma](https://prisma.io/?ref=gideondefender.com)
+- [Redis](https://redis.io/)
 - [Tailwind CSS](https://tailwindcss.com/?ref=gideondefender.com)
 
 ## Contact us

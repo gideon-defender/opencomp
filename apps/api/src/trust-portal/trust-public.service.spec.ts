@@ -98,6 +98,7 @@ describe('TrustPublicService.getPublicProfile', () => {
     mockDb.organization.findUnique.mockResolvedValue({
       name: 'Acme',
       primaryColor: '#065f46',
+      logo: null,
     });
 
     await expect(service.getPublicProfile('acme')).resolves.toEqual({
@@ -106,6 +107,8 @@ describe('TrustPublicService.getPublicProfile', () => {
       domainVerified: false,
       friendlyUrl: 'acme',
       primaryColor: '#065f46',
+      logoUrl: null,
+      faviconUrl: null,
       contactEmail: 'security@acme.com',
     });
   });
@@ -255,12 +258,18 @@ describe('TrustPublicService links, favicon, faqs, branding', () => {
   it('falls back to organizationId branding when no trust row exists', async () => {
     const { service } = makeService();
     mockDb.trust.findUnique.mockResolvedValue(null);
+    mockDb.organization.findUnique.mockResolvedValue({
+      logo: null,
+      primaryColor: '#065f46',
+    });
 
     await expect(
       service.getTrustBrandingByOrganizationId('org_1'),
     ).resolves.toEqual({
       friendlyUrl: 'org_1',
       faviconUrl: null,
+      logoUrl: null,
+      primaryColor: '#065f46',
       securityQuestionnaireEnabled: true,
     });
   });

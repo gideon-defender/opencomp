@@ -362,6 +362,8 @@ describe('TrustPublicService public portal data', () => {
       domainVerified: false,
       friendlyUrl: 'acme',
       primaryColor: '#065f46',
+      logoUrl: null,
+      faviconUrl: null,
       contactEmail: 'security@acme.com',
     });
   });
