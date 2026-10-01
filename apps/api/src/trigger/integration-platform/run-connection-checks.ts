@@ -117,8 +117,6 @@ export const runConnectionChecks = task({
       }
     }
 
-    const apiUrl = process.env.BASE_URL || 'http://localhost:3333';
-
     // Server-delegated checks (AWS + dynamic providers) decrypt credentials and
     // run ON OUR SERVER, so the Trigger-side credential preflight is skipped for
     // them — running it would add redundant failure points (a transient
@@ -131,7 +129,6 @@ export const runConnectionChecks = task({
     if (!runOnServer && manifest) {
       logger.info('Ensuring valid credentials...');
       const credentialsResult = await requestValidCredentials({
-        apiUrl,
         connectionId,
         organizationId,
       });
@@ -147,7 +144,6 @@ export const runConnectionChecks = task({
       handleTokenRefresh = async (): Promise<string | null> => {
         logger.info('Force refreshing OAuth credentials after provider 401...');
         const refreshResult = await requestValidCredentials({
-          apiUrl,
           connectionId,
           organizationId,
           forceRefresh: true,
@@ -209,7 +205,6 @@ export const runConnectionChecks = task({
       let result: RunAllChecksResult;
       if (runOnServer) {
         result = await runChecksOnServer({
-          apiUrl,
           connectionId,
           organizationId,
         });

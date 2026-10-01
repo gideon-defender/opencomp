@@ -1,8 +1,13 @@
 import { getManifest } from '@gideon-defender/integration-platform';
 import { db } from '@db';
 import { logger, schedules } from '@gideon-defender/trigger-local';
-
-const API_BASE_URL = process.env.BASE_URL || 'http://localhost:3333';
+import { SyncController } from '../../integration-platform/controllers/sync.controller';
+import {
+  getTriggerService,
+  logTriggerAuditEntry,
+  triggerHttpErrorMessage,
+  triggerHttpErrorStatus,
+} from '../nest-context';
 
 /**
  * Scheduled task that syncs employees from connected integrations.
@@ -183,7 +188,10 @@ interface SyncResult {
   errors: number;
 }
 
-async function syncProvider(params: SyncProviderParams): Promise<SyncResult> {
+/** Route to the provider's sync handler. Exported for unit tests. */
+export async function syncProvider(
+  params: SyncProviderParams,
+): Promise<SyncResult> {
   const { providerSlug, connectionId, organizationId } = params;
 
   // Route to appropriate sync endpoint based on provider
@@ -214,36 +222,28 @@ async function syncGoogleWorkspace({
   connectionId: string;
   organizationId: string;
 }): Promise<SyncResult> {
-  const url = new URL(
-    `${API_BASE_URL}/v1/integrations/sync/google-workspace/employees`,
-  );
-  url.searchParams.set('connectionId', connectionId);
-
-  const response = await fetch(url.toString(), {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-service-token': process.env.SERVICE_TOKEN_TRIGGER!,
-      'x-organization-id': organizationId,
-    },
-  });
-
-  if (!response.ok) {
-    const errorBody = await response.text();
+  // In-process through the Nest container (workers share the API process) —
+  // same handler as the HTTP endpoint, no socket, no service token.
+  try {
+    const controller = getTriggerService(SyncController);
+    const data = await controller.syncGoogleWorkspaceEmployees(
+      organizationId,
+      connectionId,
+    );
+    // In-process calls skip the global AuditLogInterceptor — write the row
+    // it would have written so scheduled syncs stay in the audit trail.
+    await logTriggerAuditEntry({
+      organizationId,
+      resource: 'integration',
+      method: 'POST',
+      path: `/v1/integrations/sync/google-workspace/employees?connectionId=${connectionId}`,
+    });
+    return toSyncResult(data);
+  } catch (error) {
     throw new Error(
-      `Google Workspace sync failed: ${response.status} - ${errorBody}`,
+      `Google Workspace sync failed: ${triggerHttpErrorStatus(error)} - ${triggerHttpErrorMessage(error)}`,
     );
   }
-
-  const data = await response.json();
-  return {
-    success: data.success,
-    imported: data.imported || 0,
-    reactivated: data.reactivated || 0,
-    deactivated: data.deactivated || 0,
-    skipped: data.skipped || 0,
-    errors: data.errors || 0,
-  };
 }
 
 async function syncRippling({
@@ -253,34 +253,28 @@ async function syncRippling({
   connectionId: string;
   organizationId: string;
 }): Promise<SyncResult> {
-  const url = new URL(
-    `${API_BASE_URL}/v1/integrations/sync/rippling/employees`,
-  );
-  url.searchParams.set('connectionId', connectionId);
-
-  const response = await fetch(url.toString(), {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-service-token': process.env.SERVICE_TOKEN_TRIGGER!,
-      'x-organization-id': organizationId,
-    },
-  });
-
-  if (!response.ok) {
-    const errorBody = await response.text();
-    throw new Error(`Rippling sync failed: ${response.status} - ${errorBody}`);
+  // In-process through the Nest container (workers share the API process) —
+  // same handler as the HTTP endpoint, no socket, no service token.
+  try {
+    const controller = getTriggerService(SyncController);
+    const data = await controller.syncRipplingEmployees(
+      organizationId,
+      connectionId,
+    );
+    // In-process calls skip the global AuditLogInterceptor — write the row
+    // it would have written so scheduled syncs stay in the audit trail.
+    await logTriggerAuditEntry({
+      organizationId,
+      resource: 'integration',
+      method: 'POST',
+      path: `/v1/integrations/sync/rippling/employees?connectionId=${connectionId}`,
+    });
+    return toSyncResult(data);
+  } catch (error) {
+    throw new Error(
+      `Rippling sync failed: ${triggerHttpErrorStatus(error)} - ${triggerHttpErrorMessage(error)}`,
+    );
   }
-
-  const data = await response.json();
-  return {
-    success: data.success,
-    imported: data.imported || 0,
-    reactivated: data.reactivated || 0,
-    deactivated: data.deactivated || 0,
-    skipped: data.skipped || 0,
-    errors: data.errors || 0,
-  };
 }
 
 async function syncJumpCloud({
@@ -290,34 +284,28 @@ async function syncJumpCloud({
   connectionId: string;
   organizationId: string;
 }): Promise<SyncResult> {
-  const url = new URL(
-    `${API_BASE_URL}/v1/integrations/sync/jumpcloud/employees`,
-  );
-  url.searchParams.set('connectionId', connectionId);
-
-  const response = await fetch(url.toString(), {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-service-token': process.env.SERVICE_TOKEN_TRIGGER!,
-      'x-organization-id': organizationId,
-    },
-  });
-
-  if (!response.ok) {
-    const errorBody = await response.text();
-    throw new Error(`JumpCloud sync failed: ${response.status} - ${errorBody}`);
+  // In-process through the Nest container (workers share the API process) —
+  // same handler as the HTTP endpoint, no socket, no service token.
+  try {
+    const controller = getTriggerService(SyncController);
+    const data = await controller.syncJumpCloudEmployees(
+      organizationId,
+      connectionId,
+    );
+    // In-process calls skip the global AuditLogInterceptor — write the row
+    // it would have written so scheduled syncs stay in the audit trail.
+    await logTriggerAuditEntry({
+      organizationId,
+      resource: 'integration',
+      method: 'POST',
+      path: `/v1/integrations/sync/jumpcloud/employees?connectionId=${connectionId}`,
+    });
+    return toSyncResult(data);
+  } catch (error) {
+    throw new Error(
+      `JumpCloud sync failed: ${triggerHttpErrorStatus(error)} - ${triggerHttpErrorMessage(error)}`,
+    );
   }
-
-  const data = await response.json();
-  return {
-    success: data.success,
-    imported: data.imported || 0,
-    reactivated: data.reactivated || 0,
-    deactivated: data.deactivated || 0,
-    skipped: data.skipped || 0,
-    errors: data.errors || 0,
-  };
 }
 
 async function syncDynamicProvider({
@@ -329,28 +317,44 @@ async function syncDynamicProvider({
   connectionId: string;
   organizationId: string;
 }): Promise<SyncResult> {
-  const url = new URL(
-    `${API_BASE_URL}/v1/integrations/sync/dynamic/${providerSlug}/employees`,
-  );
-  url.searchParams.set('connectionId', connectionId);
-
-  const response = await fetch(url.toString(), {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-service-token': process.env.SERVICE_TOKEN_TRIGGER!,
-      'x-organization-id': organizationId,
-    },
-  });
-
-  if (!response.ok) {
-    const errorBody = await response.text();
+  // In-process through the Nest container (workers share the API process) —
+  // same handler as the HTTP endpoint, no socket, no service token.
+  try {
+    const controller = getTriggerService(SyncController);
+    const data = await controller.syncDynamicProviderEmployees(
+      organizationId,
+      providerSlug,
+      connectionId,
+    );
+    // In-process calls skip the global AuditLogInterceptor — write the row
+    // it would have written so scheduled syncs stay in the audit trail.
+    await logTriggerAuditEntry({
+      organizationId,
+      resource: 'integration',
+      method: 'POST',
+      path: `/v1/integrations/sync/dynamic/${providerSlug}/employees?connectionId=${connectionId}`,
+    });
+    return toSyncResult(data);
+  } catch (error) {
     throw new Error(
-      `Dynamic sync failed for ${providerSlug}: ${response.status} - ${errorBody}`,
+      `Dynamic sync failed for ${providerSlug}: ${triggerHttpErrorStatus(error)} - ${triggerHttpErrorMessage(error)}`,
     );
   }
+}
 
-  const data = await response.json();
+/**
+ * The sync handlers return a superset of the schedule's result shape
+ * (`totalFound`, `syncRunId`, ...). Normalize to the fields the schedule
+ * reports on, mirroring the old HTTP response mapping.
+ */
+function toSyncResult(data: {
+  success: boolean;
+  imported?: number;
+  reactivated?: number;
+  deactivated?: number;
+  skipped?: number;
+  errors?: number;
+}): SyncResult {
   return {
     success: data.success,
     imported: data.imported || 0,

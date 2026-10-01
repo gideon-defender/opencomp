@@ -1,62 +1,84 @@
+import { HttpException, HttpStatus } from '@nestjs/common';
+import { getTriggerService, logTriggerAuditEntry } from '../nest-context';
 import { runChecksOnServer } from './run-checks-on-server';
 
+jest.mock('../nest-context', () => ({
+  getTriggerService: jest.fn(),
+  logTriggerAuditEntry: jest.fn(),
+  triggerHttpErrorMessage:
+    jest.requireActual('../nest-context').triggerHttpErrorMessage,
+}));
+
+const getTriggerServiceMock = getTriggerService as jest.Mock;
+const logTriggerAuditEntryMock = logTriggerAuditEntry as jest.Mock;
+
 describe('runChecksOnServer', () => {
-  const ORIGINAL_TOKEN = process.env.SERVICE_TOKEN_TRIGGER;
   const params = {
-    apiUrl: 'http://api',
     connectionId: 'conn_1',
     organizationId: 'org_1',
   };
 
+  const runChecks = jest.fn();
+
   beforeEach(() => {
-    process.env.SERVICE_TOKEN_TRIGGER = 'svc-token';
-    jest.restoreAllMocks();
+    jest.useRealTimers();
+    runChecks.mockReset();
+    getTriggerServiceMock.mockReturnValue({ runChecks });
   });
 
-  afterAll(() => {
-    if (ORIGINAL_TOKEN === undefined) delete process.env.SERVICE_TOKEN_TRIGGER;
-    else process.env.SERVICE_TOKEN_TRIGGER = ORIGINAL_TOKEN;
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
-  it('POSTs to the internal endpoint with service token + org header and returns the result', async () => {
+  it('delegates to the check-runner service in-process and returns the result', async () => {
     const runResult = { results: [{}], totalFindings: 1, totalPassing: 2 };
-    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
-      ok: true,
-      json: async () => runResult,
-    } as unknown as Response);
+    runChecks.mockResolvedValue(runResult);
 
     const result = await runChecksOnServer({
       ...params,
       checkId: 'aws-s3-public-access',
     });
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      'http://api/v1/integrations/internal/run-connection-checks/conn_1',
-      expect.objectContaining({
-        method: 'POST',
-        // An abort signal is wired up so a hung connection times out and the
-        // task can retry instead of blocking until maxDuration.
-        signal: expect.any(AbortSignal),
-        headers: expect.objectContaining({
-          'x-service-token': 'svc-token',
-          'x-organization-id': 'org_1',
-        }),
-        body: JSON.stringify({ checkId: 'aws-s3-public-access' }),
-      }),
-    );
+    expect(getTriggerServiceMock).toHaveBeenCalledTimes(1);
+    expect(runChecks).toHaveBeenCalledWith({
+      connectionId: 'conn_1',
+      organizationId: 'org_1',
+      checkId: 'aws-s3-public-access',
+    });
     expect(result).toEqual(runResult);
+    expect(logTriggerAuditEntryMock).toHaveBeenCalledWith({
+      organizationId: 'org_1',
+      resource: 'integration',
+      method: 'POST',
+      path: '/v1/integrations/internal/run-connection-checks/conn_1',
+    });
   });
 
-  it('throws a timeout error when the request is aborted (hung connection)', async () => {
-    jest.useFakeTimers();
-    jest.spyOn(global, 'fetch').mockImplementation(
-      (_url, opts) =>
-        new Promise((_resolve, reject) => {
-          (opts as RequestInit).signal?.addEventListener('abort', () =>
-            reject(new Error('aborted')),
-          );
-        }),
+  it('omits checkId when running all checks and returns the result', async () => {
+    runChecks.mockResolvedValue({ results: [] });
+
+    const result = await runChecksOnServer(params);
+
+    expect(runChecks).toHaveBeenCalledWith({
+      connectionId: 'conn_1',
+      organizationId: 'org_1',
+      checkId: undefined,
+    });
+    expect(result).toEqual({ results: [] });
+  });
+
+  it('throws with the service message on failure', async () => {
+    runChecks.mockRejectedValue(
+      new HttpException('boom', HttpStatus.INTERNAL_SERVER_ERROR),
     );
+
+    await expect(runChecksOnServer(params)).rejects.toThrow('boom');
+    expect(logTriggerAuditEntryMock).not.toHaveBeenCalled();
+  });
+
+  it('throws a timeout error when the run hangs', async () => {
+    jest.useFakeTimers();
+    runChecks.mockReturnValue(new Promise(() => {}));
 
     const promise = runChecksOnServer(params);
     // Surface the rejection without an unhandled-rejection warning.
@@ -67,34 +89,13 @@ describe('runChecksOnServer', () => {
     jest.useRealTimers();
   });
 
-  it('sends an empty body when no checkId is given (run all)', async () => {
-    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
-      ok: true,
-      json: async () => ({}),
-    } as unknown as Response);
+  it('throws when the Nest context is not initialized', async () => {
+    getTriggerServiceMock.mockImplementation(() => {
+      throw new Error('Trigger Nest context is not initialized');
+    });
 
-    await runChecksOnServer(params);
-
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.objectContaining({ body: JSON.stringify({}) }),
-    );
-  });
-
-  it('throws with the server message on a non-2xx response', async () => {
-    jest.spyOn(global, 'fetch').mockResolvedValue({
-      ok: false,
-      status: 500,
-      json: async () => ({ message: 'boom' }),
-    } as unknown as Response);
-
-    await expect(runChecksOnServer(params)).rejects.toThrow('boom');
-  });
-
-  it('throws when SERVICE_TOKEN_TRIGGER is not configured', async () => {
-    delete process.env.SERVICE_TOKEN_TRIGGER;
     await expect(runChecksOnServer(params)).rejects.toThrow(
-      'SERVICE_TOKEN_TRIGGER is not configured',
+      'Trigger Nest context is not initialized',
     );
   });
 });

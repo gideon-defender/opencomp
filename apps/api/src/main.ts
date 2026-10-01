@@ -9,6 +9,7 @@ import helmet from 'helmet';
 import path from 'path';
 import { AppModule } from './app.module';
 import { initLocalTriggerRuntime } from './trigger/register-local-triggers';
+import { setTriggerNestContext } from './trigger/nest-context';
 import { initTracing, shutdownTracing } from './inference-tracing';
 import {
   applyPublicOpenApiMetadata,
@@ -71,6 +72,10 @@ async function bootstrap(): Promise<void> {
   app = await NestFactory.create(AppModule, {
     bodyParser: false,
   });
+
+  // Let in-process trigger workers resolve controllers/services directly
+  // instead of HTTP-looping back into this server.
+  setTriggerNestContext(app);
 
   // Enable path-aware CORS with origin validation.
   // Comp extension origins are allowed only on explicitly supported routes.

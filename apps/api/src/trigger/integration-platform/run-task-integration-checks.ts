@@ -113,8 +113,6 @@ export const runTaskIntegrationChecks = task({
       return { success: false, error: 'Connection not found or inactive' };
     }
 
-    const apiUrl = process.env.BASE_URL || 'http://localhost:3333';
-
     // Server-delegated checks (AWS + dynamic providers) decrypt credentials and
     // run ON OUR SERVER, so the Trigger-side credential/session preflight is
     // skipped for them — running it would add redundant failure points (a
@@ -128,7 +126,6 @@ export const runTaskIntegrationChecks = task({
     if (!runOnServer && manifest) {
       logger.info('Ensuring valid credentials (refreshing if needed)...');
       const credentialsResult = await requestValidCredentials({
-        apiUrl,
         connectionId,
         organizationId,
       });
@@ -157,7 +154,6 @@ export const runTaskIntegrationChecks = task({
       handleTokenRefresh = async (): Promise<string | null> => {
         logger.info('Force refreshing OAuth credentials after provider 401...');
         const refreshResult = await requestValidCredentials({
-          apiUrl,
           connectionId,
           organizationId,
           forceRefresh: true,
@@ -246,7 +242,6 @@ export const runTaskIntegrationChecks = task({
         try {
           if (runOnServer) {
             result = await runChecksOnServer({
-              apiUrl,
               connectionId,
               organizationId,
               checkId,

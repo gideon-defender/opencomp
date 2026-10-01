@@ -1,11 +1,17 @@
 import { logger, tags, task } from '@gideon-defender/trigger-local';
-
-const API_BASE_URL = process.env.BASE_URL || 'http://localhost:3333';
+import { SyncController } from '../../integration-platform/controllers/sync.controller';
+import {
+  getTriggerService,
+  logTriggerAuditEntry,
+  triggerHttpErrorMessage,
+  triggerHttpErrorStatus,
+} from '../nest-context';
 
 /**
  * Local trigger task that runs device sync for a single org+connection.
- * Calls the existing API endpoint which handles credential refresh,
- * DSL interpretation, and device processing.
+ * Calls the sync handler in-process through the Nest container (workers share
+ * the API process) — same handler as the HTTP endpoint, no socket, no
+ * service token.
  *
  * Triggered by the daily integration-checks-schedule orchestrator.
  */
@@ -27,41 +33,31 @@ export const runDeviceSync = task({
     });
 
     try {
-      const url = new URL(
-        `${API_BASE_URL}/v1/integrations/sync/dynamic/${providerSlug}/devices`,
+      const controller = getTriggerService(SyncController);
+      const data = await controller.syncDynamicProviderDevices(
+        organizationId,
+        providerSlug,
+        connectionId,
       );
-      url.searchParams.set('connectionId', connectionId);
 
-      const response = await fetch(url.toString(), {
+      // In-process calls skip the global AuditLogInterceptor — write the row
+      // it would have written so scheduled syncs stay in the audit trail.
+      await logTriggerAuditEntry({
+        organizationId,
+        resource: 'integration',
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-service-token': process.env.SERVICE_TOKEN_TRIGGER!,
-          'x-organization-id': organizationId,
-        },
+        path: `/v1/integrations/sync/dynamic/${providerSlug}/devices?connectionId=${connectionId}`,
       });
 
-      if (!response.ok) {
-        const errorBody = await response.text();
-        logger.error(
-          `Device sync API call failed: ${response.status} - ${errorBody}`,
-        );
-
-        return {
-          success: false,
-          error: `Device sync failed: ${response.status} - ${errorBody}`,
-        };
-      }
-
-      const result = (await response.json()) as {
-        success: boolean;
-        totalFound: number;
-        imported: number;
-        updated: number;
-        removed: number;
-        skipped: number;
-        errors: number;
-        syncRunId?: string;
+      const result = {
+        success: data.success,
+        totalFound: data.totalFound,
+        imported: data.imported,
+        updated: data.updated,
+        removed: data.removed,
+        skipped: data.skipped,
+        errors: data.errors,
+        syncRunId: data.syncRunId,
       };
 
       logger.info(`Device sync completed for "${providerSlug}"`, {
@@ -74,8 +70,7 @@ export const runDeviceSync = task({
 
       return result;
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = `Device sync failed: ${triggerHttpErrorStatus(error)} - ${triggerHttpErrorMessage(error)}`;
 
       logger.error(`Device sync failed for "${providerSlug}"`, {
         error: errorMessage,

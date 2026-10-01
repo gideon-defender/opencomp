@@ -23,14 +23,8 @@ export const refreshExpiringTokensSchedule = schedules.task({
       lastRun: payload.lastTimestamp,
     });
 
-    const apiUrl = process.env.API_URL;
-    if (!apiUrl) {
-      logger.error(
-        'API_URL environment variable is not set — cannot refresh tokens',
-      );
-      return { refreshed: 0, failed: 0, skipped: 0 };
-    }
-
+    // Credentials resolve in-process through the Nest container (workers share
+    // the API process) — no API URL needed.
     const now = new Date();
     const lookaheadMs = REFRESH_LOOKAHEAD_HOURS * 60 * 60 * 1000;
     const expiryThreshold = new Date(now.getTime() + lookaheadMs);
@@ -82,7 +76,6 @@ export const refreshExpiringTokensSchedule = schedules.task({
       });
 
       const result = await requestValidCredentials({
-        apiUrl,
         connectionId: connection.id,
         organizationId: connection.organizationId,
         forceRefresh: true,
