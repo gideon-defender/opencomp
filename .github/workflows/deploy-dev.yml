@@ -1,0 +1,228 @@
+name: Deploy to Dev
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: false
+
+env:
+  IMAGE_TAG: dev-${{ github.sha }}-${{ github.run_id }}
+
+jobs:
+  authorize:
+    name: Check administrator access
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require repository administrator
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Use triggering_actor so a non-admin cannot rerun an admin's workflow.
+            const actor = process.env.GITHUB_TRIGGERING_ACTOR || context.actor;
+            const { data } = await github.rest.repos.getCollaboratorPermissionLevel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              username: actor,
+            });
+
+            if (data.permission !== 'admin') {
+              core.setFailed(
+                `Only repository administrators may run this workflow (actor: ${actor}, permission: ${data.permission}).`,
+              );
+            }
+
+  migrate:
+    name: Apply dev database migrations
+    needs: authorize
+    if: needs.authorize.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - uses: ./.github/actions/pnpm-install
+
+      - name: Apply database migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_DEV }}
+        working-directory: packages/db
+        run: pnpm exec prisma migrate deploy
+
+  deploy:
+    name: Build and deploy main to dev
+    needs: [authorize, migrate]
+    if: needs.authorize.result == 'success' && needs.migrate.result == 'success'
+    runs-on: ubuntu-latest
+    environment:
+      name: dev
+    env:
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}
+      ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-session-name: github-deploy-dev-${{ github.run_id }}
+
+      - name: Log in to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile.multistage
+          target: production
+          platforms: linux/arm64
+          push: true
+          tags: ${{ env.ECR_REGISTRY }}/gideon-dev-opencomp-api:${{ env.IMAGE_TAG }}
+
+      - name: Build and push app image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          target: app
+          platforms: linux/arm64
+          push: true
+          tags: ${{ env.ECR_REGISTRY }}/gideon-dev-opencomp-app:${{ env.IMAGE_TAG }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=https://opencomp-api.dev.gideondefender.com
+            NEXT_PUBLIC_BETTER_AUTH_URL=https://opencomp-api.dev.gideondefender.com
+            NEXT_PUBLIC_PORTAL_URL=https://portal.dev.gideondefender.com
+            NEXT_PUBLIC_IS_DUB_ENABLED=false
+
+      - name: Build and push trust-center image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          target: trust-center
+          platforms: linux/arm64
+          push: true
+          tags: ${{ env.ECR_REGISTRY }}/gideon-dev-opencomp-trust-center:${{ env.IMAGE_TAG }}
+          build-args: |
+            NEXT_PUBLIC_TRUST_API_URL=https://opencomp-api.dev.gideondefender.com
+            NEXT_PUBLIC_API_URL=https://opencomp-api.dev.gideondefender.com
+
+      - name: Build and push migrator image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          target: migrator
+          platforms: linux/arm64
+          push: true
+          tags: ${{ env.ECR_REGISTRY }}/gideon-dev-opencomp-migrator:${{ env.IMAGE_TAG }}
+
+      - name: Register task definitions and update ECS services
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          register_task_definition() {
+            local family="$1"
+            local image="$2"
+            local task_definition_file
+            local registered_arn
+
+            task_definition_file="$(mktemp)"
+            aws ecs describe-task-definition \
+              --region "$AWS_REGION" \
+              --task-definition "$family" \
+              --query taskDefinition \
+              --output json \
+              | jq --arg image "$image" '
+                  del(.taskDefinitionArn, .revision, .status, .requiresAttributes,
+                      .compatibilities, .registeredAt, .registeredBy)
+                  | .containerDefinitions |= map(.image = $image)
+                ' > "$task_definition_file"
+
+            registered_arn="$(aws ecs register-task-definition \
+              --region "$AWS_REGION" \
+              --cli-input-json "file://$task_definition_file" \
+              --query 'taskDefinition.taskDefinitionArn' \
+              --output text)"
+            rm -f "$task_definition_file"
+            printf '%s\n' "$registered_arn"
+          }
+
+          api_image="$ECR_REGISTRY/gideon-dev-opencomp-api:$IMAGE_TAG"
+          app_image="$ECR_REGISTRY/gideon-dev-opencomp-app:$IMAGE_TAG"
+          trust_image="$ECR_REGISTRY/gideon-dev-opencomp-trust-center:$IMAGE_TAG"
+          migrator_image="$ECR_REGISTRY/gideon-dev-opencomp-migrator:$IMAGE_TAG"
+
+          api_task_definition="$(register_task_definition gideon-dev-opencomp-api "$api_image")"
+          app_task_definition="$(register_task_definition gideon-dev-opencomp-app "$app_image")"
+          trust_task_definition="$(register_task_definition gideon-dev-opencomp-trust-center "$trust_image")"
+          email_task_definition="$(register_task_definition gideon-dev-opencomp-email-worker "$api_image")"
+          register_task_definition gideon-dev-opencomp-migrator "$migrator_image" >/dev/null
+
+          for service_definition in \
+            "gideon-dev-opencomp-api|$api_task_definition" \
+            "gideon-dev-opencomp-app|$app_task_definition" \
+            "gideon-dev-opencomp-trust-center|$trust_task_definition" \
+            "gideon-dev-opencomp-email-worker|$email_task_definition"; do
+            IFS='|' read -r service task_definition <<< "$service_definition"
+            aws ecs update-service \
+              --region "$AWS_REGION" \
+              --cluster "$ECS_CLUSTER" \
+              --service "$service" \
+              --task-definition "$task_definition" \
+              --force-new-deployment \
+              >/dev/null
+          done
+
+      - name: Wait for ECS services
+        shell: bash
+        run: |
+          set -euo pipefail
+          for service in \
+            gideon-dev-opencomp-api \
+            gideon-dev-opencomp-app \
+            gideon-dev-opencomp-trust-center \
+            gideon-dev-opencomp-email-worker; do
+            aws ecs wait services-stable \
+              --region "$AWS_REGION" \
+              --cluster "$ECS_CLUSTER" \
+              --services "$service"
+          done
+
+      - name: Print deployment summary
+        run: |
+          aws ecs describe-services \
+            --region "$AWS_REGION" \
+            --cluster "$ECS_CLUSTER" \
+            --services \
+              gideon-dev-opencomp-api \
+              gideon-dev-opencomp-app \
+              gideon-dev-opencomp-trust-center \
+              gideon-dev-opencomp-email-worker \
+            --query 'services[].{service:serviceName,taskDefinition:taskDefinition,desired:desiredCount,running:runningCount}' \
+            --output table

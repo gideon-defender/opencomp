@@ -38,6 +38,7 @@ OpenComp is the fastest way to get compliant with frameworks like SOC 2, ISO 270
 ### Built With
 
 - [Next.js](https://nextjs.org/?ref=gideondefender.com)
+- [NestJS](https://nestjs.com/?ref=gideondefender.com)
 - [Prisma](https://prisma.io/?ref=gideondefender.com)
 - [Tailwind CSS](https://tailwindcss.com/?ref=gideondefender.com)
 
@@ -47,7 +48,7 @@ Contact our team at info@gideondefender.com to learn more about how we can help 
 
 ## Stay Up-to-Date
 
-Get access to the cloud hosted version of [OpenComp](https://www.gideondefender.com).
+Get access to the cloud hosted version of [OpenComp](https://www.gideondefender.com/en/products/open-source/opencomp/).
 
 ## Getting Started
 
@@ -362,6 +363,8 @@ Steps to deploy OpenComp on Docker are coming soon.
 
 Gideon hosted production and dev environments run on AWS
 
+To deploy the `main` branch to dev, run the [Deploy to Dev workflow](.github/workflows/deploy-dev.yml) from the repository's **Actions** tab. The workflow is restricted to repository administrators, applies database migrations, builds and pushes the ARM64 API, app, trust-center, and migrator images, and rolls the ECS services. It uses the `dev` environment secrets `AWS_ACCOUNT_ID`, `AWS_REGION`, `ECS_CLUSTER`, and `AWS_ROLE_TO_ASSUME`; the employee portal is not deployed by this workflow.
+
 Dev domains (`*.dev.gideondefender.com`): `opencomp.dev` → app, `trust.dev/{friendlyUrl}` → trust-center, `api.dev` → API.
 
 Key env/config for a dev deploy:
@@ -375,7 +378,7 @@ TRUST_APP_URL=https://trust.dev.gideondefender.com  # build-time for trust-cente
 LOCAL_TRIGGER_DATABASE_URL=postgresql://...?options=-c%20search_path%3Dopencomp_trigger%2Cpublic
 ```
 
-Notes: session cookies are isolated per env (`dev` prefix / `.dev.gideondefender.com` domain, mirroring the staging carve-out); `opencomp.dev.gideondefender.com` must be in the billing-redirect allowlist; leave `TRUST_PORTAL_PROJECT_ID` / Vercel vars unset in dev (custom domains stay on the shared-domain path until a separate dev Vercel project exists); run `prisma migrate deploy` (includes the `opencomp_trigger` schema) as a CI deploy job before `aws ecs update-service --force-new-deployment` per service.
+Notes: session cookies are isolated per env (`dev` prefix / `.dev.gideondefender.com` domain, mirroring the staging carve-out); `opencomp.dev.gideondefender.com` must be in the billing-redirect allowlist; leave `TRUST_PORTAL_PROJECT_ID` / Vercel vars unset in dev (custom domains stay on the shared-domain path until a separate dev Vercel project exists); the deploy workflow runs `prisma migrate deploy` (including the `opencomp_trigger` schema) before replacing ECS tasks.
 
 ## 📦 Package Publishing
 
