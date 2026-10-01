@@ -1,5 +1,5 @@
 import type { PortalProfile } from '@/lib/api';
-import { BookOpenCheck, FileCheck } from 'lucide-react';
+import { BookOpenCheck, ExternalLink, FileCheck } from 'lucide-react';
 import { RequestAccessActions } from './RequestAccessActions';
 
 function OrgTile({ name }: { name: string }) {
@@ -79,8 +79,8 @@ export function TrustHero({
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 transition-colors hover:text-ink sm:ml-auto"
         >
-          <span aria-hidden="true">↗</span>
           OpenComp by Gideon Defender
+          <ExternalLink size={15} aria-hidden="true" />
         </a>
       </div>
     </section>
