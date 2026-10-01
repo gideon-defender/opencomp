@@ -2,8 +2,7 @@
 # "pnpm install" composite action                                                  #
 #--------------------------------------------------------------------------------------#
 # Cache:                                                                               #
-#   - pnpm store                                                                       #
-#   - node_modules directory                                                           #
+#   - pnpm store (provided by setup-node)                                               #
 ########################################################################################
 
 name: 'pnpm install'
@@ -27,14 +26,6 @@ runs:
       with:
         node-version: ${{ inputs.node_version }}
         cache: pnpm
-
-    # Cache node_modules
-    - name: Restore node_modules
-      id: nm-cache
-      uses: actions/cache@v5
-      with:
-        path: '**/node_modules/'
-        key: ${{ runner.os }}-pnpm-nm-cache-${{ hashFiles('pnpm-lock.yaml', 'package.json') }}
 
     - name: Install dependencies
       shell: bash
