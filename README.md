@@ -379,6 +379,8 @@ TRUST_APP_URL=https://trust.dev.gideondefender.com  # build-time for trust-cente
 LOCAL_TRIGGER_DATABASE_URL=postgresql://...?options=-c%20search_path%3Dopencomp_trigger%2Cpublic
 ```
 
+We are not baking secrets into the image!
+
 Notes: session cookies are isolated per env (`dev` prefix / `.dev.gideondefender.com` domain, mirroring the staging carve-out); `opencomp.dev.gideondefender.com` must be in the billing-redirect allowlist; leave `TRUST_PORTAL_PROJECT_ID` / Vercel vars unset in dev (custom domains stay on the shared-domain path until a separate dev Vercel project exists); the deploy workflow runs `prisma migrate deploy` (including the `opencomp_trigger` schema) before replacing ECS tasks.
 
 ## 📦 Package Publishing

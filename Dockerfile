@@ -10,6 +10,12 @@ FROM node:22-slim AS deps
 
 WORKDIR /app
 
+# Prisma uses the system OpenSSL library to select its query engine. The slim
+# Node image does not include OpenSSL, so install it before any workspace build
+# runs `prisma generate`.
+RUN apt-get update && apt-get install -y --no-install-recommends openssl \
+  && apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # pnpm binary for all downstream stages inheriting from deps. Fetch flags
 # tolerate flaky registry access (dropped TLS mid-download).
 RUN npm install -g pnpm@10.15.0 --fetch-retries=8 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
@@ -37,6 +43,10 @@ RUN node -e "const fs=require('fs'),path=require('path');const nm='/app/node_mod
 FROM node:22-slim AS migrator
 
 WORKDIR /app
+
+# The migrator generates Prisma Client during the image build as well.
+RUN apt-get update && apt-get install -y --no-install-recommends openssl \
+  && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # pnpm for the one-off tool install below. .npmrc carries fetch retries.
 RUN npm install -g pnpm@10.15.0 --fetch-retries=8 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
