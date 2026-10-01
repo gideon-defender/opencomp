@@ -50,7 +50,10 @@ vi.mock('./components/AppShellWrapper', () => ({
 vi.mock('next/dynamic', () => ({
   default: () => () => null,
 }));
-vi.mock('@aws-sdk/client-s3', () => ({ GetObjectCommand: vi.fn() }));
+vi.mock('@aws-sdk/client-s3', () => ({
+  GetObjectCommand: vi.fn(),
+  S3Client: vi.fn(() => ({ send: vi.fn() })),
+}));
 vi.mock('@aws-sdk/s3-request-presigner', () => ({ getSignedUrl: vi.fn() }));
 
 import { createMockSession, mockAuthApi, setupAuthMocks } from '@/test-utils/mocks/auth';

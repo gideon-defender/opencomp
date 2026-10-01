@@ -383,6 +383,15 @@ LOCAL_TRIGGER_DATABASE_URL=postgresql://...?options=-c%20search_path%3Dopencomp_
 
 We are not baking secrets into the image!
 
+AWS services used to host OpenComp:
+- Bedrock
+- ECS Fargate
+- ElastiCache
+- RDS Postgres with RLS enabled
+- S3
+- SES
+- SQS
+
 Notes: session cookies are isolated per env (`dev` prefix / `.dev.gideondefender.com` domain, mirroring the staging carve-out); `opencomp.dev.gideondefender.com` must be in the billing-redirect allowlist; leave `TRUST_PORTAL_PROJECT_ID` / Vercel vars unset in dev (custom domains stay on the shared-domain path until a separate dev Vercel project exists); the deploy workflow runs `prisma migrate deploy` (including the `opencomp_trigger` schema) before replacing ECS tasks.
 
 ## 📦 Package Publishing

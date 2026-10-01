@@ -108,18 +108,10 @@ export function BrandSettings({
   const debouncedPrimaryColor = useDebounce(primaryColorValue, 800);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      await Promise.resolve();
-      if (cancelled) return;
-      const normalizedPrimaryColor = normalizePrimaryColor(primaryColor);
-      form.reset({ primaryColor: normalizedPrimaryColor ?? undefined });
-      setPrimaryColorValue(normalizedPrimaryColor ?? '');
-      lastSaved.current.primaryColor = normalizedPrimaryColor ?? null;
-    })();
-    return () => {
-      cancelled = true;
-    };
+    const normalizedPrimaryColor = normalizePrimaryColor(primaryColor);
+    form.reset({ primaryColor: normalizedPrimaryColor ?? undefined });
+    setPrimaryColorValue(normalizedPrimaryColor ?? '');
+    lastSaved.current.primaryColor = normalizedPrimaryColor ?? null;
   }, [form, primaryColor]);
 
   useEffect(() => {

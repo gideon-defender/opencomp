@@ -11,26 +11,26 @@ import { vi } from 'vitest';
  */
 const { useLocale } = vi.hoisted(() => ({ useLocale: vi.fn(() => 'en') }));
 
+vi.mock('next-intl', () => ({
+  NextIntlClientProvider: ({ children }: { children: React.ReactNode }) => children,
+  useLocale,
+  useMessages: () => ({}),
+  useTranslations: () => (key: string) => key,
+  useFormatter: () => ({
+    dateTime: (date: Date) => date.toISOString(),
+    date: (date: Date) => date.toISOString(),
+    number: (value: number) => String(value),
+    list: (items: string[]) => items.join(', '),
+  }),
+}));
+
+vi.mock('next-intl/server', () => ({
+  getTranslations: async () => (key: string) => key,
+  getLocale: async () => 'en',
+  getMessages: async () => ({}),
+  getTimeZone: async () => 'UTC',
+}));
+
 export function mockNextIntl() {
-  vi.mock('next-intl', () => ({
-    NextIntlClientProvider: ({ children }: { children: React.ReactNode }) => children,
-    useLocale,
-    useMessages: () => ({}),
-    useTranslations: () => (key: string) => key,
-    useFormatter: () => ({
-      dateTime: (date: Date) => date.toISOString(),
-      date: (date: Date) => date.toISOString(),
-      number: (value: number) => String(value),
-      list: (items: string[]) => items.join(', '),
-    }),
-  }));
-
-  vi.mock('next-intl/server', () => ({
-    getTranslations: async () => (key: string) => key,
-    getLocale: async () => 'en',
-    getMessages: async () => ({}),
-    getTimeZone: async () => 'UTC',
-  }));
-
   return { useLocale };
 }
