@@ -5,6 +5,13 @@ FROM node:22-slim AS deps
 
 WORKDIR /app
 
+# OpenSSL: Prisma engine detection (`prisma generate` in the builder stage)
+# shells out to `openssl version`. node:*-slim has no OpenSSL, so without
+# this Prisma warns and defaults to the openssl-1.1.x engine, which then
+# fails on bookworm (OpenSSL 3).
+RUN apt-get update && apt-get install -y --no-install-recommends openssl \
+  && apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # pnpm binary for this and downstream stages. Fetch flags tolerate flaky
 # registry access (dropped TLS mid-download).
 RUN npm install -g pnpm@10.15.0 --fetch-retries=8 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
@@ -111,8 +118,10 @@ RUN npm install -g pnpm@10.15.0 --fetch-retries=8 --fetch-retry-mintimeout=20000
 # Install runtime dependencies + AWS RDS CA certificate bundle.
 # fontconfig + fonts-dejavu-core are needed so sharp/librsvg can render text
 # in the browser-automation screenshot overlay (node:*-slim has no fonts).
+# openssl is needed so the Prisma query engine loads against OpenSSL 3
+# (same reason as the deps stage above).
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    wget ca-certificates fontconfig fonts-dejavu-core \
+    wget ca-certificates fontconfig fonts-dejavu-core openssl \
   && wget -q -O /usr/local/share/aws-rds-ca-bundle.pem https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
