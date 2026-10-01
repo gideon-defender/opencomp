@@ -1,7 +1,27 @@
+import { OrgLogo } from '@/components/OrgLogo';
 import { TrustFooter } from '@/components/TrustFooter';
 import { FRAMEWORK_TITLES, publicApiBase, trustApi } from '@/lib/api';
+import { brandStyleFor, safeBrandImageUrl } from '@/lib/branding';
 import { Download, FileCheck, FileText, ShieldCheck } from 'lucide-react';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}): Promise<Metadata> {
+  const { token } = await params;
+  const grant = await trustApi.grant(token).catch(() => null);
+  if (!grant) return { title: 'Trust Center access' };
+
+  const favicon = safeBrandImageUrl(grant.faviconUrl);
+  return {
+    title: `${grant.organizationName} Trust Center`,
+    description: 'Shared security, compliance, and trust documentation.',
+    icons: favicon ? { icon: favicon } : undefined,
+  };
+}
 
 function SectionCard({
   count,
@@ -74,17 +94,12 @@ export default async function GrantAccessPage({ params }: { params: Promise<{ to
   }
 
   return (
-    <div className="min-h-dvh bg-canvas">
+    <div className="min-h-dvh bg-canvas" style={brandStyleFor(grant.primaryColor)}>
       <div className="border-b border-line bg-surface">
         <div className="mx-auto w-full max-w-7xl px-4 pt-12 pb-12 md:px-6 md:pt-20 md:pb-16">
           <section className="rounded-lg border border-line bg-surface p-6 md:p-8">
             <div className="flex items-start gap-4">
-              <div
-                aria-hidden="true"
-                className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-primary text-xl font-bold text-white"
-              >
-                {(grant.organizationName[0] ?? '?').toUpperCase()}
-              </div>
+              <OrgLogo name={grant.organizationName} logoUrl={grant.logoUrl} />
               <div className="min-w-0">
                 <p className="text-[13px] font-semibold text-muted">Granted access</p>
                 <h1 className="mt-1 text-3xl leading-[1.15] font-bold md:text-5xl md:leading-[1.1]">

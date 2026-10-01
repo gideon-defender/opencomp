@@ -95,6 +95,8 @@ export class TrustNdaService {
       organizationName: nda.accessRequest.organization.name,
       friendlyUrl: branding.friendlyUrl,
       faviconUrl: branding.faviconUrl,
+      logoUrl: branding.logoUrl,
+      primaryColor: branding.primaryColor,
       requesterName: nda.accessRequest.name,
       requesterEmail: nda.accessRequest.email,
       expiresAt: nda.signTokenExpiresAt,

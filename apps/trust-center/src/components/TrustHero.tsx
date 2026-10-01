@@ -1,23 +1,7 @@
 import type { PortalProfile } from '@/lib/api';
 import { BookOpenCheck, ExternalLink, FileCheck } from 'lucide-react';
+import { OrgLogo } from './OrgLogo';
 import { RequestAccessActions } from './RequestAccessActions';
-
-function OrgTile({ name }: { name: string }) {
-  const initials = name
-    .split(' ')
-    .slice(0, 2)
-    .map((word) => word[0])
-    .join('')
-    .toUpperCase();
-  return (
-    <div
-      aria-hidden="true"
-      className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-primary text-xl font-bold text-white"
-    >
-      {initials || '?'}
-    </div>
-  );
-}
 
 /**
  * Hero: org tile, verified label, title, lede, action buttons, and the
@@ -38,7 +22,7 @@ export function TrustHero({
     <section className="rounded-lg border border-line bg-surface p-6 md:p-8">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="flex min-w-0 items-start gap-4">
-          <OrgTile name={profile.organizationName} />
+          <OrgLogo name={profile.organizationName} logoUrl={profile.logoUrl} />
           <div className="min-w-0">
             <p className="text-[13px] font-semibold text-muted">
               Verified

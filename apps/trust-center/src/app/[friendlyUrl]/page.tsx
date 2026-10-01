@@ -7,6 +7,7 @@ import { TrustFooter } from '@/components/TrustFooter';
 import { TrustHero } from '@/components/TrustHero';
 import { VendorRow } from '@/components/VendorRow';
 import { trustApi } from '@/lib/api';
+import { brandStyleFor, safeBrandImageUrl } from '@/lib/branding';
 import { isSafeHttpUrl } from '@/lib/urls';
 import { FileCheck, HelpCircle, ShieldCheck, Users } from 'lucide-react';
 import type { Metadata } from 'next';
@@ -20,9 +21,11 @@ export async function generateMetadata({
   const { friendlyUrl } = await params;
   const profile = await trustApi.profile(friendlyUrl).catch(() => null);
   if (!profile) return { title: 'Trust Center not found' };
+  const favicon = safeBrandImageUrl(profile.faviconUrl);
   return {
     title: `${profile.organizationName} Trust Center`,
     description: 'Security, compliance, and trust documentation.',
+    icons: favicon ? { icon: favicon } : undefined,
   };
 }
 
@@ -80,7 +83,7 @@ export default async function TrustCenterPage({
   const safeCustomLinks = customLinks.filter((link) => isSafeHttpUrl(link.url));
 
   return (
-    <div className="min-h-dvh bg-canvas">
+    <div className="min-h-dvh bg-canvas" style={brandStyleFor(profile.primaryColor)}>
       <div className="border-b border-line bg-surface">
         <div className="mx-auto w-full max-w-7xl px-4 pt-12 pb-12 md:px-6 md:pt-20 md:pb-16">
           <TrustHero

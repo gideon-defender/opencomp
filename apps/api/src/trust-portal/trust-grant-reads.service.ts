@@ -67,6 +67,8 @@ export class TrustGrantReadsService {
       organizationName: grant.accessRequest.organization.name,
       friendlyUrl: branding.friendlyUrl,
       faviconUrl: branding.faviconUrl,
+      logoUrl: branding.logoUrl,
+      primaryColor: branding.primaryColor,
       securityQuestionnaireEnabled: branding.securityQuestionnaireEnabled,
       expiresAt: grant.expiresAt,
       subjectEmail: grant.subjectEmail,
