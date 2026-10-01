@@ -363,7 +363,8 @@ Steps to deploy OpenComp on Docker are coming soon.
 
 Gideon hosted production and dev environments run on AWS
 
-To deploy the `main` branch to dev, run the [Deploy to Dev workflow](.github/workflows/deploy-dev.yml) from the repository's **Actions** tab. The workflow is restricted to repository administrators, applies database migrations, builds and pushes the ARM64 API, app, trust-center, and migrator images, and rolls the ECS services. It uses the `dev` environment secrets `AWS_ACCOUNT_ID`, `AWS_REGION`, `ECS_CLUSTER`, and `AWS_ROLE_TO_ASSUME`. The employee portal is not deployed by this workflow.
+To deploy the `main` branch to dev, run the [Deploy to Dev workflow](.github/workflows/deploy-dev.yml) from the repository's **Actions** tab. The workflow is restricted to repository administrators, applies database migrations, builds and pushes the ARM64 API, app, trust-center, and migrator images, and rolls the ECS services. It uses the `dev` environment secrets `AWS_ACCOUNT_ID`, `AWS_REGION`, `ECS_CLUSTER`,  `AWS_ROLE_TO_ASSUME`, `MIGRATOR_SUBNETS` and `MIGRATOR_SECURITY_GROUP`.
+The employee portal is not deployed by this workflow.
 
 Dev domains (`*.dev.gideondefender.com`): `opencomp.dev` → app, `trust.dev/{friendlyUrl}` → trust-center, `api.dev` → API.
 

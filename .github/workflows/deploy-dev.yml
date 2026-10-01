@@ -37,32 +37,10 @@ jobs:
               );
             }
 
-  migrate:
-    name: Apply dev database migrations
-    needs: authorize
-    if: needs.authorize.result == 'success'
-    runs-on: ubuntu-latest
-    environment:
-      name: dev
-    steps:
-      - name: Checkout main
-        uses: actions/checkout@v5
-        with:
-          ref: main
-          fetch-depth: 1
-
-      - uses: ./.github/actions/pnpm-install
-
-      - name: Apply database migrations
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL_DEV }}
-        working-directory: packages/db
-        run: pnpm exec prisma migrate deploy
-
   deploy:
     name: Build and deploy main to dev
-    needs: [authorize, migrate]
-    if: needs.authorize.result == 'success' && needs.migrate.result == 'success'
+    needs: authorize
+    if: needs.authorize.result == 'success'
     runs-on: ubuntu-latest
     environment:
       name: dev
@@ -71,6 +49,8 @@ jobs:
       AWS_REGION: ${{ secrets.AWS_REGION }}
       ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}
       ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+      MIGRATOR_SUBNETS: ${{ secrets.MIGRATOR_SUBNETS }}
+      MIGRATOR_SECURITY_GROUP: ${{ secrets.MIGRATOR_SECURITY_GROUP }}
     steps:
       - name: Checkout main
         uses: actions/checkout@v5
@@ -184,7 +164,32 @@ jobs:
           app_task_definition="$(register_task_definition gideon-dev-opencomp-app "$app_image")"
           trust_task_definition="$(register_task_definition gideon-dev-opencomp-trust-center "$trust_image")"
           email_task_definition="$(register_task_definition gideon-dev-opencomp-email-worker "$api_image")"
-          register_task_definition gideon-dev-opencomp-migrator "$migrator_image" >/dev/null
+          migrator_task_definition="$(register_task_definition gideon-dev-opencomp-migrator "$migrator_image")"
+
+          migrator_task_arn="$(aws ecs run-task \
+            --region "$AWS_REGION" \
+            --cluster "$ECS_CLUSTER" \
+            --launch-type FARGATE \
+            --task-definition "$migrator_task_definition" \
+            --network-configuration "awsvpcConfiguration={subnets=[$MIGRATOR_SUBNETS],securityGroups=[$MIGRATOR_SECURITY_GROUP],assignPublicIp=ENABLED}" \
+            --query 'tasks[0].taskArn' \
+            --output text)"
+
+          aws ecs wait tasks-stopped \
+            --region "$AWS_REGION" \
+            --cluster "$ECS_CLUSTER" \
+            --tasks "$migrator_task_arn"
+
+          migrator_exit_code="$(aws ecs describe-tasks \
+            --region "$AWS_REGION" \
+            --cluster "$ECS_CLUSTER" \
+            --tasks "$migrator_task_arn" \
+            --query 'tasks[0].containers[0].exitCode' \
+            --output text)"
+          if [ "$migrator_exit_code" != "0" ]; then
+            echo "ECS migrator exited with code $migrator_exit_code"
+            exit 1
+          fi
 
           for service_definition in \
             "gideon-dev-opencomp-api|$api_task_definition" \
