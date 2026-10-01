@@ -1,82 +1,81 @@
 import type { runAllChecks } from '@gideon-defender/integration-platform';
+import { ConnectionCheckRunnerService } from '../../integration-platform/services/connection-check-runner.service';
+import {
+  getTriggerService,
+  logTriggerAuditEntry,
+  triggerHttpErrorMessage,
+} from '../nest-context';
 
 export type RunAllChecksResult = Awaited<ReturnType<typeof runAllChecks>>;
 
 // Generous backstop for a hung connection (no response). AWS checks legitimately
 // take minutes across many buckets/regions, so this is deliberately well below
 // the task's 15-minute maxDuration but high enough never to abort a real run —
-// it only catches a stalled socket so the error surfaces and the task retries
+// it only catches a stalled run so the error surfaces and the task retries
 // instead of blocking the whole 15 minutes.
 const REQUEST_TIMEOUT_MS = 10 * 60 * 1000;
 
 /**
- * Run a connection's checks ON OUR SERVER (ECS) and return the raw result.
+ * Run a connection's checks ON OUR SERVER (the API process) and return the raw
+ * result.
  *
  * Used by the AWS Trigger tasks only: AWS S3 calls made from the Local trigger
  * runtime egress Local trigger's VPC, whose endpoint policy blocks our
- * cross-account reads. Running them on our server egresses our own VPC (where
- * the endpoint allows the read) — matching the in-app manual "Run". The caller
- * still persists the returned result, so AWS runs are recorded exactly like
- * every other provider's.
+ * cross-account reads. Running them via the API's service egresses our own VPC
+ * (where the endpoint allows the read) — matching the in-app manual "Run". The
+ * caller still persists the returned result, so AWS runs are recorded exactly
+ * like every other provider's.
+ *
+ * Runs in-process through the Nest container (workers share the API process),
+ * not over HTTP — same handler, no socket, no service token.
  *
  * Pass `checkId` to run a single check (scheduled path); omit it to run all of
  * the connection's checks (auto-run-after-connect path).
  *
- * Throws on a transport failure (endpoint unreachable / non-2xx) so the caller's
- * existing try/catch handles it (the task fails and the orchestrator retries).
- * Per-check execution errors come back inside the result as usual.
+ * Throws on a failure (endpoint unreachable / non-2xx equivalent) so the
+ * caller's existing try/catch handles it (the task fails and the orchestrator
+ * retries). Per-check execution errors come back inside the result as usual.
  */
 export async function runChecksOnServer(params: {
-  apiUrl: string;
   connectionId: string;
   organizationId: string;
   checkId?: string;
 }): Promise<RunAllChecksResult> {
-  const { apiUrl, connectionId, organizationId, checkId } = params;
+  const { connectionId, organizationId, checkId } = params;
 
-  const serviceToken = process.env.SERVICE_TOKEN_TRIGGER;
-  if (!serviceToken) {
-    throw new Error('SERVICE_TOKEN_TRIGGER is not configured');
-  }
+  const runner = getTriggerService(ConnectionCheckRunnerService);
+  const run = runner.runChecks({ connectionId, organizationId, checkId });
 
-  const abortController = new AbortController();
-  const timeoutId = setTimeout(
-    () => abortController.abort(),
-    REQUEST_TIMEOUT_MS,
-  );
+  // The timeout only rejects the race — the underlying run keeps going in the
+  // background (no socket to abort in-process), same observable behavior for
+  // the caller as the old HTTP abort.
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(
+        new Error(
+          `Server-side check run timed out after ${REQUEST_TIMEOUT_MS}ms`,
+        ),
+      );
+    }, REQUEST_TIMEOUT_MS);
+  });
 
   try {
-    const response = await fetch(
-      `${apiUrl}/v1/integrations/internal/run-connection-checks/${connectionId}`,
-      {
-        method: 'POST',
-        signal: abortController.signal,
-        headers: {
-          'Content-Type': 'application/json',
-          'x-service-token': serviceToken,
-          'x-organization-id': organizationId,
-        },
-        body: JSON.stringify(checkId ? { checkId } : {}),
-      },
-    );
+    const result = await Promise.race([run, timeout]);
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      const message =
-        (errorData as { message?: string }).message ||
-        `Server-side check run failed with status ${response.status}`;
-      throw new Error(message);
-    }
+    // In-process calls skip the global AuditLogInterceptor — write the row
+    // the internal run-connection-checks endpoint would have produced.
+    await logTriggerAuditEntry({
+      organizationId,
+      resource: 'integration',
+      method: 'POST',
+      path: `/v1/integrations/internal/run-connection-checks/${connectionId}`,
+    });
 
-    return (await response.json()) as RunAllChecksResult;
+    return result;
   } catch (error) {
-    if (abortController.signal.aborted) {
-      throw new Error(
-        `Server-side check run timed out after ${REQUEST_TIMEOUT_MS}ms`,
-      );
-    }
-    throw error;
+    throw new Error(triggerHttpErrorMessage(error));
   } finally {
-    clearTimeout(timeoutId);
+    if (timeoutId) clearTimeout(timeoutId);
   }
 }

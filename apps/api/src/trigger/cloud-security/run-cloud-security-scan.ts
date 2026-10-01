@@ -1,5 +1,13 @@
 import { db } from '@db';
 import { logger, tags, task } from '@gideon-defender/trigger-local';
+import { CloudSecurityController } from '../../cloud-security/cloud-security.controller';
+import {
+  createServiceTriggerRequest,
+  getTriggerService,
+  logTriggerAuditEntry,
+  TRIGGER_SERVICE_NAME,
+  triggerHttpErrorMessage,
+} from '../nest-context';
 
 /**
  * Trigger task that runs a cloud security scan for a single connection.
@@ -59,53 +67,55 @@ export const runCloudSecurityScan = task({
         },
       );
 
-      const apiUrl = process.env.BASE_URL || 'http://localhost:3333';
-      const headers = {
-        'Content-Type': 'application/json',
-        'x-service-token': process.env.SERVICE_TOKEN_TRIGGER!,
-        'x-organization-id': organizationId,
-      };
+      // In-process through the Nest container (workers share the API process) —
+      // same handlers as the HTTP endpoints, no socket, no service token. The
+      // synthesized service request keeps the scan's audit attribution
+      // (`via service "Local trigger Workers"`, owner fallback) identical to
+      // the HTTP path.
+      const controller = getTriggerService(CloudSecurityController);
+      const serviceReq = createServiceTriggerRequest({
+        organizationId,
+        serviceName: TRIGGER_SERVICE_NAME,
+      });
 
       // Auto-detect services before scanning (AWS via Cost Explorer, GCP via Service Usage API)
       // Azure uses scan-based detection instead, so skip the pre-scan detect call
       if (resolvedProviderSlug === 'aws' || resolvedProviderSlug === 'gcp') {
         try {
-          await fetch(
-            `${apiUrl}/v1/cloud-security/detect-services/${connectionId}`,
-            { method: 'POST', headers },
-          );
+          await controller.detectServices(connectionId, organizationId);
         } catch {
           // Non-critical — scan proceeds even if detect fails
         }
       }
 
       // Run the scan
-      const response = await fetch(
-        `${apiUrl}/v1/cloud-security/scan/${connectionId}`,
-        { method: 'POST', headers },
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage =
-          (errorData as { message?: string }).message ||
-          `Scan failed with status: ${response.status}`;
+      let result;
+      try {
+        result = await controller.scan(
+          connectionId,
+          organizationId,
+          serviceReq,
+        );
+      } catch (error) {
+        const errorMessage = triggerHttpErrorMessage(error);
 
         logger.warn(`Cloud security scan failed for ${connectionName}`, {
           connectionId,
-          status: response.status,
           error: errorMessage,
         });
 
         return { success: false, error: errorMessage };
       }
 
-      const result = (await response.json()) as {
-        success: boolean;
-        provider: string;
-        findingsCount: number;
-        scannedAt: string;
-      };
+      // In-process calls skip the global AuditLogInterceptor — write the row
+      // it would have written so scheduled scans stay in the audit trail.
+      // (The handler's own scan_completed row is written inside scan().)
+      await logTriggerAuditEntry({
+        organizationId,
+        resource: 'integration',
+        method: 'POST',
+        path: `/v1/cloud-security/scan/${connectionId}`,
+      });
 
       logger.info(`Cloud security scan completed for ${connectionName}`, {
         connectionId,

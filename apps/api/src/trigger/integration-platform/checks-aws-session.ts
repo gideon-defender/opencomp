@@ -1,19 +1,14 @@
 import { logger } from '@gideon-defender/trigger-local';
+import {
+  CloudSecurityService,
+  ConnectionNotFoundError,
+} from '../../cloud-security/cloud-security.service';
+import {
+  getTriggerService,
+  logTriggerAuditEntry,
+  triggerHttpErrorMessage,
+} from '../nest-context';
 import type { IntegrationCredentialValues } from './ensure-valid-credentials';
-
-const RESOLVE_SESSION_TIMEOUT_MS = 30_000;
-
-type ResolveSessionResponse =
-  | {
-      ok: true;
-      session: {
-        accessKeyId: string;
-        secretAccessKey: string;
-        sessionToken: string;
-      };
-    }
-  | { ok: false; reason: 'not_configured' }
-  | { ok: false; reason: 'assume_failed'; error?: string };
 
 /**
  * Credential keys injected by {@link injectAwsResolvedSession} and consumed by
@@ -29,68 +24,52 @@ export const RESOLVED_AWS_SESSION_KEYS = {
 } as const;
 
 /**
- * For AWS connections, resolve the cross-account session in ECS (which holds the
- * roleAssumer task role + `SECURITY_HUB_ROLE_ASSUMER_ARN`) and inject the
- * resulting short-lived, customer-scoped credentials into `credentials`.
+ * For AWS connections, resolve the cross-account session via the API's
+ * CloudSecurityService (which holds the roleAssumer task role +
+ * `SECURITY_HUB_ROLE_ASSUMER_ARN`) and inject the resulting short-lived,
+ * customer-scoped credentials into `credentials`.
  *
  * Why: the Cloud Tests CHECK path runs inside the Local trigger runtime, which has
  * no base AWS credentials or roleAssumer ARN, so it cannot perform the two-hop
- * assume itself. Resolving in ECS keeps the cross-tenant master credential out
- * of Local trigger; the check just consumes the temp creds.
+ * assume itself. Resolving via the API service keeps the cross-tenant master
+ * credential out of Local trigger; the check just consumes the temp creds.
  *
- * On a genuine assume failure (or any transport error) an error marker is
- * injected so the AWS check surfaces a real "Could not assume AWS role" finding
- * with the true reason, rather than silently failing or falsely passing.
- * Non-AWS providers and not-configured connections are left untouched.
+ * Runs in-process through the Nest container (workers share the API process),
+ * not over HTTP — same service, no socket, no service token.
+ *
+ * On a genuine assume failure an error marker is injected so the AWS check
+ * surfaces a real "Could not assume AWS role" finding with the true reason,
+ * rather than silently failing or falsely passing. Non-AWS providers and
+ * not-configured connections are left untouched.
  *
  * Mutates and returns the same credentials object.
  */
 export async function injectAwsResolvedSession(params: {
   credentials: IntegrationCredentialValues;
-  apiUrl: string;
   connectionId: string;
   organizationId: string;
   providerSlug: string;
 }): Promise<IntegrationCredentialValues> {
-  const { credentials, apiUrl, connectionId, organizationId, providerSlug } =
-    params;
+  const { credentials, connectionId, organizationId, providerSlug } = params;
 
   if (providerSlug !== 'aws') return credentials;
 
-  const serviceToken = process.env.SERVICE_TOKEN_TRIGGER;
-  if (!serviceToken) {
-    credentials[RESOLVED_AWS_SESSION_KEYS.error] =
-      'SERVICE_TOKEN_TRIGGER is not configured';
-    return credentials;
-  }
-
-  const abortController = new AbortController();
-  const timeoutId = setTimeout(
-    () => abortController.abort(),
-    RESOLVE_SESSION_TIMEOUT_MS,
-  );
-
   try {
-    const response = await fetch(
-      `${apiUrl}/v1/cloud-security/resolve-session/${connectionId}`,
-      {
-        method: 'POST',
-        signal: abortController.signal,
-        headers: {
-          'Content-Type': 'application/json',
-          'x-service-token': serviceToken,
-          'x-organization-id': organizationId,
-        },
-      },
+    const service = getTriggerService(CloudSecurityService);
+    const result = await service.resolveAwsSession(
+      connectionId,
+      organizationId,
     );
 
-    if (!response.ok) {
-      credentials[RESOLVED_AWS_SESSION_KEYS.error] =
-        `Could not resolve AWS session (status ${response.status}).`;
-      return credentials;
-    }
-
-    const result = (await response.json()) as ResolveSessionResponse;
+    // In-process calls skip the global AuditLogInterceptor — write the row
+    // the resolve-session endpoint would have written (it logs any
+    // non-thrown POST return, including ok:false results).
+    await logTriggerAuditEntry({
+      organizationId,
+      resource: 'integration',
+      method: 'POST',
+      path: `/v1/cloud-security/resolve-session/${connectionId}`,
+    });
 
     if (result.ok) {
       credentials[RESOLVED_AWS_SESSION_KEYS.accessKeyId] =
@@ -99,7 +78,7 @@ export async function injectAwsResolvedSession(params: {
         result.session.secretAccessKey;
       credentials[RESOLVED_AWS_SESSION_KEYS.sessionToken] =
         result.session.sessionToken;
-      logger.info('Resolved AWS session via ECS for connection', {
+      logger.info('Resolved AWS session via API service for connection', {
         connectionId,
       });
       return credentials;
@@ -112,14 +91,10 @@ export async function injectAwsResolvedSession(params: {
     // not_configured -> inject nothing; the check no-ops naturally.
     return credentials;
   } catch (error) {
-    credentials[RESOLVED_AWS_SESSION_KEYS.error] = abortController.signal
-      .aborted
-      ? `Timed out resolving AWS session after ${RESOLVE_SESSION_TIMEOUT_MS}ms.`
-      : error instanceof Error
-        ? error.message
-        : String(error);
+    credentials[RESOLVED_AWS_SESSION_KEYS.error] =
+      error instanceof ConnectionNotFoundError
+        ? 'Could not resolve AWS session (connection not found).'
+        : triggerHttpErrorMessage(error);
     return credentials;
-  } finally {
-    clearTimeout(timeoutId);
   }
 }

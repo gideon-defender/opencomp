@@ -37,7 +37,6 @@ describe('refreshExpiringTokensSchedule', () => {
   const nowMs = Date.parse('2026-04-24T00:00:00.000Z');
 
   beforeEach(() => {
-    process.env.API_URL = 'http://api.test';
     jest.useFakeTimers().setSystemTime(nowMs);
     (requestValidCredentials as jest.Mock).mockResolvedValue({ success: true });
   });
@@ -45,7 +44,6 @@ describe('refreshExpiringTokensSchedule', () => {
   afterEach(() => {
     jest.useRealTimers();
     jest.clearAllMocks();
-    delete process.env.API_URL;
   });
 
   it('refreshes only connections whose latest credential version expires soon', async () => {
@@ -81,7 +79,6 @@ describe('refreshExpiringTokensSchedule', () => {
     expect(result.refreshed).toBe(1);
     expect(requestValidCredentials).toHaveBeenCalledTimes(1);
     expect(requestValidCredentials).toHaveBeenCalledWith({
-      apiUrl: expect.any(String),
       connectionId: 'conn_latest_soon',
       organizationId: 'org_2',
       forceRefresh: true,
