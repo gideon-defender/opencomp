@@ -368,7 +368,7 @@ The employee portal is not currently deployed by this workflow.
 
 Dev domains (`*.dev.gideondefender.com`): `opencomp.dev` → app, `trust.dev/{friendlyUrl}` → trust-center, `api.dev` → API.
 
-Key env/config for a dev deploy:
+Key env/config for a `dev` deploy:
 
 ```env
 BASE_URL=https://api.dev.gideondefender.com
