@@ -1,5 +1,5 @@
 import { mockNextIntl } from '@/test-utils/mocks/next-intl';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 mockNextIntl();
@@ -152,15 +152,20 @@ describe('ManageConnectionSheet', () => {
     expect(screen.getByText('Verification required')).toBeInTheDocument();
   });
 
-  it('shows Automatic 2FA as not set up and saves an added key', () => {
+  it('shows Automatic 2FA as not set up and saves an added key', async () => {
     render(<ManageConnectionSheet {...base} connection={connection()} />);
     expect(screen.getByText('connections.automatic2fa')).toBeInTheDocument();
     expect(screen.getByText('connections.totpNotSetUp')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText('connections.addAuthenticatorKey'));
+    await act(async () => {
+      fireEvent.click(screen.getByText('connections.addAuthenticatorKey'));
+    });
     const input = screen.getByPlaceholderText(/connections\.authenticatorKeyPlaceholder/i);
     fireEvent.change(input, { target: { value: '  SEED VALUE  ' } });
-    fireEvent.click(screen.getByText('connections.saveKey'));
+    await act(async () => {
+      fireEvent.click(screen.getByText('connections.saveKey'));
+      await waitFor(() => expect(base.onSetTotp).toHaveBeenCalled());
+    });
 
     expect(base.onSetTotp).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'bap_1' }),

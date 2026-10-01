@@ -143,10 +143,12 @@ export function ContextList({
                             Delete
                           </Button>
                         </AlertDialogTrigger>
-                        <AlertDialogContent>
+                        <AlertDialogContent
+                          aria-describedby={`context-delete-description-${entry.id}`}
+                        >
                           <AlertDialogHeader>
                             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
+                            <AlertDialogDescription id={`context-delete-description-${entry.id}`}>
                               This action cannot be undone.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
