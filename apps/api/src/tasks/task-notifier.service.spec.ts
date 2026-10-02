@@ -498,4 +498,84 @@ describe('TaskNotifierService', () => {
       });
     });
   });
+
+  describe('notifyAutomationFailures — admin/owner role matching', () => {
+    const automationParams = {
+      organizationId: 'org_1',
+      taskId: 'tsk_1',
+      taskTitle: '2FA',
+      failedCount: 1,
+      totalCount: 2,
+      taskStatusChanged: false,
+    };
+
+    function member(id: string, email: string, role: string | null) {
+      return { id, role, user: { id: `usr_${id}`, name: null, email } };
+    }
+
+    async function notifyWithMembers(
+      members: ReturnType<typeof member>[],
+    ): Promise<string[]> {
+      mockDb.organization.findUnique.mockResolvedValue({
+        name: 'Acme',
+        isInternal: false,
+      });
+      mockDb.task.findUnique.mockResolvedValue({ assignee: null });
+      mockDb.member.findMany.mockResolvedValue(members);
+
+      await service.notifyAutomationFailures(automationParams);
+
+      return recipientEmails();
+    }
+
+    it('notifies exact admin and owner roles', async () => {
+      const recipients = await notifyWithMembers([
+        member('mem_admin', 'admin@acme.com', 'admin'),
+        member('mem_owner', 'owner@acme.com', 'owner'),
+      ]);
+
+      expect(recipients).toContain('admin@acme.com');
+      expect(recipients).toContain('owner@acme.com');
+    });
+
+    it('notifies comma-separated roles containing admin or owner', async () => {
+      const recipients = await notifyWithMembers([
+        member('mem_multi', 'multi@acme.com', 'admin,auditor'),
+        member('mem_owner_multi', 'ownermulti@acme.com', 'employee,owner'),
+      ]);
+
+      expect(recipients).toContain('multi@acme.com');
+      expect(recipients).toContain('ownermulti@acme.com');
+    });
+
+    it('trims padded roles before matching', async () => {
+      const recipients = await notifyWithMembers([
+        member('mem_padded', 'padded@acme.com', ' admin '),
+      ]);
+
+      expect(recipients).toContain('padded@acme.com');
+    });
+
+    it('does not notify substring roles like superadmin, owner2, or administrator', async () => {
+      const recipients = await notifyWithMembers([
+        member('mem_super', 'super@acme.com', 'superadmin'),
+        member('mem_owner2', 'owner2@acme.com', 'owner2'),
+        member('mem_admin2', 'administrator@acme.com', 'administrator'),
+      ]);
+
+      expect(recipients).not.toContain('super@acme.com');
+      expect(recipients).not.toContain('owner2@acme.com');
+      expect(recipients).not.toContain('administrator@acme.com');
+    });
+
+    it('does not notify members without a role or without admin/owner', async () => {
+      const recipients = await notifyWithMembers([
+        member('mem_none', 'none@acme.com', null),
+        member('mem_emp', 'employee@acme.com', 'employee'),
+      ]);
+
+      expect(recipients).not.toContain('none@acme.com');
+      expect(recipients).not.toContain('employee@acme.com');
+    });
+  });
 });

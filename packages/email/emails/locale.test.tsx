@@ -30,9 +30,7 @@ const cases = [
   {
     name: 'invite',
     en: () => <InviteEmail organizationName="Acme" inviteLink="https://x.test/i" />,
-    es: () => (
-      <InviteEmail organizationName="Acme" inviteLink="https://x.test/i" locale="es" />
-    ),
+    es: () => <InviteEmail organizationName="Acme" inviteLink="https://x.test/i" locale="es" />,
     esPhrase: 'Te han invitado a unirte a OpenComp',
     enPhrase: 'You&#x27;ve been invited to join OpenComp',
   },
@@ -96,11 +94,7 @@ const cases = [
   {
     name: 'policy-notification',
     en: () => (
-      <PolicyNotificationEmail
-        {...baseProps}
-        policyName="Acceptable Use"
-        notificationType="new"
-      />
+      <PolicyNotificationEmail {...baseProps} policyName="Acceptable Use" notificationType="new" />
     ),
     es: () => (
       <PolicyNotificationEmail
@@ -154,9 +148,7 @@ const cases = [
   },
   {
     name: 'training-completed',
-    en: () => (
-      <TrainingCompletedEmail {...baseProps} completedAt={new Date('2026-04-13')} />
-    ),
+    en: () => <TrainingCompletedEmail {...baseProps} completedAt={new Date('2026-04-13')} />,
     es: () => (
       <TrainingCompletedEmail {...baseProps} completedAt={new Date('2026-04-13')} locale="es" />
     ),
@@ -232,15 +224,9 @@ const cases = [
   },
   {
     name: 'weekly-task-digest',
-    en: () => (
-      <WeeklyTaskDigestEmail {...baseProps} tasks={[{ id: 't1', title: 'Task one' }]} />
-    ),
+    en: () => <WeeklyTaskDigestEmail {...baseProps} tasks={[{ id: 't1', title: 'Task one' }]} />,
     es: () => (
-      <WeeklyTaskDigestEmail
-        {...baseProps}
-        tasks={[{ id: 't1', title: 'Task one' }]}
-        locale="es"
-      />
+      <WeeklyTaskDigestEmail {...baseProps} tasks={[{ id: 't1', title: 'Task one' }]} locale="es" />
     ),
     esPhrase: 'Tienes 1 tarea pendiente',
     enPhrase: 'You have 1 pending task',

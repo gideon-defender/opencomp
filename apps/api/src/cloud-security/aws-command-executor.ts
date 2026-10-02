@@ -4,6 +4,11 @@ import {
   type AwsPartition,
   getAwsPartitionForRegion,
 } from './aws-partition.utils';
+import { validateFixStepParams } from './remediation-param-guardrails';
+import {
+  looksLikeMissingDependencyError,
+  sharesResourceIdentifier,
+} from './aws-step-dependency';
 
 import * as s3 from '@aws-sdk/client-s3';
 import * as dynamodb from '@aws-sdk/client-dynamodb';
@@ -118,9 +123,39 @@ const SDK_MODULES: Record<string, SdkModule> = {
   secretsmanager: secretsManager,
 };
 
+/**
+ * IAM privilege-escalation writes. Refused on EVERY path, including
+ * rollback: undo legitimately needs deletes, but it never mints roles or
+ * grants policies — permission grants flow through the one-click scripts
+ * gated by the remediation denylist, never through executed steps.
+ * Spread into BLOCKED_COMMANDS below so the fix path refuses them too.
+ */
+const ALWAYS_BLOCKED_COMMANDS = new Set([
+  'PutRolePolicyCommand',
+  'CreateRoleCommand',
+  'AttachRolePolicyCommand',
+  // Secret-plaintext reads. Read outputs persist to the action row and feed
+  // the next model prompt — executing these pulls secrets into the DB and
+  // model context. Refused on every path, including rollback (undo never
+  // needs a fresh secret value; it restores stored state).
+  'GetSecretValueCommand',
+  'GetParameterCommand',
+  'GetParametersCommand',
+  'GetParametersByPathCommand',
+  'DecryptCommand',
+  // Secret writes: rollback restores stored state and never needs a fresh
+  // secret value, so these stay refused on every path like the reads.
+  'PutSecretValueCommand',
+  'CreateSecretCommand',
+  'UpdateSecretCommand',
+  // Interactive shell without StartSession: resuming a session is the same
+  // RCE primitive through a different verb. Never a fix, never a rollback.
+  'ResumeSessionCommand',
+]);
+
 /** Commands that are too dangerous or not allowed to execute. */
 const BLOCKED_COMMANDS = new Set([
-  // Destructive
+  // Destructive (rollback may still use these to undo — see `allowBlocked`).
   'DeleteBucketCommand',
   'DeleteTableCommand',
   'DeleteDBInstanceCommand',
@@ -133,8 +168,57 @@ const BLOCKED_COMMANDS = new Set([
   'DeleteSubnetCommand',
   'DeleteUserCommand',
   'DeleteRoleCommand',
-  // AttachRolePolicy blocked — use PutRolePolicy (inline) instead
-  'AttachRolePolicyCommand',
+  // Monitoring kill-switches. A fix step must never turn detection or
+  // logging off — that blinds the control while the plan reads like an
+  // improvement. Rollback may still use these to undo (see `allowBlocked`).
+  'StopLoggingCommand',
+  'DeleteTrailCommand',
+  'DeleteDetectorCommand',
+  'StopConfigurationRecorderCommand',
+  'DisableKeyRotationCommand',
+  'DeleteLogGroupCommand',
+  // Data-send primitives. A fix step never publishes a topic, sends a queue
+  // message, emits a bus event, or routes object events outward — with an
+  // attacker-influenced destination that is exfiltration, not a fix.
+  // Rollback may still use these to undo (see `allowBlocked`).
+  'PublishCommand',
+  'SendMessageCommand',
+  'PutEventsCommand',
+  'PutBucketNotificationConfigurationCommand',
+  // Traffic-reroute and snapshot-export primitives (mirror the denylist
+  // exact set — same traffic-redirect / exfil shape, never a fix).
+  // UpdateDistributionCommand stays allowed: it IS the CloudFront fix
+  // mechanism (see denylist note + cloudfront.adapter.ts).
+  'ChangeResourceRecordSetsCommand',
+  'ModifyListenerCommand',
+  'ModifyTargetGroupCommand',
+  // Creation-side siblings of the modify path: new listeners, target
+  // groups, and target registrations reroute traffic the same way.
+  'CreateListenerCommand',
+  'CreateTargetGroupCommand',
+  'RegisterTargetsCommand',
+  // Protection removal without a blocked verb: detaching a WAF or a
+  // network attachment blinds or exposes without Delete/Disable/Stop.
+  'DisassociateWebACLCommand',
+  'DetachVolumeCommand',
+  'DetachInternetGatewayCommand',
+  // Unauthorized compute: starting stopped instances costs and runs code
+  // the same way launching new ones does.
+  'StartInstancesCommand',
+  'StartExportTaskCommand',
+  'ExportTableToPointInTimeCommand',
+  // Data-content reads. Preview executes read steps with no acknowledgment
+  // gate and outputs land in previousState (DB), model context, and audit
+  // metadata. Config reads (Describe*/List*) stay allowed — fixes need them.
+  // Content reads pull customer payloads, not config: object bodies, queue
+  // messages, and log event bodies must never flow through preview.
+  'GetObjectCommand',
+  'ReceiveMessageCommand',
+  'FilterLogEventsCommand',
+  'GetLogEventsCommand',
+  // IAM privilege escalation: a fix step must never mint roles or grant
+  // itself policies. Refused even on rollback (see ALWAYS_BLOCKED_COMMANDS).
+  ...ALWAYS_BLOCKED_COMMANDS,
 ]);
 
 /** Param names that AWS expects as JSON strings, not objects. */
@@ -192,16 +276,6 @@ const REQUIRED_PRESENT_PARAMS: Record<string, readonly string[]> = {
 const REQUIRED_PARAM_ONE_OF: Record<string, readonly (readonly string[])[]> = {
   AuthorizeSecurityGroupIngressCommand: [['GroupId', 'GroupName']],
 };
-
-const REVOKE_SECURITY_GROUP_INGRESS_RULE_PROPERTY_PARAMS = [
-  'CidrIp',
-  'FromPort',
-  'IpPermissions',
-  'IpProtocol',
-  'SourceSecurityGroupName',
-  'SourceSecurityGroupOwnerId',
-  'ToPort',
-] as const;
 
 function normalizeArnPartition(value: string, partition: AwsPartition): string {
   if (partition === 'aws-us-gov') {
@@ -361,10 +435,12 @@ export function normalizeConfigRecordingGroup(
   const groupObj = group as Record<string, unknown>;
   const strategy = groupObj.recordingStrategy as
     { useOnly?: string } | undefined;
+  // Collapse only on an affirmative full signal. An exclusion list alone
+  // must not flip an explicit opt-out (`allSupported: false`) into
+  // record-everything — that shape belongs to the validator refusal path.
   const wantsAllSupported =
     groupObj.allSupported === true ||
-    strategy?.useOnly === 'ALL_SUPPORTED_RESOURCE_TYPES' ||
-    groupObj.exclusionByResourceTypes != null;
+    strategy?.useOnly === 'ALL_SUPPORTED_RESOURCE_TYPES';
 
   if (!wantsAllSupported) return;
 
@@ -397,14 +473,6 @@ async function sendWithAutoRetry(
     try {
       const result = await client.send(new CommandClass(input));
 
-      // After creating an IAM role, wait for propagation
-      if (
-        command === 'CreateRoleCommand' ||
-        command === 'PutRolePolicyCommand'
-      ) {
-        await new Promise((r) => setTimeout(r, 5000));
-      }
-
       return (result ?? {}) as Record<string, unknown>;
     } catch (err) {
       const awsErr = err as {
@@ -426,12 +494,21 @@ async function sendWithAutoRetry(
       );
 
       // ── Idempotent "already exists" → treat as success ──
+      // Narrow on purpose: generic "already exists" substrings also match
+      // fatal cases like S3 BucketAlreadyExists (name owned by a DIFFERENT
+      // account — globally fatal, the bucket is unusable). Only codes that
+      // prove the caller already owns an equivalent resource count.
+      // Names are the SDK v3 `err.name` values (exception class names —
+      // IAM reports `EntityAlreadyExistsException`, not the wire code
+      // `EntityAlreadyExists`).
       if (
         errName === 'ResourceAlreadyExistsException' ||
         errName === 'DuplicateDocumentContent' ||
         errName === 'DuplicateDocumentVersionName' ||
-        errMsg.includes('already exists') ||
-        errMsg.includes('AlreadyExists') ||
+        errName === 'BucketAlreadyOwnedByYou' ||
+        errName === 'EntityAlreadyExists' ||
+        errName === 'EntityAlreadyExistsException' ||
+        errName === 'TrailAlreadyExistsException' ||
         errMsg.includes('same metadata and content') ||
         errMsg.includes('DuplicateDocument')
       ) {
@@ -443,6 +520,21 @@ async function sendWithAutoRetry(
         const delay = Math.min(1000 * 2 ** attempt, 8000); // 1s, 2s, 4s, 8s
         console.log(
           `Throttled on ${service}:${command}, retrying in ${delay}ms`,
+        );
+        await new Promise((r) => setTimeout(r, delay));
+        continue;
+      }
+
+      // ── IAM propagation → wait and retry ──
+      // New roles/policies take seconds to propagate; the first call can
+      // fail with NoSuchEntity even though the create succeeded.
+      if (
+        isIamPropagationError(errName, errMsg) &&
+        attempt < MAX_ATTEMPTS - 1
+      ) {
+        const delay = Math.min(2000 * 2 ** attempt, 8000); // 2s, 4s, 8s
+        console.log(
+          `IAM propagation delay on ${service}:${command}, retrying in ${delay}ms`,
         );
         await new Promise((r) => setTimeout(r, delay));
         continue;
@@ -500,6 +592,17 @@ function isThrottleError(errName: string, errMsg: string): boolean {
     errMsg.includes('Rate exceeded') ||
     errMsg.includes('Throttling') ||
     errMsg.includes('Too Many Requests')
+  );
+}
+
+function isIamPropagationError(errName: string, errMsg: string): boolean {
+  return (
+    errName === 'NoSuchEntity' ||
+    errName === 'NoSuchEntityException' ||
+    errName === 'InvalidInstanceID.NotFound' ||
+    errMsg.includes('role/policy may not exist yet') ||
+    errMsg.includes('until it has propagated') ||
+    (errMsg.includes('NoSuchEntity') && errMsg.includes('propagat'))
   );
 }
 
@@ -593,145 +696,228 @@ function tryAutoFixValidationError(
 }
 
 /**
+ * Resolve an AI-supplied command name to the canonical SDK command name for
+ * a service. Returns the exact name on a direct hit, the canonical name for
+ * a near-miss spelling (singular/plural, small typos), or null when nothing
+ * matches. Fail-closed: short generic inputs never collapse onto a longer
+ * command, and near-identical actions stay distinct.
+ *
+ * Validation AND execution must resolve through this one helper. Previously
+ * each had its own inline fuzzy match while the param guardrails switched on
+ * the raw name — so a near-miss name passed validation, skipped every
+ * guardrail case, and still executed as the real dual-use command.
+ */
+export function resolveCanonicalCommandName(
+  service: string,
+  command: string,
+): string | null {
+  // Model output is untrusted: non-string or empty names must fail closed
+  // to "unknown command", never throw a TypeError inside validation.
+  if (typeof service !== 'string' || typeof command !== 'string') return null;
+  if (!service || !command) return null;
+  const mod = SDK_MODULES[service];
+  if (!mod) return null;
+  if (mod[command] && typeof mod[command] === 'function') return command;
+  const cmdBase = command.replace('Command', '');
+  // An empty base (e.g. command === "Command") would match everything —
+  // refuse instead of executing a random API.
+  if (!cmdBase) return null;
+  // Singular/plural and near-miss tolerance: longer gaps mean the input is
+  // a different (usually shorter, generic) name, not a typo.
+  const MAX_FUZZY_LENGTH_GAP = 2;
+  const match = Object.keys(mod).find((k) => {
+    if (!k.endsWith('Command') || typeof mod[k] !== 'function') return false;
+    const kBase = k.replace('Command', '');
+    // Containment either way tolerates singular/plural and near-miss
+    // spellings (`SetTopicAttributeCommand`, `TerminateInstanceCommand`),
+    // but the length cap keeps short generic inputs from collapsing onto a
+    // longer command (`TopicCommand` must not become `CreateTopicCommand`).
+    // Near-identical actions stay distinct (`GetAclCommand` must not become
+    // `GetBucketAclCommand` — IAM treats them as different permissions).
+    // Anything else fails closed as unknown.
+    return (
+      (kBase.includes(cmdBase) || cmdBase.includes(kBase)) &&
+      Math.abs(kBase.length - cmdBase.length) <= MAX_FUZZY_LENGTH_GAP
+    );
+  });
+  return match ?? null;
+}
+
+/**
  * Validate all steps in a plan BEFORE executing anything.
  * Catches: unknown services, missing commands, blocked commands, placeholder values.
  * Returns list of errors. Empty = valid.
+ *
+ * Pass `{ allowBlocked: true }` for rollback steps: rollback legitimately
+ * undoes with deletes, so the blocked-command refusal does not apply —
+ * every other check (unknown command, placeholders, required params,
+ * guardrails) still runs so an AI-planted rollback cannot dodge validation.
+ * IAM privilege-escalation writes (ALWAYS_BLOCKED_COMMANDS) stay refused on
+ * every path — undo never mints roles or grants policies.
+ * Pass `{ isRollback: true }` alongside it (see `validateRollbackSteps`):
+ * a rollback restores the customer's own pre-fix baseline, so the
+ * open-CIDR authorize refusal does not apply there either — without the
+ * exemption every security-group plan carries a documented undo that can
+ * never validate, and the whole plan degrades to manual steps forever.
  */
-export function validatePlanSteps(steps: AwsCommandStep[]): string[] {
+export function validatePlanSteps(
+  steps: AwsCommandStep[],
+  options?: { allowBlocked?: boolean; isRollback?: boolean },
+): string[] {
+  // Model output is untrusted: a non-array plan must fail closed to a
+  // validation error, never throw on `.length` inside the loop.
+  if (!Array.isArray(steps)) {
+    return ['Plan steps are malformed — refused for safety'];
+  }
   const errors: string[] = [];
+  const allowBlocked = options?.allowBlocked === true;
+  const isRollback = options?.isRollback === true;
 
   for (let i = 0; i < steps.length; i++) {
-    const step = steps[i];
-    const prefix = `Step ${i + 1} (${step.command})`;
-
-    // Check service exists
-    if (!SDK_MODULES[step.service]) {
-      errors.push(`${prefix}: Unknown service "${step.service}"`);
-      continue;
-    }
-
-    // Check command exists in module (with fuzzy match for AI mistakes)
-    const mod = SDK_MODULES[step.service];
-    let cmdExists =
-      mod[step.command] && typeof mod[step.command] === 'function';
-    if (!cmdExists) {
-      const cmdBase = step.command.replace('Command', '');
-      const fuzzy = Object.keys(mod).find((k) => {
-        if (!k.endsWith('Command') || typeof mod[k] !== 'function')
-          return false;
-        const kBase = k.replace('Command', '');
-        return (
-          kBase.includes(cmdBase) ||
-          cmdBase.includes(kBase) ||
-          kBase.replace('Bucket', '') === cmdBase.replace('Bucket', '')
-        );
-      });
-      cmdExists = Boolean(fuzzy);
-    }
-    if (!cmdExists) {
-      errors.push(
-        `${prefix}: Command "${step.command}" not found in @aws-sdk/client-${step.service}`,
-      );
-      continue;
-    }
-
-    // Check command name format
-    if (!step.command.endsWith('Command')) {
-      errors.push(`${prefix}: Command name must end with "Command"`);
-    }
-
-    // Check blocked
-    if (BLOCKED_COMMANDS.has(step.command)) {
-      errors.push(`${prefix}: Command is blocked for safety`);
-    }
-
-    // Check for placeholder values in params
-    const paramStr = JSON.stringify(step.params);
-    const placeholders = paramStr.match(/\{\{[\w]+\}\}|<[A-Z_]+>/g);
-    if (placeholders) {
-      errors.push(
-        `${prefix}: Contains placeholder values: ${placeholders.join(', ')}`,
-      );
-    }
-
-    // Check required top-level params for commands AWS rejects with
-    // cryptic "Member must not be null" errors. Fail fast with a clear
-    // message instead of letting the SDK return its uninformative one.
-    const required = REQUIRED_PARAMS[step.command];
-    if (required) {
-      for (const key of required) {
-        const value = step.params?.[key];
-        if (!hasRequiredParamValue(value)) {
-          errors.push(`${prefix}: Required param "${key}" is missing or empty`);
-        }
-      }
-    }
-
-    const requiredPresent = REQUIRED_PRESENT_PARAMS[step.command];
-    if (requiredPresent) {
-      for (const key of requiredPresent) {
-        const value = step.params?.[key];
-        // Must be supplied, but an empty string is valid (e.g. an empty
-        // CloudWatch filterPattern matches all log events).
-        if (value === undefined || value === null) {
-          errors.push(`${prefix}: Required param "${key}" must be provided`);
-        }
-      }
-    }
-
-    const oneOfGroups = REQUIRED_PARAM_ONE_OF[step.command];
-    if (oneOfGroups) {
-      for (const group of oneOfGroups) {
-        const hasAny = group.some((key) => {
-          const value = step.params?.[key];
-          return hasRequiredParamValue(value);
-        });
-        if (!hasAny) {
-          errors.push(
-            `${prefix}: One of "${group.join('" or "')}" is required`,
-          );
-        }
-      }
-    }
-
-    if (step.command === 'RevokeSecurityGroupIngressCommand') {
-      errors.push(...validateRevokeSecurityGroupIngressParams(step, prefix));
-    }
+    errors.push(...validateOneStep(steps[i], i, allowBlocked, isRollback));
   }
 
   return errors;
 }
 
-function validateRevokeSecurityGroupIngressParams(
+/**
+ * Validate a single plan step. Shared by `validatePlanSteps` and the AI
+ * step-repair safety gate — a repaired step must clear the same checks
+ * (blocked commands, required params, placeholders, guardrails) as a
+ * freshly generated one, never just the param-shape subset.
+ */
+export function validateOneStep(
   step: AwsCommandStep,
-  prefix: string,
+  index: number,
+  allowBlocked: boolean,
+  isRollback = false,
 ): string[] {
-  const params = step.params ?? {};
-  const hasGroupIdentifier =
-    hasRequiredParamValue(params.GroupId) ||
-    hasRequiredParamValue(params.GroupName);
-  const hasRuleIds = hasRequiredParamValue(params.SecurityGroupRuleIds);
-  const hasRuleProperties =
-    REVOKE_SECURITY_GROUP_INGRESS_RULE_PROPERTY_PARAMS.some((key) =>
-      hasRequiredParamValue(params[key]),
+  const errors: string[] = [];
+  // Model output is untrusted: a null step or non-object must fail closed
+  // to a validation error, never throw on property access below.
+  if (step === null || typeof step !== 'object' || Array.isArray(step)) {
+    errors.push(`Step ${index + 1}: malformed step — refused for safety`);
+    return errors;
+  }
+  const rawCommand =
+    typeof step.command === 'string' ? step.command : 'unknown';
+  const prefix = `Step ${index + 1} (${rawCommand})`;
+
+  // Check service exists
+  if (typeof step.service !== 'string' || !SDK_MODULES[step.service]) {
+    errors.push(`${prefix}: Unknown service "${String(step.service)}"`);
+    return errors;
+  }
+
+  // Check command exists in module (exact or fuzzy match for AI mistakes).
+  // Resolve once through the shared helper so validation, the blocked
+  // check, and the guardrails below all see the same canonical name
+  // the executor will actually run.
+  const canonicalCommand = resolveCanonicalCommandName(
+    step.service,
+    step.command,
+  );
+  if (!canonicalCommand) {
+    errors.push(
+      `${prefix}: Command "${step.command}" not found in @aws-sdk/client-${step.service}`,
     );
-
-  if (!hasRuleIds && !hasRuleProperties) {
-    return [
-      `${prefix}: One of "SecurityGroupRuleIds" or rule property params is required`,
-    ];
+    return errors;
   }
 
-  if (hasRuleIds && hasRuleProperties) {
-    return [
-      `${prefix}: SecurityGroupRuleIds cannot be combined with rule property params`,
-    ];
+  // Check command name format
+  if (!step.command.endsWith('Command')) {
+    errors.push(`${prefix}: Command name must end with "Command"`);
   }
 
-  if (hasRuleIds && !hasRuleProperties) return [];
-  if (hasGroupIdentifier) return [];
+  // Check blocked (against both the raw and the resolved name, so a
+  // near-miss spelling of a blocked command is still refused).
+  // Rollback validation passes allowBlocked since undo needs deletes —
+  // but IAM privilege-escalation writes stay refused on every path.
+  const isBlocked =
+    BLOCKED_COMMANDS.has(step.command) ||
+    BLOCKED_COMMANDS.has(canonicalCommand);
+  const isAlwaysBlocked =
+    ALWAYS_BLOCKED_COMMANDS.has(step.command) ||
+    ALWAYS_BLOCKED_COMMANDS.has(canonicalCommand);
+  if ((isBlocked && !allowBlocked) || isAlwaysBlocked) {
+    errors.push(`${prefix}: Command is blocked for safety`);
+  }
 
-  return [`${prefix}: One of "GroupId" or "GroupName" is required`];
+  // Check for placeholder values in params
+  const paramStr = JSON.stringify(step.params ?? {}) ?? '';
+  const placeholders = paramStr.match(/\{\{[\w]+\}\}|<[A-Z_]+>/g);
+  if (placeholders) {
+    errors.push(
+      `${prefix}: Contains placeholder values: ${placeholders.join(', ')}`,
+    );
+  }
+
+  // Check required top-level params for commands AWS rejects with
+  // cryptic "Member must not be null" errors. Fail fast with a clear
+  // message instead of letting the SDK return its uninformative one.
+  // Keyed on the canonical name so a fuzzy alias cannot dodge the check
+  // and then execute as the real command.
+  const required = REQUIRED_PARAMS[canonicalCommand];
+  if (required) {
+    for (const key of required) {
+      const value = step.params?.[key];
+      if (!hasRequiredParamValue(value)) {
+        errors.push(`${prefix}: Required param "${key}" is missing or empty`);
+      }
+    }
+  }
+
+  const requiredPresent = REQUIRED_PRESENT_PARAMS[canonicalCommand];
+  if (requiredPresent) {
+    for (const key of requiredPresent) {
+      const value = step.params?.[key];
+      // Must be supplied, but an empty string is valid (e.g. an empty
+      // CloudWatch filterPattern matches all log events).
+      if (value === undefined || value === null) {
+        errors.push(`${prefix}: Required param "${key}" must be provided`);
+      }
+    }
+  }
+
+  const oneOfGroups = REQUIRED_PARAM_ONE_OF[canonicalCommand];
+  if (oneOfGroups) {
+    for (const group of oneOfGroups) {
+      const hasAny = group.some((key) => {
+        const value = step.params?.[key];
+        return hasRequiredParamValue(value);
+      });
+      if (!hasAny) {
+        errors.push(`${prefix}: One of "${group.join('" or "')}" is required`);
+      }
+    }
+  }
+
+  // Parameter-level safety: refuse dangerous shapes of dual-use actions
+  // (resource-policy writes, control-weakening flags) even though the
+  // action itself stays granted for its legitimate fix uses. Match on the
+  // canonical name so fuzzy spellings cannot dodge the guardrails.
+  errors.push(
+    ...validateFixStepParams({ ...step, command: canonicalCommand }, prefix, {
+      isRollback,
+    }),
+  );
+
+  return errors;
+}
+
+/**
+ * Validate AI-generated rollback steps before they can run on the failure
+ * path. Same checks as `validatePlanSteps` except the blocked-command
+ * refusal for deletes (undo needs them) and the open-CIDR authorize
+ * refusal (undo restores the customer's own pre-fix baseline — refusing it
+ * would make every security-group plan un-runnable). IAM
+ * privilege-escalation writes stay refused. Callers must run this wherever
+ * they validate fix steps — an unvalidated rollback runs with
+ * `isRollback: true`, which skips the
+ * execution-time delete block.
+ */
+export function validateRollbackSteps(steps: AwsCommandStep[]): string[] {
+  return validatePlanSteps(steps, { allowBlocked: true, isRollback: true });
 }
 
 function hasRequiredParamValue(value: unknown): boolean {
@@ -748,6 +934,23 @@ interface StepResult {
 interface PlanExecutionResult {
   results: StepResult[];
   error?: { stepIndex: number; message: string; step: AwsCommandStep };
+  /**
+   * Set when `autoRollbackSteps` ran and at least one rollback step failed.
+   * The original step error stays in `error` — this never masks it. Callers
+   * must surface it: the resource is left partially modified (the
+   * remediation role no longer holds Delete/Stop/Disable grants, so undo
+   * steps can fail with permission errors while the fix itself applied).
+   */
+  rollbackError?: string;
+  /**
+   * Set when `autoRollbackSteps` were provided but SKIPPED because their
+   * length does not match the fix steps. Index pairing (`rollbackSteps[i]`
+   * undoes `fixSteps[i]`) is the only thing binding an undo step to the
+   * resource its fix step touched — on a length mismatch any pairing is a
+   * guess, so running them could destroy the wrong resource. Callers must
+   * surface this like `rollbackError`: completed steps were NOT undone.
+   */
+  rollbackSkipped?: string;
 }
 
 /**
@@ -790,8 +993,13 @@ async function executeAwsCommand(params: {
     throw new Error(`Service "${service}" is not supported`);
   }
 
-  // Block dangerous commands — unless this is a rollback (rollback needs Delete to undo)
-  if (BLOCKED_COMMANDS.has(command) && !isRollback) {
+  // Block dangerous commands — unless this is a rollback (rollback needs
+  // Delete to undo). IAM privilege-escalation writes stay blocked on every
+  // path: undo never mints roles or grants policies.
+  if (
+    (BLOCKED_COMMANDS.has(command) && !isRollback) ||
+    ALWAYS_BLOCKED_COMMANDS.has(command)
+  ) {
     throw new Error(`Command "${command}" is blocked for safety`);
   }
 
@@ -799,40 +1007,38 @@ async function executeAwsCommand(params: {
     throw new Error(`Invalid command name "${command}"`);
   }
 
-  // ─── Universal param normalisation ──────────────────────────────────
-  // Instead of per-command hacks, apply two universal rules that cover
-  // every current and future AWS command the AI might generate.
-
-  normaliseInputParams(input, command, region);
-
   // Try exact command name first, then fuzzy match if not found
+  // (AI sometimes generates wrong command names — resolve through the same
+  // helper validation uses so both agree on what will run).
   let CommandClass = mod[command];
+  // The name that will actually run: exact on a direct hit, canonical on a
+  // fuzzy hit, raw (doomed to the not-found error below) otherwise.
+  let effectiveCommand = command;
   if (!CommandClass || typeof CommandClass !== 'function') {
-    // AI sometimes generates wrong command names — try to find the closest match
-    const cmdBase = command.replace('Command', '');
-    const match = Object.keys(mod).find((k) => {
-      if (!k.endsWith('Command') || typeof mod[k] !== 'function') return false;
-      const kBase = k.replace('Command', '');
-      // Check if one contains the other (e.g., PutBucketPublicAccessBlock vs PutPublicAccessBlock)
-      return (
-        kBase.includes(cmdBase) ||
-        cmdBase.includes(kBase) ||
-        kBase.replace('Bucket', '') === cmdBase.replace('Bucket', '')
-      );
-    });
-    if (match) {
-      // Re-check blocked commands against the resolved name
-      if (BLOCKED_COMMANDS.has(match) && !isRollback) {
-        throw new Error(`Command "${match}" is blocked for safety`);
-      }
-      CommandClass = mod[match];
+    const canonical = resolveCanonicalCommandName(service, command);
+    // Re-check blocked commands against the resolved name (IAM writes stay
+    // refused even on rollback).
+    if (
+      canonical &&
+      ((BLOCKED_COMMANDS.has(canonical) && !isRollback) ||
+        ALWAYS_BLOCKED_COMMANDS.has(canonical))
+    ) {
+      throw new Error(`Command "${canonical}" is blocked for safety`);
     }
+    CommandClass = canonical ? mod[canonical] : undefined;
+    if (canonical) effectiveCommand = canonical;
   }
   if (!CommandClass || typeof CommandClass !== 'function') {
     throw new Error(
       `Command "${command}" not found in @aws-sdk/client-${service}`,
     );
   }
+
+  // ─── Universal param normalisation ──────────────────────────────────
+  // Normalization rules key on exact command names, so normalize as the
+  // command that will actually run — a fuzzy alias normalized under its
+  // raw name would silently skip its canonical defaults.
+  normaliseInputParams(input, effectiveCommand, region);
 
   // Find the client class from the same module (skip internal __Client)
   const clientKey = Object.keys(mod).find(
@@ -935,6 +1141,27 @@ export async function executePlanSteps(params: {
             JSON.stringify(refined.params ?? {}) !==
               JSON.stringify(originalStep.params ?? {})
           ) {
+            // The repair model writes free-form params — re-run the FULL
+            // safety gate before retrying (same checks as pre-execution
+            // validation: blocked commands, required params, placeholders,
+            // guardrails). A param-shape-only check would let a repaired
+            // step smuggle in a blocked delete, a missing required param,
+            // or a placeholder and retry it against AWS.
+            // Rollback executions keep their delete allowance here too.
+            const repairGateErrors = validateOneStep(
+              refined,
+              i,
+              params.isRollback === true,
+              params.isRollback === true,
+            );
+            if (repairGateErrors.length > 0) {
+              console.log(
+                `AI repair for ${originalStep.command} refused by safety gate — ` +
+                  `surfacing refusal instead of retrying`,
+              );
+              lastError = new Error(repairGateErrors.join('; '));
+              break;
+            }
             console.log(
               `AI returned refined step for ${originalStep.command} — retrying once`,
             );
@@ -969,47 +1196,98 @@ export async function executePlanSteps(params: {
     {
       const message = err instanceof Error ? err.message : String(err);
 
-      // If a prior step was a no-op (already exists / duplicate content),
-      // this step may depend on output from that no-op (e.g., a version number).
-      // Skip it instead of failing the entire execution — the infra is already
-      // in the desired state. This is universal: works for any service.
-      const hasPriorNoOp = results.some(
-        (r) => r.output._alreadyExists || r.output._skipped,
+      // If a prior step in the SAME service was a no-op (already exists /
+      // duplicate content), this step may depend on output from that no-op
+      // (e.g., a version number the no-op did not return). Skip it instead
+      // of failing the entire execution. Scoped to the same service on
+      // purpose: an unrelated no-op (e.g. a log group that already exists)
+      // must never mask a genuine validation failure in another service.
+      // The matcher is deliberately narrow (missing-dependency shapes
+      // only): a malformed step (`is required`, `invalid parameter`, ...)
+      // is an AI bug and stays fatal instead of reporting false progress.
+      // Two extra guards keep the skip honest. Only a real pre-existing
+      // resource (`_alreadyExists`) qualifies — a prior `_skipped` step
+      // never resolved its own dependency, so letting it bless the next
+      // skip chains false success down the whole plan. And the failing
+      // step must name an identifier the no-op step used
+      // (`sharesResourceIdentifier`): a same-service typo (right service,
+      // wrong resource name) shares nothing with the no-op and stays fatal.
+      const priorNoOp = results.find(
+        (r) =>
+          r.output._alreadyExists === true && r.step.service === step.service,
       );
+      const sharesResource =
+        priorNoOp !== undefined &&
+        sharesResourceIdentifier(priorNoOp.step.params, step.params);
       if (
-        hasPriorNoOp &&
-        (message.includes('validation error') ||
-          message.includes('failed to satisfy constraint'))
+        priorNoOp !== undefined &&
+        sharesResource &&
+        looksLikeMissingDependencyError(message)
       ) {
         console.log(
-          `Skipping step ${i + 1} (${step.command}) — prior step was no-op, this step likely depends on its output`,
+          `Skipping step ${i + 1} (${step.command}) — prior ${step.service} step was no-op, this step likely depends on its output`,
         );
         results.push({ step, output: { _skipped: true, reason: message } });
         continue;
       }
 
-      // Auto-rollback completed steps if rollback steps were provided
+      // Auto-rollback completed steps if rollback steps were provided.
+      // Only steps that actually changed something are undone: no-op
+      // entries (already-exists / skipped) map to resources this run did
+      // not create, so rolling them back would destroy pre-existing infra.
+      // Index pairing is load-bearing: rollbackSteps[i] must undo fixSteps[i].
+      // On a length mismatch the pairing is unknowable, so rollback is
+      // skipped entirely rather than run against the wrong resources.
+      let rollbackError: string | undefined;
+      let rollbackSkipped: string | undefined;
       if (params.autoRollbackSteps && results.length > 0) {
-        const rollbackSlice = params.autoRollbackSteps
-          .slice(0, results.length)
-          .reverse();
-        for (const rbStep of rollbackSlice) {
-          try {
-            await executeAwsCommand({
-              service: rbStep.service,
-              command: rbStep.command,
-              input: structuredClone(rbStep.params),
-              credentials: params.credentials,
-              region: params.region,
-              isRollback: true,
-            });
-          } catch {
-            // Best-effort rollback — don't mask original error
+        if (params.autoRollbackSteps.length !== params.steps.length) {
+          rollbackSkipped =
+            `Auto-rollback skipped: ${params.autoRollbackSteps.length} rollback step(s) ` +
+            `for ${params.steps.length} fix step(s) — cannot pair undo steps safely; ` +
+            `completed steps were NOT undone.`;
+          console.warn(rollbackSkipped);
+        } else {
+          const rollbackSlice = results
+            .map((r, idx) => ({ r, idx }))
+            .filter(({ r }) => !r.output._alreadyExists && !r.output._skipped)
+            .map(({ idx }) => params.autoRollbackSteps?.[idx])
+            .filter((rb): rb is AwsCommandStep => Boolean(rb))
+            .reverse();
+          for (const rbStep of rollbackSlice) {
+            try {
+              await executeAwsCommand({
+                service: rbStep.service,
+                command: rbStep.command,
+                input: structuredClone(rbStep.params),
+                credentials: params.credentials,
+                region: params.region,
+                isRollback: true,
+              });
+            } catch (rbErr) {
+              // Best-effort rollback — don't mask the original error. Record
+              // the first failure so the caller can warn about partial state
+              // instead of silently leaving half-applied changes behind.
+              if (!rollbackError) {
+                rollbackError =
+                  rbErr instanceof Error ? rbErr.message : String(rbErr);
+              }
+            }
           }
         }
       }
 
-      return { results, error: { stepIndex: i, message, step } };
+      const failure: PlanExecutionResult = {
+        results,
+        error: { stepIndex: i, message, step },
+      };
+      if (rollbackError) {
+        failure.rollbackError = rollbackError;
+      }
+      if (rollbackSkipped) {
+        failure.rollbackSkipped = rollbackSkipped;
+      }
+      return failure;
     }
   }
 

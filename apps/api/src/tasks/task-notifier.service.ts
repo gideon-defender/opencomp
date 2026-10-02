@@ -187,7 +187,10 @@ export class TaskNotifierService {
       }
 
       const recipients = Array.from(recipientBuckets.values());
-      const statusLabel = taskStatusLabel({ status: newStatus, locale: emailLocale });
+      const statusLabel = taskStatusLabel({
+        status: newStatus,
+        locale: emailLocale,
+      });
 
       const appUrl =
         process.env.NEXT_PUBLIC_APP_URL ??
@@ -504,8 +507,14 @@ export class TaskNotifierService {
         changedByUser?.name?.trim() ||
         changedByUser?.email?.trim() ||
         (changedByUserId ? 'Someone' : 'Automation');
-      const oldStatusLabel = taskStatusLabel({ status: oldStatus, locale: emailLocale });
-      const newStatusLabel = taskStatusLabel({ status: newStatus, locale: emailLocale });
+      const oldStatusLabel = taskStatusLabel({
+        status: oldStatus,
+        locale: emailLocale,
+      });
+      const newStatusLabel = taskStatusLabel({
+        status: newStatus,
+        locale: emailLocale,
+      });
 
       // Recipients: the task's assignee (if any). If the task is unassigned,
       // fall back to owners/admins so someone who can act on it is notified.
@@ -1197,11 +1206,11 @@ export class TaskNotifierService {
       ]);
 
       // Filter for admins/owners (roles can be comma-separated, e.g., "admin,auditor")
-      const adminMembers = allMembers.filter(
-        (member) =>
-          member.role &&
-          (member.role.includes('admin') || member.role.includes('owner')),
-      );
+      const adminMembers = allMembers.filter((member) => {
+        if (!member.role) return false;
+        const roles = member.role.split(',').map((r) => r.trim());
+        return roles.includes('admin') || roles.includes('owner');
+      });
 
       this.logger.debug(
         `[notifyAutomationFailures] Found ${allMembers.length} total members, ${adminMembers.length} admins/owners for organization ${organizationId}`,
@@ -1411,11 +1420,11 @@ export class TaskNotifierService {
       ]);
 
       // Filter for admins/owners (roles can be comma-separated, e.g., "admin,auditor")
-      const adminMembers = allMembers.filter(
-        (member) =>
-          member.role &&
-          (member.role.includes('admin') || member.role.includes('owner')),
-      );
+      const adminMembers = allMembers.filter((member) => {
+        if (!member.role) return false;
+        const roles = member.role.split(',').map((r) => r.trim());
+        return roles.includes('admin') || roles.includes('owner');
+      });
 
       this.logger.debug(
         `[notifyBulkAutomationFailures] Found ${allMembers.length} total members, ${adminMembers.length} admins/owners for organization ${organizationId}`,

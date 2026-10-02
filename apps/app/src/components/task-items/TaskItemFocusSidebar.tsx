@@ -18,8 +18,8 @@ import {
   TrashCan,
   User as UserIcon,
 } from '@trycompai/design-system/icons';
-import { toast } from 'sonner';
 import { createElement } from 'react';
+import { toast } from 'sonner';
 import {
   PRIORITY_OPTIONS,
   STATUS_OPTIONS,
@@ -308,11 +308,11 @@ export function TaskItemFocusSidebar({
             <button
               type="button"
               className={`w-full h-7 rounded-md select-none transition-all duration-200 focus:outline-none flex items-center gap-2 group ${readOnly ? 'cursor-default opacity-70' : 'cursor-pointer hover:bg-accent/50 active:bg-accent'} ${getStatusColor(taskItem.status)}`}
-                aria-label={`Status: ${taskItem.status.replace('_', ' ')}`}
-              >
-                {createElement(getStatusIcon(taskItem.status), {
-                  className: 'h-3.5 w-3.5 stroke-[2] shrink-0',
-                })}
+              aria-label={`Status: ${taskItem.status.replace('_', ' ')}`}
+            >
+              {createElement(getStatusIcon(taskItem.status), {
+                className: 'h-3.5 w-3.5 stroke-[2] shrink-0',
+              })}
               <span className="text-xs font-medium capitalize flex-1 text-left">
                 {taskItem.status.replace('_', ' ')}
               </span>
@@ -348,11 +348,11 @@ export function TaskItemFocusSidebar({
             <button
               type="button"
               className={`w-full h-7 rounded-md select-none transition-all duration-200 focus:outline-none flex items-center gap-2 group ${readOnly ? 'cursor-default opacity-70' : 'cursor-pointer hover:bg-accent/50 active:bg-accent'} ${getPriorityColor(taskItem.priority)}`}
-                aria-label={`Priority: ${taskItem.priority}`}
-              >
-                {createElement(getPriorityIcon(taskItem.priority), {
-                  className: 'h-3.5 w-3.5 stroke-[2] shrink-0',
-                })}
+              aria-label={`Priority: ${taskItem.priority}`}
+            >
+              {createElement(getPriorityIcon(taskItem.priority), {
+                className: 'h-3.5 w-3.5 stroke-[2] shrink-0',
+              })}
               <span className="text-xs font-medium capitalize flex-1 text-left">
                 {taskItem.priority}
               </span>

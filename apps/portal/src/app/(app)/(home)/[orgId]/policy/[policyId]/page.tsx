@@ -10,8 +10,8 @@ import {
   Stack,
   Text,
 } from '@trycompai/design-system';
-import { headers } from 'next/headers';
 import { getTranslations } from 'next-intl/server';
+import { headers } from 'next/headers';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { PolicyAcceptButton } from './PolicyAcceptButton';

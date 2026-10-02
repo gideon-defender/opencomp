@@ -2,16 +2,16 @@
 
 import { usePermissions } from '@/hooks/use-permissions';
 import { useTrustPortalSettings } from '@/hooks/use-trust-portal-settings';
-import { Button, Switch } from '@trycompai/design-system';
-import { ChevronLeft, ChevronRight } from '@trycompai/design-system/icons';
-import { useCallback, useMemo, useState } from 'react';
-import { toast } from 'sonner';
 import {
   HIGH_RES_LOGO_OVERRIDES,
   registrableDomain,
   toSafeExternalHref,
   upgradeFaviconUrl,
 } from '@gideon-defender/utils';
+import { Button, Switch } from '@trycompai/design-system';
+import { ChevronLeft, ChevronRight } from '@trycompai/design-system/icons';
+import { useCallback, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import {
   DORA,
   GDPR,

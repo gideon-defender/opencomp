@@ -38,10 +38,7 @@ function parseLanguageRanges(header: string): LanguageRange[] {
       }
       return { tag: (tagPart ?? '').trim().toLowerCase(), quality, index };
     })
-    .filter(
-      (range) =>
-        range.tag.length > 0 && range.tag !== '*' && range.quality > 0,
-    )
+    .filter((range) => range.tag.length > 0 && range.tag !== '*' && range.quality > 0)
     .sort((a, b) => b.quality - a.quality || a.index - b.index);
 }
 

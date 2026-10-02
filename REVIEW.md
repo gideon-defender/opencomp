@@ -22,10 +22,9 @@
 
 ### Design System
 
-- New UI must use `@trycompai/design-system` components, not `@gideon-defender/ui` (legacy, being phased out)
-- Icons must come from `@trycompai/design-system/icons` (Carbon icons), not `lucide-react`
-- DS components `Text`, `Stack`, `HStack`, `Badge`, `Button` do not accept `className` — wrap in a `<div>` for custom styling
-- Use DS `Button` props like `loading`, `iconLeft`, `iconRight` instead of manually rendering spinners/icons inside buttons
+- New UI must use `@gideon-defender/ui` components, not `@trycompai/design-system` (being phased out — do NOT add new imports)
+- Icons must come from `lucide-react`, not `@trycompai/design-system/icons` (Carbon icons, being retired)
+- `@gideon-defender/ui` components accept `className` (merged via `cn()`) — use variants + `className` for layout tweaks
 
 ### TypeScript
 
@@ -58,8 +57,8 @@
 
 ## Skip
 
-- Pre-existing `@gideon-defender/ui` usage in files not touched by the PR
-- Pre-existing `lucide-react` usage in files not touched by the PR
+- Pre-existing `@trycompai/design-system` usage in files not touched by the PR
+- Pre-existing `@trycompai/design-system/icons` usage in files not touched by the PR
 - Pre-existing server actions in files not touched by the PR
 - Test files using simplified mock types
 - Generated files under `packages/db/prisma/generated/`

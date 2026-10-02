@@ -75,7 +75,9 @@ function LogRow({ log }: { log: AuditLogWithRelations }) {
       >
         <Avatar className="h-5 w-5 shrink-0">
           <AvatarImage src={log.user?.image || ''} alt={userName} />
-          <AvatarFallback className="text-[9px]">{getInitials(log.user?.name ?? '')}</AvatarFallback>
+          <AvatarFallback className="text-[9px]">
+            {getInitials(log.user?.name ?? '')}
+          </AvatarFallback>
         </Avatar>
 
         <Text size="sm" as="span">

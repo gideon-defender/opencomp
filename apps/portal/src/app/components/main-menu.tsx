@@ -34,7 +34,9 @@ const Item = ({ item, isActive, onSelect, disabled }: ItemProps) => {
   return (
     <TooltipProvider delayDuration={70}>
       {linkDisabled ? (
-        <div className="flex h-[45px] w-[45px] items-center md:justify-center">{tNav('comingSoon')}</div>
+        <div className="flex h-[45px] w-[45px] items-center md:justify-center">
+          {tNav('comingSoon')}
+        </div>
       ) : (
         <Link prefetch href={item.path} onClick={() => onSelect?.()}>
           <Tooltip>

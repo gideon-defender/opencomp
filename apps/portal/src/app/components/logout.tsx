@@ -2,8 +2,8 @@
 
 import { authClient } from '@/app/lib/auth-client';
 import { DropdownMenuItem } from '@gideon-defender/ui/dropdown-menu';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 export function Logout() {

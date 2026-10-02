@@ -5,8 +5,7 @@
  * those cases. Keyed by registrable domain so subdomains match too.
  */
 export const HIGH_RES_LOGO_OVERRIDES: Record<string, string> = {
-  'github.com':
-    'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png',
+  'github.com': 'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png',
   'google.com':
     'https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png',
 };
@@ -72,10 +71,7 @@ export function upgradeFaviconUrl(logoUrl: string | null): string | null {
   let domain: string | null = null;
   try {
     const parsed = new URL(logoUrl);
-    if (
-      parsed.hostname === 'www.google.com' &&
-      parsed.pathname === '/s2/favicons'
-    ) {
+    if (parsed.hostname === 'www.google.com' && parsed.pathname === '/s2/favicons') {
       domain = parsed.searchParams.get('domain');
     }
   } catch {
@@ -88,9 +84,7 @@ export function upgradeFaviconUrl(logoUrl: string | null): string | null {
   if (Object.hasOwn(HIGH_RES_LOGO_OVERRIDES, lower)) {
     return HIGH_RES_LOGO_OVERRIDES[lower] as string;
   }
-  for (const [registered, replacement] of Object.entries(
-    HIGH_RES_LOGO_OVERRIDES,
-  )) {
+  for (const [registered, replacement] of Object.entries(HIGH_RES_LOGO_OVERRIDES)) {
     if (matchesDomainOrSubdomain(lower, registered)) return replacement;
   }
   return logoUrl;

@@ -1,7 +1,7 @@
+import type { AdminTimelineTemplate } from '@/hooks/use-admin-timelines';
+import { mockNextIntl } from '@/test-utils/mocks/next-intl';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { mockNextIntl } from '@/test-utils/mocks/next-intl';
-import type { AdminTimelineTemplate } from '@/hooks/use-admin-timelines';
 
 mockNextIntl();
 
@@ -47,9 +47,7 @@ describe('TemplateEditor delete toast flow', () => {
       <TemplateEditor open={true} onClose={onClose} template={template} onMutate={onMutate} />,
     );
 
-    fireEvent.click(
-      screen.getByRole('button', { name: 'timelineTemplates.editor.delete' }),
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'timelineTemplates.editor.delete' }));
 
     await waitFor(() => {
       expect(api.delete).toHaveBeenCalledWith('/v1/admin/timeline-templates/tpl-1');
@@ -61,15 +59,9 @@ describe('TemplateEditor delete toast flow', () => {
   });
 
   it('renders translated labels instead of hardcoded English', () => {
-    render(
-      <TemplateEditor open={true} onClose={vi.fn()} template={template} onMutate={vi.fn()} />,
-    );
+    render(<TemplateEditor open={true} onClose={vi.fn()} template={template} onMutate={vi.fn()} />);
 
-    expect(
-      screen.getByText('timelineTemplates.editor.editTemplate'),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('timelineTemplates.editor.templateNameLabel'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('timelineTemplates.editor.editTemplate')).toBeInTheDocument();
+    expect(screen.getByText('timelineTemplates.editor.templateNameLabel')).toBeInTheDocument();
   });
 });

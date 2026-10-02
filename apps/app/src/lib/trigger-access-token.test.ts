@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { getValidTriggerAccessToken } from './trigger-access-token';
 
 const { getPayload } = vi.hoisted(() => ({ getPayload: vi.fn() }));
 vi.mock('@gideon-defender/trigger-local', () => ({
   auth: { getPayloadFromJWT: getPayload },
 }));
-import { getValidTriggerAccessToken } from './trigger-access-token';
 
 describe('getValidTriggerAccessToken', () => {
   beforeEach(() => {

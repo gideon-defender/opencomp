@@ -53,7 +53,12 @@ const copy: Record<
   },
 };
 
-export const InvitePortalEmail = ({ email, inviteLink, organizationName, locale = 'en' }: Props) => {
+export const InvitePortalEmail = ({
+  email,
+  inviteLink,
+  organizationName,
+  locale = 'en',
+}: Props) => {
   const t = copy[locale];
   return (
     <Html lang={locale}>

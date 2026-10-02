@@ -17,8 +17,8 @@ import {
   TableRow,
   Text,
 } from '@trycompai/design-system';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 
 type SubmissionRow = {
   id: string;
@@ -75,9 +75,7 @@ export function PortalSubmissionsClient({
   return (
     <Stack gap="lg">
       <PageHeader title={t('pageTitle', { title: formTitle })} />
-      <Text variant="muted">
-        {t('pageDescription', { title: formTitle.toLowerCase() })}
-      </Text>
+      <Text variant="muted">{t('pageDescription', { title: formTitle.toLowerCase() })}</Text>
 
       {showSuccess && (
         <div className="rounded-md border border-green-300 bg-green-50 p-3 text-sm text-green-700 dark:border-green-800 dark:bg-green-950/30 dark:text-green-400">

@@ -60,7 +60,11 @@ export function PolicyGrid({ policies, onPolicyClick, member }: PolicyGridProps)
                           {t('statusLabel', { status: policy.status })}
                           {policy.updatedAt && (
                             <span className="ml-2">
-                              ({t('updatedLabel', { date: new Date(policy.updatedAt).toLocaleDateString() })})
+                              (
+                              {t('updatedLabel', {
+                                date: new Date(policy.updatedAt).toLocaleDateString(),
+                              })}
+                              )
                             </span>
                           )}
                         </Text>

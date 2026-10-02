@@ -40,10 +40,7 @@ export const Message = memo(function Message({
   const latestStreamingReasoning = [...reasoningParts]
     .reverse()
     .find(({ part }) => (part as any)?.state === 'streaming');
-  if (
-    latestStreamingReasoning &&
-    latestStreamingReasoning.index !== expandedReasoningIndex
-  ) {
+  if (latestStreamingReasoning && latestStreamingReasoning.index !== expandedReasoningIndex) {
     setExpandedReasoningIndex(latestStreamingReasoning.index);
   } else if (expandedReasoningIndex === null && reasoningParts.length > 0) {
     setExpandedReasoningIndex(reasoningParts[reasoningParts.length - 1].index);

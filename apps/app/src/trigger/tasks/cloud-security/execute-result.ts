@@ -1,6 +1,8 @@
 interface PermissionError {
   missingActions: string[];
   fixScript?: string;
+  blockedPermissions?: string[];
+  blockedPermissionsMessage?: string;
 }
 
 type ExecuteClassification =
@@ -88,11 +90,23 @@ function parsePermissionError(value: unknown): PermissionError | undefined {
   const missingActions = record.missingActions.filter(
     (action): action is string => typeof action === 'string',
   );
-  if (missingActions.length === 0) return undefined;
+  const blockedPermissions = Array.isArray(record.blockedPermissions)
+    ? record.blockedPermissions.filter((action): action is string => typeof action === 'string')
+    : [];
+  const fixScript = typeof record.fixScript === 'string' ? record.fixScript : undefined;
+  // An all-blocked failure carries no grantable actions, but it still needs
+  // the permissions UX (manual-review banner), not a generic failure.
+  if (missingActions.length === 0 && blockedPermissions.length === 0 && !fixScript) {
+    return undefined;
+  }
 
   return {
     missingActions,
-    ...(typeof record.fixScript === 'string' && { fixScript: record.fixScript }),
+    ...(fixScript && { fixScript }),
+    ...(blockedPermissions.length > 0 && { blockedPermissions }),
+    ...(typeof record.blockedPermissionsMessage === 'string' && {
+      blockedPermissionsMessage: record.blockedPermissionsMessage,
+    }),
   };
 }
 

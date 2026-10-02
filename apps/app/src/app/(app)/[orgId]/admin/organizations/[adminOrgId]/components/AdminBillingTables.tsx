@@ -221,7 +221,9 @@ export function InvoiceRows({
                   {invoiceStatusLabel(t, invoice.status)}
                 </Badge>
               </td>
-              <td className="px-4 py-3">{formatAmount(invoice.amountDue, invoice.currency, locale)}</td>
+              <td className="px-4 py-3">
+                {formatAmount(invoice.amountDue, invoice.currency, locale)}
+              </td>
               <td className="px-4 py-3">
                 {formatDate(invoice.createdAt, t('organizations.billingTables.notAvailable'))}
               </td>

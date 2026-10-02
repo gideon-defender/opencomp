@@ -23,8 +23,8 @@ import {
   TrashCan,
   Upload,
 } from '@trycompai/design-system/icons';
-import type { FleetPolicy } from '../../types';
 import { useTranslations } from 'next-intl';
+import type { FleetPolicy } from '../../types';
 import { PolicyImagePreviewModal } from './PolicyImagePreviewModal';
 import { PolicyImageResetModal } from './PolicyImageResetModal';
 import { PolicyImageUploadModal } from './PolicyImageUploadModal';

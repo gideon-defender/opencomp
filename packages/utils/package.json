@@ -7,8 +7,8 @@
     "axios": "^1.16.0"
   },
   "devDependencies": {
-    "@types/node": "^24.0.3",
-    "typescript": "^5.8.3",
+    "@types/node": "^24.2.0",
+    "typescript": "^5.9.3",
     "vitest": "^4.1.11"
   },
   "main": "./dist/index.js",
@@ -45,6 +45,14 @@
     "./format": {
       "types": "./dist/format.d.ts",
       "default": "./dist/format.js"
+    },
+    "./remediation-denylist": {
+      "types": "./dist/remediation-denylist.d.ts",
+      "default": "./dist/remediation-denylist.js"
+    },
+    "./remediation-script": {
+      "types": "./dist/remediation-script.d.ts",
+      "default": "./dist/remediation-script.js"
     },
     "./s3": {
       "types": "./dist/s3.d.ts",

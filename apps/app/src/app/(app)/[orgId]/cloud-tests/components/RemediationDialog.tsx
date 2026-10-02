@@ -15,6 +15,7 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { startPreview, startSingleFix } from '../actions/single-fix';
+import { formatBlockedActionsForDisplay } from '../lib/remediation-denylist';
 import { extractJsonSegments } from './extract-json-segments';
 import { PermissionErrorPanel } from './PermissionErrorPanel';
 
@@ -28,7 +29,12 @@ interface SingleFixProgress {
   phase: 'executing' | 'success' | 'failed' | 'needs_permissions' | 'manual';
   error?: string;
   actionId?: string;
-  permissionError?: { missingActions: string[]; fixScript?: string };
+  permissionError?: {
+    missingActions: string[];
+    fixScript?: string;
+    blockedPermissions?: string[];
+    blockedPermissionsMessage?: string;
+  };
   guidedSteps?: string[];
 }
 
@@ -70,6 +76,9 @@ interface PreviewData {
   missingPermissions?: string[];
   permissionFixScript?: string;
   allRequiredPermissions?: string[];
+  blockedPermissions?: string[];
+  blockedPermissionsMessage?: string;
+  needsFreshPreview?: string;
 }
 
 const RISK_STYLES: Record<string, string> = {
@@ -134,9 +143,16 @@ function CodeBlock({ code }: { code: string }) {
   const t = useTranslations('integrations.list');
   const [copied, setCopied] = useState(false);
   const handleCopy = () => {
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    navigator.clipboard
+      .writeText(code)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {
+        // Non-secure context or denied permission — leave the code visible
+        // for manual selection instead of an unhandled rejection.
+      });
   };
   return (
     <div className="group relative rounded-md border bg-muted/50">
@@ -373,6 +389,8 @@ export function RemediationDialog({
   const [permissionError, setPermissionError] = useState<{
     missingActions: string[];
     fixScript?: string;
+    blockedPermissions?: string[];
+    blockedPermissionsMessage?: string;
   } | null>(null);
   const [acknowledgment, setAcknowledgment] = useState<string | null>(null);
 
@@ -396,6 +414,13 @@ export function RemediationDialog({
 
   // Ref to store permissions across rechecks (avoids stale closure in useCallback)
   const permissionsRef = useRef<string[] | undefined>(undefined);
+  // Set while the retry propagation wait sleeps — close cancels the wait so
+  // no fix starts for a closed dialog.
+  const retryCancelledRef = useRef(false);
+  useEffect(() => {
+    if (!open) retryCancelledRef.current = true;
+    else retryCancelledRef.current = false;
+  }, [open]);
 
   // Watch preview task progress
   useEffect(() => {
@@ -516,9 +541,21 @@ export function RemediationDialog({
 
   // Reset dialog state when a new remediation is opened — applied during render
   // so the fresh state is in place before paint, without a cascading effect.
-  const [prevDialogReset, setPrevDialogReset] = useState({ open, remediationKey });
-  if (prevDialogReset.open !== open || prevDialogReset.remediationKey !== remediationKey) {
-    setPrevDialogReset({ open, remediationKey });
+  // Tracks the full finding identity: the same remediationKey recurs across
+  // findings, so keying on it alone shows finding A's preview for finding B.
+  const [prevDialogReset, setPrevDialogReset] = useState({
+    open,
+    remediationKey,
+    checkResultId,
+    connectionId,
+  });
+  if (
+    prevDialogReset.open !== open ||
+    prevDialogReset.remediationKey !== remediationKey ||
+    prevDialogReset.checkResultId !== checkResultId ||
+    prevDialogReset.connectionId !== connectionId
+  ) {
+    setPrevDialogReset({ open, remediationKey, checkResultId, connectionId });
     if (open) {
       setError(null);
       setPermissionError(null);
@@ -528,6 +565,11 @@ export function RemediationDialog({
       setExecuteRunId(null);
       setExecuteAccessToken(null);
       setSucceeded(false);
+      // A close mid-execute must not leak the spinner into the next open —
+      // the background task continues, but this dialog starts idle.
+      setIsExecuting(false);
+      setIsWaitingPropagation(false);
+      setIsLoadingPreview(false);
 
       // Guided-only: skip API call, use local data
       if (guidedOnly && guidedSteps) {
@@ -581,7 +623,7 @@ export function RemediationDialog({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, remediationKey]);
+  }, [open, remediationKey, checkResultId, connectionId]);
 
   const handleExecute = async () => {
     setIsExecuting(true);
@@ -609,9 +651,11 @@ export function RemediationDialog({
   };
 
   const handleRetry = async () => {
+    retryCancelledRef.current = false;
     setIsWaitingPropagation(true);
     // IAM permission changes take up to 10s to propagate in AWS
     await new Promise((r) => setTimeout(r, 10_000));
+    if (retryCancelledRef.current) return;
     setIsWaitingPropagation(false);
     await handleExecute();
   };
@@ -695,10 +739,17 @@ export function RemediationDialog({
                 error={error}
                 missingActions={permissionError?.missingActions}
                 fixScript={permissionError?.fixScript}
+                blockedPermissions={permissionError?.blockedPermissions}
+                blockedPermissionsMessage={permissionError?.blockedPermissionsMessage}
                 apiCalls={preview?.apiCalls}
                 onRetry={handleRetry}
                 isRetrying={isExecuting}
                 isWaiting={isWaitingPropagation}
+                provider={
+                  providerSlug === 'azure' || providerSlug === 'gcp' || providerSlug === 'aws'
+                    ? providerSlug
+                    : undefined
+                }
               />
             )}
 
@@ -808,13 +859,13 @@ export function RemediationDialog({
                     </div>
 
                     {/* API calls — collapsible if many */}
-                    {preview.apiCalls.length > 0 && (
+                    {(preview.apiCalls?.length ?? 0) > 0 && (
                       <details className="text-xs" open>
                         <summary className="cursor-pointer text-muted-foreground font-medium">
-                          {t('cloudTests_apiCallsCount', { count: preview.apiCalls.length })}
+                          {t('cloudTests_apiCallsCount', { count: preview.apiCalls?.length ?? 0 })}
                         </summary>
                         <div className="flex flex-wrap gap-1 mt-1.5">
-                          {preview.apiCalls.map((call, i) => {
+                          {(preview.apiCalls ?? []).map((call, i) => {
                             const label =
                               typeof call === 'string'
                                 ? call
@@ -848,15 +899,35 @@ export function RemediationDialog({
                               {preview.permissionFixScript}
                             </pre>
                           )}
+                          {preview.blockedPermissions && preview.blockedPermissions.length > 0 && (
+                            <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-relaxed text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                              {preview.blockedPermissionsMessage ??
+                                'Some permissions need manual review and were not granted.'}{' '}
+                              {formatBlockedActionsForDisplay(preview.blockedPermissions)}
+                            </p>
+                          )}
+                          {preview.needsFreshPreview && !preview.permissionFixScript && (
+                            <p className="text-[11px] leading-relaxed text-muted-foreground">
+                              {preview.needsFreshPreview}
+                            </p>
+                          )}
                           <div className="flex gap-2">
                             <button
                               type="button"
                               onClick={() => {
                                 if (preview.permissionFixScript) {
-                                  navigator.clipboard.writeText(
-                                    preview.permissionFixScript.replace(/\s*\\\n\s*/g, ' '),
-                                  );
-                                  toast.success(t('cloudTests_copiedShort'));
+                                  navigator.clipboard
+                                    .writeText(
+                                      preview.permissionFixScript.replace(/\s*\\\n\s*/g, ' '),
+                                    )
+                                    .then(
+                                      () => {
+                                        toast.success(t('cloudTests_copiedShort'));
+                                      },
+                                      () => {
+                                        toast.error('Copy failed — select and copy manually');
+                                      },
+                                    );
                                 }
                               }}
                               className="flex items-center gap-1.5 rounded-md bg-primary px-2.5 py-1 text-[11px] font-medium text-primary-foreground hover:bg-primary/90"
@@ -873,13 +944,22 @@ export function RemediationDialog({
                             </a>
                             <button
                               type="button"
-                              onClick={() => loadPreview(true)}
+                              onClick={() =>
+                                loadPreview(
+                                  // A recheck replays the expired client list
+                                  // and returns the same script-less answer —
+                                  // only a fresh preview breaks the loop.
+                                  !(preview.needsFreshPreview && !preview.permissionFixScript),
+                                )
+                              }
                               disabled={isLoadingPreview}
                               className="flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-[11px] font-medium hover:bg-muted disabled:opacity-50"
                             >
                               {isLoadingPreview
                                 ? t('cloudTests_checking')
-                                : t('cloudTests_recheck')}
+                                : preview.needsFreshPreview && !preview.permissionFixScript
+                                  ? t('cloudTests_freshPreview')
+                                  : t('cloudTests_recheck')}
                             </button>
                           </div>
                         </div>

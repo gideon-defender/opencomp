@@ -78,7 +78,8 @@ export const PolicyAcknowledgmentDigestEmail = ({
   const subjectText = computePolicyAcknowledgmentDigestSubject(orgsWithPolicies, locale);
   const isMultiOrg = orgsWithPolicies.length > 1;
   const greeting = locale === 'es' ? 'Hola' : 'Hi';
-  const footer = locale === 'es' ? 'Esta notificación estaba destinada a' : 'This notification was intended for';
+  const footer =
+    locale === 'es' ? 'Esta notificación estaba destinada a' : 'This notification was intended for';
 
   return (
     <Html lang={locale}>

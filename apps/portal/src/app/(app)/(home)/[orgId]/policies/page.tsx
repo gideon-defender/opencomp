@@ -10,8 +10,8 @@ import {
   Text,
 } from '@trycompai/design-system';
 import { Document } from '@trycompai/design-system/icons';
-import { headers } from 'next/headers';
 import { getTranslations } from 'next-intl/server';
+import { headers } from 'next/headers';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { sortPoliciesByName } from '../components/policy/sort-policies-by-name';

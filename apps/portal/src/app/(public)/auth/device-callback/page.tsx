@@ -3,8 +3,8 @@
 import { BrandLogo } from '@gideon-defender/ui/brand-logo';
 import { Card, CardContent, CardHeader, CardTitle } from '@gideon-defender/ui/card';
 import { CheckCircle2, Loader2 } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 type Status = 'redirecting' | 'success' | 'error';

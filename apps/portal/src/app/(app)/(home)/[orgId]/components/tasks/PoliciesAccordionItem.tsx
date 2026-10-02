@@ -9,9 +9,9 @@ import {
   cn,
 } from '@trycompai/design-system';
 import { CheckmarkFilled, CircleDash, Document } from '@trycompai/design-system/icons';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -58,9 +58,7 @@ export function PoliciesAccordionItem({ policies, member }: PoliciesAccordionIte
       toast.success(tPolicies('allAcceptedToast'));
       router.refresh();
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : tPolicies('acceptPoliciesErrorGeneric'),
-      );
+      toast.error(error instanceof Error ? error.message : tPolicies('acceptPoliciesErrorGeneric'));
     } finally {
       setIsAcceptingAll(false);
     }

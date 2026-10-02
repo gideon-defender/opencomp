@@ -143,8 +143,12 @@ describe('CheckRunItem scope actions', () => {
       />,
     );
 
-    expect(screen.queryByRole('button', { name: 'runItem.markOutOfScope' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'runItem.moveBackInScope' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'runItem.markOutOfScope' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'runItem.moveBackInScope' }),
+    ).not.toBeInTheDocument();
     // Read-only users still see the excepted state + reason.
     expect(screen.getByText('runItem.outOfScope')).toBeInTheDocument();
   });
@@ -159,8 +163,12 @@ describe('CheckRunItem scope actions', () => {
       />,
     );
 
-    expect(screen.queryByRole('button', { name: 'runItem.markOutOfScope' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'runItem.moveBackInScope' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'runItem.markOutOfScope' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'runItem.moveBackInScope' }),
+    ).not.toBeInTheDocument();
   });
 
   it('expands beyond the first three failing rows so every sampled resource is markable', () => {
@@ -188,13 +196,19 @@ describe('CheckRunItem scope actions', () => {
 
     // Expanded: every sampled failing row is actionable.
     expect(screen.getAllByRole('button', { name: 'runItem.markOutOfScope' })).toHaveLength(5);
-    expect(screen.queryByRole('button', { name: 'runItem.showMoreIssues' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'runItem.showMoreIssues' }),
+    ).not.toBeInTheDocument();
   });
 
   it('renders no actions at all when none are provided (other callers unaffected)', () => {
     render(<CheckRunItem run={buildRun()} isLatest organizationName="Acme" />);
 
-    expect(screen.queryByRole('button', { name: 'runItem.markOutOfScope' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'runItem.moveBackInScope' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'runItem.markOutOfScope' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'runItem.moveBackInScope' }),
+    ).not.toBeInTheDocument();
   });
 });

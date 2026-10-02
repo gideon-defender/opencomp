@@ -108,8 +108,6 @@ describe('buildCitationsHeading', () => {
       linkedTotals: { controls: 0, tasks: 0 },
       locale: 'es',
     });
-    expect(gaps).toBe(
-      'Este plan aborda el riesgo a través de 2 brechas recomendadas:',
-    );
+    expect(gaps).toBe('Este plan aborda el riesgo a través de 2 brechas recomendadas:');
   });
 });

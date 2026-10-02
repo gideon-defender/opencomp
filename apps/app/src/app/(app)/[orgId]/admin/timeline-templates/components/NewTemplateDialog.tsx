@@ -20,12 +20,12 @@ import {
   Stack,
   Text,
 } from '@trycompai/design-system';
+import { useTranslations } from 'next-intl';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { useTranslations } from 'next-intl';
 
 export interface NewTemplateSchemaMessages {
   name: string;
@@ -147,9 +147,7 @@ export function NewTemplateDialog({ open, onClose }: NewTemplateDialogProps) {
                   render={({ field }) => (
                     <Select value={field.value} onValueChange={field.onChange}>
                       <SelectTrigger>
-                        <SelectValue
-                          placeholder={t('timelineTemplates.editor.selectFramework')}
-                        />
+                        <SelectValue placeholder={t('timelineTemplates.editor.selectFramework')} />
                       </SelectTrigger>
                       <SelectContent>
                         {frameworks.map((fw) => (

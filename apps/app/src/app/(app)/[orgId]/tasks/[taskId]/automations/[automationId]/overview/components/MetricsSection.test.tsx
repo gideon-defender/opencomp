@@ -1,7 +1,7 @@
 import { mockNextIntl } from '@/test-utils/mocks/next-intl';
 import { render, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderToString } from 'react-dom/server';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 mockNextIntl();
 

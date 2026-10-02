@@ -233,6 +233,8 @@ export class AzureRemediationService {
 
       // If AI decided it can't auto-fix after seeing real state, fail clearly
       if (!plan.canAutoFix || plan.fixSteps.length === 0) {
+        // Drop the dead plan so Retry regenerates instead of reloading it.
+        this.planCache.delete(cacheKey);
         await db.remediationAction.update({
           where: { id: action.id },
           data: {
@@ -340,6 +342,8 @@ export class AzureRemediationService {
 
       // If still failing after self-healing attempts
       if (fixResult.error) {
+        // Drop the dead plan so Retry regenerates instead of reloading it.
+        this.planCache.delete(cacheKey);
         const permError = parseAzurePermissionError(fixResult.error.message);
 
         // Store ALL completed steps (even partial) so we can see what was modified
@@ -366,10 +370,15 @@ export class AzureRemediationService {
                 error: fixResult.error.message,
               },
               rollbackSteps: plan.rollbackSteps,
-              ...(permError && {
-                missingActions: permError.missingActions,
-                fixScript: permError.fixScript,
-              }),
+              // parseAzurePermissionError always returns an object — gate on
+              // the flag, not truthiness, or every failure carries empty
+              // permission fields.
+              ...(permError.isPermissionError
+                ? {
+                    missingActions: permError.missingActions,
+                    fixScript: permError.fixScript,
+                  }
+                : {}),
             } as unknown as Prisma.InputJsonValue,
             executedAt: new Date(),
           },
@@ -381,10 +390,12 @@ export class AzureRemediationService {
           resourceId: finding.resourceId,
           error: fixResult.error.message,
           previousState,
-          ...(permError && {
-            missingPermissions: permError.missingActions,
-            permissionFixScript: permError.fixScript,
-          }),
+          ...(permError.isPermissionError
+            ? {
+                missingPermissions: permError.missingActions,
+                permissionFixScript: permError.fixScript,
+              }
+            : {}),
         };
       }
 
@@ -584,10 +595,12 @@ export class AzureRemediationService {
         remediationKey: action.remediationKey,
         resourceId: action.checkResultId,
         error: result.error.message,
-        ...(permError && {
-          missingPermissions: permError.missingActions,
-          permissionFixScript: permError.fixScript,
-        }),
+        ...(permError.isPermissionError
+          ? {
+              missingPermissions: permError.missingActions,
+              permissionFixScript: permError.fixScript,
+            }
+          : {}),
       };
     }
 

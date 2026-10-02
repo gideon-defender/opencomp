@@ -118,12 +118,8 @@ export function ResultsView({
         <div className="bg-primary/10 flex items-center gap-3 rounded-lg border border-primary/20 p-4">
           <Loader2 className="text-primary h-5 w-5 animate-spin flex-shrink-0" />
           <div className="flex-1">
-            <p className="text-primary text-sm font-medium">
-              {t('results.scanningInProgress')}
-            </p>
-            <p className="text-muted-foreground text-xs">
-              {t('results.scanningDescription')}
-            </p>
+            <p className="text-primary text-sm font-medium">{t('results.scanningInProgress')}</p>
+            <p className="text-muted-foreground text-xs">{t('results.scanningDescription')}</p>
           </div>
         </div>
       )}

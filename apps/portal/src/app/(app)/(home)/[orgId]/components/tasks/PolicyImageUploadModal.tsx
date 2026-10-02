@@ -12,8 +12,8 @@ import {
   Spinner,
 } from '@trycompai/design-system';
 import { Add, TrashCan } from '@trycompai/design-system/icons';
-import Image from 'next/image';
 import { useTranslations } from 'next-intl';
+import Image from 'next/image';
 import { toast } from 'sonner';
 import { FleetPolicy } from '../../types';
 
@@ -182,7 +182,9 @@ export function PolicyImageUploadModal({
             <>
               <div className="flex items-center gap-2 mr-auto">
                 <span className="text-sm text-muted-foreground">
-                  {files.length === 1 ? t('fileCount', { count: files.length }) : t('fileCountPlural', { count: files.length })}
+                  {files.length === 1
+                    ? t('fileCount', { count: files.length })
+                    : t('fileCountPlural', { count: files.length })}
                 </span>
               </div>
               <Button

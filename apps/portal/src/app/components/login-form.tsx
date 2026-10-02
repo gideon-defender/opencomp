@@ -1,7 +1,7 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
 import { GideonSignIn } from './gideon-sign-in';
 import { GoogleSignIn } from './google-sign-in';
 import { MicrosoftSignIn } from './microsoft-sign-in';

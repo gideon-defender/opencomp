@@ -16,12 +16,11 @@ import {
   Text,
 } from '@trycompai/design-system';
 import { Add, TrashCan } from '@trycompai/design-system/icons';
-import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { useEffect, useMemo, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { useMemo } from 'react';
-import { useTranslations } from 'next-intl';
 import { PhaseRow } from './PhaseRow';
 import { createNewTemplate, getDefaults, saveExistingTemplate } from './template-actions';
 
@@ -212,9 +211,9 @@ export function TemplateEditor({ open, onClose, template, onMutate }: TemplateEd
               </div>
 
               <div className="flex items-center justify-between">
-                  <Text size="sm" weight="semibold">
-                    {t('timelineTemplates.editor.phases')}
-                  </Text>
+                <Text size="sm" weight="semibold">
+                  {t('timelineTemplates.editor.phases')}
+                </Text>
                 <Button
                   type="button"
                   size="sm"

@@ -4,7 +4,7 @@ model RemediationBatch {
   organizationId String
   initiatedById  String
   triggerRunId   String?
-  status         String   @default("pending") // pending, running, done, cancelled
+  status         String   @default("pending") // pending, running, completed/done, failed, cancelled
   findings       Json     @default("[]") // Array of { id, key, title, status, error? }
   fixed          Int      @default(0)
   skipped        Int      @default(0)
@@ -17,4 +17,10 @@ model RemediationBatch {
   @@index([connectionId])
   @@index([organizationId])
   @@index([status])
+  // Unmanaged partial unique index (see migration
+  // 20261003120000_remediation_batch_one_active): one active
+  // (pending/running) batch per connection. Declared in SQL only — Prisma
+  // cannot express partial indexes — so `migrate diff` will not show it.
+  // Roll back with:
+  //   DROP INDEX IF EXISTS "RemediationBatch_one_active_per_connection";
 }

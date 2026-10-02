@@ -96,9 +96,7 @@ export function PdfViewer({
       }
       const query = versionId ? `?versionId=${versionId}` : '';
       try {
-        const response = await api.get<{ url: string }>(
-          `/v1/policies/${policyId}/pdf-url${query}`,
-        );
+        const response = await api.get<{ url: string }>(`/v1/policies/${policyId}/pdf-url${query}`);
         if (cancelled) return;
         if (response.data?.url) {
           setSignedUrl(response.data.url);

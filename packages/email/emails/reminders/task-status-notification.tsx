@@ -56,8 +56,7 @@ const copy: Record<
     footer: 'esta notificación estaba destinada a',
     failedLabel: 'Fallida',
     reviewLabel: 'Necesita revisión',
-    failedMessage:
-      'Tu tarea no ha superado las comprobaciones automáticas y requiere tu atención.',
+    failedMessage: 'Tu tarea no ha superado las comprobaciones automáticas y requiere tu atención.',
     reviewMessage: 'Tu tarea ha superado su fecha de revisión y debe ser revisada.',
   },
 };
@@ -99,13 +98,13 @@ export const TaskStatusNotificationEmail = ({
 
             {locale === 'es' ? (
               <Text className="text-[14px] leading-[24px] text-[#121212]">
-                La tarea <strong>&quot;{taskName}&quot;</strong> de <strong>{organizationName}</strong>{' '}
-                requiere tu atención.
+                La tarea <strong>&quot;{taskName}&quot;</strong> de{' '}
+                <strong>{organizationName}</strong> requiere tu atención.
               </Text>
             ) : (
               <Text className="text-[14px] leading-[24px] text-[#121212]">
-                The task <strong>&quot;{taskName}&quot;</strong> in <strong>{organizationName}</strong>{' '}
-                requires your attention.
+                The task <strong>&quot;{taskName}&quot;</strong> in{' '}
+                <strong>{organizationName}</strong> requires your attention.
               </Text>
             )}
 
