@@ -49,12 +49,6 @@ export default async function RootPage({
     return redirect(await buildUrlWithParams('/auth'));
   }
 
-  const intent = (await searchParams)?.intent;
-
-  if (intent === 'create-additional') {
-    return redirect(await buildUrlWithParams('/setup'));
-  }
-
   const meRes = await serverApi.get<AuthMeResponse>('/v1/auth/me');
   const memberships = meRes.data?.organizations ?? [];
 

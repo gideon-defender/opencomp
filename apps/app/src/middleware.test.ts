@@ -97,12 +97,11 @@ describe('Middleware', () => {
       expect(response.status).toBe(200);
     });
 
-    it('should allow access to /setup with intent param', async () => {
+    it('should allow access to /setup', async () => {
       // Arrange
       setupAuthMocks();
 
       const request = await createMockRequest('/setup', {
-        searchParams: Promise.resolve({ intent: 'create-additional' }),
         authenticated: true,
       });
 

@@ -6,11 +6,13 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase();
+  const initials = name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => Array.from(part)[0]?.toUpperCase())
+    .join('');
+  return initials || '?';
 }
 
 export function sleep(ms: number) {
@@ -22,7 +24,7 @@ export function isJSON(str: string) {
   try {
     const parsed = JSON.parse(str);
     return typeof parsed === 'object' && parsed !== null;
-  } catch (e) {
+  } catch {
     return false;
   }
 }

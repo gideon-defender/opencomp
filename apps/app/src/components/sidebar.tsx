@@ -1,15 +1,13 @@
 import { getFeatureFlags } from '@/app/posthog';
 import { APP_AWS_ORG_ASSETS_BUCKET, s3Client } from '@/app/s3';
-import { serverApi } from '@/lib/api-server';
 import { getSignedUrl } from '@/lib/s3-presigner';
-import type { OrganizationFromMe } from '@/types';
 import { auth } from '@/utils/auth';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { db, type Organization, Role } from '@db/server';
 import { cn } from '@gideon-defender/ui/cn';
 import { cookies, headers } from 'next/headers';
 import { MainMenu } from './main-menu';
-import { OrganizationSwitcher } from './organization-switcher';
+import { OrganizationBadge } from './organization-badge';
 import { SidebarCollapseButton } from './sidebar-collapse-button';
 import { SidebarLogo } from './sidebar-logo';
 
@@ -25,28 +23,20 @@ export async function Sidebar({
 }) {
   const cookieStore = await cookies();
   const isCollapsed = collapsed || cookieStore.get('sidebar-collapsed')?.value === 'true';
-  const meRes = await serverApi.get<{ organizations: OrganizationFromMe[] }>('/v1/auth/me');
-  const organizations = meRes.data?.organizations ?? [];
 
-  // Generate logo URLs for all organizations
-  const logoUrls: Record<string, string> = {};
-  if (s3Client && APP_AWS_ORG_ASSETS_BUCKET) {
-    const s3 = s3Client;
-    await Promise.all(
-      organizations.map(async (org) => {
-        if (org.logo) {
-          try {
-            const command = new GetObjectCommand({
-              Bucket: APP_AWS_ORG_ASSETS_BUCKET,
-              Key: org.logo,
-            });
-            logoUrls[org.id] = await getSignedUrl(s3, command, { expiresIn: 3600 });
-          } catch {
-            // Logo not available
-          }
-        }
-      }),
-    );
+  // Single-tenant: organization comes from the route (IdP tenant). Only the
+  // current organization's logo is needed for the badge.
+  let logoUrl: string | undefined;
+  if (s3Client && APP_AWS_ORG_ASSETS_BUCKET && organization?.logo) {
+    try {
+      const command = new GetObjectCommand({
+        Bucket: APP_AWS_ORG_ASSETS_BUCKET,
+        Key: organization.logo,
+      });
+      logoUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+    } catch {
+      // Logo not available
+    }
   }
 
   // Check feature flags for menu items
@@ -88,11 +78,10 @@ export async function Sidebar({
           <SidebarLogo isCollapsed={isCollapsed} />
         </div>
         <div className="mt-2 flex flex-col gap-2">
-          <OrganizationSwitcher
-            organizations={organizations}
+          <OrganizationBadge
             organization={organization}
             isCollapsed={isCollapsed}
-            logoUrls={logoUrls}
+            logoUrl={logoUrl}
           />
           <MainMenu
             organizationId={organization?.id ?? ''}

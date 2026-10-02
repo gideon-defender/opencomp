@@ -1,7 +1,6 @@
 'use client';
 
 import { apiClient, unwrapApiData } from '@/lib/api-client';
-import type { OrganizationFromMe } from '@/types';
 import useSWR from 'swr';
 
 /** User shape returned by `GET /v1/auth/me` (see `AuthController.getMe`). */
@@ -15,7 +14,6 @@ export interface AuthMeUser {
 
 export interface AuthMeData {
   user: AuthMeUser | null;
-  organizations: OrganizationFromMe[];
   pendingInvitation: { id: string } | null;
   hasInactiveMembership: boolean;
   impersonatedBy: string | null;
@@ -38,7 +36,6 @@ export function useAuthMe() {
 
   return {
     user: data?.user ?? null,
-    organizations: data?.organizations ?? [],
     impersonatedBy: data?.impersonatedBy ?? null,
     authType: data?.authType ?? null,
     hasInactiveMembership: data?.hasInactiveMembership ?? false,

@@ -1,16 +1,15 @@
 'use client';
 
-import type { OrganizationFromMe } from '@/types';
 import { BrandLogo } from '@gideon-defender/ui/brand-logo';
 import { Button } from '@gideon-defender/ui/button';
 import { Icons } from '@gideon-defender/ui/icons';
 import { Sheet, SheetContent } from '@gideon-defender/ui/sheet';
 import { useState } from 'react';
 import { MainMenu } from './main-menu';
-import { OrganizationSwitcher } from './organization-switcher';
+import { OrganizationBadge } from './organization-badge';
 
 interface MobileMenuProps {
-  organizations: OrganizationFromMe[];
+  organization: { id: string; name: string } | null;
   isCollapsed?: boolean;
   organizationId?: string;
   isQuestionnaireEnabled?: boolean;
@@ -19,7 +18,7 @@ interface MobileMenuProps {
 
 export function MobileMenu({
   organizationId,
-  organizations,
+  organization,
   isQuestionnaireEnabled = false,
   isTrustNdaEnabled = false,
 }: MobileMenuProps) {
@@ -28,8 +27,6 @@ export function MobileMenu({
   const handleCloseSheet = () => {
     setOpen(false);
   };
-
-  const currentOrganization = organizations.find((org) => org.id === organizationId) || null;
 
   return (
     <Sheet open={isOpen} onOpenChange={setOpen}>
@@ -48,11 +45,7 @@ export function MobileMenu({
           <BrandLogo />
         </div>
         <div className="flex flex-col gap-2">
-          <OrganizationSwitcher
-            organizations={organizations}
-            organization={currentOrganization}
-            modal={false}
-          />
+          <OrganizationBadge organization={organization} />
           <MainMenu
             organizationId={organizationId}
             onItemClick={handleCloseSheet}

@@ -1,15 +1,10 @@
 import { CheckoutCompleteDialog } from '@/components/dialogs/checkout-complete-dialog';
 import { MinimalHeader } from '@/components/layout/MinimalHeader';
-import { serverApi } from '@/lib/api-server';
-import type { OrganizationFromMe } from '@/types';
 import { auth } from '@/utils/auth';
+import { db } from '@db/server';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { OnboardingSidebar } from '../../setup/components/OnboardingSidebar';
-
-interface AuthMeResponse {
-  organizations: OrganizationFromMe[];
-}
 
 interface OnboardingRouteLayoutProps {
   children: React.ReactNode;
@@ -30,12 +25,19 @@ export default async function OnboardingRouteLayout({
     notFound();
   }
 
-  // Verify membership via auth/me endpoint
-  const meRes = await serverApi.get<AuthMeResponse>('/v1/auth/me');
-  const orgs = meRes.data?.organizations ?? [];
-  const organization = orgs.find((o) => o.id === orgId);
+  // Single-tenant: verify membership directly instead of listing all
+  // organizations via the /v1/auth/me endpoint. Mirrors the /v1/auth/me
+  // filters — only active, non-deactivated memberships may proceed.
+  const member = await db.member.findFirst({
+    where: {
+      userId: session.user.id,
+      organizationId: orgId,
+      deactivated: false,
+      isActive: true,
+    },
+  });
 
-  if (!organization) {
+  if (!member) {
     notFound();
   }
 
@@ -43,12 +45,7 @@ export default async function OnboardingRouteLayout({
     <main className="flex min-h-dvh flex-col">
       <div className="flex flex-1 min-h-0">
         <div className="flex-1 flex flex-col">
-          <MinimalHeader
-            user={session.user}
-            organizations={[]}
-            currentOrganization={organization}
-            variant="onboarding"
-          />
+          <MinimalHeader user={session.user} variant="onboarding" />
           {children}
         </div>
 
@@ -56,7 +53,7 @@ export default async function OnboardingRouteLayout({
           <OnboardingSidebar className="w-full max-w-xl mx-auto h-1/2 mt-auto" />
         </div>
       </div>
-      <CheckoutCompleteDialog orgId={organization.id} />
+      <CheckoutCompleteDialog orgId={orgId} />
     </main>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import type { AuditLogWithRelations } from '@/hooks/use-audit-logs';
+import { getInitials } from '@/lib/utils';
 import type { AuditLog } from '@db';
 import { Avatar, AvatarFallback, AvatarImage } from '@gideon-defender/ui/avatar';
 import { Badge, Button, HStack, Section, Spinner, Stack, Text } from '@trycompai/design-system';
@@ -10,16 +11,6 @@ import { ActivityIcon, ChevronDownIcon, ChevronRightIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 const LOGS_PER_PAGE = 15;
-
-const getInitials = (name = '') =>
-  name
-    ? name
-        .split(' ')
-        .map((p) => p[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2)
-    : 'U';
 
 /** Extract plain text from a value that may be TipTap JSON */
 function extractPlainText(str: string): string {
@@ -84,7 +75,7 @@ function LogRow({ log }: { log: AuditLogWithRelations }) {
       >
         <Avatar className="h-5 w-5 shrink-0">
           <AvatarImage src={log.user?.image || ''} alt={userName} />
-          <AvatarFallback className="text-[9px]">{getInitials(log.user?.name)}</AvatarFallback>
+          <AvatarFallback className="text-[9px]">{getInitials(log.user?.name ?? '')}</AvatarFallback>
         </Avatar>
 
         <Text size="sm" as="span">

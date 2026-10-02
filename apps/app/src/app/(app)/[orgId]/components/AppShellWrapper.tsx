@@ -5,7 +5,7 @@ import Chat from '@/components/ai/chat';
 import { CheckoutCompleteDialog } from '@/components/dialogs/checkout-complete-dialog';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { NotificationBell } from '@/components/notifications/notification-bell';
-import { OrganizationSwitcher } from '@/components/organization-switcher';
+import { OrganizationBadge } from '@/components/organization-badge';
 import { SidebarProvider, useSidebar } from '@/context/sidebar-context';
 import {
   canAccessCompliance,
@@ -13,7 +13,6 @@ import {
   hasAnyPermission,
   type UserPermissions,
 } from '@/lib/permissions';
-import type { OrganizationFromMe } from '@/types';
 import { signOutFromGideon } from '@/utils/gideon-sign-out';
 import { Badge, Globe, Locked, Logout, ManageProtection, Settings } from '@carbon/icons-react';
 import type { Onboarding, Organization } from '@db';
@@ -65,8 +64,7 @@ import { ShellRailNavItem } from './ShellRailNavItem';
 interface AppShellWrapperProps {
   children: React.ReactNode;
   organization: Organization;
-  organizations: OrganizationFromMe[];
-  logoUrls: Record<string, string>;
+  logoUrl?: string;
   onboarding: Onboarding | null;
   isCollapsed: boolean;
   isQuestionnaireEnabled: boolean;
@@ -99,8 +97,7 @@ export function AppShellWrapper({ isCollapsed, ...props }: AppShellWrapperProps)
 function AppShellWrapperContent({
   children,
   organization,
-  organizations,
-  logoUrls,
+  logoUrl,
   onboarding,
   isQuestionnaireEnabled,
   isTrustNdaEnabled,
@@ -170,11 +167,7 @@ function AppShellWrapperContent({
                 <BrandLogo showText iconSize={22} />
               </Link>
               <span className="pl-3 pr-1 text-muted-foreground">/</span>
-              <OrganizationSwitcher
-                organizations={organizations}
-                organization={organization}
-                logoUrls={logoUrls}
-              />
+              <OrganizationBadge organization={organization} logoUrl={logoUrl} />
             </HStack>
           }
           centerContent={<CommandSearch groups={searchGroups} placeholder={t('search')} />}

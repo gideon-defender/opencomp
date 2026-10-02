@@ -58,16 +58,6 @@ function formatRemediationKey(key: string): string {
   return meaningful.map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
-const getInitials = (name: string | null) =>
-  name
-    ? name
-        .split(' ')
-        .map((p) => p[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2)
-    : 'S';
-
 function RemediationRow({
   action,
   onRollback,
@@ -97,6 +87,13 @@ function RemediationRow({
           </span>
         </p>
         <p className="text-xs text-muted-foreground mt-0.5">{timeAgo}</p>
+        {/* Never render action.errorMessage here: it holds raw provider text
+            (ARNs, account IDs, request IDs). Show a generic status instead. */}
+        {hasError && (
+          <p className="text-xs text-destructive mt-0.5 truncate">
+            {action.status === 'rollback_failed' ? 'Rollback failed' : 'Remediation failed'}
+          </p>
+        )}
       </div>
       {canRollback && (
         <button

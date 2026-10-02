@@ -24,16 +24,11 @@ vi.mock('@/app/posthog', () => ({
   getFeatureFlags: vi.fn().mockResolvedValue({}),
 }));
 vi.mock('@/app/s3', () => ({
-  s3Client: null,
-  APP_AWS_ORG_ASSETS_BUCKET: null,
+  s3Client: {},
+  APP_AWS_ORG_ASSETS_BUCKET: 'test-bucket',
 }));
 vi.mock('@/components/trigger-token-provider', () => ({
   TriggerTokenProvider: ({ children }: { children: React.ReactNode }) => children,
-}));
-vi.mock('@/lib/api-server', () => ({
-  serverApi: {
-    get: vi.fn().mockResolvedValue({ data: { organizations: [] }, status: 200 }),
-  },
 }));
 vi.mock('@/lib/permissions', () => ({
   canAccessApp: vi.fn().mockReturnValue(true),
@@ -58,6 +53,7 @@ vi.mock('@aws-sdk/s3-request-presigner', () => ({ getSignedUrl: vi.fn() }));
 
 import { createMockSession, mockAuthApi, setupAuthMocks } from '@/test-utils/mocks/auth';
 import { mockDb } from '@/test-utils/mocks/db';
+import { GetObjectCommand } from '@aws-sdk/client-s3';
 
 const { default: Layout } = await import('./layout');
 
@@ -164,5 +160,41 @@ describe('Layout activeOrganizationId sync', () => {
     );
 
     consoleSpy.mockRestore();
+  });
+
+  it('signs only the current organization logo (no multi-org fan-out)', async () => {
+    setupAuthMocks({
+      session: createMockSession({ id: sessionId, activeOrganizationId: requestedOrgId }),
+    });
+    mockDb.organization.findUnique.mockResolvedValue({
+      id: requestedOrgId,
+      hasAccess: true,
+      onboardingCompleted: true,
+      logo: 'logos/org_requested.png',
+    });
+
+    await Layout({
+      children: null,
+      params: Promise.resolve({ orgId: requestedOrgId }),
+    });
+
+    expect(GetObjectCommand).toHaveBeenCalledTimes(1);
+    expect(GetObjectCommand).toHaveBeenCalledWith({
+      Bucket: 'test-bucket',
+      Key: 'logos/org_requested.png',
+    });
+  });
+
+  it('skips logo signing when the organization has no logo', async () => {
+    setupAuthMocks({
+      session: createMockSession({ id: sessionId, activeOrganizationId: requestedOrgId }),
+    });
+
+    await Layout({
+      children: null,
+      params: Promise.resolve({ orgId: requestedOrgId }),
+    });
+
+    expect(GetObjectCommand).not.toHaveBeenCalled();
   });
 });

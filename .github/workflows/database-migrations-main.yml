@@ -6,20 +6,37 @@ on:
   workflow_dispatch: # Allows manual triggering
 
 permissions:
-  contents: read # only needs to check out the repo to run migrations
+  contents: read # only needs to check out the repo to validate migrations
 
 jobs:
-  migrate:
-    name: Run Database Migrations
+  validate:
+    name: Validate Database Migrations
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_DB: comp
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d comp"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # Ephemeral database: validates migrations apply cleanly from scratch
+      # without touching any real environment. Real migrations run via the
+      # ECS migrator task during deploy (see deploy-dev.yml).
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/comp?sslmode=disable
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
 
       - uses: ./.github/actions/pnpm-install
 
-      - name: Apply database migrations
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL_DEV }}
+      - name: Validate migrations apply cleanly
         working-directory: packages/db
         run: pnpm exec prisma migrate deploy

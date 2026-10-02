@@ -1,20 +1,10 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useQueryState } from 'nuqs';
 import { useHotkeys } from 'react-hotkeys-hook';
 
 export function HotKeys() {
   const router = useRouter();
-
-  const [showOrganizationSwitcher, setShowOrganizationSwitcher] = useQueryState(
-    'showOrganizationSwitcher',
-    {
-      history: 'push',
-      parse: (value) => value === 'true',
-      serialize: (value) => value.toString(),
-    },
-  );
 
   useHotkeys('ctrl+m', (evt) => {
     evt.preventDefault();
@@ -44,11 +34,6 @@ export function HotKeys() {
   useHotkeys('shift+meta+p', (evt) => {
     evt.preventDefault();
     router.push('/account');
-  });
-
-  useHotkeys('meta+o', (evt) => {
-    evt.preventDefault();
-    setShowOrganizationSwitcher(!showOrganizationSwitcher);
   });
 
   return null;
