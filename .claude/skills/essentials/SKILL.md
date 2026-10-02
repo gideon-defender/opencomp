@@ -22,19 +22,21 @@ pnpm exec <cmd>                  # Execute binary
 
 ## Components
 
-**Use `@trycompai/design-system` first**, `@gideon-defender/ui` only as fallback.
+**Always prefer `@gideon-defender/ui`** over `@trycompai/design-system`. Check UI exports first.
 
 ```tsx
-// ✅ Design system
+// ✅ @gideon-defender/ui
+import { Button } from '@gideon-defender/ui/button';
+import { Input } from '@gideon-defender/ui/input';
+import { Select } from '@gideon-defender/ui/select';
+import { Plus, X } from 'lucide-react';
+
+// ❌ Do NOT add new @trycompai/design-system imports (being phased out)
 import { Button, Card, Input, Select } from '@trycompai/design-system';
 import { Add, Close } from '@trycompai/design-system/icons';
-
-// ❌ Don't use when DS has the component
-import { Button } from '@gideon-defender/ui/button';
-import { Plus } from 'lucide-react';
 ```
 
-**No `className` on DS components** - use variants and props only.
+**`@gideon-defender/ui` components accept `className`** (merged via `cn()`). Use variants + `className` for layout tweaks.
 
 ```tsx
 // ✅ Use variants

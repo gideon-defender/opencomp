@@ -146,7 +146,7 @@ describe('SOAController', () => {
       // was already written into dto before any downstream call.
       mockSOAService.getDocument.mockResolvedValue(null);
 
-      await controller.autoFill(dto as never, 'org_123', mockAuthContext, buildRes());
+      await controller.autoFill(dto, 'org_123', mockAuthContext, buildRes());
 
       expect(dto.organizationId).toBe('org_123');
       expect(syncOrganizationEmbeddings).toHaveBeenCalledWith('org_123');
@@ -155,7 +155,12 @@ describe('SOAController', () => {
 
     it('should throw BadRequestException when userId is missing', async () => {
       await expect(
-        controller.autoFill(dto as never, 'org_123', noUserAuthContext, buildRes()),
+        controller.autoFill(
+          dto as never,
+          'org_123',
+          noUserAuthContext,
+          buildRes(),
+        ),
       ).rejects.toThrow(BadRequestException);
     });
   });

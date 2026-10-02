@@ -1,24 +1,24 @@
 ---
 name: audit-design-system
-description: Audit & fix design system usage — migrate @gideon-defender/ui and lucide-react to @trycompai/design-system
+description: Audit & fix design system usage — migrate @trycompai/design-system and @trycompai/design-system/icons to @gideon-defender/ui and lucide-react
 ---
 
 Audit the specified files for design system compliance. **Fix every issue found immediately.**
 
 ## Rules
 
-1. **`@trycompai/design-system`** is the primary component library. `@gideon-defender/ui` is legacy — only use as last resort when no DS equivalent exists.
-2. **Always check DS exports first** before reaching for `@gideon-defender/ui`. Run `node -e "console.log(Object.keys(require('@trycompai/design-system')))"` to check.
-3. **Icons**: Use `@trycompai/design-system/icons` (Carbon icons), NOT `lucide-react`. Check with `node -e "const i = require('@trycompai/design-system/icons'); console.log(Object.keys(i).filter(k => k.match(/YourSearch/i)))"`.
-4. **DS components that do NOT accept `className`**: `Text`, `Stack`, `HStack`, `Badge`, `Button` — wrap in `<div>` for custom styling.
-5. **Button**: Use DS `Button` with `loading`, `iconLeft`, `iconRight` props instead of manually rendering spinners/icons.
-6. **Layout**: Use `PageLayout`, `PageHeader`, `Stack`, `HStack`, `Section`, `SettingGroup`.
-7. **Patterns**: Sheet (`Sheet > SheetContent > SheetHeader + SheetBody`), Drawer, Collapsible.
+1. **`@gideon-defender/ui`** is the primary component library. `@trycompai/design-system` is being phased out — only use as last resort for existing imports. Do NOT add new imports from it.
+2. **Always check `@gideon-defender/ui` exports first** before reaching for anything else. Check `packages/ui/src/components/` for the component.
+3. **Icons**: Use `lucide-react`, NOT `@trycompai/design-system/icons` (Carbon icons, being retired). Migrate existing Carbon imports to lucide-react when touching a file.
+4. **`@gideon-defender/ui` components accept `className`** (merged via `cn()`) — use variants + `className` for layout tweaks.
+5. **Button**: Use `@gideon-defender/ui` `Button` with `variant`/`size` + `disabled` state; render spinners/icons as children.
+6. **Layout**: Use Tailwind flex/grid utilities + `@gideon-defender/ui` `Card`, `Sheet`, `Separator`.
+7. **Patterns**: Sheet (`Sheet > SheetContent > SheetHeader + SheetBody`), Drawer, Collapsible from `@gideon-defender/ui` subpaths.
 
 ## Process
 
 1. Read files specified in `$ARGUMENTS`
-2. Find `@gideon-defender/ui` imports — check if DS equivalent exists
-3. Find `lucide-react` imports — find matching Carbon icons
+2. Find `@trycompai/design-system` imports — migrate to `@gideon-defender/ui` equivalent
+3. Find `@trycompai/design-system/icons` imports — migrate to matching `lucide-react` icons
 4. Migrate components and icons
-5. Run build to verify: `npx turbo run typecheck --filter=@gideon-defender/app`
+5. Run typecheck to verify: `pnpm --filter=@gideon-defender/app run typecheck` (or `pnpm exec turbo run typecheck --filter=@gideon-defender/app`)

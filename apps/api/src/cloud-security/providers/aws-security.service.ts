@@ -525,6 +525,10 @@ export class AWSSecurityService {
       region,
       sessionName: 'CompSecurityRemediation',
       partition,
+      // The remediator role caps sessions at 1 hour (IAM minimum, see the
+      // CloudShell setup script). Request 15-minute sessions to fit inside
+      // that cap and limit stolen-credential blast radius.
+      durationSeconds: 900,
     });
   }
 
@@ -537,6 +541,7 @@ export class AWSSecurityService {
     region: string;
     sessionName?: string;
     partition?: AwsPartition;
+    durationSeconds?: number;
   }): Promise<AwsCredentials> {
     const { roleArn, externalId, region, sessionName } = params;
     const parsedRoleArn = parseAwsRoleArn(roleArn);
@@ -603,7 +608,7 @@ export class AWSSecurityService {
           RoleArn: roleArn,
           ExternalId: externalId,
           RoleSessionName: sessionName ?? 'CompSecurityAudit',
-          DurationSeconds: 3600,
+          DurationSeconds: params.durationSeconds ?? 3600,
         }),
       ),
     );

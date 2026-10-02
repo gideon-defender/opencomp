@@ -20,7 +20,7 @@
 | [Unit Tests](workflows/unit-tests.yml)                                | All PRs          | Before merge    | Component & logic tests  | ~10 min  |
 | [E2E Tests](workflows/e2e-tests.yml)                                  | All PRs          | Before merge    | Browser automation tests | ~20 min  |
 | [Release Tests](workflows/release-tests.yml)                          | main→release PRs | Before merge    | Production readiness     | ~45 min  |
-| [Database Migrations Dev](workflows/database-migrations-main.yml)     | Push to main     | **After merge** | Apply migrations to dev  | ~2 min   |
+| [Database Migrations](workflows/database-migrations.yml)               | Push to main, PRs to main | **After + before merge** | Validate migrations (ephemeral DB) | ~2 min |
 | [Database Migrations Prod](workflows/database-migrations-release.yml) | Push to release  | **After merge** | Apply migrations to prod | ~2 min   |
 | [Release](workflows/release.yml)                                      | Push to release  | **After merge** | Semantic versioning      | ~5 min   |
 
@@ -68,7 +68,7 @@ See [BRANCH_PROTECTION.md](BRANCH_PROTECTION.md) for setup instructions.
   - `release-tests.yml` - Production validation suite
 
 - **Deployment**
-  - `database-migrations-main.yml` - Auto-migrate dev database
+  - `database-migrations.yml` - Validate migrations (ephemeral DB)
   - `release.yml` - Semantic release & changelog
 
 ## Secrets Required

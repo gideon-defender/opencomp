@@ -28,7 +28,11 @@ interface SingleFixProgress {
   phase: 'executing' | 'success' | 'failed' | 'needs_permissions' | 'manual';
   error?: string;
   actionId?: string;
-  permissionError?: { missingActions: string[]; fixScript?: string };
+  permissionError?: {
+    missingActions: string[];
+    fixScript?: string;
+    blockedPermissions?: string[];
+  };
   guidedSteps?: string[];
 }
 
@@ -134,9 +138,16 @@ function CodeBlock({ code }: { code: string }) {
   const t = useTranslations('integrations.list');
   const [copied, setCopied] = useState(false);
   const handleCopy = () => {
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    navigator.clipboard
+      .writeText(code)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {
+        // Non-secure context or denied permission — leave the code visible
+        // for manual selection instead of an unhandled rejection.
+      });
   };
   return (
     <div className="group relative rounded-md border bg-muted/50">
@@ -373,6 +384,7 @@ export function RemediationDialog({
   const [permissionError, setPermissionError] = useState<{
     missingActions: string[];
     fixScript?: string;
+    blockedPermissions?: string[];
   } | null>(null);
   const [acknowledgment, setAcknowledgment] = useState<string | null>(null);
 
@@ -396,6 +408,13 @@ export function RemediationDialog({
 
   // Ref to store permissions across rechecks (avoids stale closure in useCallback)
   const permissionsRef = useRef<string[] | undefined>(undefined);
+  // Set while the retry propagation wait sleeps — close cancels the wait so
+  // no fix starts for a closed dialog.
+  const retryCancelledRef = useRef(false);
+  useEffect(() => {
+    if (!open) retryCancelledRef.current = true;
+    else retryCancelledRef.current = false;
+  }, [open]);
 
   // Watch preview task progress
   useEffect(() => {
@@ -528,6 +547,11 @@ export function RemediationDialog({
       setExecuteRunId(null);
       setExecuteAccessToken(null);
       setSucceeded(false);
+      // A close mid-execute must not leak the spinner into the next open —
+      // the background task continues, but this dialog starts idle.
+      setIsExecuting(false);
+      setIsWaitingPropagation(false);
+      setIsLoadingPreview(false);
 
       // Guided-only: skip API call, use local data
       if (guidedOnly && guidedSteps) {
@@ -609,9 +633,11 @@ export function RemediationDialog({
   };
 
   const handleRetry = async () => {
+    retryCancelledRef.current = false;
     setIsWaitingPropagation(true);
     // IAM permission changes take up to 10s to propagate in AWS
     await new Promise((r) => setTimeout(r, 10_000));
+    if (retryCancelledRef.current) return;
     setIsWaitingPropagation(false);
     await handleExecute();
   };
@@ -695,10 +721,18 @@ export function RemediationDialog({
                 error={error}
                 missingActions={permissionError?.missingActions}
                 fixScript={permissionError?.fixScript}
+                blockedPermissions={permissionError?.blockedPermissions}
                 apiCalls={preview?.apiCalls}
                 onRetry={handleRetry}
                 isRetrying={isExecuting}
                 isWaiting={isWaitingPropagation}
+                provider={
+                  providerSlug === 'azure' ||
+                  providerSlug === 'gcp' ||
+                  providerSlug === 'aws'
+                    ? providerSlug
+                    : undefined
+                }
               />
             )}
 
@@ -853,10 +887,18 @@ export function RemediationDialog({
                               type="button"
                               onClick={() => {
                                 if (preview.permissionFixScript) {
-                                  navigator.clipboard.writeText(
-                                    preview.permissionFixScript.replace(/\s*\\\n\s*/g, ' '),
-                                  );
-                                  toast.success(t('cloudTests_copiedShort'));
+                                  navigator.clipboard
+                                    .writeText(
+                                      preview.permissionFixScript.replace(/\s*\\\n\s*/g, ' '),
+                                    )
+                                    .then(
+                                      () => {
+                                        toast.success(t('cloudTests_copiedShort'));
+                                      },
+                                      () => {
+                                        toast.error('Copy failed — select and copy manually');
+                                      },
+                                    );
                                 }
                               }}
                               className="flex items-center gap-1.5 rounded-md bg-primary px-2.5 py-1 text-[11px] font-medium text-primary-foreground hover:bg-primary/90"

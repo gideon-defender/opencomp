@@ -46,6 +46,10 @@
       "types": "./dist/format.d.ts",
       "default": "./dist/format.js"
     },
+    "./remediation-denylist": {
+      "types": "./dist/remediation-denylist.d.ts",
+      "default": "./dist/remediation-denylist.js"
+    },
     "./s3": {
       "types": "./dist/s3.d.ts",
       "default": "./dist/s3.js"

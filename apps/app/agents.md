@@ -2,25 +2,26 @@
 
 ## Core Principle
 
-**ONLY use components from `@trycompai/design-system`.** Do not use shadcn/ui, Radix primitives, or custom components when a design system component exists.
+**ONLY use components from `@gideon-defender/ui`.** Do not use `@trycompai/design-system`, shadcn/ui copies, Radix primitives directly, or custom components when a `@gideon-defender/ui` component exists.
 
-**Components do NOT accept `className`. Use variants and props only.**
+**`@gideon-defender/ui` components accept `className` (merged via `cn()`). Use variants + `className` for one-off layout tweaks.**
 
-This design system enforces strict styling through `class-variance-authority` (cva).
-The `className` prop has been removed from all components to prevent style overrides.
+`@trycompai/design-system` is being phased out — only use as last resort for existing imports. Do NOT add new imports from it.
 
 ## Component Priority
 
-1. **First choice:** `@trycompai/design-system`
-2. **Never:** Custom implementations when DS has the component
+1. **First choice:** `@gideon-defender/ui`
+2. **Never:** Custom implementations when `@gideon-defender/ui` has the component
+3. **Last resort only:** Existing `@trycompai/design-system` imports (do not add new ones)
 
 ```tsx
-// ✅ ALWAYS - Use design system
-import { Button, Table, Badge, Tabs } from '@trycompai/design-system';
-
-// ❌ NEVER - Don't use @gideon-defender/ui when DS has the component
+// ✅ ALWAYS - Use @gideon-defender/ui
 import { Button } from '@gideon-defender/ui/button';
 import { Table } from '@gideon-defender/ui/table';
+import { Badge } from '@gideon-defender/ui/badge';
+
+// ❌ NEVER - Don't add new @trycompai/design-system imports
+import { Button, Table, Badge, Tabs } from '@trycompai/design-system';
 ```
 
 ## Server vs Client Components
@@ -34,11 +35,10 @@ import { ClientTabs } from './components/ClientTabs';
 
 export default function Layout({ children }) {
   return (
-    <PageLayout>
-      <PageHeader title="Title" />
+    <div>
       <ClientTabs /> {/* Client component for interactive tabs */}
       {children}
-    </PageLayout>
+    </div>
   );
 }
 
@@ -62,14 +62,21 @@ Don't use `nuqs` for query state. Use standard Next.js patterns:
 - `useSearchParams()` for reading query params
 - Server-side `searchParams` prop for initial state
 
-## ❌ These Will NOT Compile
+## Styling with className
+
+`@gideon-defender/ui` components accept `className` and merge it with variants via `cn()`:
 
 ```tsx
-// className is not a valid prop - TypeScript will error
-<Button className="bg-red-500">Delete</Button>
-<Card className="shadow-xl">Content</Card>
-<Badge className="uppercase">Status</Badge>
-<Stack className="mt-4">Content</Stack>
+// ✅ Variants + className for layout tweaks
+import { Button } from '@gideon-defender/ui/button';
+import { Badge } from '@gideon-defender/ui/badge';
+
+<Button variant="destructive">Delete</Button>
+<Button variant="outline" size="lg">
+  Large Outline
+</Button>
+<Badge variant="secondary">Status</Badge>
+<Button className="w-full">Full Width</Button>
 ```
 
 ## ✅ ALWAYS Do This
@@ -77,110 +84,45 @@ Don't use `nuqs` for query state. Use standard Next.js patterns:
 ```tsx
 // Use component variants
 <Button variant="destructive">Delete</Button>
-<Button variant="outline" size="lg">Large Outline</Button>
+<Button variant="outline" size="lg">
+  Large Outline
+</Button>
 <Badge variant="secondary">Status</Badge>
 
-// Use component props
-<Card maxWidth="lg">Content</Card>
-<Text size="lg" weight="bold" variant="primary">Title</Text>
-<Heading level={2}>Section Title</Heading>
-<Stack gap="4" align="center">Content</Stack>
+// Use className for one-off layout adjustments (merged via cn())
+<Button className="w-full">Full Width</Button>
+<div className="flex items-center gap-4">
+  <Button>First</Button>
+  <Button>Second</Button>
+</div>
 ```
 
 ## Layout & Positioning
 
-For layout concerns (width, grid positioning, margins), use wrapper elements:
+For layout concerns (width, grid positioning, margins), use Tailwind utilities directly or wrapper elements:
 
 ```tsx
-// ✅ Wrapper div for layout
-<div className="w-full">
-  <Button>Full Width</Button>
-</div>
+// ✅ className directly on @gideon-defender/ui components
+import { Button } from '@gideon-defender/ui/button';
+import { Card } from '@gideon-defender/ui/card';
+
+<Button className="w-full">Full Width</Button>;
 
 // ✅ Grid/flex positioning with wrapper
 <div className="col-span-2">
   <Card>Spanning Card</Card>
-</div>
+</div>;
 
-// ✅ Use Stack/Grid for spacing
-<Stack gap="4">
+// ✅ Flex for spacing
+<div className="flex items-center gap-4">
   <Button>First</Button>
   <Button>Second</Button>
-</Stack>
-```
-
-## Available Components & Their APIs
-
-### Layout Primitives
-
-```tsx
-// Stack - flex layout
-<Stack direction="row" gap="4" align="center" justify="between">
-  {children}
-</Stack>
-
-// Grid - responsive grid
-<Grid cols={3} gap="4">
-  {children}
-</Grid>
-
-// Container - max-width wrapper
-<Container size="lg" padding="default">
-  {children}
-</Container>
-
-// PageLayout - full page structure
-<PageLayout variant="center" padding="default">
-  {children}
-</PageLayout>
-```
-
-### Typography
-
-```tsx
-// Heading - h1-h6 with consistent styles
-<Heading level={1}>Page Title</Heading>
-<Heading level={2} variant="muted">Subtitle</Heading>
-
-// Text - body text
-<Text size="sm" variant="muted">Description</Text>
-<Text weight="semibold">Important text</Text>
-```
-
-### Interactive
-
-```tsx
-// Button variants: default, outline, secondary, ghost, destructive, link
-// Button sizes: default, xs, sm, lg, icon, icon-xs, icon-sm, icon-lg
-<Button variant="outline" size="sm" loading={isLoading}>
-  Save
-</Button>
-<Button iconLeft={<PlusIcon />}>Add Item</Button>
-<Button iconRight={<ArrowRightIcon />}>Continue</Button>
-
-// Badge variants: default, secondary, destructive, outline
-<Badge variant="outline">Active</Badge>
-```
-
-### Layout Components
-
-```tsx
-// Card with maxWidth control
-<Card maxWidth="lg">Content</Card>
-
-// Section with title/description
-<Section>
-  <SectionHeader>
-    <SectionTitle>Settings</SectionTitle>
-    <SectionDescription>Manage your preferences</SectionDescription>
-  </SectionHeader>
-  <SectionContent>{children}</SectionContent>
-</Section>
+</div>;
 ```
 
 ## If a Variant Doesn't Exist
 
-1. **Check the component file** - it might exist and you missed it
+1. **Check the component file** in `packages/ui/src/components/` - it might exist and you missed it
 2. **Add a new variant** to the component's `cva` definition
 3. **Create a new component** if it's a genuinely new pattern
 
@@ -196,55 +138,46 @@ const buttonVariants = cva('...base classes...', {
 });
 ```
 
-**NEVER use wrapper divs to apply styles that should be component variants.**
-
 ## Import Pattern
 
+`@gideon-defender/ui` uses per-component subpath imports:
+
 ```tsx
-import {
-  Button,
-  Card,
-  CardHeader,
-  CardContent,
-  Stack,
-  Heading,
-  Text,
-  Badge,
-  // ... etc
-} from '@trycompai/design-system';
+import { Button } from '@gideon-defender/ui/button';
+import { Card, CardHeader, CardContent } from '@gideon-defender/ui/card';
+import { Badge } from '@gideon-defender/ui/badge';
+import { Input } from '@gideon-defender/ui/input';
+import { Sheet, SheetContent, SheetHeader } from '@gideon-defender/ui/sheet';
 ```
 
 ## Icons
 
-Import icons from `@trycompai/design-system/icons` (re-exports `@carbon/icons-react`):
+Use `lucide-react` for icons:
 
 ```tsx
-// ✅ ALWAYS - Use design system icons
-import { Add, Download, Settings, ChevronDown } from '@trycompai/design-system/icons';
+// ✅ ALWAYS - Use lucide-react
+import { Plus, Download, Settings, ChevronDown } from 'lucide-react';
 
-// Carbon icons use size prop, not className
-<Add size={16} />
-<Download size={20} />
-
-// ❌ NEVER - Don't use lucide-react
-import { Plus, Download } from 'lucide-react';
 <Plus className="h-4 w-4" />
+<Download className="h-5 w-5" />
+
+// ❌ NEVER - Don't add new @trycompai/design-system/icons (Carbon) imports
+import { Add, Download, Settings, ChevronDown } from '@trycompai/design-system/icons';
 ```
 
-Common icon mappings from lucide-react to Carbon:
+When touching a file, migrate existing `@trycompai/design-system/icons` (Carbon) imports to `lucide-react` equivalents:
 
-| lucide-react | @carbon/icons-react       |
-| ------------ | ------------------------- |
-| Plus         | Add                       |
-| X            | Close                     |
-| Check        | Checkmark                 |
-| ChevronDown  | ChevronDown               |
-| ChevronRight | ChevronRight              |
-| Settings     | Settings                  |
-| Trash        | TrashCan                  |
-| Edit         | Edit                      |
-| Search       | Search                    |
-| Loader2      | (use Button loading prop) |
+| @carbon/icons-react | lucide-react   |
+| ------------------- | -------------- |
+| Add                 | Plus           |
+| Close               | X              |
+| Checkmark           | Check          |
+| ChevronDown         | ChevronDown    |
+| ChevronRight        | ChevronRight   |
+| Settings            | Settings       |
+| TrashCan            | Trash          |
+| Edit                | Pencil         |
+| Search              | Search         |
 
 <!-- BEGIN:nextjs-agent-rules -->
 

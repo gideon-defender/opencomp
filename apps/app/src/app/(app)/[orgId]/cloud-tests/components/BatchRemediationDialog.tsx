@@ -24,7 +24,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
   cancelBatchFix,
@@ -32,6 +32,12 @@ import {
   skipBatchFinding,
   startBatchFix,
 } from '../actions/batch-fix';
+import {
+  buildFindingPermissionsScript,
+  buildMissingPermsMergeScript,
+  isGuidanceOnlyScript,
+} from '../lib/batch-merge-script';
+import { formatBlockedActionsForDisplay } from '../lib/remediation-denylist';
 
 interface Finding {
   id: string;
@@ -113,26 +119,35 @@ function FindingPermissions({
   const [copied, setCopied] = useState(false);
   const [retrying, setRetrying] = useState(false);
 
-  // Group by service
+  const {
+    script,
+    blocked: blockedPermissions,
+    grantable,
+  } = useMemo(() => buildFindingPermissionsScript(permissions), [permissions]);
+
+  // Group grantable actions only — blocked actions surface in the manual
+  // review warning below, never as required chips (same as PermissionErrorPanel).
   const grouped = useMemo(() => {
     const groups: Record<string, string[]> = {};
-    for (const p of permissions) {
+    for (const p of grantable) {
       const [svc, action] = p.split(':');
       if (svc && action) (groups[svc] ??= []).push(action);
     }
     return groups;
-  }, [permissions]);
-
-  const script = [
-    'ROLE="OpenComp-Remediator" POLICY="OpenComp-BatchPermissions"',
-    `NEW='${JSON.stringify(permissions)}'`,
-    'CUR=$(aws iam get-role-policy --role-name "$ROLE" --policy-name "$POLICY" --query \'PolicyDocument.Statement[0].Action\' --output json 2>/dev/null || echo \'[]\')',
-    'MERGED=$(echo "$CUR $NEW" | jq -s \'add | unique\')',
-    'aws iam put-role-policy --role-name "$ROLE" --policy-name "$POLICY" --policy-document "{\\"Version\\":\\"2012-10-17\\",\\"Statement\\":[{\\"Effect\\":\\"Allow\\",\\"Action\\":$MERGED,\\"Resource\\":\\"*\\"}]}"',
-  ].join('\n');
+  }, [grantable]);
+  // Guidance-only when every action needs manual review — nothing to run,
+  // so copy/CloudShell buttons stay hidden (same as PermissionErrorPanel).
+  const guidanceOnly = isGuidanceOnlyScript(script);
 
   return (
     <div className="ml-[30px] mt-1.5 space-y-1.5">
+      {blockedPermissions.length > 0 && (
+        <p className="text-[10px] leading-relaxed text-amber-700 dark:text-amber-400">
+          {blockedPermissions.length} permission(s) need manual review and are excluded from the
+          script:{' '}
+          <code className="font-mono">{formatBlockedActionsForDisplay(blockedPermissions)}</code>
+        </p>
+      )}
       <div className="flex flex-wrap gap-x-3 gap-y-1">
         {Object.entries(grouped).map(([svc, actions]) => (
           <div key={svc} className="flex items-center gap-1">
@@ -149,38 +164,51 @@ function FindingPermissions({
         ))}
       </div>
       <div className="flex gap-1.5">
-        <button
-          type="button"
-          onClick={() => {
-            navigator.clipboard.writeText(script);
-            setCopied(true);
-            toast.success(t('cloudTests_batchScriptCopied'));
-            setTimeout(() => setCopied(false), 2000);
-          }}
-          className="inline-flex items-center gap-1 rounded border bg-background px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-        >
-          {copied ? (
-            <Check className="h-2.5 w-2.5 text-emerald-500" />
-          ) : (
-            <Copy className="h-2.5 w-2.5" />
-          )}
-          {copied ? t('cloudTests_batchCopied') : t('cloudTests_batchCopy')}
-        </button>
-        <a
-          href="https://console.aws.amazon.com/cloudshell"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 rounded border bg-background px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ExternalLink className="h-2.5 w-2.5" />
-          CloudShell
-        </a>
+        {!guidanceOnly && (
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard.writeText(script).then(
+                  () => {
+                    setCopied(true);
+                    toast.success(t('cloudTests_batchScriptCopied'));
+                    setTimeout(() => setCopied(false), 2000);
+                  },
+                  () => {
+                    toast.error('Copy failed — select and copy manually');
+                  },
+                );
+              }}
+              className="inline-flex items-center gap-1 rounded border bg-background px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {copied ? (
+                <Check className="h-2.5 w-2.5 text-emerald-500" />
+              ) : (
+                <Copy className="h-2.5 w-2.5" />
+              )}
+              {copied ? t('cloudTests_batchCopied') : t('cloudTests_batchCopy')}
+            </button>
+            <a
+              href="https://console.aws.amazon.com/cloudshell"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 rounded border bg-background px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ExternalLink className="h-2.5 w-2.5" />
+              CloudShell
+            </a>
+          </>
+        )}
         <button
           type="button"
           onClick={async () => {
             setRetrying(true);
-            await onRetry();
-            setRetrying(false);
+            try {
+              await onRetry();
+            } finally {
+              setRetrying(false);
+            }
           }}
           disabled={retrying}
           className="inline-flex items-center gap-1 rounded border border-primary/30 bg-primary/5 px-2 py-0.5 text-[10px] font-medium text-primary hover:bg-primary/10 transition-colors"
@@ -209,8 +237,11 @@ function MissingPermsBanner({
   const [copied, setCopied] = useState(false);
   const confirmed = useMemo(() => new Set(confirmedPermissions), [confirmedPermissions]);
 
-  // Group by AWS service
-  const grouped = useMemo(() => {
+  // Collect every unconfirmed missing permission, then split grantable
+  // from blocked. Grouped chips show grantable actions only — blocked
+  // actions surface in the manual review warning below, never as required
+  // chips (same as PermissionErrorPanel).
+  const allMissing = useMemo(() => {
     const perms = new Set<string>();
     for (const f of findings) {
       if (f.missingPermissions) {
@@ -219,49 +250,41 @@ function MissingPermsBanner({
         }
       }
     }
+    return [...perms].sort();
+  }, [findings, confirmed]);
+
+  if (allMissing.length === 0) return null;
+
+  // Merge-safe script: unions new permissions with the full live policy.
+  // Uses jq (available in AWS CloudShell). Deny statements, Conditions,
+  // and scoped Resources survive — a stray Deny is never merged back as
+  // Allow.
+  const { script, blocked: blockedMissing, grantable } =
+    buildMissingPermsMergeScript(allMissing);
+  const guidanceOnly = isGuidanceOnlyScript(script);
+
+  // Group by AWS service (grantable only)
+  const grouped = (() => {
     const groups: Record<string, string[]> = {};
-    for (const p of [...perms].sort()) {
+    for (const p of grantable) {
       const [svc, action] = p.split(':');
       if (!svc || !action) continue;
       (groups[svc] ??= []).push(action);
     }
     return groups;
-  }, [findings, confirmed]);
-
-  const allMissing = Object.entries(grouped).flatMap(([svc, actions]) =>
-    actions.map((a) => `${svc}:${a}`),
-  );
-
-  if (allMissing.length === 0) return null;
-
-  // Merge-safe script: reads existing policy, merges new permissions, writes combined
-  // Uses jq (available in AWS CloudShell) to avoid overwriting existing perms
-  const newPermsJson = JSON.stringify(allMissing);
-  const script = [
-    "# Merge new permissions with existing (won't overwrite)",
-    'ROLE="OpenComp-Remediator"',
-    'POLICY="OpenComp-BatchPermissions"',
-    `NEW_PERMS='${newPermsJson}'`,
-    '',
-    "# Get existing permissions (empty array if policy doesn't exist yet)",
-    'EXISTING=$(aws iam get-role-policy --role-name "$ROLE" --policy-name "$POLICY" \\',
-    "  --query 'PolicyDocument.Statement[0].Action' --output json 2>/dev/null || echo '[]')",
-    '',
-    '# Merge and deduplicate',
-    'MERGED=$(echo "$EXISTING $NEW_PERMS" | jq -s \'add | unique\')',
-    '',
-    '# Apply combined policy',
-    'aws iam put-role-policy --role-name "$ROLE" --policy-name "$POLICY" \\',
-    '  --policy-document "{\\"Version\\":\\"2012-10-17\\",\\"Statement\\":[{\\"Effect\\":\\"Allow\\",\\"Action\\":$MERGED,\\"Resource\\":\\"*\\"}]}"',
-    '',
-    'echo "Added $(echo $NEW_PERMS | jq length) permissions ($(echo $MERGED | jq length) total)"',
-  ].join('\n');
+  })();
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(script);
-    setCopied(true);
-    toast.success(t('cloudTests_batchPermScriptCopied'));
-    setTimeout(() => setCopied(false), 2000);
+    navigator.clipboard.writeText(script).then(
+      () => {
+        setCopied(true);
+        toast.success(t('cloudTests_batchPermScriptCopied'));
+        setTimeout(() => setCopied(false), 2000);
+      },
+      () => {
+        toast.error('Copy failed — select and copy manually');
+      },
+    );
   };
 
   const serviceCount = Object.keys(grouped).length;
@@ -282,6 +305,13 @@ function MissingPermsBanner({
           <p className="text-[11px] text-muted-foreground mt-0.5">
             {t('cloudTests_batchMergeScriptHint')}
           </p>
+          {blockedMissing.length > 0 && (
+            <p className="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5">
+              {blockedMissing.length} permission(s) need manual review and are excluded from the
+              script:{' '}
+              <code className="font-mono">{formatBlockedActionsForDisplay(blockedMissing)}</code>
+            </p>
+          )}
         </div>
       </div>
 
@@ -307,23 +337,31 @@ function MissingPermsBanner({
       </div>
 
       <div className="flex gap-2 ml-[34px]">
-        <button
-          type="button"
-          onClick={handleCopy}
-          className="inline-flex items-center gap-1.5 rounded-md border bg-background px-2.5 py-1 text-[11px] font-medium text-foreground hover:bg-muted transition-colors"
-        >
-          {copied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
-          {copied ? t('cloudTests_batchCopied') : t('cloudTests_batchCopyScript')}
-        </button>
-        <a
-          href="https://console.aws.amazon.com/cloudshell"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-md border bg-background px-2.5 py-1 text-[11px] font-medium text-foreground hover:bg-muted transition-colors"
-        >
-          <ExternalLink className="h-3 w-3" />
-          CloudShell
-        </a>
+        {!guidanceOnly && (
+          <>
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="inline-flex items-center gap-1.5 rounded-md border bg-background px-2.5 py-1 text-[11px] font-medium text-foreground hover:bg-muted transition-colors"
+            >
+              {copied ? (
+                <Check className="h-3 w-3 text-emerald-500" />
+              ) : (
+                <Copy className="h-3 w-3" />
+              )}
+              {copied ? t('cloudTests_batchCopied') : t('cloudTests_batchCopyScript')}
+            </button>
+            <a
+              href="https://console.aws.amazon.com/cloudshell"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-md border bg-background px-2.5 py-1 text-[11px] font-medium text-foreground hover:bg-muted transition-colors"
+            >
+              <ExternalLink className="h-3 w-3" />
+              CloudShell
+            </a>
+          </>
+        )}
       </div>
     </div>
   );
@@ -404,9 +442,16 @@ export function BatchRemediationDialog({
     }
   }
 
-  // Auto-complete + auto-close when all findings are fixed
+  // Auto-complete + auto-close when all findings are fixed. Guarded to run
+  // once — progress metadata is recreated per poll, so without the ref this
+  // re-fires on every identity change and stacks close timers.
+  const completedRef = useRef(false);
   useEffect(() => {
-    if (isDone && progress && progress.fixed > 0) {
+    completedRef.current = false;
+  }, [runId, batchId]);
+  useEffect(() => {
+    if (isDone && progress && progress.fixed > 0 && !completedRef.current) {
+      completedRef.current = true;
       onComplete?.();
       // Auto-close if everything succeeded (no failures or skips)
       const allFixed = progress.failed === 0 && progress.skipped === 0;
@@ -415,7 +460,7 @@ export function BatchRemediationDialog({
         return () => clearTimeout(timer);
       }
     }
-  }, [isDone, progress, onComplete, onOpenChange]);
+  }, [isDone, progress, onComplete, onOpenChange, runId, batchId]);
 
   // Findings with progress (from task metadata or initial list)
   const findingsWithProgress = useMemo((): FindingProgress[] => {
@@ -487,7 +532,11 @@ export function BatchRemediationDialog({
   const handleCancel = async () => {
     if (!runId || !batchId) return;
     setCancelling(true);
-    await cancelBatchFix(runId, batchId);
+    try {
+      await cancelBatchFix(runId, batchId);
+    } finally {
+      setCancelling(false);
+    }
   };
 
   const handleSkipFinding = async (findingId: string) => {
@@ -536,7 +585,8 @@ export function BatchRemediationDialog({
 
   const selectedCount = selected.size;
   const allSelected = selectedCount === findings.length;
-  const pct = progress ? Math.round((progress.current / progress.total) * 100) : 0;
+  const pct =
+    progress && progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0;
   const hasSkippedOrFailed = findingsWithProgress.some(
     (f) => f.status === 'skipped' || f.status === 'failed' || f.status === 'needs_permissions',
   );

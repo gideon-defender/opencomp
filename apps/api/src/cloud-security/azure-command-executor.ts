@@ -419,6 +419,24 @@ const AZURE_ALLOWED_HOSTS = new Set([
   'graph.microsoft.com',
 ]);
 
+/**
+ * Normalized ARM path for privilege-escalation checks. ARM resource paths
+ * are case-insensitive and may carry percent-encoding, so a raw
+ * case-sensitive `includes` skips evasions like
+ * `/providers/microsoft.authorization/roleassignments/...` or
+ * `%72oleAssignments`. Returns null when the URL cannot be parsed — the
+ * host allowlist check above already fail-closes that case.
+ */
+function normalizedAzurePath(url: string | undefined): string | null {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    return decodeURIComponent(parsed.pathname).toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
 export function validateAzurePlanSteps(steps: AzureApiStep[]): string[] {
   const errors: string[] = [];
   for (let i = 0; i < steps.length; i++) {
@@ -445,11 +463,26 @@ export function validateAzurePlanSteps(steps: AzureApiStep[]): string[] {
     ) {
       errors.push(`Step ${i}: Cannot delete a subscription`);
     }
+    const azurePath = normalizedAzurePath(step.url);
     if (
       step.method !== 'GET' &&
-      step.url?.includes('/providers/Microsoft.Authorization/roleDefinitions/')
+      azurePath?.includes('/providers/microsoft.authorization/roledefinitions/')
     ) {
       errors.push(`Step ${i}: Cannot modify built-in role definitions`);
+    }
+    // Role-assignment writes are the Azure analog of the blocked IAM grant
+    // primitives: a fooled step that grants Contributor/Owner self-escalates
+    // inside the customer tenant. Like the AWS denylist, assignment grants
+    // go to manual review — never through executed steps. Reads stay allowed
+    // so plans can inspect current assignments, and DELETE stays allowed:
+    // removing an assignment only narrows access (the Revoke/Authorize
+    // asymmetry on the AWS side).
+    if (
+      step.method !== 'GET' &&
+      step.method !== 'DELETE' &&
+      azurePath?.includes('/providers/microsoft.authorization/roleassignments/')
+    ) {
+      errors.push(`Step ${i}: Cannot grant Azure role assignments`);
     }
   }
   return errors;

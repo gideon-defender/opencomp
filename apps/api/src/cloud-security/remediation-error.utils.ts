@@ -1,3 +1,5 @@
+import { extractIamActionsFromErrorMessage } from './remediation-denylist';
+
 interface PermissionErrorInfo {
   isPermissionError: boolean;
   missingActions: string[];
@@ -23,23 +25,6 @@ const PERMISSION_KEYWORDS = [
 ] as const;
 
 /**
- * Patterns to extract the specific IAM action from AWS error messages.
- * Each pattern should have a capture group for the action string.
- */
-const ACTION_PATTERNS: RegExp[] = [
-  // "is not authorized to perform: iam:CreateServiceLinkedRole on resource"
-  /not authorized to perform:\s*([\w:*]+)/i,
-  // "you do not have the required iam:CreateServiceLinkedRole permission"
-  /required\s+([\w:*]+)\s+permission/i,
-  // "User ... is not authorized to perform: ec2:DescribeInstances"
-  /not authorized to perform:\s*([\w:*]+)/i,
-  // "Access Denied for action: s3:PutBucketEncryption"
-  /denied.*?(?:action|for):\s*([\w:*]+)/i,
-  // "UnauthorizedAccess: guardduty:CreateDetector"
-  /UnauthorizedAccess.*?([\w]+:[\w*]+)/i,
-];
-
-/**
  * Parse an AWS error message to detect permission errors and extract
  * the specific missing IAM action(s).
  *
@@ -47,8 +32,15 @@ const ACTION_PATTERNS: RegExp[] = [
  * extract the action, `missingActions` will be empty.
  */
 export function parseAwsPermissionError(
-  errorMessage: string,
+  errorMessage: string | null | undefined,
 ): PermissionErrorInfo {
+  if (typeof errorMessage !== 'string' || errorMessage.length === 0) {
+    return {
+      isPermissionError: false,
+      missingActions: [],
+      rawMessage: '',
+    };
+  }
   const lower = errorMessage.toLowerCase();
   const isPermissionError = PERMISSION_KEYWORDS.some((kw) =>
     lower.includes(kw),
@@ -62,17 +54,14 @@ export function parseAwsPermissionError(
     };
   }
 
-  const actions = new Set<string>();
-  for (const pattern of ACTION_PATTERNS) {
-    const match = errorMessage.match(pattern);
-    if (match?.[1]) {
-      actions.add(match[1]);
-    }
-  }
+  // Action extraction lives in the shared denylist module so the API
+  // fallback path and the web client parse hyphenated services
+  // (e.g. cognito-idp) exactly the same way.
+  const actions = extractIamActionsFromErrorMessage(errorMessage);
 
   return {
     isPermissionError: true,
-    missingActions: [...actions],
+    missingActions: actions,
     rawMessage: errorMessage,
   };
 }
@@ -117,9 +106,18 @@ const GCP_PERMISSION_PATTERNS: RegExp[] = [
  * permission, suggest a role, and generate a ready-to-paste gcloud command.
  */
 export function parseGcpPermissionError(
-  errorMessage: string,
+  errorMessage: string | null | undefined,
   projectId?: string,
 ): GcpPermissionErrorInfo {
+  if (typeof errorMessage !== 'string' || errorMessage.length === 0) {
+    return {
+      isPermissionError: false,
+      missingPermissions: [],
+      suggestedRole: null,
+      fixScript: null,
+      rawMessage: '',
+    };
+  }
   const lower = errorMessage.toLowerCase();
   const isPermissionError =
     lower.includes('permission_denied') ||
@@ -186,17 +184,39 @@ interface AzurePermissionErrorInfo {
  * Parse an Azure API error to detect permission (403/AuthorizationFailed) errors.
  */
 export function parseAzurePermissionError(
-  errorMessage: string,
-): AzurePermissionErrorInfo | null {
+  errorMessage: string | null | undefined,
+): AzurePermissionErrorInfo {
+  if (typeof errorMessage !== 'string' || errorMessage.length === 0) {
+    return {
+      isPermissionError: false,
+      missingActions: [],
+      fixScript: null,
+      rawMessage: '',
+    };
+  }
   const lower = errorMessage.toLowerCase();
+  // Match real auth failures only: bare "403" also hits IDs/timestamps,
+  // so require an auth keyword alongside the status code.
+  const has403WithAuthContext =
+    (lower.includes('403') || lower.includes('forbidden')) &&
+    (lower.includes('authorization') ||
+      lower.includes('authenticated') ||
+      lower.includes('permission') ||
+      lower.includes('access'));
   const isPermissionError =
     lower.includes('authorizationfailed') ||
     lower.includes('authorization failed') ||
-    lower.includes('403') ||
     lower.includes('does not have authorization') ||
-    lower.includes('forbidden');
+    has403WithAuthContext;
 
-  if (!isPermissionError) return null;
+  if (!isPermissionError) {
+    return {
+      isPermissionError: false,
+      missingActions: [],
+      fixScript: null,
+      rawMessage: errorMessage,
+    };
+  }
 
   // Try to extract action from Azure error: "does not have authorization to perform action 'X' over scope"
   const actionMatch = errorMessage.match(/perform action '([^']+)'/);

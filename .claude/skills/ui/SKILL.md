@@ -10,31 +10,31 @@ Original Cursor alwaysApply: `true`.
 
 ## Design System Priority
 
-1. **First choice:** `@trycompai/design-system`
-2. **Fallback:** `@gideon-defender/ui` only if DS doesn't have the component
+1. **First choice:** `@gideon-defender/ui`
+2. **Last resort only:** Existing `@trycompai/design-system` imports (being phased out — do NOT add new imports)
 
 ```tsx
-// ✅ Design system
+// ✅ @gideon-defender/ui
+import { Button } from '@gideon-defender/ui/button';
+import { Card } from '@gideon-defender/ui/card';
+import { Input } from '@gideon-defender/ui/input';
+import { Badge } from '@gideon-defender/ui/badge';
+import { Plus, ArrowRight } from 'lucide-react';
+
+// ❌ Do NOT add new @trycompai/design-system imports
 import { Button, Card, Input, Sheet, Badge } from '@trycompai/design-system';
 import { Add, Close, ArrowRight } from '@trycompai/design-system/icons';
-
-// ❌ Don't use when DS has it
-import { Button } from '@gideon-defender/ui/button';
-import { Plus } from 'lucide-react';
 ```
 
-## No className on DS Components
+## className on @gideon-defender/ui Components
 
-DS components don't accept `className`. Use variants and props only.
+`@gideon-defender/ui` components accept `className` (merged via `cn()`). Use variants + `className` for layout tweaks.
 
 ```tsx
-// ✅ Use variants
-<Button variant="destructive" size="sm" loading={isLoading}>Delete</Button>
-<Button type="submit" iconRight={<ArrowRight size={16} />}>Continue</Button>
+// ✅ Use variants + className
+<Button variant="destructive" size="sm">Delete</Button>
+<Button type="submit" className="w-full">Continue</Button>
 <Badge variant="outline">Active</Badge>
-
-// ❌ TypeScript will error
-<Button className="bg-red-500">Delete</Button>
 ```
 
 ## Layout with Wrapper Divs
@@ -114,16 +114,16 @@ Always support both modes:
 
 ## Icons
 
-Carbon icons from DS, not lucide:
+`lucide-react` icons, not Carbon:
 
 ```tsx
-// ✅ Design system icons with size prop
+// ✅ lucide-react icons with className sizing
+import { Plus, X, ChevronDown } from 'lucide-react';
+<Plus className="h-4 w-4" />;
+
+// ❌ Don't add new @trycompai/design-system/icons (Carbon) imports
 import { Add, Close, ChevronDown } from '@trycompai/design-system/icons';
 <Add size={16} />;
-
-// ❌ Don't use lucide
-import { Plus, X } from 'lucide-react';
-<Plus className="h-4 w-4" />;
 ```
 
 ## Anti-Patterns
@@ -131,7 +131,6 @@ import { Plus, X } from 'lucide-react';
 ```tsx
 // ❌ Never do these
 <div style={{ display: 'flex' }}>              // Inline styles
-<Button className="bg-red-500">               // className on DS
 <div className="bg-[#059669]">                // Hardcoded colors
 <div className="w-[847px]">                   // Arbitrary values
 ```
@@ -142,7 +141,7 @@ Every UI change must work on mobile (375px), tablet (768px), desktop (1280px), a
 large desktop (1920px) **by default — nobody has to ask**. Tailwind is mobile-first:
 write the base (mobile) layout, widen with `sm:`/`md:`/`lg:`/`xl:`. No fixed widths
 without a responsive strategy (`hidden sm:block`, `w-full md:max-w-xs`, or a wrapping
-parent). All the rules above still apply: breakpoint classes go on wrapper divs, never
-on DS components, and arbitrary pixel values remain an anti-pattern. Wide tables scroll
-inside the DS `Table` (`overflow-x-auto`), never the page. Full rules + repo patterns +
+parent). `@gideon-defender/ui` components accept `className`, so responsive
+breakpoint classes may go directly on them or on wrappers, and arbitrary pixel values remain an anti-pattern. Wide tables scroll
+inside a wrapper (`overflow-x-auto`), never the page. Full rules + repo patterns +
 checklist: `.claude/skills/responsive-ui/SKILL.md`.

@@ -76,6 +76,10 @@ export default defineConfig({
         __dirname,
         '../../packages/utils/src/format.ts',
       ),
+      '@gideon-defender/utils/remediation-denylist': resolve(
+        __dirname,
+        '../../packages/utils/src/remediation-denylist.ts',
+      ),
       '@gideon-defender/utils/s3': resolve(__dirname, '../../packages/utils/src/s3.ts'),
       '@gideon-defender/utils/vendor-logo': resolve(
         __dirname,

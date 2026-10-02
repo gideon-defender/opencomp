@@ -1,11 +1,41 @@
+import type { AwsCredentialIdentity } from '@aws-sdk/types';
 import type { AwsCommandStep } from './ai-remediation.prompt';
 import {
   REQUIRED_PARAMS,
+  executePlanSteps,
+  looksLikeMissingDependencyError,
   looksLikeValidationError,
   normalizeConfigRecordingGroup,
   normalizeMetricFilterTransformations,
+  resolveCanonicalCommandName,
+  sharesResourceIdentifier,
   validatePlanSteps,
+  validateRollbackSteps,
 } from './aws-command-executor';
+
+// executePlanSteps builds real SDK clients — keep the whole real s3 module
+// (command resolution and validation depend on it) and swap only the
+// client class for one whose send is controllable per test.
+jest.mock('@aws-sdk/client-s3', () => {
+  const actual = jest.requireActual('@aws-sdk/client-s3');
+  const sendMock = jest.fn();
+  class S3Client {
+    send = sendMock;
+    destroy = jest.fn();
+  }
+  return { ...actual, S3Client, __sendMock: sendMock };
+});
+
+const s3SendMock = (
+  jest.requireMock('@aws-sdk/client-s3') as unknown as {
+    __sendMock: jest.Mock;
+  }
+).__sendMock;
+
+const testCredentials: AwsCredentialIdentity = {
+  accessKeyId: 'test',
+  secretAccessKey: 'test',
+};
 
 function step(overrides: Partial<AwsCommandStep>): AwsCommandStep {
   return {
@@ -365,22 +395,21 @@ describe('normalizeConfigRecordingGroup', () => {
     );
   });
 
-  it('converts a pure exclusion strategy (allSupported absent) to all-supported', () => {
+  it('leaves a pure exclusion strategy untouched (validator refuses it — no silent flip)', () => {
+    const recordingGroup = {
+      recordingStrategy: { useOnly: 'EXCLUSION_BY_RESOURCE_TYPES' },
+      exclusionByResourceTypes: { resourceTypes: ['AWS::IAM::Role'] },
+    };
     const input: Record<string, unknown> = {
       ConfigurationRecorder: {
         name: 'default',
-        recordingGroup: {
-          recordingStrategy: { useOnly: 'EXCLUSION_BY_RESOURCE_TYPES' },
-          exclusionByResourceTypes: { resourceTypes: ['AWS::IAM::Role'] },
-        },
+        recordingGroup,
       },
     };
     normalizeConfigRecordingGroup(input);
-    const recorder = input.ConfigurationRecorder as Record<string, unknown>;
-    expect(recorder.recordingGroup).toEqual({
-      allSupported: true,
-      includeGlobalResourceTypes: true,
-    });
+    expect(
+      (input.ConfigurationRecorder as Record<string, unknown>).recordingGroup,
+    ).toEqual(recordingGroup);
   });
 
   it('cleans an ALL_SUPPORTED_RESOURCE_TYPES strategy to the minimal valid shape', () => {
@@ -560,5 +589,695 @@ describe('PutMetricFilterCommand required params + normalization', () => {
     const input: Record<string, unknown> = { logGroupName: 'lg' };
     expect(() => normalizeMetricFilterTransformations(input)).not.toThrow();
     expect(input).toEqual({ logGroupName: 'lg' });
+  });
+});
+
+describe('validatePlanSteps — canonical required params + IAM blocks + rollback', () => {
+  it('applies required-param checks to fuzzy command aliases', () => {
+    const errors = validatePlanSteps([
+      step({
+        service: 'logs',
+        command: 'CreateLogGroupsCommand',
+        params: {},
+      }),
+    ]);
+    expect(errors).toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(/Required param "logGroupName" is missing/),
+      ]),
+    );
+  });
+
+  it('rejects short inputs instead of executing a neighboring command', () => {
+    // `TopicCommand` is not a real command — it must fail closed, not
+    // substring-match `CreateTopicCommand` and run a mutating API.
+    expect(resolveCanonicalCommandName('sns', 'TopicCommand')).toBeNull();
+    const errors = validatePlanSteps([
+      step({ service: 'sns', command: 'TopicCommand', params: {} }),
+    ]);
+    expect(errors).toEqual(
+      expect.arrayContaining([expect.stringMatching(/not found/)]),
+    );
+  });
+
+  it('keeps near-identical actions distinct instead of Bucket-stripping', () => {
+    // `GetAclCommand` is not real; the old resolver stripped `Bucket` and
+    // ran `GetBucketAclCommand`. Distinct IAM actions stay distinct.
+    expect(resolveCanonicalCommandName('s3', 'GetAclCommand')).toBeNull();
+  });
+
+  it('blocks IAM privilege-escalation fix steps', () => {
+    for (const command of ['PutRolePolicyCommand', 'CreateRoleCommand']) {
+      const errors = validatePlanSteps([
+        step({ service: 'iam', command, params: {} }),
+      ]);
+      expect(errors).toEqual(
+        expect.arrayContaining([expect.stringMatching(/blocked for safety/)]),
+      );
+    }
+  });
+
+  it.each([
+    ['cloudtrail', 'StopLoggingCommand'],
+    ['cloudtrail', 'DeleteTrailCommand'],
+    ['guardduty', 'DeleteDetectorCommand'],
+    ['config-service', 'StopConfigurationRecorderCommand'],
+    ['kms', 'DisableKeyRotationCommand'],
+    ['logs', 'DeleteLogGroupCommand'],
+  ])('blocks monitoring kill-switch %s as a fix step', (service, command) => {
+    const errors = validatePlanSteps([step({ service, command, params: {} })]);
+    expect(errors).toEqual(
+      expect.arrayContaining([expect.stringMatching(/blocked for safety/)]),
+    );
+  });
+
+  it.each([
+    ['sns', 'PublishCommand'],
+    ['sqs', 'SendMessageCommand'],
+    ['eventbridge', 'PutEventsCommand'],
+    ['s3', 'PutBucketNotificationConfigurationCommand'],
+  ])('blocks data-send primitive %s as a fix step', (service, command) => {
+    const errors = validatePlanSteps([step({ service, command, params: {} })]);
+    expect(errors).toEqual(
+      expect.arrayContaining([expect.stringMatching(/blocked for safety/)]),
+    );
+  });
+
+  it.each([
+    ['cloudtrail', 'StopLoggingCommand'],
+    ['guardduty', 'DeleteDetectorCommand'],
+  ])(
+    'still allows kill-switch %s as a rollback undo step',
+    (service, command) => {
+      expect(
+        validateRollbackSteps([step({ service, command, params: {} })]),
+      ).toEqual([]);
+    },
+  );
+
+  it('validates rollback steps without the blocked-command refusal', () => {
+    // A delete rollback is allowed through the blocked gate …
+    expect(
+      validateRollbackSteps([
+        step({
+          service: 's3',
+          command: 'DeleteBucketCommand',
+          params: { Bucket: 'b' },
+        }),
+      ]),
+    ).toEqual([]);
+    // … but unknown commands and placeholders still fail.
+    expect(
+      validateRollbackSteps([
+        step({ service: 's3', command: 'NopeCommand', params: {} }),
+      ]),
+    ).not.toEqual([]);
+    expect(
+      validateRollbackSteps([
+        step({
+          service: 's3',
+          command: 'DeleteBucketCommand',
+          params: { Bucket: '{{BUCKET}}' },
+        }),
+      ]),
+    ).not.toEqual([]);
+  });
+});
+
+describe('executePlanSteps — auto-rollback failure surfacing', () => {
+  const fixStepOne = step({
+    service: 's3',
+    command: 'PutBucketVersioningCommand',
+    params: {
+      Bucket: 'b',
+      VersioningConfiguration: { Status: 'Enabled' },
+    },
+  });
+  const fixStepTwo = step({
+    service: 's3',
+    command: 'PutBucketVersioningCommand',
+    params: {
+      Bucket: 'c',
+      VersioningConfiguration: { Status: 'Enabled' },
+    },
+  });
+  const rollbackStep = step({
+    service: 's3',
+    command: 'DeleteBucketCommand',
+    params: { Bucket: 'b' },
+  });
+
+  beforeEach(() => {
+    s3SendMock.mockReset();
+  });
+
+  it('records rollbackError when auto-rollback fails after a fix failure', async () => {
+    s3SendMock
+      .mockResolvedValueOnce({})
+      .mockRejectedValueOnce(
+        Object.assign(new Error('InternalError: step 2 failed'), {
+          name: 'InternalError',
+        }),
+      )
+      .mockRejectedValueOnce(
+        Object.assign(new Error('AccessDenied: cannot delete bucket'), {
+          name: 'AccessDenied',
+        }),
+      );
+
+    const result = await executePlanSteps({
+      steps: [fixStepOne, fixStepTwo],
+      credentials: testCredentials,
+      region: 'us-east-1',
+      // Index-paired: rollbackSteps[i] undoes fixSteps[i].
+      autoRollbackSteps: [rollbackStep, rollbackStep],
+    });
+
+    expect(result.error?.stepIndex).toBe(1);
+    // The original step error is preserved and the rollback failure rides
+    // along — the caller must warn about partial state.
+    expect(result.error?.message).toBe('InternalError: step 2 failed');
+    expect(result.rollbackError).toBe('AccessDenied: cannot delete bucket');
+  });
+
+  it('leaves rollbackError unset when auto-rollback succeeds', async () => {
+    s3SendMock
+      .mockResolvedValueOnce({})
+      .mockRejectedValueOnce(
+        Object.assign(new Error('InternalError: step 2 failed'), {
+          name: 'InternalError',
+        }),
+      )
+      .mockResolvedValueOnce({});
+
+    const result = await executePlanSteps({
+      steps: [fixStepOne, fixStepTwo],
+      credentials: testCredentials,
+      region: 'us-east-1',
+      autoRollbackSteps: [rollbackStep, rollbackStep],
+    });
+
+    expect(result.error?.stepIndex).toBe(1);
+    expect(result.rollbackError).toBeUndefined();
+  });
+
+  it('skips auto-rollback when rollback steps cannot be paired by index', async () => {
+    s3SendMock.mockReset();
+    s3SendMock.mockResolvedValueOnce({}).mockRejectedValueOnce(
+      Object.assign(new Error('InternalError: step 2 failed'), {
+        name: 'InternalError',
+      }),
+    );
+
+    const result = await executePlanSteps({
+      steps: [fixStepOne, fixStepTwo],
+      credentials: testCredentials,
+      region: 'us-east-1',
+      // One undo step for two fix steps — unpairable, so no undo may run.
+      autoRollbackSteps: [rollbackStep],
+    });
+
+    expect(result.error?.stepIndex).toBe(1);
+    expect(result.error?.message).toBe('InternalError: step 2 failed');
+    // No rollback attempted: exactly the two fix-step SDK calls happened.
+    expect(s3SendMock).toHaveBeenCalledTimes(2);
+    expect(result.rollbackError).toBeUndefined();
+    expect(result.rollbackSkipped).toMatch(/cannot pair undo steps safely/);
+  });
+
+  it('leaves rollbackError unset without auto-rollback steps', async () => {
+    s3SendMock.mockRejectedValueOnce(
+      Object.assign(new Error('InternalError: step 1 failed'), {
+        name: 'InternalError',
+      }),
+    );
+
+    const result = await executePlanSteps({
+      steps: [fixStepOne],
+      credentials: testCredentials,
+      region: 'us-east-1',
+    });
+
+    expect(result.error?.stepIndex).toBe(0);
+    expect(result.rollbackError).toBeUndefined();
+    expect(result.rollbackSkipped).toBeUndefined();
+  });
+});
+
+describe('executePlanSteps — idempotent already-exists error names', () => {
+  beforeEach(() => {
+    s3SendMock.mockReset();
+  });
+
+  // Matching is driven by the SDK v3 `err.name` (exception class names),
+  // not the service — so the s3 mock stands in for every service here.
+  it.each([
+    'EntityAlreadyExistsException',
+    'EntityAlreadyExists',
+    'TrailAlreadyExistsException',
+    'BucketAlreadyOwnedByYou',
+    'ResourceAlreadyExistsException',
+  ])('treats %s as a no-op success', async (name) => {
+    s3SendMock.mockRejectedValueOnce(
+      Object.assign(new Error(`${name}: resource already exists`), { name }),
+    );
+
+    const result = await executePlanSteps({
+      steps: [
+        step({
+          service: 's3',
+          command: 'PutBucketVersioningCommand',
+          params: {
+            Bucket: 'b',
+            VersioningConfiguration: { Status: 'Enabled' },
+          },
+        }),
+      ],
+      credentials: testCredentials,
+      region: 'us-east-1',
+    });
+
+    expect(result.error).toBeUndefined();
+    expect(result.results).toHaveLength(1);
+    expect(result.results[0].output._alreadyExists).toBe(true);
+  });
+
+  it('keeps a foreign-owned BucketAlreadyExists fatal', async () => {
+    s3SendMock.mockRejectedValueOnce(
+      Object.assign(new Error('The requested bucket name is not available'), {
+        name: 'BucketAlreadyExists',
+      }),
+    );
+
+    const result = await executePlanSteps({
+      steps: [
+        step({
+          service: 's3',
+          command: 'PutBucketVersioningCommand',
+          params: {
+            Bucket: 'someone-elses-bucket',
+            VersioningConfiguration: { Status: 'Enabled' },
+          },
+        }),
+      ],
+      credentials: testCredentials,
+      region: 'us-east-1',
+    });
+
+    expect(result.error).toBeDefined();
+    expect(result.results).toHaveLength(0);
+  });
+});
+
+describe('executePlanSteps — post-no-op skip stays narrow', () => {
+  const versioningStep = (bucket: string) =>
+    step({
+      service: 's3',
+      command: 'PutBucketVersioningCommand',
+      params: {
+        Bucket: bucket,
+        VersioningConfiguration: { Status: 'Enabled' },
+      },
+    });
+
+  function mockNoOpThenFailure(failure: Error) {
+    let calls = 0;
+    s3SendMock.mockImplementation(() => {
+      calls += 1;
+      if (calls === 1) {
+        return Promise.reject(
+          Object.assign(new Error('BucketAlreadyOwnedByYou: owned'), {
+            name: 'BucketAlreadyOwnedByYou',
+          }),
+        );
+      }
+      return Promise.reject(failure);
+    });
+  }
+
+  beforeEach(() => {
+    s3SendMock.mockReset();
+  });
+
+  it('still skips a missing-dependency failure after a same-service no-op', async () => {
+    mockNoOpThenFailure(
+      Object.assign(
+        new Error('NoSuchBucket: the specified bucket does not exist'),
+        { name: 'NoSuchBucket' },
+      ),
+    );
+
+    const result = await executePlanSteps({
+      steps: [versioningStep('owned-bucket'), versioningStep('owned-bucket')],
+      credentials: testCredentials,
+      region: 'us-east-1',
+    });
+
+    expect(result.error).toBeUndefined();
+    expect(result.results[1].output._skipped).toBe(true);
+  });
+
+  it('keeps a malformed step fatal after a same-service no-op', async () => {
+    mockNoOpThenFailure(
+      Object.assign(
+        new Error('Invalid parameter: Bucket must be a valid bucket name'),
+        { name: 'InvalidParameter' },
+      ),
+    );
+
+    const result = await executePlanSteps({
+      steps: [versioningStep('owned-bucket'), versioningStep('owned-bucket')],
+      credentials: testCredentials,
+      region: 'us-east-1',
+    });
+
+    // A broken step is an AI bug, not a missing dependency — the run must
+    // fail loudly instead of reporting skipped progress.
+    expect(result.error).toBeDefined();
+    expect(result.results.some((r) => r.output._skipped === true)).toBe(false);
+  });
+
+  it('classifies missing-dependency shapes narrowly', () => {
+    expect(
+      looksLikeMissingDependencyError(
+        'NoSuchBucket: the specified bucket does not exist',
+      ),
+    ).toBe(true);
+    expect(
+      looksLikeMissingDependencyError('ResourceNotFoundException: not found'),
+    ).toBe(true);
+    expect(
+      looksLikeMissingDependencyError(
+        'Invalid parameter: Bucket must be a valid bucket name',
+      ),
+    ).toBe(false);
+    expect(
+      looksLikeMissingDependencyError('Missing required parameter: Bucket'),
+    ).toBe(false);
+  });
+
+  it('stays fatal when the missing resource name differs from the no-op step', async () => {
+    mockNoOpThenFailure(
+      Object.assign(
+        new Error('NoSuchBucket: the specified bucket does not exist'),
+        { name: 'NoSuchBucket' },
+      ),
+    );
+
+    const result = await executePlanSteps({
+      steps: [versioningStep('owned-bucket'), versioningStep('other-bucket')],
+      credentials: testCredentials,
+      region: 'us-east-1',
+    });
+
+    // Same service, but nothing names `other-bucket` except the failing
+    // step — a typo, not a missing no-op output. The run must fail loudly.
+    // (`Enabled` is shared and proves nothing: it is a status flag, not an
+    // identifier, so it must not qualify the skip.)
+    expect(result.error).toBeDefined();
+    expect(result.results.some((r) => r.output._skipped === true)).toBe(false);
+  });
+
+  it('does not let a skipped step bless the next skip', async () => {
+    let calls = 0;
+    s3SendMock.mockImplementation(() => {
+      calls += 1;
+      if (calls === 1) {
+        return Promise.reject(
+          Object.assign(new Error('BucketAlreadyOwnedByYou: owned'), {
+            name: 'BucketAlreadyOwnedByYou',
+          }),
+        );
+      }
+      return Promise.reject(
+        Object.assign(
+          new Error('NoSuchBucket: the specified bucket does not exist'),
+          { name: 'NoSuchBucket' },
+        ),
+      );
+    });
+
+    const result = await executePlanSteps({
+      steps: [
+        versioningStep('owned-bucket'),
+        versioningStep('owned-bucket'),
+        versioningStep('third-bucket'),
+      ],
+      credentials: testCredentials,
+      region: 'us-east-1',
+    });
+
+    // Step 2 skips legitimately (same bucket as the no-op). Step 3 names a
+    // bucket neither prior step used — the `_skipped` in results must not
+    // qualify it, so the run fails loudly instead of chaining false success.
+    expect(result.error).toBeDefined();
+    expect(result.error?.stepIndex).toBe(2);
+    expect(result.results[1].output._skipped).toBe(true);
+  });
+});
+
+describe('sharesResourceIdentifier', () => {
+  it('matches on shared identifier keys and ignores status flags', () => {
+    expect(
+      sharesResourceIdentifier(
+        {
+          Bucket: 'owned-bucket',
+          VersioningConfiguration: { Status: 'Enabled' },
+        },
+        {
+          Bucket: 'owned-bucket',
+          VersioningConfiguration: { Status: 'Suspended' },
+        },
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects steps that only share a status flag', () => {
+    expect(
+      sharesResourceIdentifier(
+        {
+          Bucket: 'owned-bucket',
+          VersioningConfiguration: { Status: 'Enabled' },
+        },
+        {
+          Bucket: 'other-bucket',
+          VersioningConfiguration: { Status: 'Enabled' },
+        },
+      ),
+    ).toBe(false);
+  });
+
+  it('matches nested identifiers like LogGroupName', () => {
+    expect(
+      sharesResourceIdentifier(
+        { logGroupName: '/aws/app' },
+        {
+          logGroupName: '/aws/app',
+          filterName: 'errors',
+          filterPattern: 'ERROR',
+        },
+      ),
+    ).toBe(true);
+  });
+
+  it('returns false when the prior step names nothing usable', () => {
+    expect(
+      sharesResourceIdentifier({ Status: 'Enabled' }, { Status: 'Enabled' }),
+    ).toBe(false);
+    expect(sharesResourceIdentifier({}, { Bucket: 'b' })).toBe(false);
+  });
+});
+
+describe('rollback path — IAM privilege-escalation stays blocked', () => {
+  it.each([
+    'PutRolePolicyCommand',
+    'CreateRoleCommand',
+    'AttachRolePolicyCommand',
+  ])('refuses %s in validateRollbackSteps', (command) => {
+    const errors = validateRollbackSteps([
+      step({ service: 'iam', command, params: {} }),
+    ]);
+    expect(errors).toEqual(
+      expect.arrayContaining([expect.stringMatching(/blocked for safety/)]),
+    );
+  });
+
+  it('still allows delete undo steps in validateRollbackSteps', () => {
+    expect(
+      validateRollbackSteps([
+        step({
+          service: 's3',
+          command: 'DeleteBucketCommand',
+          params: { Bucket: 'b' },
+        }),
+      ]),
+    ).toEqual([]);
+  });
+
+  it.each([
+    { service: 'secretsmanager', command: 'GetSecretValueCommand' },
+    { service: 'ssm', command: 'GetParameterCommand' },
+    { service: 'ssm', command: 'GetParametersCommand' },
+    { service: 'ssm', command: 'GetParametersByPathCommand' },
+    { service: 'kms', command: 'DecryptCommand' },
+  ])(
+    'refuses secret-plaintext read $command on fix and rollback paths',
+    ({ service, command }) => {
+      for (const errors of [
+        validatePlanSteps([step({ service, command, params: {} })]),
+        validateRollbackSteps([step({ service, command, params: {} })]),
+      ]) {
+        expect(errors).toEqual(
+          expect.arrayContaining([expect.stringMatching(/blocked for safety/)]),
+        );
+      }
+    },
+  );
+
+  it('refuses IAM writes at execution time even with isRollback', async () => {
+    s3SendMock.mockReset();
+    s3SendMock.mockResolvedValueOnce({}).mockRejectedValueOnce(
+      Object.assign(new Error('InternalError: step 2 failed'), {
+        name: 'InternalError',
+      }),
+    );
+
+    const versioned = (bucket: string): AwsCommandStep =>
+      step({
+        service: 's3',
+        command: 'PutBucketVersioningCommand',
+        params: {
+          Bucket: bucket,
+          VersioningConfiguration: { Status: 'Enabled' },
+        },
+      });
+
+    const result = await executePlanSteps({
+      steps: [versioned('b'), versioned('c')],
+      credentials: testCredentials,
+      region: 'us-east-1',
+      autoRollbackSteps: [
+        step({
+          service: 'iam',
+          command: 'PutRolePolicyCommand',
+          params: {
+            RoleName: 'r',
+            PolicyName: 'p',
+            PolicyDocument: '{}',
+          },
+        }),
+        step({
+          service: 'iam',
+          command: 'CreateRoleCommand',
+          params: { RoleName: 'r2' },
+        }),
+      ],
+    });
+
+    expect(result.error?.stepIndex).toBe(1);
+    expect(result.rollbackError).toMatch(/blocked for safety/);
+  });
+});
+
+describe('executePlanSteps — AI repair safety gate runs full validation', () => {
+  const fixStep = step({
+    service: 's3',
+    command: 'PutBucketVersioningCommand',
+    params: {
+      Bucket: 'b',
+      VersioningConfiguration: { Status: 'Enabled' },
+    },
+  });
+
+  beforeEach(() => {
+    s3SendMock.mockReset();
+  });
+
+  function validationFailure() {
+    // Validation-class error the rules-based auto-fix cannot handle (no
+    // "Value at 'x'" shape), so the AI repair callback fires.
+    s3SendMock.mockRejectedValueOnce(
+      Object.assign(
+        new Error('ValidationException: request failed validation'),
+        { name: 'ValidationException' },
+      ),
+    );
+  }
+
+  it('refuses a repaired step that smuggles in a blocked command', async () => {
+    validationFailure();
+
+    const result = await executePlanSteps({
+      steps: [fixStep],
+      credentials: testCredentials,
+      region: 'us-east-1',
+      repairStep: async ({ step: failed }) => ({
+        ...failed,
+        command: 'DeleteBucketCommand',
+        params: { Bucket: 'b' },
+      }),
+    });
+
+    expect(result.error?.stepIndex).toBe(0);
+    expect(result.error?.message).toMatch(/blocked for safety/);
+    // Refused before retry: the SDK ran exactly once.
+    expect(s3SendMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses a repaired step that drops a required param', async () => {
+    const policyStep = step({
+      service: 's3',
+      command: 'PutBucketPolicyCommand',
+      params: { Bucket: 'b', Policy: '{}' },
+    });
+    s3SendMock.mockRejectedValueOnce(
+      Object.assign(
+        new Error('ValidationException: request failed validation'),
+        { name: 'ValidationException' },
+      ),
+    );
+
+    const result = await executePlanSteps({
+      steps: [policyStep],
+      credentials: testCredentials,
+      region: 'us-east-1',
+      repairStep: async ({ step: failed }) => ({
+        ...failed,
+        params: { Policy: '{}' },
+      }),
+    });
+
+    expect(result.error?.message).toMatch(/Required param "Bucket"/);
+    expect(s3SendMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries a repaired step that clears full validation', async () => {
+    s3SendMock
+      .mockRejectedValueOnce(
+        Object.assign(
+          new Error('ValidationException: request failed validation'),
+          { name: 'ValidationException' },
+        ),
+      )
+      .mockResolvedValueOnce({ VersioningConfiguration: {} });
+
+    const result = await executePlanSteps({
+      steps: [fixStep],
+      credentials: testCredentials,
+      region: 'us-east-1',
+      repairStep: async ({ step: failed }) => ({
+        ...failed,
+        params: {
+          ...failed.params,
+          // Genuinely changed (not just reshaped): the unchanged-params
+          // case counts as "cannot repair" and never retries.
+          ExpectedBucketOwner: '123456789012',
+        },
+      }),
+    });
+
+    expect(result.error).toBeUndefined();
+    expect(result.results).toHaveLength(1);
+    expect(s3SendMock).toHaveBeenCalledTimes(2);
   });
 });
