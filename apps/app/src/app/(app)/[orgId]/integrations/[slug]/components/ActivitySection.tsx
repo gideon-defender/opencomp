@@ -1,6 +1,7 @@
 'use client';
 
 import { api } from '@/lib/api-client';
+import { getInitials } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '@gideon-defender/ui/avatar';
 import { HStack, Section, Stack, Text } from '@trycompai/design-system';
 import { Activity } from '@trycompai/design-system/icons';
@@ -23,16 +24,6 @@ interface ActivitySectionProps {
   connectionId: string;
 }
 
-const getInitials = (name: string | null) =>
-  name
-    ? name
-        .split(' ')
-        .map((p) => p[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2)
-    : 'S';
-
 function ActivityRow({ entry }: { entry: ActivityEntry }) {
   const displayName = entry.userName ?? 'System';
   const timeAgo = formatDistanceToNow(new Date(entry.timestamp), { addSuffix: true });
@@ -40,7 +31,7 @@ function ActivityRow({ entry }: { entry: ActivityEntry }) {
   return (
     <HStack gap="sm" align="center">
       <Avatar className="h-5 w-5 shrink-0">
-        <AvatarFallback className="text-[9px]">{getInitials(entry.userName)}</AvatarFallback>
+        <AvatarFallback className="text-[9px]">{getInitials(displayName)}</AvatarFallback>
       </Avatar>
 
       <Text size="sm" as="span">

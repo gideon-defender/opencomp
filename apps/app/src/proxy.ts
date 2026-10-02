@@ -48,13 +48,6 @@ export async function proxy(request: NextRequest) {
       },
     });
     response.headers.set('x-pathname', nextUrl.pathname);
-    const intent = nextUrl.searchParams.get('intent') || '';
-    if (intent) {
-      // Also forward intent to the request headers so server components can read it
-      requestHeaders.set('x-intent', intent);
-      // Recreate response with updated forwarded headers
-      return NextResponse.next({ request: { headers: requestHeaders } });
-    }
 
     // Allow unauthenticated access to invite routes
     if (nextUrl.pathname.startsWith('/invite/')) {

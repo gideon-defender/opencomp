@@ -82,20 +82,6 @@ export function formatDate(date: string, dateFormat?: string) {
   return format(new Date(date), dateFormat ?? 'P');
 }
 
-export function getInitials(value: string) {
-  const formatted = value.toUpperCase().replace(/[\s.-]/g, '');
-
-  if (formatted.split(' ').length > 1) {
-    return `${formatted.charAt(0)}${formatted.charAt(1)}`;
-  }
-
-  if (value.length > 1) {
-    return formatted.charAt(0) + formatted.charAt(1);
-  }
-
-  return formatted.charAt(0);
-}
-
 export function formatAccountName({ name, currency }: { name?: string; currency?: string }) {
   if (currency) {
     return `${name} (${currency})`;

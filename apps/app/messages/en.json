@@ -19,7 +19,6 @@
     "notFoundDescription": "The page you are looking for does not exist.",
     "notFoundTitle": "404 - Page not found",
     "returnToDashboard": "Return to dashboard",
-    "selectAnotherOrg": "Please select another organization or contact your organization administrator.",
     "somethingWentWrong": "Something went wrong",
     "tryAgain": "Try again",
     "unexpectedErrorDescription": "An unexpected error has occurred. Please try again or contact support if the issue persists."
@@ -49,7 +48,6 @@
     "compliance": "Compliance",
     "context": "Context",
     "controls": "Controls",
-    "createOrganization": "Create organization",
     "documents": "Documents",
     "evidence": "Evidence",
     "findingTemplates": "Finding Templates",
@@ -73,7 +71,6 @@
     "search": "Search...",
     "secrets": "Secrets",
     "security": "Security",
-    "selectOrganization": "Select organization",
     "settings": "Settings",
     "theme": "Theme",
     "timelineTemplates": "Timeline Templates",

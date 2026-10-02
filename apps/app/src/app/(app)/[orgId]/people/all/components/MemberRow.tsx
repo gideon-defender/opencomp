@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import { useState } from 'react';
 
 import { parseRolesString } from '@/lib/permissions';
+import { getInitials } from '@/lib/utils';
 import type { Role } from '@db';
 import {
   Avatar,
@@ -88,20 +89,6 @@ interface MemberRowProps {
   twoFactorStatus?: TwoFactorStatus;
   /** Which requirement columns the table is rendering, in order. */
   requirementColumns?: RequirementColumnKey[];
-}
-
-function getInitials(name?: string | null, email?: string | null): string {
-  if (name) {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase();
-  }
-  if (email) {
-    return email.substring(0, 2).toUpperCase();
-  }
-  return '??';
 }
 
 function getRoleLabel(role: string): string {
@@ -327,7 +314,7 @@ export function MemberRow({
             <div className={`flex-shrink-0 ${isDeactivated ? 'grayscale opacity-60' : ''}`}>
               <Avatar>
                 <AvatarImage src={memberAvatar || undefined} />
-                <AvatarFallback>{getInitials(member.user.name, member.user.email)}</AvatarFallback>
+                <AvatarFallback>{getInitials(memberName)}</AvatarFallback>
               </Avatar>
             </div>
             <div className="min-w-0">

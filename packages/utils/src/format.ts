@@ -185,3 +185,20 @@ export function formatAmount({
     maximumFractionDigits,
   }).format(amount);
 }
+
+/**
+ * Avatar initials for a display name — canonical copy.
+ * Mirrors `apps/app/src/lib/utils.ts:8` so every app renders the same
+ * fallback. Takes the first character of the first two words
+ * (unicode-safe), `'?'` for a blank name. Callers pass their own
+ * fallback for nullish input, e.g. `getInitials(name ?? email ?? '')`.
+ */
+export function getInitials(name: string): string {
+  const initials = name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => Array.from(part)[0]?.toUpperCase())
+    .join('');
+  return initials || '?';
+}

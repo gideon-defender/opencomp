@@ -2,12 +2,10 @@ import { getFeatureFlags } from '@/app/posthog';
 import { APP_AWS_ORG_ASSETS_BUCKET, s3Client } from '@/app/s3';
 import { OrgInternalProvider } from '@/components/org-internal-context';
 import { TriggerTokenProvider } from '@/components/trigger-token-provider';
-import { serverApi } from '@/lib/api-server';
 import { canAccessApp, canAccessAuditorView, parseRolesString } from '@/lib/permissions';
 import { resolveCustomRolePermissions, resolveUserPermissions } from '@/lib/permissions.server';
 import { getSignedUrl } from '@/lib/s3-presigner';
 import { getValidTriggerAccessToken } from '@/lib/trigger-access-token';
-import type { OrganizationFromMe } from '@/types';
 import { auth } from '@/utils/auth';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { db, Role } from '@db/server';
@@ -121,29 +119,19 @@ export default async function Layout({
     },
   });
 
-  // Fetch organizations for sidebar via API
-  const meRes = await serverApi.get<{ organizations: OrganizationFromMe[] }>('/v1/auth/me');
-  const organizations = meRes.data?.organizations ?? [];
-
-  // Generate logo URLs for all organizations
-  const logoUrls: Record<string, string> = {};
-  if (s3Client && APP_AWS_ORG_ASSETS_BUCKET) {
-    const s3 = s3Client;
-    await Promise.all(
-      organizations.map(async (org) => {
-        if (org.logo) {
-          try {
-            const command = new GetObjectCommand({
-              Bucket: APP_AWS_ORG_ASSETS_BUCKET,
-              Key: org.logo,
-            });
-            logoUrls[org.id] = await getSignedUrl(s3, command, { expiresIn: 3600 });
-          } catch {
-            // Logo not available
-          }
-        }
-      }),
-    );
+  // Single-tenant: organization comes from the route (IdP tenant). Only the
+  // current organization's logo is needed for the badge.
+  let logoUrl: string | undefined;
+  if (s3Client && APP_AWS_ORG_ASSETS_BUCKET && organization.logo) {
+    try {
+      const command = new GetObjectCommand({
+        Bucket: APP_AWS_ORG_ASSETS_BUCKET,
+        Key: organization.logo,
+      });
+      logoUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+    } catch {
+      // Logo not available
+    }
   }
 
   // Check feature flags for menu items. Security (penetration tests) is
@@ -193,8 +181,7 @@ export default async function Layout({
         <OrgInternalProvider isInternal={organization.isInternal}>
           <AppShellWrapper
             organization={organization}
-            organizations={organizations}
-            logoUrls={logoUrls}
+            logoUrl={logoUrl}
             onboarding={onboarding}
             isCollapsed={isCollapsed}
             isQuestionnaireEnabled={isQuestionnaireEnabled}

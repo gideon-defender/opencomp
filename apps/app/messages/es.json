@@ -19,7 +19,6 @@
     "notFoundDescription": "La página que buscas no existe.",
     "notFoundTitle": "404 - Página no encontrada",
     "returnToDashboard": "Volver al panel de control",
-    "selectAnotherOrg": "Selecciona otra organización o contacta al administrador de tu organización.",
     "somethingWentWrong": "Algo salió mal",
     "tryAgain": "Intentar de nuevo",
     "unexpectedErrorDescription": "Se produjo un error inesperado. Inténtalo de nuevo o contacta con soporte si el problema persiste."
@@ -49,7 +48,6 @@
     "compliance": "Compliance",
     "context": "Contexto",
     "controls": "Controles",
-    "createOrganization": "Crear organización",
     "documents": "Documentos",
     "evidence": "Evidencias",
     "findingTemplates": "Plantillas de hallazgos",
@@ -73,7 +71,6 @@
     "search": "Buscar...",
     "secrets": "Secretos",
     "security": "Seguridad",
-    "selectOrganization": "Seleccionar organización",
     "settings": "Configuración",
     "theme": "Tema",
     "timelineTemplates": "Plantillas de cronogramas",

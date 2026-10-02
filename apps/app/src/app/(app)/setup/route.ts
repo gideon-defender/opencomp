@@ -25,8 +25,7 @@ export async function GET(request: NextRequest) {
   // the downstream truthy check (an empty ?inviteCode= is not an invite).
   const inviteCode = request.nextUrl.searchParams.get('inviteCode');
   if (!inviteCode) {
-    // CS-569: guard the onboarding loop at the setup entry too (direct nav or
-    // the create-additional intent). Reuse the same decision the landing page
+    // CS-569: guard the onboarding loop at the setup entry too (direct nav). Reuse the same decision the landing page
     // uses so the two can't drift. A non-null target means the user is invited
     // or offboarded; `null` means a new user (or one with active orgs) who
     // should fall through to onboarding.

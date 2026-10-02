@@ -13,11 +13,8 @@ interface AuthMeResponse {
 }
 
 export default async function SetupLayout({ children }: { children: React.ReactNode }) {
-  const hdrs = await headers();
-  const intent = hdrs.get('x-intent');
-
   const session = await auth.api.getSession({ headers: await headers() });
-  if (session && intent !== 'create-additional') {
+  if (session) {
     const meRes = await serverApi.get<AuthMeResponse>('/v1/auth/me');
     const orgs = meRes.data?.organizations ?? [];
 
