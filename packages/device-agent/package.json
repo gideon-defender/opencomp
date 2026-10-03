@@ -1,25 +1,8 @@
 {
   "name": "@gideon-defender/device-agent",
-  "version": "1.0.0",
   "description": "OpenComp Device Agent - Endpoint Compliance",
+  "version": "1.0.0",
   "author": "OpenComp <hello@gideondefender.com>",
-  "homepage": "https://gideondefender.com/",
-  "private": true,
-  "main": "dist/main/index.js",
-  "scripts": {
-    "postinstall": "electron-builder install-app-deps",
-    "dev": "electron-vite dev --watch",
-    "build": "electron-vite build",
-    "preview": "electron-vite preview",
-    "typecheck": "tsc --noEmit",
-    "lint": "prettier --check 'src/**/*.{ts,tsx}'",
-    "package:mac": "electron-builder --mac --config electron-builder.config.js",
-    "package:win": "electron-builder --win --config electron-builder.config.js",
-    "package:linux": "electron-builder --linux --config electron-builder.config.js",
-    "package:all": "electron-builder --mac --win --linux --config electron-builder.config.js",
-    "test": "vitest run",
-    "test:watch": "vitest"
-  },
   "dependencies": {
     "@trycompai/design-system": "*",
     "electron-store": "^10.0.0",
@@ -41,5 +24,22 @@
     "typescript": "^5.9.3",
     "vite": "^6.4.3",
     "vitest": "^4.1.11"
+  },
+  "homepage": "https://gideondefender.com/",
+  "main": "dist/main/index.js",
+  "private": true,
+  "scripts": {
+    "build": "electron-vite build",
+    "dev": "electron-vite dev --watch",
+    "lint": "prettier --check 'src/**/*.{ts,tsx}'",
+    "package:all": "electron-builder --mac --win --linux --config electron-builder.config.js",
+    "package:linux": "electron-builder --linux --config electron-builder.config.js",
+    "package:mac": "electron-builder --mac --config electron-builder.config.js",
+    "package:win": "electron-builder --win --config electron-builder.config.js",
+    "postinstall": "electron-builder install-app-deps",
+    "preview": "electron-vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
   }
 }

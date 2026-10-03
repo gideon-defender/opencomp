@@ -33,12 +33,13 @@ import {
   formatBlockedActionsForDisplay,
   splitBlockedRemediationActions,
 } from './remediation-denylist';
+import { AWS_LEGACY_REMEDIATION_ROLE_NAME } from './aws-partition.utils';
 
 // Gemini Flash for every pass. Fix-plan output is structured SDK-call shapes,
 // so keep prompts strict; the manual-steps fallback below needs only clear
 // natural language, which the same model handles.
 const MODEL = google('gemini-3.8-flash');
-const REMEDIATION_ROLE_NAME = 'OpenComp-Remediator';
+const REMEDIATION_ROLE_NAME = AWS_LEGACY_REMEDIATION_ROLE_NAME;
 
 export interface FindingContext {
   title: string;

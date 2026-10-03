@@ -17,8 +17,8 @@
     "README.md"
   ],
   "keywords": [
-    "opencomp",
     "configuration",
+    "opencomp",
     "tsconfig",
     "typescript"
   ],

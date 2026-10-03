@@ -11,6 +11,7 @@ import {
   subtractDeniedActions,
   type RolePolicyReader,
 } from './remediation-permission-coverage';
+import { AWS_LEGACY_REMEDIATION_ROLE_NAME } from './aws-partition.utils';
 
 export interface RemediatorCredentials {
   accessKeyId: string;
@@ -45,7 +46,7 @@ export async function readRemediatorRolePermissions(params: {
       sessionToken: params.credentials.sessionToken,
     },
   });
-  const roleName = params.roleName ?? 'OpenComp-Remediator';
+  const roleName = params.roleName ?? AWS_LEGACY_REMEDIATION_ROLE_NAME;
 
   // Thin SDK adapter over the shared paginated reader.
   const reader: RolePolicyReader = {

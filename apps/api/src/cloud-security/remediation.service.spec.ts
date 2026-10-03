@@ -122,6 +122,318 @@ describe('RemediationService.previewRemediation', () => {
     expect(preview.apiCalls).toEqual([]);
     expect(getDecryptedCredentials).not.toHaveBeenCalled();
   });
+
+  it('returns guided-only manual steps when no remediation role is configured', async () => {
+    const assumeRemediationRole = jest.fn();
+    const service = makeService({
+      credentialVaultService: {
+        getDecryptedCredentials: jest
+          .fn()
+          .mockResolvedValue({ regions: ['us-east-1'] }),
+      },
+      awsSecurityService: { assumeRemediationRole },
+    });
+
+    mockDb.integrationConnection.findFirst.mockResolvedValue({
+      id: 'conn_123',
+      provider: { slug: 'aws' },
+    });
+    mockDb.integrationCheckResult.findFirst.mockResolvedValue({
+      id: 'chk_123',
+      title: 'S3 bucket is not encrypted',
+      description: 'Server-side encryption is not enabled.',
+      severity: 'high',
+      resourceId: 'test-bucket',
+      resourceType: 'AwsS3Bucket',
+      evidence: { findingKey: 's3-encryption-test' },
+      remediation: 'Enable default encryption on the bucket.',
+    });
+
+    const preview = await service.previewRemediation({
+      connectionId: 'conn_123',
+      organizationId: 'org_123',
+      checkResultId: 'chk_123',
+      remediationKey: 's3-encryption-test',
+    });
+
+    // No write path without the role — guided manual steps, and the
+    // auditor credentials are never used for writes.
+    expect(preview.guidedOnly).toBe(true);
+    expect(assumeRemediationRole).not.toHaveBeenCalled();
+  });
+
+  it('treats whitespace-only remediation role ARNs as missing (preview)', async () => {
+    const assumeRemediationRole = jest.fn();
+    const service = makeService({
+      credentialVaultService: {
+        getDecryptedCredentials: jest.fn().mockResolvedValue({
+          regions: ['us-east-1'],
+          remediationRoleArn: '   ',
+        }),
+      },
+      awsSecurityService: { assumeRemediationRole },
+    });
+
+    mockDb.integrationConnection.findFirst.mockResolvedValue({
+      id: 'conn_123',
+      provider: { slug: 'aws' },
+    });
+    mockDb.integrationCheckResult.findFirst.mockResolvedValue({
+      id: 'chk_123',
+      title: 'S3 bucket is not encrypted',
+      description: 'Server-side encryption is not enabled.',
+      severity: 'high',
+      resourceId: 'test-bucket',
+      resourceType: 'AwsS3Bucket',
+      evidence: { findingKey: 's3-encryption-test' },
+      remediation: 'Enable default encryption on the bucket.',
+    });
+
+    const preview = await service.previewRemediation({
+      connectionId: 'conn_123',
+      organizationId: 'org_123',
+      checkResultId: 'chk_123',
+      remediationKey: 's3-encryption-test',
+    });
+
+    expect(preview.guidedOnly).toBe(true);
+    expect(assumeRemediationRole).not.toHaveBeenCalled();
+  });
+
+  it('returns guided-only manual steps when the External ID is missing (preview)', async () => {
+    const assumeRemediationRole = jest.fn();
+    const service = makeService({
+      credentialVaultService: {
+        getDecryptedCredentials: jest.fn().mockResolvedValue({
+          regions: ['us-east-1'],
+          remediationRoleArn:
+            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+        }),
+      },
+      awsSecurityService: { assumeRemediationRole },
+    });
+
+    mockDb.integrationConnection.findFirst.mockResolvedValue({
+      id: 'conn_123',
+      provider: { slug: 'aws' },
+    });
+    mockDb.integrationCheckResult.findFirst.mockResolvedValue({
+      id: 'chk_123',
+      title: 'S3 bucket is not encrypted',
+      description: 'Server-side encryption is not enabled.',
+      severity: 'high',
+      resourceId: 'test-bucket',
+      resourceType: 'AwsS3Bucket',
+      evidence: { findingKey: 's3-encryption-test' },
+      remediation: 'Enable default encryption on the bucket.',
+    });
+
+    const preview = await service.previewRemediation({
+      connectionId: 'conn_123',
+      organizationId: 'org_123',
+      checkResultId: 'chk_123',
+      remediationKey: 's3-encryption-test',
+    });
+
+    // The gate needs ARN + External ID — without the latter there is no
+    // write path, so no AI plan runs and no assume is attempted.
+    expect(preview.guidedOnly).toBe(true);
+    expect(assumeRemediationRole).not.toHaveBeenCalled();
+  });
+
+  it('throws from executeRemediation when the External ID is missing', async () => {
+    const assumeRemediationRole = jest.fn();
+    const service = makeService({
+      credentialVaultService: {
+        getDecryptedCredentials: jest.fn().mockResolvedValue({
+          regions: ['us-east-1'],
+          remediationRoleArn:
+            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+        }),
+      },
+      awsSecurityService: { assumeRemediationRole },
+    });
+
+    mockDb.integrationConnection.findFirst.mockResolvedValue({
+      id: 'conn_123',
+      provider: { slug: 'aws' },
+    });
+    mockDb.integrationCheckResult.findFirst.mockResolvedValue({
+      id: 'chk_123',
+      title: 'S3 bucket is not encrypted',
+      description: 'Server-side encryption is not enabled.',
+      severity: 'high',
+      resourceId: 'test-bucket',
+      resourceType: 'AwsS3Bucket',
+      evidence: { findingKey: 's3-encryption-test' },
+      remediation: 'Enable default encryption on the bucket.',
+    });
+
+    // Fail closed before the action record exists — and never on auditor
+    // credentials.
+    await expect(
+      service.executeRemediation({
+        connectionId: 'conn_123',
+        organizationId: 'org_123',
+        checkResultId: 'chk_123',
+        remediationKey: 's3-encryption-test',
+        userId: 'user_123',
+      }),
+    ).rejects.toThrow(/Remediation role ARN not configured/);
+    expect(assumeRemediationRole).not.toHaveBeenCalled();
+    expect(mockDb.remediationAction.create).not.toHaveBeenCalled();
+  });
+
+  it('throws from executeRemediation for a whitespace-only remediation role ARN', async () => {
+    const assumeRemediationRole = jest.fn();
+    const service = makeService({
+      credentialVaultService: {
+        getDecryptedCredentials: jest.fn().mockResolvedValue({
+          regions: ['us-east-1'],
+          externalId: 'test-external-id',
+          remediationRoleArn: '   ',
+        }),
+      },
+      awsSecurityService: { assumeRemediationRole },
+    });
+
+    mockDb.integrationConnection.findFirst.mockResolvedValue({
+      id: 'conn_123',
+      provider: { slug: 'aws' },
+    });
+    mockDb.integrationCheckResult.findFirst.mockResolvedValue({
+      id: 'chk_123',
+      title: 'S3 bucket is not encrypted',
+      description: 'Server-side encryption is not enabled.',
+      severity: 'high',
+      resourceId: 'test-bucket',
+      resourceType: 'AwsS3Bucket',
+      evidence: { findingKey: 's3-encryption-test' },
+      remediation: 'Enable default encryption on the bucket.',
+    });
+
+    await expect(
+      service.executeRemediation({
+        connectionId: 'conn_123',
+        organizationId: 'org_123',
+        checkResultId: 'chk_123',
+        remediationKey: 's3-encryption-test',
+        userId: 'user_123',
+      }),
+    ).rejects.toThrow(/Remediation role ARN not configured/);
+    expect(assumeRemediationRole).not.toHaveBeenCalled();
+    expect(mockDb.remediationAction.create).not.toHaveBeenCalled();
+  });
+
+  it('throws from executeRemediation when no remediation role is configured', async () => {
+    const assumeRemediationRole = jest.fn();
+    const service = makeService({
+      credentialVaultService: {
+        getDecryptedCredentials: jest
+          .fn()
+          .mockResolvedValue({ regions: ['us-east-1'] }),
+      },
+      awsSecurityService: { assumeRemediationRole },
+    });
+
+    mockDb.integrationConnection.findFirst.mockResolvedValue({
+      id: 'conn_123',
+      provider: { slug: 'aws' },
+    });
+    mockDb.integrationCheckResult.findFirst.mockResolvedValue({
+      id: 'chk_123',
+      title: 'S3 bucket is not encrypted',
+      description: 'Server-side encryption is not enabled.',
+      severity: 'high',
+      resourceId: 'test-bucket',
+      resourceType: 'AwsS3Bucket',
+      evidence: { findingKey: 's3-encryption-test' },
+      remediation: 'Enable default encryption on the bucket.',
+    });
+
+    // Fail closed before the action record exists — and never on auditor
+    // credentials.
+    await expect(
+      service.executeRemediation({
+        connectionId: 'conn_123',
+        organizationId: 'org_123',
+        checkResultId: 'chk_123',
+        remediationKey: 's3-encryption-test',
+        userId: 'user_123',
+      }),
+    ).rejects.toThrow(/Remediation role ARN not configured/);
+    expect(assumeRemediationRole).not.toHaveBeenCalled();
+    expect(mockDb.remediationAction.create).not.toHaveBeenCalled();
+  });
+
+  it('threads the finding ID into the remediation session name', async () => {
+    const assumeRemediationRole = jest
+      .fn()
+      .mockResolvedValue({ accessKeyId: 'AKID', secretAccessKey: 'x' });
+    const generateFixPlan = jest.fn().mockResolvedValue({
+      canAutoFix: true,
+      risk: 'medium',
+      description: 'Enable bucket encryption.',
+      currentState: {},
+      proposedState: {},
+      requiredPermissions: ['s3:PutBucketEncryption'],
+      readSteps: [],
+      fixSteps: [
+        {
+          service: 's3',
+          command: 'PutBucketEncryptionCommand',
+          params: {},
+          purpose: 'Enable encryption',
+        },
+      ],
+      rollbackSteps: [],
+      rollbackSupported: false,
+    });
+    const service = makeService({
+      credentialVaultService: {
+        getDecryptedCredentials: jest.fn().mockResolvedValue({
+          regions: ['us-east-1'],
+          externalId: 'test-external-id',
+          remediationRoleArn:
+            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+        }),
+      },
+      awsSecurityService: { assumeRemediationRole },
+      aiRemediationService: { generateFixPlan },
+    });
+
+    mockDb.integrationConnection.findFirst.mockResolvedValue({
+      id: 'conn_123',
+      provider: { slug: 'aws' },
+    });
+    mockDb.integrationCheckResult.findFirst.mockResolvedValue({
+      id: 'chk_123',
+      title: 'S3 bucket is not encrypted',
+      description: 'Server-side encryption is not enabled.',
+      severity: 'high',
+      resourceId: 'test-bucket',
+      resourceType: 'AwsS3Bucket',
+      evidence: { findingKey: 's3-encryption-test' },
+      remediation: 'Enable default encryption on the bucket.',
+    });
+
+    await service.previewRemediation({
+      connectionId: 'conn_123',
+      organizationId: 'org_123',
+      checkResultId: 'chk_123',
+      remediationKey: 's3-encryption-test',
+      cachedPermissions: ['s3:PutBucketEncryption'],
+    });
+
+    expect(assumeRemediationRole).toHaveBeenCalledWith(
+      expect.objectContaining({
+        remediationRoleArn:
+          'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+      }),
+      'us-east-1',
+      { findingId: 'chk_123' },
+    );
+  });
 });
 
 describe('buildStaticPermissionScript (denylist)', () => {
@@ -406,9 +718,12 @@ describe('RemediationService.previewRemediation (denylist wiring)', () => {
     });
     const service = makeService({
       credentialVaultService: {
-        getDecryptedCredentials: jest
-          .fn()
-          .mockResolvedValue({ regions: ['us-east-1'] }),
+        getDecryptedCredentials: jest.fn().mockResolvedValue({
+          regions: ['us-east-1'],
+          externalId: 'test-external-id',
+          remediationRoleArn:
+            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+        }),
       },
       aiRemediationService: { generateFixPlan },
     });
@@ -477,9 +792,12 @@ describe('RemediationService.previewRemediation (denylist wiring)', () => {
     });
     const service = makeService({
       credentialVaultService: {
-        getDecryptedCredentials: jest
-          .fn()
-          .mockResolvedValue({ regions: ['us-east-1'] }),
+        getDecryptedCredentials: jest.fn().mockResolvedValue({
+          regions: ['us-east-1'],
+          externalId: 'test-external-id',
+          remediationRoleArn:
+            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+        }),
       },
       awsSecurityService: {
         assumeRemediationRole: jest
@@ -540,9 +858,12 @@ describe('RemediationService.previewRemediation (recheck mode)', () => {
   ): RemediationService {
     const service = makeService({
       credentialVaultService: {
-        getDecryptedCredentials: jest
-          .fn()
-          .mockResolvedValue({ regions: ['us-east-1'] }),
+        getDecryptedCredentials: jest.fn().mockResolvedValue({
+          regions: ['us-east-1'],
+          externalId: 'test-external-id',
+          remediationRoleArn:
+            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+        }),
       },
       awsSecurityService: {
         assumeRemediationRole: jest
@@ -858,9 +1179,13 @@ describe('RemediationService.executeRemediation (rollback surfacing)', () => {
     };
     const service = makeService({
       credentialVaultService: {
-        getDecryptedCredentials: jest
-          .fn()
-          .mockResolvedValue({ accessKeyId: 'a', secretAccessKey: 'b' }),
+        getDecryptedCredentials: jest.fn().mockResolvedValue({
+          accessKeyId: 'a',
+          secretAccessKey: 'b',
+          externalId: 'test-external-id',
+          remediationRoleArn:
+            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+        }),
       },
       awsSecurityService: {
         assumeRemediationRole: jest
@@ -1024,6 +1349,129 @@ describe('RemediationService.rollbackRemediation (blocked split)', () => {
     jest.clearAllMocks();
   });
 
+  it('refuses to roll back when the remediation role is no longer configured', async () => {
+    const assumeRemediationRole = jest.fn();
+    const service = makeService({
+      credentialVaultService: {
+        getDecryptedCredentials: jest.fn().mockResolvedValue({
+          regions: ['us-east-1'],
+        }),
+      },
+      awsSecurityService: { assumeRemediationRole },
+    });
+    mockDb.remediationAction.findFirst.mockResolvedValue({
+      id: 'act_123',
+      status: 'success',
+      connectionId: 'conn_123',
+      checkResultId: 'chk_123',
+      remediationKey: 's3-versioning',
+      resourceId: 'b',
+      appliedState: {
+        rollbackSteps: [
+          {
+            service: 's3',
+            command: 'DeleteBucketCommand',
+            params: { Bucket: 'b' },
+          },
+        ],
+      },
+      connection: { provider: { slug: 'aws' } },
+    });
+
+    // Fail closed before claiming: no role means no rollback, and the
+    // auditor credentials must not silently substitute.
+    await expect(
+      service.rollbackRemediation({
+        actionId: 'act_123',
+        organizationId: 'org_123',
+      }),
+    ).rejects.toThrow(/no longer configured/);
+    expect(assumeRemediationRole).not.toHaveBeenCalled();
+    expect(mockDb.remediationAction.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('refuses to roll back for a whitespace-only remediation role ARN', async () => {
+    const assumeRemediationRole = jest.fn();
+    const service = makeService({
+      credentialVaultService: {
+        getDecryptedCredentials: jest.fn().mockResolvedValue({
+          regions: ['us-east-1'],
+          externalId: 'test-external-id',
+          remediationRoleArn: '   ',
+        }),
+      },
+      awsSecurityService: { assumeRemediationRole },
+    });
+    mockDb.remediationAction.findFirst.mockResolvedValue({
+      id: 'act_123',
+      status: 'success',
+      connectionId: 'conn_123',
+      checkResultId: 'chk_123',
+      remediationKey: 's3-versioning',
+      resourceId: 'b',
+      appliedState: {
+        rollbackSteps: [
+          {
+            service: 's3',
+            command: 'DeleteBucketCommand',
+            params: { Bucket: 'b' },
+          },
+        ],
+      },
+      connection: { provider: { slug: 'aws' } },
+    });
+
+    await expect(
+      service.rollbackRemediation({
+        actionId: 'act_123',
+        organizationId: 'org_123',
+      }),
+    ).rejects.toThrow(/no longer configured/);
+    expect(assumeRemediationRole).not.toHaveBeenCalled();
+    expect(mockDb.remediationAction.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('refuses to roll back when the External ID is missing', async () => {
+    const assumeRemediationRole = jest.fn();
+    const service = makeService({
+      credentialVaultService: {
+        getDecryptedCredentials: jest.fn().mockResolvedValue({
+          regions: ['us-east-1'],
+          remediationRoleArn:
+            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+        }),
+      },
+      awsSecurityService: { assumeRemediationRole },
+    });
+    mockDb.remediationAction.findFirst.mockResolvedValue({
+      id: 'act_123',
+      status: 'success',
+      connectionId: 'conn_123',
+      checkResultId: 'chk_123',
+      remediationKey: 's3-versioning',
+      resourceId: 'b',
+      appliedState: {
+        rollbackSteps: [
+          {
+            service: 's3',
+            command: 'DeleteBucketCommand',
+            params: { Bucket: 'b' },
+          },
+        ],
+      },
+      connection: { provider: { slug: 'aws' } },
+    });
+
+    await expect(
+      service.rollbackRemediation({
+        actionId: 'act_123',
+        organizationId: 'org_123',
+      }),
+    ).rejects.toThrow(/no longer configured/);
+    expect(assumeRemediationRole).not.toHaveBeenCalled();
+    expect(mockDb.remediationAction.updateMany).not.toHaveBeenCalled();
+  });
+
   it('splits denylisted actions out of the rollback permission error', async () => {
     mockDb.remediationAction.findFirst.mockResolvedValue({
       id: 'act_123',
@@ -1046,9 +1494,12 @@ describe('RemediationService.rollbackRemediation (blocked split)', () => {
     mockDb.remediationAction.updateMany.mockResolvedValue({ count: 1 });
     const service = makeService({
       credentialVaultService: {
-        getDecryptedCredentials: jest
-          .fn()
-          .mockResolvedValue({ regions: ['us-east-1'] }),
+        getDecryptedCredentials: jest.fn().mockResolvedValue({
+          regions: ['us-east-1'],
+          externalId: 'test-external-id',
+          remediationRoleArn:
+            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+        }),
       },
       awsSecurityService: {
         assumeRemediationRole: jest
@@ -1109,9 +1560,12 @@ describe('RemediationService.rollbackRemediation (blocked split)', () => {
     mockDb.remediationAction.updateMany.mockResolvedValue({ count: 1 });
     const service = makeService({
       credentialVaultService: {
-        getDecryptedCredentials: jest
-          .fn()
-          .mockResolvedValue({ regions: ['us-east-1'] }),
+        getDecryptedCredentials: jest.fn().mockResolvedValue({
+          regions: ['us-east-1'],
+          externalId: 'test-external-id',
+          remediationRoleArn:
+            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+        }),
       },
       awsSecurityService: {
         assumeRemediationRole: jest
@@ -1165,9 +1619,12 @@ describe('RemediationService.rollbackRemediation (blocked split)', () => {
     mockDb.remediationAction.updateMany.mockResolvedValue({ count: 0 });
     const service = makeService({
       credentialVaultService: {
-        getDecryptedCredentials: jest
-          .fn()
-          .mockResolvedValue({ regions: ['us-east-1'] }),
+        getDecryptedCredentials: jest.fn().mockResolvedValue({
+          regions: ['us-east-1'],
+          externalId: 'test-external-id',
+          remediationRoleArn:
+            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+        }),
       },
       awsSecurityService: {
         assumeRemediationRole: jest
@@ -1256,9 +1713,12 @@ describe('RemediationService.rollbackRemediation (blocked split)', () => {
     });
     const service = makeService({
       credentialVaultService: {
-        getDecryptedCredentials: jest
-          .fn()
-          .mockResolvedValue({ regions: ['us-east-1'] }),
+        getDecryptedCredentials: jest.fn().mockResolvedValue({
+          regions: ['us-east-1'],
+          externalId: 'test-external-id',
+          remediationRoleArn:
+            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+        }),
       },
       awsSecurityService: {
         assumeRemediationRole: jest
@@ -1308,9 +1768,12 @@ describe('RemediationService.rollbackRemediation (blocked split)', () => {
     });
     const service = makeService({
       credentialVaultService: {
-        getDecryptedCredentials: jest
-          .fn()
-          .mockResolvedValue({ regions: ['us-east-1'] }),
+        getDecryptedCredentials: jest.fn().mockResolvedValue({
+          regions: ['us-east-1'],
+          externalId: 'test-external-id',
+          remediationRoleArn:
+            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+        }),
       },
       awsSecurityService: {
         assumeRemediationRole: jest
@@ -1361,5 +1824,79 @@ describe('RemediationService.rollbackRemediation (blocked split)', () => {
     ).rejects.toThrow('Cannot rollback action with status');
     expect(mockDb.remediationAction.updateMany).not.toHaveBeenCalled();
     expect(mockExecutePlanSteps).not.toHaveBeenCalled();
+  });
+});
+
+describe('RemediationService.getCapabilities', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDb.integrationConnection.findFirst.mockResolvedValue({
+      id: 'conn_123',
+      provider: { slug: 'aws' },
+    });
+  });
+
+  function capabilitiesService(
+    credentials: Record<string, unknown> | null,
+  ): RemediationService {
+    return makeService({
+      credentialVaultService: {
+        getDecryptedCredentials: jest.fn().mockResolvedValue(credentials),
+      },
+    });
+  }
+
+  it('reports disabled without a remediation role ARN', async () => {
+    const service = capabilitiesService({ regions: ['us-east-1'] });
+    await expect(
+      service.getCapabilities({
+        connectionId: 'conn_123',
+        organizationId: 'org_123',
+      }),
+    ).resolves.toEqual({ enabled: false, aiPowered: true, remediations: [] });
+  });
+
+  it('reports disabled for a whitespace-only remediation role ARN', async () => {
+    // Matches the preview/execute/rollback gates — the flag must never
+    // advertise a write path the gates refuse to open.
+    const service = capabilitiesService({
+      regions: ['us-east-1'],
+      remediationRoleArn: '   ',
+    });
+    await expect(
+      service.getCapabilities({
+        connectionId: 'conn_123',
+        organizationId: 'org_123',
+      }),
+    ).resolves.toEqual({ enabled: false, aiPowered: true, remediations: [] });
+  });
+
+  it('reports enabled with a configured remediation role ARN', async () => {
+    const service = capabilitiesService({
+      regions: ['us-east-1'],
+      externalId: 'test-external-id',
+      remediationRoleArn: 'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+    });
+    await expect(
+      service.getCapabilities({
+        connectionId: 'conn_123',
+        organizationId: 'org_123',
+      }),
+    ).resolves.toEqual({ enabled: true, aiPowered: true, remediations: [] });
+  });
+
+  it('reports disabled with a remediation role ARN but no External ID', async () => {
+    // The write path needs both values — advertising enabled here would
+    // run the AI plan and fail late at the STS call instead.
+    const service = capabilitiesService({
+      regions: ['us-east-1'],
+      remediationRoleArn: 'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+    });
+    await expect(
+      service.getCapabilities({
+        connectionId: 'conn_123',
+        organizationId: 'org_123',
+      }),
+    ).resolves.toEqual({ enabled: false, aiPowered: true, remediations: [] });
   });
 });

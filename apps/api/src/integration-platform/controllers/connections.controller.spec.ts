@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { ConnectionsController } from './connections.controller';
+import { trimAwsCredentialStrings } from './connections.controller';
 import { HybridAuthGuard } from '../../auth/hybrid-auth.guard';
 import { PermissionGuard } from '../../auth/permission.guard';
 import { ConnectionService } from '../services/connection.service';
@@ -27,6 +28,12 @@ jest.mock('@db', () => ({
   },
 }));
 
+jest.mock('@aws-sdk/client-sts', () => ({
+  STSClient: jest.fn(),
+  AssumeRoleCommand: jest.fn((input: unknown) => ({ input })),
+  GetCallerIdentityCommand: jest.fn(() => ({})),
+}));
+
 jest.mock('@gideon-defender/integration-platform', () => ({
   getManifest: jest.fn(),
   getAllManifests: jest.fn(),
@@ -39,6 +46,7 @@ import {
   getAllManifests,
   getActiveManifests,
 } from '@gideon-defender/integration-platform';
+import { AssumeRoleCommand, STSClient } from '@aws-sdk/client-sts';
 
 const mockedGetManifest = getManifest as jest.MockedFunction<
   typeof getManifest
@@ -662,6 +670,267 @@ describe('ConnectionsController', () => {
 
       expect(mockConnectionService.activateConnection).toHaveBeenCalledWith(
         'conn_1',
+      );
+    });
+  });
+
+  describe('testConnection (AWS validation)', () => {
+    const stsCtor = STSClient as unknown as jest.Mock;
+    const assumeCmd = AssumeRoleCommand as unknown as jest.Mock;
+    const stsSend = jest.fn();
+    const previousAssumerArn = process.env.SECURITY_HUB_ROLE_ASSUMER_ARN;
+
+    const AUDITOR_ARN = 'arn:aws:iam::123456789012:role/OpenComp-Auditor';
+    const REMEDIATOR_ARN = 'arn:aws:iam::123456789012:role/OpenComp-Remediator';
+
+    function stsCreds() {
+      return {
+        Credentials: {
+          AccessKeyId: 'AKIAIOSFODNN7EXAMPLE',
+          SecretAccessKey: 'secret',
+          SessionToken: 'token',
+        },
+      };
+    }
+
+    function awsConnection() {
+      mockConnectionService.getConnectionForOrg.mockResolvedValue({
+        id: 'conn_aws',
+        organizationId: 'org_1',
+        status: 'active',
+        provider: { slug: 'aws' },
+      });
+    }
+
+    function awsCredentials(
+      overrides: Record<string, unknown> = {},
+    ): Record<string, unknown> {
+      return {
+        roleArn: AUDITOR_ARN,
+        externalId: 'org_1-secret',
+        regions: ['us-east-1'],
+        awsType: 'aws',
+        remediationRoleArn: REMEDIATOR_ARN,
+        ...overrides,
+      };
+    }
+
+    beforeEach(() => {
+      process.env.SECURITY_HUB_ROLE_ASSUMER_ARN =
+        'arn:aws:iam::999999999999:role/CompRoleAssumer';
+      stsCtor.mockImplementation(() => ({ send: stsSend }));
+      // Default: every assume succeeds EXCEPT a remediation assume without
+      // an External ID (the trust policy correctly requires it), and
+      // identity verification returns the auditor account.
+      stsSend.mockImplementation(async (cmd: unknown) => {
+        const input = (cmd as { input?: Record<string, unknown> }).input;
+        if (!input) {
+          return {
+            Arn: `arn:aws:sts::123456789012:assumed-role/OpenComp-Auditor/CompValidation`,
+            Account: '123456789012',
+          };
+        }
+        if (
+          typeof input.RoleArn === 'string' &&
+          input.RoleArn.includes('Remediator') &&
+          input.ExternalId === undefined
+        ) {
+          throw new Error(
+            'AccessDenied: is not authorized to perform: sts:AssumeRole',
+          );
+        }
+        return stsCreds();
+      });
+      mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue(
+        awsCredentials(),
+      );
+      awsConnection();
+    });
+
+    afterAll(() => {
+      if (previousAssumerArn === undefined) {
+        delete process.env.SECURITY_HUB_ROLE_ASSUMER_ARN;
+      } else {
+        process.env.SECURITY_HUB_ROLE_ASSUMER_ARN = previousAssumerArn;
+      }
+    });
+
+    it('validates the remediation role with a 900s session when the trust policy requires the External ID', async () => {
+      const result = await controller.testConnection('conn_aws', 'org_1');
+
+      expect(result.success).toBe(true);
+      expect(result.message).toContain('Remediation role validated');
+      // The remediation assume uses a 15-minute session.
+      const remediationCall = assumeCmd.mock.calls.find(
+        (call) =>
+          (call[0] as { RoleArn?: string }).RoleArn === REMEDIATOR_ARN &&
+          (call[0] as { ExternalId?: string }).ExternalId !== undefined,
+      );
+      expect(remediationCall).toBeDefined();
+      expect(remediationCall?.[0]).toMatchObject({
+        RoleSessionName: 'CompValidation',
+        DurationSeconds: 900,
+      });
+      expect(mockConnectionService.activateConnection).toHaveBeenCalledWith(
+        'conn_aws',
+      );
+    });
+
+    it('fails when the remediation role can be assumed without the External ID', async () => {
+      // Trust policy too open: assume without External ID succeeds.
+      stsSend.mockImplementation(async (cmd: unknown) => {
+        const input = (cmd as { input?: Record<string, unknown> }).input;
+        if (!input) {
+          return {
+            Arn: 'arn:aws:sts::123456789012:assumed-role/OpenComp-Auditor/CompValidation',
+            Account: '123456789012',
+          };
+        }
+        return stsCreds();
+      });
+
+      const result = await controller.testConnection('conn_aws', 'org_1');
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('does not require the External ID');
+      expect(mockConnectionService.setConnectionError).toHaveBeenCalledWith(
+        'conn_aws',
+        expect.stringContaining('does not require the External ID'),
+      );
+    });
+
+    it('fails visibly when the ExternalId probe errors inconclusively', async () => {
+      // A network error on the negative probe must not certify the policy.
+      stsSend.mockImplementation(async (cmd: unknown) => {
+        const input = (cmd as { input?: Record<string, unknown> }).input;
+        if (!input) {
+          return {
+            Arn: 'arn:aws:sts::123456789012:assumed-role/OpenComp-Auditor/CompValidation',
+            Account: '123456789012',
+          };
+        }
+        if (
+          typeof input.RoleArn === 'string' &&
+          input.RoleArn.includes('Remediator') &&
+          input.ExternalId === undefined
+        ) {
+          throw new Error('NetworkingError: socket hang up');
+        }
+        return stsCreds();
+      });
+
+      const result = await controller.testConnection('conn_aws', 'org_1');
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('socket hang up');
+    });
+
+    it('rejects placeholder External IDs before any STS call', async () => {
+      mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue(
+        awsCredentials({ externalId: 'YOUR_EXTERNAL_ID' }),
+      );
+
+      const result = await controller.testConnection('conn_aws', 'org_1');
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('placeholder');
+      expect(stsSend).not.toHaveBeenCalled();
+    });
+
+    it('rejects cross-account remediation role ARNs without calling STS', async () => {
+      mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue(
+        awsCredentials({
+          remediationRoleArn:
+            'arn:aws:iam::999999999999:role/OpenComp-Remediator',
+        }),
+      );
+
+      const result = await controller.testConnection('conn_aws', 'org_1');
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('must match the auditor');
+      expect(stsSend).not.toHaveBeenCalled();
+    });
+
+    it('rejects non-remediator role names without calling STS', async () => {
+      mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue(
+        awsCredentials({
+          remediationRoleArn: 'arn:aws:iam::123456789012:role/Admin',
+        }),
+      );
+
+      const result = await controller.testConnection('conn_aws', 'org_1');
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('must reference OpenComp-Remediator');
+      expect(stsSend).not.toHaveBeenCalled();
+    });
+
+    it('skips remediation validation when no remediation role is configured', async () => {
+      mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue(
+        awsCredentials({ remediationRoleArn: undefined }),
+      );
+
+      const result = await controller.testConnection('conn_aws', 'org_1');
+
+      expect(result.success).toBe(true);
+      expect(result.message).not.toContain('Remediation role validated');
+      const remediationCall = assumeCmd.mock.calls.find(
+        (call) => (call[0] as { RoleArn?: string }).RoleArn === REMEDIATOR_ARN,
+      );
+      expect(remediationCall).toBeUndefined();
+    });
+
+    it('trims pasted AWS credential strings in place', () => {
+      const credentials: Record<string, string | string[]> = {
+        roleArn: '  arn:aws:iam::123456789012:role/OpenComp-Auditor  ',
+        externalId: '  org_1-secret  ',
+        remediationRoleArn:
+          '  arn:aws:iam::123456789012:role/OpenComp-Remediator  ',
+        regions: ['us-east-1'],
+      };
+
+      trimAwsCredentialStrings(credentials);
+
+      expect(credentials).toMatchObject({
+        roleArn: 'arn:aws:iam::123456789012:role/OpenComp-Auditor',
+        externalId: 'org_1-secret',
+        remediationRoleArn:
+          'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+      });
+      // Non-string values pass through untouched.
+      const withArrays: Record<string, string | string[]> = {
+        regions: ['us-east-1'],
+      };
+      expect(() => trimAwsCredentialStrings(withArrays)).not.toThrow();
+      expect(withArrays).toEqual({ regions: ['us-east-1'] });
+    });
+
+    it('stores trimmed credential strings when updating AWS credentials', async () => {
+      // A pasted ARN with a trailing space must not reach the vault: STS
+      // rejects it verbatim on every later scan.
+      mockedGetManifest.mockReturnValue({
+        auth: { type: 'api_key' },
+        category: 'Cloud',
+      } as never);
+
+      await controller.updateCredentials('conn_aws', 'org_1', {
+        credentials: {
+          roleArn: `  ${AUDITOR_ARN}  `,
+          externalId: '  org_1-secret  ',
+          remediationRoleArn: `  ${REMEDIATOR_ARN}  `,
+        },
+      });
+
+      expect(
+        mockCredentialVaultService.storeApiKeyCredentials,
+      ).toHaveBeenCalledWith(
+        'conn_aws',
+        expect.objectContaining({
+          roleArn: AUDITOR_ARN,
+          externalId: 'org_1-secret',
+          remediationRoleArn: REMEDIATOR_ARN,
+        }),
       );
     });
   });

@@ -17,12 +17,11 @@
       "require": "./dist/index.js"
     }
   },
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
   "files": [
     "dist"
   ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
   "private": true,
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm --dts",
@@ -32,5 +31,6 @@
     "lint": "prettier --check .",
     "typecheck": "tsc --noEmit"
   },
-  "sideEffects": false
+  "sideEffects": false,
+  "types": "./dist/index.d.ts"
 }

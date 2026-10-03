@@ -1,9 +1,13 @@
 {
   "name": "@gideon-defender/auth",
   "version": "0.0.1",
-  "private": true,
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "dependencies": {
+    "better-auth": "1.6.26"
+  },
+  "devDependencies": {
+    "@gideon-defender/tsconfig": "*",
+    "typescript": "^5.9.3"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -18,15 +22,11 @@
       "default": "./dist/participation.js"
     }
   },
+  "main": "./dist/index.js",
+  "private": true,
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {
-    "better-auth": "1.6.26"
-  },
-  "devDependencies": {
-    "@gideon-defender/tsconfig": "*",
-    "typescript": "^5.9.3"
-  }
+  "types": "./dist/index.d.ts"
 }
