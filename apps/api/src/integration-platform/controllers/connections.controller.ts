@@ -61,6 +61,30 @@ import {
 } from '../../cloud-security/aws-partition.utils';
 import { getProviderSummary } from '../utils/provider-summary';
 
+/**
+ * AWS credential fields that must never carry leading/trailing whitespace
+ * into the vault. Exported for tests.
+ */
+const AWS_TRIMMED_CREDENTIAL_KEYS = [
+  'roleArn',
+  'externalId',
+  'remediationRoleArn',
+] as const;
+
+/**
+ * Strip surrounding whitespace from pasted AWS credential strings in
+ * place. STS rejects ARNs with a trailing space, so the stored value must
+ * be the trimmed one — validation alone being trim-tolerant is not enough.
+ */
+export function trimAwsCredentialStrings(
+  credentials: Record<string, string | string[]>,
+): void {
+  for (const key of AWS_TRIMMED_CREDENTIAL_KEYS) {
+    const value = credentials[key];
+    if (typeof value === 'string') credentials[key] = value.trim();
+  }
+}
+
 // Class (not interface) so @nestjs/swagger can introspect it — interfaces are
 // erased at runtime and produce an empty OpenAPI body schema, which means MCP
 // tools have no input fields and agents have to blind-guess the body.
@@ -735,6 +759,13 @@ export class ConnectionsController {
   private async validateAwsCredentials(
     credentials: Record<string, string | string[]>,
   ): Promise<{ success: boolean; message: string; details?: unknown }> {
+    // Trim pasted credential strings in place before anything else. The
+    // vault stores raw credential strings, so a pasted ARN with a trailing
+    // space would otherwise pass trim-tolerant validation here yet fail
+    // later STS calls that send the stored value verbatim. Both callers
+    // pass the to-be-stored object (same reference), so normalizing here
+    // fixes the vault value and the metadata built from it downstream.
+    trimAwsCredentialStrings(credentials);
     // Validate types before using values
     const roleArnValue = credentials.roleArn;
     const externalIdValue = credentials.externalId;
@@ -757,19 +788,32 @@ export class ConnectionsController {
     const regions = regionsValue.filter(
       (r): r is string => typeof r === 'string' && r.trim() !== '',
     );
+    const remediationRoleArn =
+      typeof credentials.remediationRoleArn === 'string' &&
+      credentials.remediationRoleArn.trim()
+        ? credentials.remediationRoleArn.trim()
+        : undefined;
 
     if (regions.length === 0) {
       return { success: false, message: 'No valid AWS regions selected' };
+    }
+
+    // Fail closed on placeholder External IDs left over from the setup
+    // instructions. A guessable/documented default defeats the
+    // confused-deputy protection the External ID exists for.
+    if (externalId.toUpperCase() === 'YOUR_EXTERNAL_ID') {
+      return {
+        success: false,
+        message:
+          'External ID is still the placeholder from the setup instructions. Replace it with your organization ID (or another secret value) in BOTH the IAM trust policy and this form.',
+      };
     }
 
     const partitionErrors = validateAwsPartitionConfig({
       partition,
       roleArn,
       regions,
-      remediationRoleArn:
-        typeof credentials.remediationRoleArn === 'string'
-          ? credentials.remediationRoleArn.trim()
-          : undefined,
+      remediationRoleArn,
     });
     if (partitionErrors.length > 0) {
       return { success: false, message: partitionErrors.join(' ') };
@@ -864,11 +908,73 @@ export class ConnectionsController {
         `Validated AWS identity: ${identity.Arn} (Account: ${identity.Account})`,
       );
 
+      // Step 4 (remediation only): assume the remediation role with a short
+      // session, then prove the trust policy actually requires the External
+      // ID — an assume that succeeds WITHOUT it means the trust policy is
+      // too open and the ARN must not be stored.
+      if (remediationRoleArn) {
+        this.logger.log(
+          `Validating AWS: Assuming remediation role ${remediationRoleArn}...`,
+        );
+        const remediationResp = await roleAssumerSts.send(
+          new AssumeRoleCommand({
+            RoleArn: remediationRoleArn,
+            ExternalId: externalId,
+            RoleSessionName: 'CompValidation',
+            DurationSeconds: 900,
+          }),
+        );
+        if (
+          !remediationResp.Credentials?.AccessKeyId ||
+          !remediationResp.Credentials.SecretAccessKey
+        ) {
+          throw new Error(
+            'Failed to assume remediation role - no credentials returned',
+          );
+        }
+
+        let externalIdEnforced = false;
+        try {
+          await roleAssumerSts.send(
+            new AssumeRoleCommand({
+              RoleArn: remediationRoleArn,
+              RoleSessionName: 'CompValidation-NoExtId',
+              DurationSeconds: 900,
+            }),
+          );
+        } catch (err) {
+          // Only an auth rejection proves the trust policy requires the
+          // External ID. Anything else (network, throttling) is
+          // inconclusive — rethrow so validation fails visibly instead of
+          // wrongly certifying an open trust policy.
+          const msg = err instanceof Error ? err.message : String(err);
+          if (
+            /AccessDenied|Unauthorized|InvalidClientTokenId|SignatureDoesNotMatch|not authorized/i.test(
+              msg,
+            )
+          ) {
+            externalIdEnforced = true;
+          } else {
+            throw err;
+          }
+        }
+        if (!externalIdEnforced) {
+          return {
+            success: false,
+            message:
+              'Remediation role trust policy does not require the External ID (assume succeeded without it). Add a StringEquals sts:ExternalId condition to the role trust policy and try again.',
+          };
+        }
+        this.logger.log(
+          'Validating AWS: Remediation role assumption + ExternalId enforcement successful',
+        );
+      }
+
       // All validations passed!
       const message =
         regions.length === 1
-          ? `Validated! Connected to AWS account ${identity.Account} in ${regions[0]}.`
-          : `Validated! Connected to AWS account ${identity.Account} in ${regions.length} regions.`;
+          ? `Validated! Connected to AWS account ${identity.Account} in ${regions[0]}.${remediationRoleArn ? ' Remediation role validated.' : ''}`
+          : `Validated! Connected to AWS account ${identity.Account} in ${regions.length} regions.${remediationRoleArn ? ' Remediation role validated.' : ''}`;
 
       return {
         success: true,

@@ -30,8 +30,8 @@
     "README.md"
   ],
   "keywords": [
-    "opencomp",
     "email-templates",
+    "opencomp",
     "react-email"
   ],
   "license": "MIT",

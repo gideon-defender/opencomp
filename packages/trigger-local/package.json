@@ -1,23 +1,23 @@
 {
   "name": "@gideon-defender/trigger-local",
-  "version": "1.0.0",
   "description": "In-process task runner (tasks, schedules, runs, realtime auth) backed by BullMQ on the project's existing Redis — no external task runner.",
-  "private": true,
-  "type": "commonjs",
-  "main": "src/index.js",
-  "types": "src/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./src/index.d.ts",
-      "require": "./src/index.js",
-      "import": "./src/index.js",
-      "default": "./src/index.js"
-    }
-  },
+  "version": "1.0.0",
   "dependencies": {
     "bullmq": "^5.48.0",
     "ioredis": "^5.4.1",
     "pg": "^8.13.1",
     "zod": "^4.6.5"
-  }
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js",
+      "require": "./src/index.js",
+      "default": "./src/index.js"
+    }
+  },
+  "main": "src/index.js",
+  "private": true,
+  "type": "commonjs",
+  "types": "src/index.d.ts"
 }

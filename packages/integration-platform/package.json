@@ -1,43 +1,6 @@
 {
   "name": "@gideon-defender/integration-platform",
   "version": "1.0.0",
-  "private": true,
-  "sideEffects": false,
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "require": "./dist/index.js",
-      "import": "./dist/index.js"
-    },
-    "./types": {
-      "types": "./dist/types.d.ts",
-      "require": "./dist/types.js",
-      "import": "./dist/types.js"
-    },
-    "./registry": {
-      "types": "./dist/registry/index.d.ts",
-      "require": "./dist/registry/index.js",
-      "import": "./dist/registry/index.js"
-    },
-    "./runtime": {
-      "types": "./dist/runtime/index.d.ts",
-      "require": "./dist/runtime/index.js",
-      "import": "./dist/runtime/index.js"
-    }
-  },
-  "scripts": {
-    "build": "tsc",
-    "clean": "rm -rf .turbo node_modules dist",
-    "dev": "tsc --watch",
-    "format": "prettier --write .",
-    "lint": "prettier --check .",
-    "test": "vitest run",
-    "typecheck": "tsc --noEmit",
-    "verify": "tsx src/validators/manifest-validator.ts",
-    "generate:tasks": "tsx scripts/generate-task-types.ts"
-  },
   "dependencies": {
     "@aws-sdk/client-cloudtrail": "3.1013.0",
     "@aws-sdk/client-ec2": "^3.948.0",
@@ -58,7 +21,44 @@
     "typescript": "^5.9.3",
     "vitest": "^4.1.11"
   },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js",
+      "require": "./dist/types.js"
+    },
+    "./registry": {
+      "types": "./dist/registry/index.d.ts",
+      "import": "./dist/registry/index.js",
+      "require": "./dist/registry/index.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime/index.d.ts",
+      "import": "./dist/runtime/index.js",
+      "require": "./dist/runtime/index.js"
+    }
+  },
+  "main": "./dist/index.js",
   "peerDependencies": {
     "react": "^19.2.3"
-  }
+  },
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf .turbo node_modules dist",
+    "dev": "tsc --watch",
+    "format": "prettier --write .",
+    "generate:tasks": "tsx scripts/generate-task-types.ts",
+    "lint": "prettier --check .",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "verify": "tsx src/validators/manifest-validator.ts"
+  },
+  "sideEffects": false,
+  "types": "./dist/index.d.ts"
 }

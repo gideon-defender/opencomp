@@ -2,6 +2,9 @@
   "name": "@gideon-defender/db",
   "description": "Database package with Prisma client and schema for OpenComp",
   "version": "2.3.0",
+  "bin": {
+    "comp-prisma-postinstall": "./dist/postinstall.js"
+  },
   "dependencies": {
     "@prisma/adapter-pg": "7.6.0",
     "@prisma/client": "7.6.0",
@@ -32,9 +35,6 @@
       "import": "./dist/ssl-config.js",
       "default": "./dist/ssl-config.js"
     }
-  },
-  "bin": {
-    "comp-prisma-postinstall": "./dist/postinstall.js"
   },
   "files": [
     "dist",

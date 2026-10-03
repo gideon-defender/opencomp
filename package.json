@@ -1,6 +1,11 @@
 {
   "name": "comp",
   "version": "1.50.0",
+  "dependencies": {
+    "@trycompai/design-system": "*",
+    "@types/react-syntax-highlighter": "^15.5.13",
+    "zod": "^4.6.5"
+  },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
@@ -33,42 +38,6 @@
     "*.{js,jsx,ts,tsx,json,md}": "prettier --write"
   },
   "packageManager": "pnpm@10.15.0",
-  "private": true,
-  "scripts": {
-    "build": "turbo build",
-    "check:env": "node scripts/check-unused-env.js",
-    "check:prisma-schemas": "node scripts/check-generated-prisma-schemas.js",
-    "clean": "git clean -xdf node_modules",
-    "clean:workspaces": "turbo clean",
-    "deps:check": "syncpack list-mismatches",
-    "deps:dedupe": "syncpack fix-mismatches && pnpm install",
-    "deps:fix": "syncpack fix-mismatches",
-    "deps:lint": "syncpack lint",
-    "deps:update": "syncpack update",
-    "deps:upgrade": "syncpack update && pnpm install",
-    "dev": "turbo dev --parallel",
-    "db:generate": "turbo run db:generate --filter=@gideon-defender/db --filter=@gideon-defender/app --filter=@gideon-defender/portal --filter=@gideon-defender/api --filter=@gideon-defender/framework-editor",
-    "docker:clean": "pnpm --filter @gideon-defender/db docker:clean",
-    "docker:down": "pnpm --filter @gideon-defender/db docker:down",
-    "docker:up": "pnpm --filter @gideon-defender/db docker:up",
-    "format": "prettier --write .",
-    "lint": "turbo lint && syncpack lint",
-    "prepare": "husky",
-    "test": "turbo test --parallel",
-    "typecheck": "turbo typecheck",
-    "typecheck:ci": "turbo typecheck --filter={apps/**} --filter={packages/**} --filter=!@gideon-defender/integrations --filter=!@gideon-defender/ui"
-  },
-  "workspaces": [
-    "apps/*",
-    "apps/browser-extension/*",
-    "!apps/mcp-server",
-    "packages/*"
-  ],
-  "dependencies": {
-    "@trycompai/design-system": "*",
-    "@types/react-syntax-highlighter": "^15.5.13",
-    "zod": "^4.6.5"
-  },
   "pnpm": {
     "overrides": {
       "nwsapi": "2.2.16",
@@ -156,5 +125,36 @@
       "app-builder-lib": "^26.16.1",
       "electron-builder-squirrel-windows": "^26.16.1"
     }
-  }
+  },
+  "private": true,
+  "scripts": {
+    "build": "turbo build",
+    "check:env": "node scripts/check-unused-env.js",
+    "check:prisma-schemas": "node scripts/check-generated-prisma-schemas.js",
+    "clean": "git clean -xdf node_modules",
+    "clean:workspaces": "turbo clean",
+    "db:generate": "turbo run db:generate --filter=@gideon-defender/db --filter=@gideon-defender/app --filter=@gideon-defender/portal --filter=@gideon-defender/api --filter=@gideon-defender/framework-editor",
+    "deps:check": "syncpack list-mismatches",
+    "deps:dedupe": "syncpack fix-mismatches && pnpm install",
+    "deps:fix": "syncpack fix-mismatches",
+    "deps:lint": "syncpack lint",
+    "deps:update": "syncpack update",
+    "deps:upgrade": "syncpack update && pnpm install",
+    "dev": "turbo dev --parallel",
+    "docker:clean": "pnpm --filter @gideon-defender/db docker:clean",
+    "docker:down": "pnpm --filter @gideon-defender/db docker:down",
+    "docker:up": "pnpm --filter @gideon-defender/db docker:up",
+    "format": "prettier --write .",
+    "lint": "turbo lint && syncpack lint",
+    "prepare": "husky",
+    "test": "turbo test --parallel",
+    "typecheck": "turbo typecheck",
+    "typecheck:ci": "turbo typecheck --filter={apps/**} --filter={packages/**} --filter=!@gideon-defender/integrations --filter=!@gideon-defender/ui"
+  },
+  "workspaces": [
+    "apps/*",
+    "apps/browser-extension/*",
+    "!apps/mcp-server",
+    "packages/*"
+  ]
 }

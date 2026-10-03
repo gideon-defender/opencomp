@@ -17,6 +17,7 @@ import {
 } from './aws-command-executor';
 import {
   getAwsDefaultRegion,
+  hasRemediationRole,
   normalizeAwsPartition,
 } from './aws-partition.utils';
 import {
@@ -52,6 +53,9 @@ function isStaleRollbackClaim(updatedAt: unknown): boolean {
   }
   return Date.now() - updatedAt.getTime() > ROLLBACK_CLAIM_TIMEOUT_MS;
 }
+
+const REMEDIATION_ROLE_MISSING_GUIDANCE =
+  'Auto-remediation is not configured for this AWS connection. Add a Remediation Role ARN to the connection settings and make sure an External ID is set (reconnect your AWS account if needed) to enable one-click fixes. Until then, follow the AWS console steps for this finding manually.';
 
 interface ExecutePermissionError {
   missingActions: string[];
@@ -138,7 +142,9 @@ export class RemediationService {
       );
 
     return {
-      enabled: Boolean(credentials?.remediationRoleArn),
+      // Same trim-aware gate as the preview/execute/rollback paths — a
+      // whitespace-only ARN must not report as enabled.
+      enabled: Boolean(credentials && hasRemediationRole(credentials)),
       aiPowered: true,
       remediations: [],
     };
@@ -176,6 +182,17 @@ export class RemediationService {
       connectionId: params.connectionId,
       finding,
     });
+
+    // Fail closed: no remediation role + External ID means no write path.
+    // The auditor credentials are read-only and must never be used for
+    // writes.
+    if (!hasRemediationRole(credentials)) {
+      return buildManualRemediationPreview({
+        remediation: `[MANUAL] ${REMEDIATION_ROLE_MISSING_GUIDANCE}`,
+        description: finding.description,
+        severity: finding.severity,
+      });
+    }
 
     const evidence = (finding.evidence ?? {}) as Record<string, unknown>;
     const findingKey = evidence.findingKey as string;
@@ -223,6 +240,7 @@ export class RemediationService {
         await this.awsSecurityService.assumeRemediationRole(
           credentials,
           region,
+          { findingId: params.checkResultId },
         );
       let missingPermissions: string[] | undefined;
       let permissionFixScript: string | undefined;
@@ -324,6 +342,7 @@ export class RemediationService {
             await this.awsSecurityService.assumeRemediationRole(
               credentials,
               region,
+              { findingId: params.checkResultId },
             );
           const readResult = await executePlanSteps({
             steps: plan.readSteps,
@@ -587,6 +606,15 @@ export class RemediationService {
       finding,
     });
 
+    // Fail closed before creating the action record: without a remediation
+    // role + External ID there is no write path, and the auditor creds stay
+    // read-only.
+    if (!hasRemediationRole(credentials)) {
+      throw new Error(
+        'Remediation role ARN not configured for this AWS connection. Add a Remediation Role ARN to enable auto-remediation.',
+      );
+    }
+
     // Get plan from cache or regenerate
     let plan: FixPlan;
     const cacheKey = `${params.connectionId}:${params.checkResultId}:${params.remediationKey}`;
@@ -705,6 +733,7 @@ export class RemediationService {
         await this.awsSecurityService.assumeRemediationRole(
           credentials,
           region,
+          { findingId: params.checkResultId },
         );
 
       // Phase 1: Execute read steps to get REAL AWS state
@@ -1096,9 +1125,20 @@ export class RemediationService {
       );
     if (!credentials) throw new Error('No credentials found');
 
+    // Fail closed before claiming: a rollback without the remediation role
+    // + External ID cannot run, and must not silently fall back to auditor
+    // credentials.
+    if (!hasRemediationRole(credentials)) {
+      throw new Error(
+        'Cannot rollback: remediation role ARN is no longer configured for this AWS connection.',
+      );
+    }
+
     const region = this.getRegion(credentials);
     const remediationCreds =
-      await this.awsSecurityService.assumeRemediationRole(credentials, region);
+      await this.awsSecurityService.assumeRemediationRole(credentials, region, {
+        findingId: action.checkResultId,
+      });
 
     // Claim the rollback atomically so two concurrent callers cannot both
     // execute non-idempotent rollback steps. Only one updateMany wins.

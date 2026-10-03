@@ -7,6 +7,7 @@ jest.mock('@aws-sdk/client-sts', () => ({
 
 import { AssumeRoleCommand, STSClient } from '@aws-sdk/client-sts';
 import { AWSSecurityService } from './aws-security.service';
+import { sanitizeStsSessionName } from './aws-security.service';
 
 const stsCtor = STSClient as unknown as jest.Mock;
 const assumeCmd = AssumeRoleCommand as unknown as jest.Mock;
@@ -50,6 +51,7 @@ describe('AWSSecurityService session durations', () => {
 
     await service.assumeRemediationRole(
       {
+        roleArn: 'arn:aws:iam::123456789012:role/OpenComp-Auditor',
         remediationRoleArn:
           'arn:aws:iam::123456789012:role/OpenComp-Remediator',
         externalId: 'ext-1',
@@ -61,6 +63,8 @@ describe('AWSSecurityService session durations', () => {
     // and limits stolen-credential blast radius.
     expect(assumeRole).toHaveBeenCalledWith(
       expect.objectContaining({
+        roleArn: 'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+        externalId: 'ext-1',
         durationSeconds: 900,
         sessionName: 'CompSecurityRemediation',
       }),
@@ -69,10 +73,181 @@ describe('AWSSecurityService session durations', () => {
 
   it('throws when no remediation role ARN is configured', async () => {
     const service = new AWSSecurityService();
+    const assumeRole = jest
+      .spyOn(service, 'assumeRole')
+      .mockResolvedValue({ accessKeyId: 'AK', secretAccessKey: 'SK' });
 
     await expect(
       service.assumeRemediationRole({ externalId: 'ext-1' }, 'us-east-1'),
     ).rejects.toThrow(/Remediation role ARN not configured/);
+    expect(assumeRole).not.toHaveBeenCalled();
+  });
+
+  it('throws on whitespace-only remediation role ARNs without calling STS', async () => {
+    const service = new AWSSecurityService();
+    const assumeRole = jest
+      .spyOn(service, 'assumeRole')
+      .mockResolvedValue({ accessKeyId: 'AK', secretAccessKey: 'SK' });
+
+    await expect(
+      service.assumeRemediationRole(
+        {
+          roleArn: 'arn:aws:iam::123456789012:role/OpenComp-Auditor',
+          remediationRoleArn: '   ',
+          externalId: 'ext-1',
+        },
+        'us-east-1',
+      ),
+    ).rejects.toThrow(/Remediation role ARN not configured/);
+    expect(assumeRole).not.toHaveBeenCalled();
+  });
+
+  it('throws when the remediation External ID is missing', async () => {
+    const service = new AWSSecurityService();
+    const assumeRole = jest
+      .spyOn(service, 'assumeRole')
+      .mockResolvedValue({ accessKeyId: 'AK', secretAccessKey: 'SK' });
+
+    await expect(
+      service.assumeRemediationRole(
+        {
+          remediationRoleArn:
+            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+        },
+        'us-east-1',
+      ),
+    ).rejects.toThrow(/External ID not configured/);
+    expect(assumeRole).not.toHaveBeenCalled();
+  });
+
+  it('rejects remediation when the auditor ARN is missing without calling STS', async () => {
+    const service = new AWSSecurityService();
+    const assumeRole = jest
+      .spyOn(service, 'assumeRole')
+      .mockResolvedValue({ accessKeyId: 'AK', secretAccessKey: 'SK' });
+
+    // No auditor ARN means the same-account check cannot run — fail
+    // closed instead of validating with fewer checks.
+    await expect(
+      service.assumeRemediationRole(
+        {
+          remediationRoleArn:
+            'arn:aws:iam::999999999999:role/OpenComp-Remediator',
+          externalId: 'ext-1',
+        },
+        'us-east-1',
+      ),
+    ).rejects.toThrow(/Auditor Role ARN is required/);
+    expect(assumeRole).not.toHaveBeenCalled();
+  });
+
+  it('rejects a wrong-partition remediation ARN against the target region', async () => {
+    const service = new AWSSecurityService();
+    const assumeRole = jest
+      .spyOn(service, 'assumeRole')
+      .mockResolvedValue({ accessKeyId: 'AK', secretAccessKey: 'SK' });
+
+    // No awsType stored: the partition anchors to the region (commercial),
+    // so the GovCloud remediation ARN must fail — not validate against
+    // its own partition.
+    await expect(
+      service.assumeRemediationRole(
+        {
+          roleArn: 'arn:aws:iam::123456789012:role/OpenComp-Auditor',
+          remediationRoleArn:
+            'arn:aws-us-gov:iam::123456789012:role/OpenComp-Remediator',
+          externalId: 'ext-1',
+        },
+        'us-east-1',
+      ),
+    ).rejects.toThrow(/must match selected AWS environment/);
+    expect(assumeRole).not.toHaveBeenCalled();
+  });
+
+  it('fails closed on remediation role confusion without calling STS', async () => {
+    const service = new AWSSecurityService();
+    const assumeRole = jest
+      .spyOn(service, 'assumeRole')
+      .mockResolvedValue({ accessKeyId: 'AK', secretAccessKey: 'SK' });
+
+    // Cross-account remediation ARN.
+    await expect(
+      service.assumeRemediationRole(
+        {
+          roleArn: 'arn:aws:iam::123456789012:role/OpenComp-Auditor',
+          remediationRoleArn:
+            'arn:aws:iam::999999999999:role/OpenComp-Remediator',
+          externalId: 'ext-1',
+        },
+        'us-east-1',
+      ),
+    ).rejects.toThrow(/must match the auditor/);
+
+    // Auditor role reused as the remediation role.
+    await expect(
+      service.assumeRemediationRole(
+        {
+          roleArn: 'arn:aws:iam::123456789012:role/OpenComp-Auditor',
+          remediationRoleArn: 'arn:aws:iam::123456789012:role/OpenComp-Auditor',
+          externalId: 'ext-1',
+        },
+        'us-east-1',
+      ),
+    ).rejects.toThrow(/must differ from the auditor/);
+
+    // Non-remediator role name.
+    await expect(
+      service.assumeRemediationRole(
+        {
+          roleArn: 'arn:aws:iam::123456789012:role/OpenComp-Auditor',
+          remediationRoleArn: 'arn:aws:iam::123456789012:role/Admin',
+          externalId: 'ext-1',
+        },
+        'us-east-1',
+      ),
+    ).rejects.toThrow(/must reference OpenComp-Remediator/);
+
+    expect(assumeRole).not.toHaveBeenCalled();
+  });
+
+  it('stamps the finding ID as the remediation session name', async () => {
+    const service = new AWSSecurityService();
+    const assumeRole = jest
+      .spyOn(service, 'assumeRole')
+      .mockResolvedValue({ accessKeyId: 'AK', secretAccessKey: 'SK' });
+
+    await service.assumeRemediationRole(
+      {
+        roleArn: 'arn:aws:iam::123456789012:role/OpenComp-Auditor',
+        remediationRoleArn:
+          'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+        externalId: 'ext-1',
+      },
+      'us-east-1',
+      { findingId: 'chk_abc123' },
+    );
+
+    expect(assumeRole).toHaveBeenCalledWith(
+      expect.objectContaining({
+        roleArn: 'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+        externalId: 'ext-1',
+        durationSeconds: 900,
+        sessionName: 'chk_abc123',
+      }),
+    );
+  });
+
+  it('sanitizes session names to the STS charset and length', () => {
+    expect(sanitizeStsSessionName('chk_abc123', 'fallback')).toBe('chk_abc123');
+    // Spaces and slashes are replaced; output fits the 64-char cap.
+    expect(sanitizeStsSessionName('a b/c', 'fallback')).toBe('a-b-c');
+    expect(sanitizeStsSessionName('x'.repeat(100), 'fallback')).toHaveLength(
+      64,
+    );
+    // Nothing usable left (or too short) → fallback so STS never 400s.
+    expect(sanitizeStsSessionName('', 'fallback')).toBe('fallback');
+    expect(sanitizeStsSessionName('!', 'fallback')).toBe('fallback');
+    expect(sanitizeStsSessionName(undefined, 'fallback')).toBe('fallback');
   });
 
   it('defaults to 1-hour sessions on the audit path', async () => {
@@ -104,5 +279,24 @@ describe('AWSSecurityService session durations', () => {
     const hop2 = assumeCmd.mock.calls[1]?.[0] as
       { DurationSeconds?: number } | undefined;
     expect(hop2?.DurationSeconds).toBe(900);
+  });
+
+  it('trims padded role ARNs and External IDs before the STS call', async () => {
+    // Heals vault rows written before whitespace normalization: STS
+    // rejects a trailing space verbatim, so the wire value must be clean.
+    const service = new AWSSecurityService();
+
+    await service.assumeRole({
+      roleArn: '  arn:aws:iam::123456789012:role/OpenComp-Auditor  ',
+      externalId: '  ext-1  ',
+      region: 'us-east-1',
+    });
+
+    const hop2 = assumeCmd.mock.calls[1]?.[0] as
+      { RoleArn?: string; ExternalId?: string } | undefined;
+    expect(hop2?.RoleArn).toBe(
+      'arn:aws:iam::123456789012:role/OpenComp-Auditor',
+    );
+    expect(hop2?.ExternalId).toBe('ext-1');
   });
 });

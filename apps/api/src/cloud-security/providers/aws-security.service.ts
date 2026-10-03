@@ -70,6 +70,32 @@ import { AppFlowAdapter } from './aws/appflow.adapter';
 import { SecurityHubAdapter } from './aws/security-hub.adapter';
 import { type AwsScanMode, DEFAULT_AWS_SCAN_MODE } from '../aws-scan-mode';
 
+/**
+ * Context stamped onto a remediation assume-role session for CloudTrail
+ * traceability. RoleSessionName carries the finding ID (no trust-policy
+ * change needed); session tags are intentionally NOT passed here because
+ * they require `sts:TagSession` in the customer trust policy, which legacy
+ * roles don't grant. Per-pair Phase 2 scripts will grant it from day one.
+ */
+export interface RemediationSessionContext {
+  findingId?: string;
+}
+
+/**
+ * Sanitize an arbitrary ID for use as an STS RoleSessionName
+ * (pattern `[\w+=,.@-]*`, 2–64 chars). Falls back when nothing usable
+ * remains so callers never send an STS-rejected session name.
+ */
+export function sanitizeStsSessionName(
+  value: string | undefined,
+  fallback: string,
+): string {
+  const cleaned = (value ?? '').replace(/[^\w+=,.@-]/g, '-').slice(0, 64);
+  return cleaned.length >= 2 ? cleaned : fallback;
+}
+
+const REMEDIATION_SESSION_FALLBACK = 'CompSecurityRemediation';
+
 const GOVCLOUD_UNSUPPORTED_SERVICE_IDS = new Set(['cloudfront', 'shield']);
 
 /**
@@ -500,30 +526,59 @@ export class AWSSecurityService {
   /**
    * Assume the remediation IAM role for write access.
    * Uses a separate role ARN so the audit role stays read-only.
+   * Fails closed: rejects auditor-role reuse, cross-account ARNs, and
+   * non-remediator role names before any STS call (see
+   * validateAwsPartitionConfig). Never falls back to auditor credentials.
    */
   async assumeRemediationRole(
     credentials: Record<string, unknown>,
     region: string,
+    sessionContext?: RemediationSessionContext,
   ): Promise<AwsCredentials> {
     const remediationRoleArn = credentials.remediationRoleArn as
       string | undefined;
-    if (!remediationRoleArn) {
+    if (!remediationRoleArn || !remediationRoleArn.trim()) {
       throw new Error(
         'Remediation role ARN not configured. Add a Remediation Role ARN to your AWS connection.',
       );
     }
 
+    const externalId = credentials.externalId as string | undefined;
+    if (!externalId || !externalId.trim()) {
+      throw new Error(
+        'Remediation External ID not configured. Reconnect your AWS account with an External ID.',
+      );
+    }
+
+    // Anchor the partition to the stored connection type / target region —
+    // never to the remediation ARN itself. Deriving it from the ARN would
+    // make the partition-mismatch check below tautological (an ARN always
+    // matches its own partition).
     const partition = normalizeAwsPartition(
-      credentials.awsType ??
-        parseAwsRoleArn(remediationRoleArn)?.partition ??
-        getAwsPartitionForRegion(region),
+      credentials.awsType ?? getAwsPartitionForRegion(region),
     );
 
+    // Fail closed on role confusion before touching STS.
+    const auditorRoleArn =
+      typeof credentials.roleArn === 'string' ? credentials.roleArn : undefined;
+    const configErrors = validateAwsPartitionConfig({
+      partition,
+      roleArn: auditorRoleArn,
+      regions: [region],
+      remediationRoleArn,
+    });
+    if (configErrors.length > 0) {
+      throw new Error(configErrors.join(' '));
+    }
+
     return this.assumeRole({
-      roleArn: remediationRoleArn,
-      externalId: credentials.externalId as string,
+      roleArn: remediationRoleArn.trim(),
+      externalId: externalId.trim(),
       region,
-      sessionName: 'CompSecurityRemediation',
+      sessionName: sanitizeStsSessionName(
+        sessionContext?.findingId,
+        REMEDIATION_SESSION_FALLBACK,
+      ),
       partition,
       // The remediator role caps sessions at 1 hour (IAM minimum, see the
       // CloudShell setup script). Request 15-minute sessions to fit inside
@@ -543,7 +598,13 @@ export class AWSSecurityService {
     partition?: AwsPartition;
     durationSeconds?: number;
   }): Promise<AwsCredentials> {
-    const { roleArn, externalId, region, sessionName } = params;
+    const { region, sessionName } = params;
+    // Trim defensively: connections written before whitespace normalization
+    // may hold a pasted ARN / External ID with a trailing space, which STS
+    // rejects verbatim. Neither value legitimately contains surrounding
+    // whitespace.
+    const roleArn = params.roleArn.trim();
+    const externalId = params.externalId.trim();
     const parsedRoleArn = parseAwsRoleArn(roleArn);
     const partition =
       params.partition ??

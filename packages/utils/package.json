@@ -11,8 +11,6 @@
     "typescript": "^5.9.3",
     "vitest": "^4.1.11"
   },
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -59,6 +57,7 @@
       "default": "./dist/s3.js"
     }
   },
+  "main": "./dist/index.js",
   "private": true,
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -68,5 +67,6 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
-  "sideEffects": false
+  "sideEffects": false,
+  "types": "./dist/index.d.ts"
 }

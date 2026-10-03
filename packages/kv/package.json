@@ -29,10 +29,10 @@
   ],
   "keywords": [
     "cache",
-    "opencomp",
     "key-value",
-    "redis",
-    "rate-limit"
+    "opencomp",
+    "rate-limit",
+    "redis"
   ],
   "license": "MIT",
   "main": "./dist/index.js",

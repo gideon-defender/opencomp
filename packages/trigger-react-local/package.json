@@ -1,11 +1,7 @@
 {
   "name": "@gideon-defender/trigger-react",
-  "version": "1.0.0",
   "description": "Polling-based React hooks for the in-process task runner.",
-  "private": true,
-  "type": "module",
-  "main": "src/index.js",
-  "types": "src/index.d.ts",
+  "version": "1.0.0",
   "exports": {
     ".": {
       "types": "./src/index.d.ts",
@@ -13,8 +9,12 @@
       "default": "./src/index.js"
     }
   },
+  "main": "src/index.js",
   "peerDependencies": {
     "react": "^19.2.3",
     "react-dom": "^19.2.3"
-  }
+  },
+  "private": true,
+  "type": "module",
+  "types": "src/index.d.ts"
 }

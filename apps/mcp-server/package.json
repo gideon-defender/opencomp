@@ -2,35 +2,15 @@
   "name": "@gideon-defender/mcp-server",
   "version": "0.2.5",
   "author": "OpenComp",
-  "type": "module",
-  "sideEffects": false,
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/gideon-security/opencomp.git",
-    "directory": "apps/mcp-server"
-  },
   "bin": {
     "@gideon-defender/mcp-server": "bin/mcp-server.js",
     "mcp": "bin/mcp-server.js"
-  },
-  "scripts": {
-    "build": "npm ci && tsx src/mcp-server/build.mts && tsc",
-    "mcpb:build": "npm ci && tsx src/mcp-server/build.mts --pack && tsc",
-    "check": "npm run lint",
-    "lint": "eslint --cache --max-warnings=0 src",
-    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.26.0",
     "@stricli/core": "^1.1.2",
     "express": "^5.1.0",
     "zod": "^4.6.5"
-  },
-  "overrides": {
-    "@modelcontextprotocol/sdk": "1.26.0",
-    "hono": ">=4.12.25",
-    "fast-uri": ">=4.1.3",
-    "tmp": "^0.2.7"
   },
   "devDependencies": {
     "@anthropic-ai/mcpb": "^1.2.0",
@@ -43,5 +23,25 @@
     "tsx": "^4.19.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.31.1"
-  }
+  },
+  "overrides": {
+    "@modelcontextprotocol/sdk": "1.26.0",
+    "hono": ">=4.12.25",
+    "fast-uri": ">=4.1.3",
+    "tmp": "^0.2.7"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gideon-security/opencomp.git",
+    "directory": "apps/mcp-server"
+  },
+  "scripts": {
+    "build": "npm ci && tsx src/mcp-server/build.mts && tsc",
+    "check": "npm run lint",
+    "lint": "eslint --cache --max-warnings=0 src",
+    "mcpb:build": "npm ci && tsx src/mcp-server/build.mts --pack && tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "sideEffects": false,
+  "type": "module"
 }

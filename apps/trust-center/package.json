@@ -1,15 +1,6 @@
 {
   "name": "@gideon-defender/trust-center",
   "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "build": "next build",
-    "dev": "next dev --port 3008",
-    "lint": "eslint .",
-    "start": "next start",
-    "test": "vitest run",
-    "typecheck": "tsc --noEmit"
-  },
   "dependencies": {
     "@gideon-defender/utils": "*",
     "@hookform/resolvers": "^5.9.1",
@@ -36,5 +27,14 @@
     "tailwindcss": "^4.1.8",
     "typescript": "^5.9.3",
     "vitest": "^4.1.11"
+  },
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev --port 3008",
+    "lint": "eslint .",
+    "start": "next start",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
   }
 }

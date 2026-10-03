@@ -1,7 +1,6 @@
 {
   "name": "@gideon-defender/app",
   "version": "0.1.0",
-  "type": "module",
   "dependencies": {
     "@ai-sdk/google": "^3.0.68",
     "@ai-sdk/react": "^3.0.177",
@@ -168,8 +167,8 @@
     "dev": "NODE_OPTIONS='--no-deprecation' next dev --turbo -p 3000",
     "dev:no-trigger": "NODE_OPTIONS='--no-deprecation' next dev --turbo -p 3000",
     "lint": "eslint . && prettier --check .",
-    "prebuild": "pnpm run db:generate",
     "postinstall": "prisma generate --schema=./prisma/schema || exit 0",
+    "prebuild": "pnpm run db:generate",
     "start": "next start",
     "test": "vitest",
     "test:all": "./scripts/test-all.sh",
@@ -184,5 +183,6 @@
     "test:ui": "vitest --ui",
     "test:watch": "vitest --watch",
     "typecheck": "tsc --noEmit"
-  }
+  },
+  "type": "module"
 }
