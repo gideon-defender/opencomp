@@ -37,7 +37,11 @@ const prismaError = (code: string) =>
     clientVersion: '5.0.0',
   });
 
-const scope = { organizationId: 'org_1', taskId: 'tsk_1', automationId: 'aut_1' };
+const scope = {
+  organizationId: 'org_1',
+  taskId: 'tsk_1',
+  automationId: 'aut_1',
+};
 
 describe('AutomationsService — automation access is scoped to task and organization', () => {
   let service: AutomationsService;
@@ -248,8 +252,8 @@ describe('AutomationsService.createVersion — error mapping', () => {
     const boom = new Error('db exploded');
     (db.$transaction as jest.Mock).mockRejectedValue(boom);
 
-    await expect(
-      service.createVersion({ ...scope, data: input }),
-    ).rejects.toBe(boom);
+    await expect(service.createVersion({ ...scope, data: input })).rejects.toBe(
+      boom,
+    );
   });
 });

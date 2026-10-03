@@ -1,6 +1,6 @@
 ---
 name: responsive-ui
-description: MANDATORY for any UI work in apps/app, apps/portal, or packages/design-system — every component, page, or layout change must work on mobile (~375px), tablet (~768px), desktop (~1280px), and large desktop (~1920px) BY DEFAULT, without being asked. Read this before writing or editing any JSX/TSX that renders visible UI. Triggers on: new component, page, layout, table, toolbar, form, modal/sheet, dashboard, "build UI", "add a column", "add a filter", any styling change.
+description: MANDATORY for any UI work in apps/app, apps/portal, or packages/ui — every component, page, or layout change must work on mobile (~375px), tablet (~768px), desktop (~1280px), and large desktop (~1920px) BY DEFAULT, without being asked. Read this before writing or editing any JSX/TSX that renders visible UI. Triggers on: new component, page, layout, table, toolbar, form, modal/sheet, dashboard, "build UI", "add a column", "add a filter", any styling change.
 ---
 
 # Responsive UI — default, not a feature request
@@ -26,22 +26,21 @@ and 1920. If you only checked one width, you checked none.
 
 ## Works WITH the design system — precedence rules
 
-This skill layers on top of the `ui` skill; **where they touch, the design-system
-rules win**. Responsiveness is achieved THROUGH the DS, never around it:
+This skill layers on top of the `ui` skill; **where they touch, the
+`@gideon-defender/ui` rules win**. Responsiveness is achieved WITH `@gideon-defender/ui`,
+never around it:
 
-- **Never put responsive classes (or any `className`) on DS components**
-  (`Text`, `Stack`, `HStack`, `Badge`, `Button`, …) — they don't accept it. Put
-  breakpoint utilities on a wrapper `<div>` (the `ui` skill's "Layout with Wrapper
-  Divs" pattern):
+- **`@gideon-defender/ui` components accept `className`** (merged via `cn()`), so
+  responsive utilities may go directly on them OR on a wrapper `<div>`:
   ```tsx
-  // ✅ breakpoints on the wrapper, DS component untouched
+  // ✅ breakpoints directly on a @gideon-defender/ui component
+  <Badge className="hidden sm:block" variant="outline">Active</Badge>
+  // ✅ also fine: breakpoints on a wrapper
   <div className="hidden sm:block"><Badge variant="outline">Active</Badge></div>
-  // ❌ className on a DS component
-  <Badge className="hidden sm:block">Active</Badge>
   ```
-- **Reach for DS layout primitives first** (`PageLayout`, `Stack`, `HStack`,
-  `Section`) — they carry responsive spacing already. Raw responsive divs are for
-  what the primitives don't cover, not a replacement for them.
+- **Reach for Tailwind flex/grid + `@gideon-defender/ui` layout components first**
+  (`Card`, `Sheet`, `Separator`) — raw responsive divs are for what they don't
+  cover, not a replacement for them.
 - **Arbitrary pixel values stay an anti-pattern** (`w-[847px]` ❌ — per the `ui`
   skill). Prefer the standard Tailwind scale (`max-w-sm`, `w-48`, `max-w-xs`). A
   fixed control width like `w-[200px]` is acceptable ONLY when it matches an
@@ -55,7 +54,8 @@ rules win**. Responsiveness is achieved THROUGH the DS, never around it:
 2. **No fixed width without a responsive strategy.** A fixed-width control is only
    acceptable if the element hides, shrinks, or wraps on smaller screens
    (`hidden sm:block`, `w-full md:max-w-xs`, or a wrapping parent) — with the
-   breakpoint classes on a wrapper div, never on a DS component.
+   breakpoint classes on the `@gideon-defender/ui` component itself (it accepts
+   `className`) or on a wrapper div.
 3. **Touch targets** on mobile: interactive elements ≥40px tall; don't rely on hover
    for anything essential (no hover on touch devices).
 4. **Test with real content lengths** — long names, emails, 33-item counts. Use
@@ -65,19 +65,19 @@ rules win**. Responsiveness is achieved THROUGH the DS, never around it:
 
 ## Repo patterns (use these, don't invent)
 
-- **Tables**: the design-system `Table` already wraps rows in `overflow-x-auto` —
-  wide tables scroll horizontally inside themselves on mobile. That is the accepted
+- **Tables**: wrap the `@gideon-defender/ui` `Table` in an `overflow-x-auto`
+  container — wide tables scroll horizontally inside themselves on mobile. That is the accepted
   pattern for dense admin tables. Do NOT try to reflow table columns per breakpoint;
   do keep cells reasonable (`min-w-* max-w-*` on cell content is fine).
 - **Toolbars / filter rows**: primary control (search) is `w-full md:max-w-[300px]`;
   secondary controls (filters, source selectors) collapse on phones with
   `hidden sm:block`. Example: the People tab toolbar in
   `apps/app/.../people/all/components/TeamMembersClient.tsx`.
-- **Page shells**: use design-system `PageLayout` / `Stack` / `HStack` — they carry
-  the responsive spacing; don't rebuild them with raw divs.
+- **Page shells**: use `@gideon-defender/ui` `Card` / layout components plus
+  Tailwind flex/grid — don't rebuild them inconsistently per page.
 - **Grids**: `grid-cols-1 md:grid-cols-2 xl:grid-cols-3` style progressions — never a
   fixed column count for all widths.
-- **Sheets/Modals**: design-system `Sheet`/`Dialog` are responsive already; don't fix
+- **Sheets/Modals**: `@gideon-defender/ui` `Sheet`/`Dialog` are responsive already; don't fix
   their widths with arbitrary values.
 - **Images/logos**: constrain (`max-w-full`, explicit small sizes); never let an
   image force layout width.

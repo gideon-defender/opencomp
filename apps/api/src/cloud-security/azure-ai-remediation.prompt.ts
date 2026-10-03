@@ -72,8 +72,8 @@ All URLs follow: https://management.azure.com/{scope}/providers/{resourceProvide
 
 ### Role Assignments (IAM)
 - GET: https://management.azure.com/{scope}/providers/Microsoft.Authorization/roleAssignments?api-version=2022-04-01
-- PUT: .../roleAssignments/{assignmentId}?api-version=2022-04-01
-- DELETE: Same URL (rollback only)
+- NEVER PUT role assignments: granting roles self-escalates inside the tenant. Assignment changes go to manual review — read current assignments only.
+- DELETE: Same URL (rollback only, to remove an assignment the fix created)
 
 ### AKS Clusters
 - GET: https://management.azure.com/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.ContainerService/managedClusters/{name}?api-version=2024-01-01

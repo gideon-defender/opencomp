@@ -16,7 +16,8 @@ Original Cursor alwaysApply: `false`.
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { Button, Input } from '@trycompai/design-system';
+import { Button } from '@gideon-defender/ui/button';
+import { Input } from '@gideon-defender/ui/input';
 
 // 1. Define schema
 const formSchema = z.object({
@@ -42,7 +43,7 @@ function MyForm() {
       <Input {...register('email')} />
       {errors.email && <p>{errors.email.message}</p>}
 
-      <Button type="submit" loading={isSubmitting}>
+      <Button type="submit" disabled={isSubmitting}>
         Submit
       </Button>
     </form>
@@ -86,7 +87,7 @@ const passwordSchema = z
 
 ```tsx
 import { Controller } from 'react-hook-form';
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@trycompai/design-system';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@gideon-defender/ui/select';
 
 <Controller
   name="status"

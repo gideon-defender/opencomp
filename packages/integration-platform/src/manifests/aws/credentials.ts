@@ -9,7 +9,7 @@ export function normalizeAwsEnvironment(value: unknown): AwsEnvironment {
   return value === 'aws-us-gov' ? 'aws-us-gov' : 'aws';
 }
 
-function getAwsRoleAssumerArn(environment: AwsEnvironment): string {
+export function getAwsRoleAssumerArn(environment: AwsEnvironment): string {
   const accountId =
     environment === 'aws-us-gov'
       ? COMP_AI_GOVCLOUD_ROLE_ASSUMER_ACCOUNT_ID
@@ -197,75 +197,23 @@ echo "============================================"
 
 export const awsCloudShellScript = getAwsCloudShellScript();
 
-/**
- * CloudShell setup script for the remediation IAM role.
- * Separate from the auditor role so the audit role stays read-only.
- */
-export function getAwsRemediationScript(environment: AwsEnvironment = 'aws'): string {
+/** Setup instructions for AWS IAM Role (partition-aware). */
+export function getAwsSetupInstructions(environment: AwsEnvironment = 'aws'): string {
   const roleAssumerArn = getAwsRoleAssumerArn(environment);
+  const securityAuditPolicyArn = getAwsManagedPolicyArn(environment, 'SecurityAudit');
+  const viewOnlyPolicyArn = getAwsManagedPolicyArn(environment, 'job-function/ViewOnlyAccess');
+  const cloudShellUrl = getAwsCloudShellUrl(environment);
 
-  return `# Create Remediation Role for Auto-Fix
-# Run this in AWS CloudShell after setting up the Auditor role.
+  return `Setup (AWS CloudShell)
 
-(
-set -euo pipefail
-
-EXTERNAL_ID="YOUR_EXTERNAL_ID"
-ROLE_NAME="OpenComp-Remediator"
-
-ROLE_ARN=$(aws iam create-role --role-name "$ROLE_NAME" --max-session-duration 3600 \\
-  --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"AWS":"${roleAssumerArn}"},"Action":"sts:AssumeRole","Condition":{"StringEquals":{"sts:ExternalId":"'$EXTERNAL_ID'"}}}]}' \\
-  --query 'Role.Arn' --output text)
-
-# Storage Remediation: S3, DynamoDB, Redshift, Glue, Athena
-aws iam put-role-policy --role-name "$ROLE_NAME" --policy-name OpenComp-StorageRemediation \\
-  --policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["s3:CreateBucket","s3:GetPublicAccessBlock","s3:PutPublicAccessBlock","s3:DeletePublicAccessBlock","s3:GetBucketEncryption","s3:PutBucketEncryption","s3:DeleteBucketEncryption","s3:GetBucketVersioning","s3:PutBucketVersioning","s3:PutBucketPolicy","s3:GetBucketPolicy","s3:DeleteBucketPolicy","dynamodb:DescribeContinuousBackups","dynamodb:UpdateContinuousBackups","dynamodb:DescribeTable","dynamodb:UpdateTable","redshift:DescribeLoggingStatus","redshift:EnableLogging","redshift:DisableLogging","glue:GetDataCatalogEncryptionSettings","glue:PutDataCatalogEncryptionSettings","athena:GetWorkGroup","athena:UpdateWorkGroup"],"Resource":"*"}]}'
-
-# Compute Remediation: EC2, EMR, CodeBuild, Step Functions
-aws iam put-role-policy --role-name "$ROLE_NAME" --policy-name OpenComp-ComputeRemediation \\
-  --policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["ec2:GetEbsEncryptionByDefault","ec2:EnableEbsEncryptionByDefault","ec2:DisableEbsEncryptionByDefault","elasticmapreduce:DescribeCluster","elasticmapreduce:SetTerminationProtection","codebuild:BatchGetProjects","codebuild:UpdateProject","states:DescribeStateMachine","states:UpdateStateMachine"],"Resource":"*"}]}'
-
-# Network Remediation: ELB, CloudFront, API Gateway, Route53, Network Firewall, Transfer Family
-aws iam put-role-policy --role-name "$ROLE_NAME" --policy-name OpenComp-NetworkRemediation \\
-  --policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["elasticloadbalancing:DescribeLoadBalancerAttributes","elasticloadbalancing:ModifyLoadBalancerAttributes","cloudfront:GetDistributionConfig","cloudfront:GetDistribution","cloudfront:UpdateDistribution","apigateway:GET","apigateway:PATCH","route53:CreateQueryLoggingConfig","route53:DeleteQueryLoggingConfig","route53:ListQueryLoggingConfigs","network-firewall:DescribeLoggingConfiguration","network-firewall:UpdateLoggingConfiguration","transfer:DescribeServer","transfer:UpdateServer"],"Resource":"*"}]}'
-
-# Security Remediation: KMS, CloudTrail, GuardDuty, Config, Inspector, Macie, Cognito, IAM
-aws iam put-role-policy --role-name "$ROLE_NAME" --policy-name opencomp-securityRemediation \\
-  --policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["kms:GetKeyRotationStatus","kms:EnableKeyRotation","kms:DisableKeyRotation","cloudtrail:GetTrailStatus","cloudtrail:GetTrail","cloudtrail:CreateTrail","cloudtrail:StartLogging","cloudtrail:StopLogging","cloudtrail:UpdateTrail","guardduty:CreateDetector","guardduty:UpdateDetector","guardduty:DeleteDetector","guardduty:ListDetectors","config:DescribeConfigurationRecorders","config:DescribeConfigurationRecorderStatus","config:DescribeDeliveryChannels","config:DescribeDeliveryChannelStatus","config:PutConfigurationRecorder","config:PutDeliveryChannel","config:DeleteDeliveryChannel","config:StartConfigurationRecorder","config:StopConfigurationRecorder","inspector2:Enable","inspector2:Disable","inspector2:BatchGetAccountStatus","macie2:EnableMacie","macie2:DisableMacie","macie2:GetMacieSession","cognito-idp:DescribeUserPool","cognito-idp:UpdateUserPool","iam:GetAccountPasswordPolicy","iam:UpdateAccountPasswordPolicy","iam:DeleteAccountPasswordPolicy","iam:CreateServiceLinkedRole","iam:CreateRole","iam:PutRolePolicy","iam:PassRole","iam:ListRolePolicies","iam:GetRolePolicy","iam:GetRole"],"Resource":"*"}]}'
-
-# Messaging Remediation: SNS, SQS, Kinesis, EventBridge, ECR, Systems Manager, RDS
-aws iam put-role-policy --role-name "$ROLE_NAME" --policy-name OpenComp-MessagingRemediation \\
-  --policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["sns:GetTopicAttributes","sns:SetTopicAttributes","sns:CreateTopic","sns:Subscribe","sqs:GetQueueAttributes","sqs:SetQueueAttributes","sqs:GetQueueUrl","kinesis:DescribeStream","kinesis:StartStreamEncryption","kinesis:StopStreamEncryption","kinesis:EnableEnhancedMonitoring","kinesis:DisableEnhancedMonitoring","events:DescribeEventBus","events:RemovePermission","events:PutPermission","ecr:DescribeRepositories","ecr:PutImageScanningConfiguration","ecr:PutImageTagMutability","ssm:GetServiceSetting","ssm:UpdateServiceSetting","ssm:ResetServiceSetting","ssm:GetDocument","ssm:UpdateDocument","ssm:CreateDocument","ssm:DeleteDocument","ssm:UpdateDocumentDefaultVersion","ssm:DescribeDocument","rds:DescribeDBInstances","rds:ModifyDBInstance"],"Resource":"*"}]}'
-
-# Extended Remediation: Shield, Elastic Beanstalk, Lambda, EKS, CloudWatch, SNS, Backup, OpenSearch, MSK, Secrets Manager, SageMaker, ACM, ElastiCache, EFS, AppFlow, WAF
-aws iam put-role-policy --role-name "$ROLE_NAME" --policy-name OpenComp-ExtendedRemediation \\
-  --policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["shield:CreateSubscription","shield:DescribeSubscription","elasticbeanstalk:UpdateEnvironment","elasticbeanstalk:DescribeConfigurationSettings","elasticbeanstalk:DescribeEnvironments","lambda:GetPolicy","lambda:RemovePermission","lambda:GetFunction","lambda:UpdateFunctionConfiguration","eks:DescribeCluster","eks:UpdateClusterConfig","logs:PutMetricFilter","logs:DeleteMetricFilter","logs:DescribeLogGroups","cloudwatch:PutMetricAlarm","cloudwatch:DeleteAlarms","cloudwatch:DescribeAlarms","sns:CreateTopic","sns:Subscribe","backup:CreateBackupPlan","backup:CreateBackupSelection","backup:DeleteBackupPlan","backup:ListBackupPlans","es:DescribeDomain","es:UpdateDomainConfig","kafka:DescribeCluster","kafka:UpdateMonitoring","secretsmanager:DescribeSecret","secretsmanager:RotateSecret","sagemaker:DescribeNotebookInstance","sagemaker:StopNotebookInstance","sagemaker:UpdateNotebookInstance","sagemaker:StartNotebookInstance","acm:DescribeCertificate","acm:RenewCertificate","elasticache:DescribeReplicationGroups","elasticache:DescribeCacheClusters","efs:DescribeFileSystems","appflow:DescribeFlow","wafv2:GetWebACL","wafv2:UpdateWebACL"],"Resource":"*"}]}'
-
-# Rollback permissions (allows undoing auto-fixes)
-aws iam put-role-policy --role-name "$ROLE_NAME" --policy-name OpenComp-Rollback \\
-  --policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["cloudtrail:DeleteTrail","cloudtrail:StopLogging","s3:DeleteBucket","s3:DeleteBucketPolicy","s3:DeleteBucketEncryption","s3:DeletePublicAccessBlock","iam:DeleteRole","iam:DeleteRolePolicy","logs:DeleteLogGroup","logs:DeleteMetricFilter","logs:DeleteRetentionPolicy","cloudwatch:DeleteAlarms","sns:DeleteTopic","sns:Unsubscribe","guardduty:DeleteDetector","config:StopConfigurationRecorder","config:DeleteDeliveryChannel","inspector2:Disable","macie2:DisableMacie","kms:DisableKeyRotation","ssm:DeleteDocument","ssm:UpdateDocument","ssm:UpdateServiceSetting","ec2:DisableEbsEncryptionByDefault","ec2:DeleteFlowLogs","redshift:DisableLogging","kinesis:StopStreamEncryption","kinesis:DisableEnhancedMonitoring"],"Resource":"*"}]}'
-
-echo ""
-echo "============================================"
-echo "  Remediation Role ARN (paste this below):"
-echo ""
-echo "  $ROLE_ARN"
-echo ""
-echo "============================================"
-)`;
-}
-
-export const awsRemediationScript = getAwsRemediationScript();
-
-/**
- * Setup instructions for AWS IAM Role
- */
-export const awsSetupInstructions = `Setup (AWS CloudShell)
-
-1. Open AWS CloudShell at console.aws.amazon.com/cloudshell
+1. Open AWS CloudShell at ${cloudShellUrl.replace('https://', '')}
 2. Run the following command (replace YOUR_EXTERNAL_ID with your OpenComp organization ID):
 
-EXTERNAL_ID="YOUR_EXTERNAL_ID" && ROLE_NAME="OpenComp-Auditor" && aws iam create-role --role-name "$ROLE_NAME" --max-session-duration 43200 --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"AWS":"arn:aws:iam::684120556289:role/roleAssumer"},"Action":"sts:AssumeRole","Condition":{"StringEquals":{"sts:ExternalId":"'$EXTERNAL_ID'"}}}]}' --query 'Role.Arn' --output text && aws iam attach-role-policy --role-name "$ROLE_NAME" --policy-arn arn:aws:iam::aws:policy/SecurityAudit && aws iam attach-role-policy --role-name "$ROLE_NAME" --policy-arn arn:aws:iam::aws:policy/job-function/ViewOnlyAccess && aws iam put-role-policy --role-name "$ROLE_NAME" --policy-name OpenComp-CostExplorer --policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":"ce:GetCostAndUsage","Resource":"*"}]}' && aws iam put-role-policy --role-name "$ROLE_NAME" --policy-name OpenComp-ExtraReadAccess --policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["ssm:GetDocument","ssm:DescribeDocument","ssm:ListDocuments"],"Resource":"*"}]}'
+EXTERNAL_ID="YOUR_EXTERNAL_ID" && ROLE_NAME="OpenComp-Auditor" && aws iam create-role --role-name "$ROLE_NAME" --max-session-duration 43200 --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"AWS":"${roleAssumerArn}"},"Action":"sts:AssumeRole","Condition":{"StringEquals":{"sts:ExternalId":"'$EXTERNAL_ID'"}}}]}' --query 'Role.Arn' --output text && aws iam attach-role-policy --role-name "$ROLE_NAME" --policy-arn ${securityAuditPolicyArn} && aws iam attach-role-policy --role-name "$ROLE_NAME" --policy-arn ${viewOnlyPolicyArn} && aws iam put-role-policy --role-name "$ROLE_NAME" --policy-name OpenComp-CostExplorer --policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":"ce:GetCostAndUsage","Resource":"*"}]}' && aws iam put-role-policy --role-name "$ROLE_NAME" --policy-name OpenComp-ExtraReadAccess --policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["ssm:GetDocument","ssm:DescribeDocument","ssm:ListDocuments","iam:GetLoginProfile"],"Resource":"*"}]}'
 
 3. Copy the Role ARN from the output
 4. Paste the Role ARN and External ID into the form below`;
+}
+
+/** Default (commercial partition) setup instructions for manifests. */
+export const awsSetupInstructions = getAwsSetupInstructions('aws');

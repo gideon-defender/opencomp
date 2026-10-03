@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
 import { apiClient } from '@/lib/api-client';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fetchPreviewNdaPdf } from './use-access-requests';
 
 vi.mock('@/lib/api-client', () => ({
@@ -30,7 +30,11 @@ describe('fetchPreviewNdaPdf', () => {
       '/v1/trust-access/admin/requests/req_1/preview-nda',
       expect.objectContaining({ method: 'GET' }),
     );
-    expect(await result.text()).toBe('pdf-bytes');
+    // The helper returns response.blob(). That Blob comes from the fetch
+    // implementation's realm, which differs from the test global's Blob,
+    // so assert the shape (type + size) instead of the prototype chain.
+    expect(result.type).toBe('application/pdf');
+    expect(result.size).toBe(new Blob(['pdf-bytes']).size);
   });
 
   it('encodes request ids with special characters', async () => {
@@ -52,9 +56,7 @@ describe('fetchPreviewNdaPdf', () => {
   it('throws a not-found error on 404 so the caller can toast', async () => {
     mockRaw.mockResolvedValue(new Response('nope', { status: 404 }));
 
-    await expect(fetchPreviewNdaPdf('missing')).rejects.toThrow(
-      'Access request not found',
-    );
+    await expect(fetchPreviewNdaPdf('missing')).rejects.toThrow('Access request not found');
   });
 
   it('throws a session error on 401 and a permission error on 403', async () => {
@@ -62,16 +64,12 @@ describe('fetchPreviewNdaPdf', () => {
     await expect(fetchPreviewNdaPdf('req_1')).rejects.toThrow('Session expired');
 
     mockRaw.mockResolvedValueOnce(new Response('x', { status: 403 }));
-    await expect(fetchPreviewNdaPdf('req_1')).rejects.toThrow(
-      'Missing permission',
-    );
+    await expect(fetchPreviewNdaPdf('req_1')).rejects.toThrow('Missing permission');
   });
 
   it('throws a generic error on 500 so the caller can toast', async () => {
     mockRaw.mockResolvedValue(new Response('boom', { status: 500 }));
 
-    await expect(fetchPreviewNdaPdf('req_1')).rejects.toThrow(
-      'Failed to generate preview',
-    );
+    await expect(fetchPreviewNdaPdf('req_1')).rejects.toThrow('Failed to generate preview');
   });
 });
