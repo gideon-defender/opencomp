@@ -2,7 +2,6 @@ import {
   Controller,
   Post,
   Get,
-  Patch,
   Param,
   Query,
   Body,
@@ -11,15 +10,18 @@ import {
   HttpStatus,
   UseGuards,
 } from '@nestjs/common';
-import { ApiOperation } from '@nestjs/swagger';
+import { ApiBody, ApiOperation } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
-import { db } from '@db';
 import { HybridAuthGuard } from '../auth/hybrid-auth.guard';
 import { PermissionGuard } from '../auth/permission.guard';
 import { RequirePermission } from '../auth/require-permission.decorator';
 import { OrganizationId, UserId } from '../auth/auth-context.decorator';
 import { RemediationService } from './remediation.service';
 import { logCloudSecurityActivity } from './cloud-security-audit';
+import {
+  ExecuteRemediationDto,
+  PreviewRemediationDto,
+} from './dto/remediation.dto';
 
 @Controller({ path: 'cloud-security/remediation', version: '1' })
 @UseGuards(HybridAuthGuard, PermissionGuard)
@@ -31,7 +33,11 @@ export class RemediationController {
   @Get('capabilities')
   @SkipThrottle()
   @RequirePermission('integration', 'read')
-  @ApiOperation({ summary: 'List remediation capabilities' })
+  @ApiOperation({
+    summary: 'List remediation capabilities',
+    description:
+      'List which providers and finding types support one-click auto-fix for this connection.',
+  })
   async getCapabilities(
     @Query('connectionId') connectionId: string,
     @OrganizationId() organizationId: string,
@@ -57,15 +63,14 @@ export class RemediationController {
 
   @Post('preview')
   @RequirePermission('integration', 'update')
-  @ApiOperation({ summary: 'Preview a remediation' })
+  @ApiOperation({
+    summary: 'Preview a remediation',
+    description:
+      'Build an auto-fix plan for one finding. Send cachedPermissions only to recheck a previous preview.',
+  })
+  @ApiBody({ type: PreviewRemediationDto })
   async preview(
-    @Body()
-    body: {
-      connectionId: string;
-      checkResultId: string;
-      remediationKey: string;
-      cachedPermissions?: string[];
-    },
+    @Body() body: PreviewRemediationDto,
     @OrganizationId() organizationId: string,
   ) {
     try {
@@ -85,15 +90,14 @@ export class RemediationController {
 
   @Post('execute')
   @RequirePermission('integration', 'update')
-  @ApiOperation({ summary: 'Execute a remediation' })
+  @ApiOperation({
+    summary: 'Execute a remediation',
+    description:
+      'Run the approved auto-fix plan for one finding. Fails closed when a step is skipped or invalid.',
+  })
+  @ApiBody({ type: ExecuteRemediationDto })
   async execute(
-    @Body()
-    body: {
-      connectionId: string;
-      checkResultId: string;
-      remediationKey: string;
-      acknowledgment?: string;
-    },
+    @Body() body: ExecuteRemediationDto,
     @OrganizationId() organizationId: string,
     @UserId() userId: string,
   ) {
@@ -172,7 +176,11 @@ export class RemediationController {
 
   @Post(':actionId/rollback')
   @RequirePermission('integration', 'update')
-  @ApiOperation({ summary: 'Roll back a remediation action' })
+  @ApiOperation({
+    summary: 'Roll back a remediation action',
+    description:
+      'Undo a previously applied auto-fix using its stored rollback steps.',
+  })
   async rollback(
     @Param('actionId') actionId: string,
     @OrganizationId() organizationId: string,
@@ -230,6 +238,15 @@ export class RemediationController {
               message: parsed.message,
               missingActions: parsed.missingActions,
               script: parsed.script,
+              // Forward the denylist fields when present — without them the
+              // client renders a one-click grant with no record that part of
+              // the requirement was refused for manual review.
+              ...(parsed.blockedPermissions && {
+                blockedPermissions: parsed.blockedPermissions,
+              }),
+              ...(parsed.blockedPermissionsMessage && {
+                blockedPermissionsMessage: parsed.blockedPermissionsMessage,
+              }),
             },
             HttpStatus.BAD_REQUEST,
           );
@@ -244,7 +261,11 @@ export class RemediationController {
 
   @Get('actions')
   @RequirePermission('integration', 'read')
-  @ApiOperation({ summary: 'List remediation actions' })
+  @ApiOperation({
+    summary: 'List remediation actions',
+    description:
+      'List recorded auto-fix attempts and their status for a connection.',
+  })
   async getActions(
     @Query('connectionId') connectionId: string,
     @OrganizationId() organizationId: string,
@@ -267,118 +288,5 @@ export class RemediationController {
         error instanceof Error ? error.message : 'Failed to get actions';
       throw new HttpException(message, HttpStatus.BAD_REQUEST);
     }
-  }
-
-  // ─── Batch endpoints ──────────────────────────────────────────────
-
-  /** Get active batch for a connection (if any). */
-  @Get('batch/active')
-  @RequirePermission('integration', 'read')
-  @ApiOperation({ summary: 'Get the active remediation batch' })
-  async getActiveBatch(
-    @Query('connectionId') connectionId: string,
-    @OrganizationId() organizationId: string,
-  ) {
-    const batch = await db.remediationBatch.findFirst({
-      where: {
-        connectionId,
-        organizationId,
-        status: { in: ['pending', 'running'] },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-    return { data: batch };
-  }
-
-  /** Create a new batch record (called before triggering the task). */
-  @Post('batch')
-  @RequirePermission('integration', 'update')
-  @ApiOperation({ summary: 'Create a remediation batch' })
-  async createBatch(
-    @Body()
-    body: {
-      connectionId: string;
-      findings: Array<{ id: string; key: string; title: string }>;
-    },
-    @OrganizationId() organizationId: string,
-    @UserId() userId: string,
-  ) {
-    const findings = body.findings.map((f) => ({
-      id: f.id,
-      key: f.key,
-      title: f.title,
-      status: 'pending',
-    }));
-
-    const batch = await db.remediationBatch.create({
-      data: {
-        connectionId: body.connectionId,
-        organizationId,
-        initiatedById: userId,
-        status: 'pending',
-        findings,
-      },
-    });
-
-    await logCloudSecurityActivity({
-      organizationId,
-      userId,
-      connectionId: body.connectionId,
-      action: 'remediation_executed',
-      description: `Started batch fix: ${body.findings.length} findings`,
-      metadata: { batchId: batch.id, findingCount: body.findings.length },
-    });
-
-    return { data: batch };
-  }
-
-  /** Update a batch (set triggerRunId after task starts). */
-  @Patch('batch/:batchId')
-  @RequirePermission('integration', 'update')
-  @ApiOperation({ summary: 'Update a remediation batch' })
-  async updateBatch(
-    @Param('batchId') batchId: string,
-    @Body() body: { triggerRunId?: string; status?: string },
-    @OrganizationId() organizationId: string,
-  ) {
-    const batch = await db.remediationBatch.update({
-      where: { id: batchId, organizationId },
-      data: {
-        ...(body.triggerRunId && { triggerRunId: body.triggerRunId }),
-        ...(body.status && { status: body.status }),
-      },
-    });
-    return { data: batch };
-  }
-
-  /** Skip a specific finding in an active batch. */
-  @Post('batch/:batchId/skip/:findingId')
-  @RequirePermission('integration', 'update')
-  @ApiOperation({ summary: 'Skip a finding in a remediation batch' })
-  async skipFinding(
-    @Param('batchId') batchId: string,
-    @Param('findingId') findingId: string,
-    @OrganizationId() organizationId: string,
-  ) {
-    const batch = await db.remediationBatch.findFirst({
-      where: { id: batchId, organizationId },
-    });
-    if (!batch) {
-      throw new HttpException('Batch not found', HttpStatus.NOT_FOUND);
-    }
-
-    const findings = batch.findings as Array<{ id: string; status: string }>;
-    const updated = findings.map((f) =>
-      f.id === findingId && f.status === 'pending'
-        ? { ...f, status: 'cancelled' }
-        : f,
-    );
-
-    await db.remediationBatch.update({
-      where: { id: batchId },
-      data: { findings: updated },
-    });
-
-    return { success: true };
   }
 }

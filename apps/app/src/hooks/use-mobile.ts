@@ -4,8 +4,8 @@ const MOBILE_BREAKPOINT = 1024;
 
 export function useIsMobile() {
   // Initialize from the current viewport so the mount effect below only subscribes.
-  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(
-    () => (typeof window === 'undefined' ? undefined : window.innerWidth < MOBILE_BREAKPOINT),
+  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(() =>
+    typeof window === 'undefined' ? undefined : window.innerWidth < MOBILE_BREAKPOINT,
   );
 
   React.useEffect(() => {

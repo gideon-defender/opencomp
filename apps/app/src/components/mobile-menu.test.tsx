@@ -8,9 +8,7 @@ vi.mock('./main-menu', () => ({
 
 describe('MobileMenu', () => {
   it('renders the current organization badge without a switcher control', async () => {
-    render(
-      <MobileMenu organization={{ id: 'org_1', name: 'Acme Corp' }} organizationId="org_1" />,
-    );
+    render(<MobileMenu organization={{ id: 'org_1', name: 'Acme Corp' }} organizationId="org_1" />);
 
     fireEvent.click(screen.getByRole('button'));
 

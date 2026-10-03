@@ -3,20 +3,12 @@ import { registrableDomain, upgradeFaviconUrl } from './vendor-logo';
 
 describe('upgradeFaviconUrl', () => {
   it('upgrades known-bad Google favicon URLs to high-res assets', () => {
-    expect(
-      upgradeFaviconUrl(
-        'https://www.google.com/s2/favicons?domain=github.com&sz=128',
-      ),
-    ).toBe(
+    expect(upgradeFaviconUrl('https://www.google.com/s2/favicons?domain=github.com&sz=128')).toBe(
       'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png',
     );
     expect(
-      upgradeFaviconUrl(
-        'https://www.google.com/s2/favicons?domain=cloud.google.com&sz=128',
-      ),
-    ).toBe(
-      'https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png',
-    );
+      upgradeFaviconUrl('https://www.google.com/s2/favicons?domain=cloud.google.com&sz=128'),
+    ).toBe('https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png');
   });
 
   it('leaves good favicons, manual uploads, and empty values alone', () => {

@@ -4,6 +4,19 @@ import { Button } from '@gideon-defender/ui/button';
 import { Check, Copy, ExternalLink, RefreshCw, ShieldAlert } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { isGuidanceOnlyScript } from '../lib/batch-merge-script';
+import {
+  formatBlockedActionsForDisplay,
+  splitBlockedRemediationActions,
+} from '../lib/remediation-denylist';
+import {
+  buildAwsFixScript,
+  detectServiceLinkedRole,
+  extractActionsFromError,
+  isAzureError,
+  isGcpError,
+  isPermissionErrorMessage,
+} from './permission-error-helpers';
 
 interface PermissionErrorPanelProps {
   error: string;
@@ -13,6 +26,10 @@ interface PermissionErrorPanelProps {
   apiCalls?: string[];
   /** Ready-to-paste fix script from backend (preferred over client-side). */
   fixScript?: string;
+  /** Actions the backend flagged for manual review (never grantable). */
+  blockedPermissions?: string[];
+  /** Backend-authored explanation for the manual-review actions. */
+  blockedPermissionsMessage?: string;
   /** Cloud provider — affects script format and links. */
   provider?: 'aws' | 'gcp' | 'azure';
   /** Retry the remediation after the user fixes permissions. */
@@ -21,99 +38,13 @@ interface PermissionErrorPanelProps {
   isWaiting?: boolean;
 }
 
-/** Extract IAM actions from the error message itself (client-side parsing). */
-function extractActionsFromError(error: string): string[] {
-  const patterns = [
-    // AWS patterns
-    /not authorized to perform:\s*([\w:*]+)/i,
-    /required\s+([\w:*]+)\s+permission/i,
-    /denied.*?(?:action|for):\s*([\w:*]+)/i,
-    // GCP patterns
-    /permission\s+'([\w.]+)'/i,
-    /does not have\s+([\w.]+)\s+access/i,
-    /'([\w.]+)'\s*denied/i,
-  ];
-  const actions = new Set<string>();
-  for (const pattern of patterns) {
-    const match = error.match(pattern);
-    if (match?.[1]) actions.add(match[1]);
-  }
-  return [...actions];
-}
-
-/** Known AWS service-linked role patterns. */
-const SERVICE_LINKED_ROLE_PATTERNS: { pattern: RegExp; service: string; command: string }[] = [
-  {
-    pattern: /config.*service-linked role/i,
-    service: 'AWS Config',
-    command: 'aws iam create-service-linked-role --aws-service-name config.amazonaws.com',
-  },
-  {
-    pattern: /guardduty.*service-linked role|service-linked role.*guardduty/i,
-    service: 'GuardDuty',
-    command: 'aws iam create-service-linked-role --aws-service-name guardduty.amazonaws.com',
-  },
-  {
-    pattern: /inspector.*service-linked role/i,
-    service: 'Inspector',
-    command: 'aws iam create-service-linked-role --aws-service-name inspector2.amazonaws.com',
-  },
-  {
-    pattern: /macie.*service-linked role/i,
-    service: 'Macie',
-    command: 'aws iam create-service-linked-role --aws-service-name macie.amazonaws.com',
-  },
-];
-
-function detectServiceLinkedRole(error: string): { service: string; command: string } | null {
-  if (!error.toLowerCase().includes('service-linked role')) return null;
-  for (const entry of SERVICE_LINKED_ROLE_PATTERNS) {
-    if (entry.pattern.test(error)) return entry;
-  }
-  return null;
-}
-
-function buildAwsFixScript(actions: string[]): string | null {
-  if (actions.length === 0) return null;
-  const policy = JSON.stringify({
-    Version: '2012-10-17',
-    Statement: [{ Effect: 'Allow', Action: actions, Resource: '*' }],
-  });
-  return `aws iam put-role-policy --role-name OpenComp-Remediator --policy-name OpenComp-AutoFix --policy-document '${policy}'`;
-}
-
-/**
- * Host-like token matchers (CodeQL js/incomplete-hostname-regexp):
- * static literals with escaped dots — never built from strings via
- * `new RegExp`. The boundary classes ensure "management.azure.com"
- * is matched as a host token, so "management.azure.com.evil.com"
- * does NOT count.
- */
-const AZURE_MANAGEMENT_HOST = /(?:^|[^A-Za-z0-9.-])management\.azure\.com(?![A-Za-z0-9.-])/i;
-const GCP_APIS_HOST = /(?:^|[^A-Za-z0-9.-])googleapis\.com(?![A-Za-z0-9.-])/i;
-
-function isAzureError(error: string): boolean {
-  return (
-    error.includes('AuthorizationFailed') ||
-    AZURE_MANAGEMENT_HOST.test(error) ||
-    error.includes('does not have authorization')
-  );
-}
-
-function isGcpError(error: string): boolean {
-  return (
-    error.includes('PERMISSION_DENIED') ||
-    GCP_APIS_HOST.test(error) ||
-    /does not have\s+[\w.]+\s+access/i.test(error) ||
-    /permission\s+'[\w.]+'/i.test(error)
-  );
-}
-
 export function PermissionErrorPanel({
   error,
   missingActions,
   apiCalls,
   fixScript: backendScript,
+  blockedPermissions: backendBlockedPermissions,
+  blockedPermissionsMessage: backendBlockedMessage,
   provider,
   onRetry,
   isRetrying,
@@ -127,15 +58,10 @@ export function PermissionErrorPanel({
   const isGcp = detectedProvider === 'gcp';
   const isAzure = detectedProvider === 'azure';
 
-  const serviceLinkedRole = isGcp ? null : detectServiceLinkedRole(error);
-  const isPermissionError =
-    serviceLinkedRole !== null ||
-    error.includes('not authorized') ||
-    error.includes('AccessDenied') ||
-    error.includes('access denied') ||
-    error.includes('PERMISSION_DENIED') ||
-    error.includes('Permission denied') ||
-    (error.includes('required') && error.includes('permission'));
+  // Service-linked-role commands are AWS-only — never render the AWS CLI
+  // inside the Azure or GCP branches.
+  const serviceLinkedRole = isGcp || isAzure ? null : detectServiceLinkedRole(error);
+  const isPermissionError = serviceLinkedRole !== null || isPermissionErrorMessage(error);
 
   if (!isPermissionError) {
     // Truncate long AI-generated messages for clean UX
@@ -173,7 +99,12 @@ export function PermissionErrorPanel({
     );
   }
 
-  // Priority: service-linked role > backend script > client-parsed
+  // Priority: service-linked role > backend script > client-parsed.
+  // The service-linked-role command is an intentional manual-execution
+  // exception: the admin runs it in their own CloudShell (AWS-defined
+  // permissions, not a grant onto our role), so it is not an auto-grant of
+  // the denylisted permission onto OpenComp-Remediator. The generic merge
+  // path still filters that permission through the denylist.
   const parsedFromError = extractActionsFromError(error);
   const actions = missingActions?.length
     ? missingActions
@@ -184,6 +115,26 @@ export function PermissionErrorPanel({
   const script = serviceLinkedRole
     ? serviceLinkedRole.command
     : (backendScript ?? (isGcp || isAzure ? null : buildAwsFixScript(actions)));
+
+  // A guidance-only script names manual-review actions but runs nothing —
+  // label it as guidance so nobody pastes it expecting a grant.
+  const guidanceOnly = isGuidanceOnlyScript(script);
+  // Client-built fallback scripts strip denylisted actions from the grant
+  // (buildAwsFixScript splits internally). Split here too so the "Required"
+  // banner matches what the script actually grants instead of listing
+  // blocked actions as required. Backend-reported blocked actions are
+  // excluded the same way: the banner must never present a manual-review
+  // action as an ordinary requirement.
+  const usingClientScript = !serviceLinkedRole && !backendScript && !isGcp && !isAzure;
+  const clientSplit = usingClientScript ? splitBlockedRemediationActions(actions) : null;
+  const manualReviewBlocked = [
+    ...new Set([...(clientSplit?.blocked ?? []), ...(backendBlockedPermissions ?? [])]),
+  ];
+  const manualReviewSet = new Set(manualReviewBlocked.map((a) => a.toLowerCase()));
+  // Case-insensitive on purpose: denylist matching is case-insensitive
+  // (IAM evaluates actions that way), but the two action sources can use
+  // different casings — otherwise a blocked action renders as "Required".
+  const requiredActions = actions.filter((a) => !manualReviewSet.has(a.toLowerCase()));
 
   const shellName = isAzure ? 'Cloud Shell' : isGcp ? 'Cloud Shell' : 'CloudShell';
   const shellUrl = isAzure
@@ -199,11 +150,41 @@ export function PermissionErrorPanel({
 
   const handleCopy = () => {
     if (!script) return;
-    navigator.clipboard.writeText(script);
-    setCopied(true);
-    toast.success('Script copied to clipboard');
-    setTimeout(() => setCopied(false), 2000);
+    navigator.clipboard.writeText(script).then(
+      () => {
+        setCopied(true);
+        toast.success('Script copied to clipboard');
+        setTimeout(() => setCopied(false), 2000);
+      },
+      () => {
+        toast.error('Copy failed — select and copy manually');
+      },
+    );
   };
+
+  // Retry lives outside the script block: when no script could be built
+  // (zero parseable actions, GCP/Azure errors), retry is the only useful
+  // action, so it must not hide behind the `{script && ...}` gate below.
+  const retryButton = onRetry ? (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={onRetry}
+      disabled={isRetrying || isWaiting}
+      className="h-auto px-3 py-1.5 text-xs"
+    >
+      {isRetrying || isWaiting ? (
+        <RefreshCw className="mr-1.5 h-3 w-3 animate-spin" />
+      ) : (
+        <RefreshCw className="mr-1.5 h-3 w-3" />
+      )}
+      {isWaiting
+        ? `Waiting for ${isAzure ? 'Azure' : isGcp ? 'GCP' : 'AWS'}...`
+        : isRetrying
+          ? 'Retrying...'
+          : 'Retry'}
+    </Button>
+  ) : null;
 
   return (
     <div className="space-y-3">
@@ -240,16 +221,31 @@ export function PermissionErrorPanel({
               ) : (
                 <>
                   The remediation role is missing permissions needed for this fix.
-                  {actions.length > 0 && (
+                  {requiredActions.length > 0 && (
                     <>
                       {' '}
                       Required:{' '}
-                      {actions.map((a, i) => (
+                      {requiredActions.map((a, i) => (
                         <span key={a}>
                           {i > 0 && ', '}
                           <code className="font-mono">{a}</code>
                         </span>
                       ))}
+                    </>
+                  )}
+                  {manualReviewBlocked.length > 0 && (
+                    <>
+                      {' '}
+                      <span className="text-amber-700 dark:text-amber-400">
+                        (
+                        {backendBlockedMessage ??
+                          `${manualReviewBlocked.length} need manual review and are excluded from the script`}
+                        :{' '}
+                        <code className="font-mono">
+                          {formatBlockedActionsForDisplay(manualReviewBlocked)}
+                        </code>
+                        )
+                      </span>
                     </>
                   )}
                 </>
@@ -262,8 +258,14 @@ export function PermissionErrorPanel({
       {script && (
         <div className="rounded-md border bg-muted/30 p-3 space-y-2.5">
           <p className="text-xs font-medium">
-            Run this in {isAzure ? 'Azure' : isGcp ? 'Google' : 'AWS'} {shellName} to add the
-            permission:
+            {guidanceOnly ? (
+              'Manual review required — nothing to run:'
+            ) : (
+              <>
+                Run this in {isAzure ? 'Azure' : isGcp ? 'Google' : 'AWS'} {shellName} to add the
+                permission:
+              </>
+            )}
           </p>
           <pre className="overflow-x-auto rounded bg-muted p-2.5 text-[11px] leading-relaxed whitespace-pre-wrap break-all">
             {script}
@@ -286,7 +288,7 @@ export function PermissionErrorPanel({
                 </>
               ) : (
                 <>
-                  <Copy className="h-3 w-3" /> Copy Script
+                  <Copy className="h-3 w-3" /> {guidanceOnly ? 'Copy Details' : 'Copy Script'}
                 </>
               )}
             </button>
@@ -299,27 +301,18 @@ export function PermissionErrorPanel({
               <ExternalLink className="h-3 w-3" />
               Open {shellName}
             </a>
-            {onRetry && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onRetry}
-                disabled={isRetrying || isWaiting}
-                className="h-auto px-3 py-1.5 text-xs"
-              >
-                {isRetrying || isWaiting ? (
-                  <RefreshCw className="mr-1.5 h-3 w-3 animate-spin" />
-                ) : (
-                  <RefreshCw className="mr-1.5 h-3 w-3" />
-                )}
-                {isWaiting
-                  ? `Waiting for ${isAzure ? 'Azure' : isGcp ? 'GCP' : 'AWS'}...`
-                  : isRetrying
-                    ? 'Retrying...'
-                    : 'Retry'}
-              </Button>
-            )}
+            {retryButton}
           </div>
+          <p className="text-[10px] text-muted-foreground/60">{propagationText}</p>
+        </div>
+      )}
+      {!script && (
+        <div className="rounded-md border bg-muted/30 p-3 space-y-2.5">
+          <p className="text-xs text-muted-foreground">
+            No fix script could be built from this error. Add the missing permissions manually, then
+            retry.
+          </p>
+          {retryButton && <div className="flex flex-wrap gap-2">{retryButton}</div>}
           <p className="text-[10px] text-muted-foreground/60">{propagationText}</p>
         </div>
       )}

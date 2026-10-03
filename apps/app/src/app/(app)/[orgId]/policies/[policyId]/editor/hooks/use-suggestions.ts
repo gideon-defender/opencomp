@@ -71,10 +71,7 @@ export function useSuggestions({
     editor: Editor | null;
     proposedMarkdown: string | null;
   }>(() => ({ editor, proposedMarkdown }));
-  if (
-    prevProposal.editor !== editor ||
-    prevProposal.proposedMarkdown !== proposedMarkdown
-  ) {
+  if (prevProposal.editor !== editor || prevProposal.proposedMarkdown !== proposedMarkdown) {
     setPrevProposal({ editor, proposedMarkdown });
     setEditingRangeId(null);
     setRanges(computeInitialRanges(editor, proposedMarkdown));

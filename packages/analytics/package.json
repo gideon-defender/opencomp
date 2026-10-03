@@ -5,13 +5,13 @@
   "dependencies": {
     "next": "^16.3.8",
     "posthog-js": "^1.236.6",
-    "posthog-node": "^5.8.2",
-    "react": "^19.1.1"
+    "posthog-node": "^5.29.2",
+    "react": "^19.2.3"
   },
   "devDependencies": {
-    "@types/node": "^24.0.3",
+    "@types/node": "^24.2.0",
     "tsup": "^8.5.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.3"
   },
   "exports": {
     ".": {

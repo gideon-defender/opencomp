@@ -1,5 +1,5 @@
-import { mockNextIntl } from '@/test-utils/mocks/next-intl';
 import { apiClient } from '@/lib/api-client';
+import { mockNextIntl } from '@/test-utils/mocks/next-intl';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { toast } from 'sonner';

@@ -20,13 +20,14 @@ import {
   useRef,
   useState,
 } from 'react';
+import { saveChatHistory } from './actions/task-automation-actions';
 import {
   Conversation,
   ConversationContent,
   ConversationScrollButton,
 } from './components/ai-elements/conversation';
 import { ChatBreadcrumb } from './components/chat/ChatBreadcrumb';
-import { saveChatHistory } from './actions/task-automation-actions';import { EmptyState } from './components/chat/EmptyState';
+import { EmptyState } from './components/chat/EmptyState';
 import { Message } from './components/chat/message';
 import type { ChatUIMessage } from './components/chat/types';
 import { PanelHeader } from './components/panels/panels';

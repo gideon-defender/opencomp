@@ -92,7 +92,8 @@ export const WeeklyTaskDigestEmail = ({
             </Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              {taskCountMessage} {locale === 'es' ? 'en' : 'in'} <strong>{organizationName}</strong>:
+              {taskCountMessage} {locale === 'es' ? 'en' : 'in'} <strong>{organizationName}</strong>
+              :
             </Text>
 
             <Section className="my-[24px]">

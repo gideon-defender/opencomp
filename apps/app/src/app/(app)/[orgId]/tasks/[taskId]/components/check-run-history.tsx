@@ -142,7 +142,9 @@ function GroupedCheckRuns({
   }, [displayRuns, locale]);
 
   if (runs.length === 0) {
-    return <p className="text-xs text-muted-foreground text-center py-2">{t('runHistory.noRunsYet')}</p>;
+    return (
+      <p className="text-xs text-muted-foreground text-center py-2">{t('runHistory.noRunsYet')}</p>
+    );
   }
 
   let runIndex = 0;
@@ -242,7 +244,11 @@ export function CheckRunItem({
 
   const statusColor = hasError ? 'text-destructive' : hasFailed ? 'text-warning' : 'text-primary';
 
-  const statusText = hasError ? t('runItem.error') : hasFailed ? t('runItem.issuesFound') : t('runItem.passed');
+  const statusText = hasError
+    ? t('runItem.error')
+    : hasFailed
+      ? t('runItem.issuesFound')
+      : t('runItem.passed');
 
   return (
     <div
@@ -451,9 +457,7 @@ export function CheckRunItem({
             {shownPassing.length > 0 && (
               <details className="text-xs" open={run.failedCount === 0}>
                 <summary className="text-sm font-medium text-primary cursor-pointer flex items-center gap-2">
-                  <span>
-                    ✓ {t('integrationChecks.passedCount', { count: run.passedCount })}
-                  </span>
+                  <span>✓ {t('integrationChecks.passedCount', { count: run.passedCount })}</span>
                 </summary>
                 <div className="mt-2 space-y-2 pl-4 border-l-2 border-primary/20">
                   {shownPassing.map((result) => (

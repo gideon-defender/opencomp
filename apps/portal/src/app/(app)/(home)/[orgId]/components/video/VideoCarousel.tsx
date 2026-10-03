@@ -68,9 +68,7 @@ export function VideoCarousel() {
       {allVideosCompleted && (
         <div className="flex w-full flex-col items-center justify-center space-y-2 py-8">
           <h2 className="text-2xl font-semibold">{t('allVideosCompleted')}</h2>
-          <p className="text-muted-foreground text-center">
-            {t('allVideosDoneBody')}
-          </p>
+          <p className="text-muted-foreground text-center">{t('allVideosDoneBody')}</p>
         </div>
       )}
       {!allVideosCompleted && (

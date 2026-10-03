@@ -3,8 +3,8 @@
 import type { Member, Policy, PolicyVersion } from '@db';
 import { Button, Text } from '@trycompai/design-system';
 import { ChevronLeft, ChevronRight } from '@trycompai/design-system/icons';
-import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { PolicyCard } from './PolicyCard';
 

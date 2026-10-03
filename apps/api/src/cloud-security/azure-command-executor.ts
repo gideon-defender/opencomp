@@ -270,6 +270,13 @@ async function executeOnce(
       // Validate poll URL to prevent SSRF via response headers
       try {
         const parsedPoll = new URL(pollUrl);
+        if (parsedPoll.protocol !== 'https:') {
+          return {
+            step,
+            success: false,
+            error: 'Async poll URL must use HTTPS',
+          };
+        }
         if (!AZURE_ALLOWED_HOSTS.has(parsedPoll.hostname)) {
           return {
             step,
@@ -419,6 +426,35 @@ const AZURE_ALLOWED_HOSTS = new Set([
   'graph.microsoft.com',
 ]);
 
+/**
+ * Normalized ARM path for privilege-escalation checks. ARM resource paths
+ * are case-insensitive and may carry percent-encoding, so a raw
+ * case-sensitive `includes` skips evasions like
+ * `/providers/microsoft.authorization/roleassignments/...` or
+ * `%72oleAssignments`. Decodes until stable to defeat double-encoding
+ * (`%2572oleAssignments` → `%72oleAssignments` → `roleAssignments`).
+ * Returns null when the URL cannot be parsed or decoded — callers must
+ * treat null as a validation failure, not a pass.
+ */
+function normalizedAzurePath(url: string | undefined): string | null {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    let path = parsed.pathname;
+    // Decode until stable (caps double/triple encoding); bail out on error.
+    for (let i = 0; i < 3; i++) {
+      const next = decodeURIComponent(path);
+      if (next === path) break;
+      path = next;
+    }
+    // A leftover `%` means malformed or over-encoded input — fail closed.
+    if (path.includes('%')) return null;
+    return path.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
 export function validateAzurePlanSteps(steps: AzureApiStep[]): string[] {
   const errors: string[] = [];
   for (let i = 0; i < steps.length; i++) {
@@ -439,17 +475,42 @@ export function validateAzurePlanSteps(steps: AzureApiStep[]): string[] {
     } catch {
       errors.push(`Step ${i}: URL must be a valid absolute URL`);
     }
-    if (
-      step.method === 'DELETE' &&
-      step.url?.match(/\/subscriptions\/[^/]+$/)
-    ) {
-      errors.push(`Step ${i}: Cannot delete a subscription`);
+    if (step.method === 'DELETE' && step.url) {
+      // Match against the pathname only — real ARM delete URLs always
+      // carry `?api-version=`, which defeated the old end-of-string match
+      // on the raw URL. A trailing slash is accepted.
+      try {
+        const parsedSub = new URL(step.url);
+        if (/^\/subscriptions\/[^/]+\/?$/i.test(parsedSub.pathname)) {
+          errors.push(`Step ${i}: Cannot delete a subscription`);
+        }
+      } catch {
+        // Malformed URL already reported above; skip the subscription check.
+      }
+    }
+    const azurePath = normalizedAzurePath(step.url);
+    if (azurePath === null) {
+      errors.push(`Step ${i}: URL path could not be decoded`);
     }
     if (
       step.method !== 'GET' &&
-      step.url?.includes('/providers/Microsoft.Authorization/roleDefinitions/')
+      azurePath?.includes('/providers/microsoft.authorization/roledefinitions/')
     ) {
       errors.push(`Step ${i}: Cannot modify built-in role definitions`);
+    }
+    // Role-assignment writes are the Azure analog of the blocked IAM grant
+    // primitives: a fooled step that grants Contributor/Owner self-escalates
+    // inside the customer tenant. Like the AWS denylist, assignment grants
+    // go to manual review — never through executed steps. Reads stay allowed
+    // so plans can inspect current assignments, and DELETE stays allowed:
+    // removing an assignment only narrows access (the Revoke/Authorize
+    // asymmetry on the AWS side).
+    if (
+      step.method !== 'GET' &&
+      step.method !== 'DELETE' &&
+      azurePath?.includes('/providers/microsoft.authorization/roleassignments/')
+    ) {
+      errors.push(`Step ${i}: Cannot grant Azure role assignments`);
     }
   }
   return errors;

@@ -22,7 +22,14 @@ interface Props {
 
 const copy: Record<
   Locale,
-  { preview: string; heading: string; body: string; button: string; copyPaste: string; footer: string }
+  {
+    preview: string;
+    heading: string;
+    body: string;
+    button: string;
+    copyPaste: string;
+    footer: string;
+  }
 > = {
   en: {
     preview: 'Verify your email for OpenComp',

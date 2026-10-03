@@ -31,11 +31,9 @@ vi.mock('sonner', () => ({
 }));
 
 vi.mock('./request-data-table', () => ({
-  RequestDataTable: ({
-    onPreviewNda,
-  }: {
-    onPreviewNda: (row: { id: string }) => void;
-  }) => <button onClick={() => onPreviewNda({ id: 'req_1' })}>Preview</button>,
+  RequestDataTable: ({ onPreviewNda }: { onPreviewNda: (row: { id: string }) => void }) => (
+    <button onClick={() => onPreviewNda({ id: 'req_1' })}>Preview</button>
+  ),
 }));
 
 vi.mock('./approve-dialog', () => ({
@@ -75,9 +73,7 @@ describe('RequestsTab NDA preview object URL cleanup', () => {
     // instead of spyOn, which requires the property to exist.
     URL.createObjectURL = vi.fn().mockReturnValue('blob:preview');
     URL.revokeObjectURL = vi.fn(() => undefined);
-    mockFetchPreviewNdaPdf.mockResolvedValue(
-      new Blob(['pdf-bytes'], { type: 'application/pdf' }),
-    );
+    mockFetchPreviewNdaPdf.mockResolvedValue(new Blob(['pdf-bytes'], { type: 'application/pdf' }));
   });
 
   it('revokes the preview object URL after the new tab loads', async () => {
@@ -86,11 +82,9 @@ describe('RequestsTab NDA preview object URL cleanup', () => {
 
     await waitFor(() => expect(URL.createObjectURL).toHaveBeenCalled());
     expect(opened.location.href).toBe('blob:preview');
-    expect(opened.addEventListener).toHaveBeenCalledWith(
-      'load',
-      expect.any(Function),
-      { once: true },
-    );
+    expect(opened.addEventListener).toHaveBeenCalledWith('load', expect.any(Function), {
+      once: true,
+    });
 
     loadHandler?.();
 
@@ -104,9 +98,7 @@ describe('RequestsTab NDA preview object URL cleanup', () => {
 
     await waitFor(() => expect(URL.createObjectURL).toHaveBeenCalled());
 
-    const timeoutCall = setTimeoutSpy.mock.calls.find(
-      (call) => call[1] === 60_000,
-    );
+    const timeoutCall = setTimeoutSpy.mock.calls.find((call) => call[1] === 60_000);
     expect(timeoutCall).toBeDefined();
 
     (timeoutCall?.[0] as () => void)();

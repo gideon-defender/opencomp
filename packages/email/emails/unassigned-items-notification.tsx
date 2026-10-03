@@ -47,8 +47,7 @@ const copy: Record<
     heading: 'Miembro eliminado: los elementos requieren reasignación',
     greeting: 'Hola',
     cta: 'Ver organización',
-    loginPrompt:
-      'Inicia sesión para asignar estos elementos a los miembros adecuados del equipo.',
+    loginPrompt: 'Inicia sesión para asignar estos elementos a los miembros adecuados del equipo.',
   },
 };
 
@@ -161,7 +160,11 @@ export const UnassignedItemsNotificationEmail = ({
             </Section>
 
             {email && (
-              <UnsubscribeLink email={email} unsubscribeUrl={getUnsubscribeUrl(email)} locale={locale} />
+              <UnsubscribeLink
+                email={email}
+                unsubscribeUrl={getUnsubscribeUrl(email)}
+                locale={locale}
+              />
             )}
 
             <br />

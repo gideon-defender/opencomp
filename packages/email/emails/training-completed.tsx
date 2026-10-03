@@ -44,8 +44,7 @@ const copy: Record<
     completionDate: 'Completion Date',
     certificate:
       'Your training completion certificate is attached to this email. Please save it for your records.',
-    thanks:
-      'Thank you for your commitment to maintaining security awareness and helping protect',
+    thanks: 'Thank you for your commitment to maintaining security awareness and helping protect',
     footer: 'This notification was intended for',
   },
   es: {
@@ -71,11 +70,14 @@ export const TrainingCompletedEmail = ({
   locale = 'en',
 }: Props) => {
   const t = copy[locale];
-  const formattedDate = new Date(completedAt).toLocaleDateString(locale === 'es' ? 'es-ES' : 'en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  const formattedDate = new Date(completedAt).toLocaleDateString(
+    locale === 'es' ? 'es-ES' : 'en-US',
+    {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    },
+  );
 
   return (
     <Html lang={locale}>

@@ -11,8 +11,8 @@ import {
   Text,
 } from '@trycompai/design-system';
 import { Document } from '@trycompai/design-system/icons';
-import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 interface PortalPdfViewerProps {
@@ -104,9 +104,7 @@ export function PortalPdfViewer({ policyId, s3Key, versionId }: PortalPdfViewerP
           </EmptyMedia>
           <EmptyHeader>
             <EmptyTitle>{t('pdfUnavailableTitle')}</EmptyTitle>
-            <EmptyDescription>
-              {t('pdfUnavailableBody')}
-            </EmptyDescription>
+            <EmptyDescription>{t('pdfUnavailableBody')}</EmptyDescription>
           </EmptyHeader>
         </Empty>
       </CardContent>

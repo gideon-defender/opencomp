@@ -859,3 +859,252 @@ describe('AiRemediationService.generateFixPlan retry selection', () => {
     expect(plan.canAutoFix).toBe(false);
   });
 });
+
+describe('AiRemediationService.suggestPermissionFix denylist', () => {
+  const generateObjectMock = generateObject as unknown as jest.Mock;
+
+  beforeEach(() => {
+    generateObjectMock.mockReset();
+  });
+
+  const failedStep = {
+    service: 's3',
+    command: 'PutBucketEncryptionCommand',
+    params: {},
+    purpose: 'Enable encryption',
+  };
+
+  it('strips denylisted actions from Allow and warns (never Deny)', async () => {
+    generateObjectMock.mockResolvedValueOnce({
+      object: {
+        missingActions: ['s3:PutBucketEncryption', 'iam:PutRolePolicy'],
+        policyStatement: {
+          Effect: 'Allow',
+          Action: ['s3:PutBucketEncryption', 'sns:Subscribe'],
+          Resource: '*',
+        },
+      },
+    });
+
+    const service = new AiRemediationService();
+    const result = await service.suggestPermissionFix({
+      errorMessage: 'not authorized to perform: s3:PutBucketEncryption',
+      failedStep,
+    });
+
+    expect(result.missingActions).toEqual(['s3:PutBucketEncryption']);
+    expect(result.policyStatement.Action).toEqual(['s3:PutBucketEncryption']);
+    // The blocked culprit is carried for the execute path — it must not
+    // vanish without explanation once the fix script is rebuilt downstream.
+    expect(result.blockedActions).toEqual(
+      expect.arrayContaining(['iam:PutRolePolicy', 'sns:Subscribe']),
+    );
+    // Blocked actions surface only in the warning comment — never as Allow
+    // and never as an explicit Deny (which would override a manual Allow).
+    expect(result.fixScript).toContain('WARNING');
+    expect(result.fixScript).toContain('iam:PutRolePolicy');
+    expect(result.fixScript).toContain('sns:Subscribe');
+    // Merge shape: grants union with the live policy, never overwrites it.
+    const newLine = result.fixScript.match(/^NEW='(.*)'$/m)?.[1];
+    expect(newLine).toBeDefined();
+    expect(JSON.parse(newLine as string)).toEqual(['s3:PutBucketEncryption']);
+    expect(result.fixScript).toContain('get-role-policy');
+    expect(result.fixScript).toContain('MERGED=');
+    // Deny statements, Conditions, and scoped Resources survive the merge.
+    expect(result.fixScript).toContain('select(.Effect != "Allow")');
+  });
+
+  it('returns a manual-review comment when every suggested action is blocked', async () => {
+    generateObjectMock.mockResolvedValueOnce({
+      object: {
+        missingActions: ['iam:PassRole'],
+        policyStatement: {
+          Effect: 'Allow',
+          Action: ['iam:PassRole'],
+          Resource: '*',
+        },
+      },
+    });
+
+    const service = new AiRemediationService();
+    const result = await service.suggestPermissionFix({
+      errorMessage: 'not authorized to perform: iam:PassRole',
+      failedStep,
+    });
+
+    expect(result.missingActions).toEqual([]);
+    expect(result.blockedActions).toEqual(['iam:PassRole']);
+    expect(result.policyStatement.Action).toEqual([]);
+    expect(result.fixScript).toContain('manual review');
+    expect(result.fixScript).not.toContain('--policy-document');
+  });
+
+  it('omits a denylisted error-derived action in the fallback path', async () => {
+    generateObjectMock.mockRejectedValueOnce(new Error('model down'));
+
+    const service = new AiRemediationService();
+    const result = await service.suggestPermissionFix({
+      errorMessage: 'not authorized to perform: iam:PassRole',
+      failedStep,
+    });
+
+    expect(result.missingActions).toEqual([]);
+    expect(result.blockedActions).toEqual(['iam:PassRole']);
+    expect(result.fixScript).toContain('manual review');
+    expect(result.fixScript).toContain('iam:PassRole');
+    expect(result.fixScript).not.toContain('--policy-document');
+  });
+
+  it('blocks a quote-breaking model action and sanitizes the warning', async () => {
+    const evil = "s3:PutBucketEncryption'; touch /tmp/pwned #";
+    generateObjectMock.mockResolvedValueOnce({
+      object: {
+        missingActions: ['s3:PutBucketEncryption', evil],
+        policyStatement: {
+          Effect: 'Allow',
+          Action: ['s3:PutBucketEncryption'],
+          Resource: '*',
+        },
+      },
+    });
+
+    const service = new AiRemediationService();
+    const result = await service.suggestPermissionFix({
+      errorMessage: 'not authorized to perform: s3:PutBucketEncryption',
+      failedStep,
+    });
+
+    expect(result.missingActions).toEqual(['s3:PutBucketEncryption']);
+    expect(result.blockedActions).toEqual([evil]);
+    const newLine = result.fixScript.match(/^NEW='(.*)'$/m)?.[1];
+    expect(newLine).toBeDefined();
+    expect(JSON.parse(newLine as string)).toEqual(['s3:PutBucketEncryption']);
+    expect(newLine).not.toContain('touch /tmp/pwned');
+    // The warning line stays a comment — no raw quote leaks into the script.
+    expect(result.fixScript).not.toContain("'; touch");
+  });
+
+  it('reconciles divergent model lists via the grantable union', async () => {
+    generateObjectMock.mockResolvedValueOnce({
+      object: {
+        missingActions: ['s3:PutBucketEncryption'],
+        policyStatement: {
+          Effect: 'Allow',
+          Action: ['logs:PutMetricFilter'],
+          Resource: '*',
+        },
+      },
+    });
+
+    const service = new AiRemediationService();
+    const result = await service.suggestPermissionFix({
+      errorMessage: 'not authorized',
+      failedStep,
+    });
+
+    // Both grantable actions survive — missingActions, the policy, and the
+    // execute path (which merges missingActions) all agree.
+    expect(result.missingActions).toEqual([
+      'logs:PutMetricFilter',
+      's3:PutBucketEncryption',
+    ]);
+    expect(result.policyStatement.Action).toEqual([
+      'logs:PutMetricFilter',
+      's3:PutBucketEncryption',
+    ]);
+    expect(result.fixScript).toContain('--policy-document');
+  });
+
+  it('grants the model-listed safe action when the policy list is blocked-only', async () => {
+    generateObjectMock.mockResolvedValueOnce({
+      object: {
+        missingActions: ['s3:PutBucketEncryption'],
+        policyStatement: {
+          Effect: 'Allow',
+          Action: ['iam:PassRole'],
+          Resource: '*',
+        },
+      },
+    });
+
+    const service = new AiRemediationService();
+    const result = await service.suggestPermissionFix({
+      errorMessage: 'not authorized',
+      failedStep,
+    });
+
+    expect(result.missingActions).toEqual(['s3:PutBucketEncryption']);
+    expect(result.policyStatement.Action).toEqual(['s3:PutBucketEncryption']);
+    expect(result.blockedActions).toEqual(['iam:PassRole']);
+    expect(result.fixScript).toContain('--policy-document');
+  });
+
+  it('captures hyphenated service names in the fallback path', async () => {
+    generateObjectMock.mockRejectedValueOnce(new Error('model down'));
+
+    const service = new AiRemediationService();
+    const result = await service.suggestPermissionFix({
+      errorMessage:
+        'not authorized to perform: cognito-idp:DescribeUserPool with an explicit deny',
+      failedStep,
+    });
+
+    expect(result.missingActions).toEqual(['cognito-idp:DescribeUserPool']);
+    expect(result.blockedActions).toEqual([]);
+    expect(result.fixScript).toContain('--policy-document');
+  });
+
+  it('scopes the merge to the role policy, ignoring model Resource text', async () => {
+    const scopedArn = 'arn:aws:s3:::example-bucket';
+    generateObjectMock.mockResolvedValueOnce({
+      object: {
+        missingActions: ['s3:PutBucketEncryption'],
+        policyStatement: {
+          Effect: 'Allow',
+          Action: ['s3:PutBucketEncryption'],
+          Resource: scopedArn,
+        },
+      },
+    });
+
+    const service = new AiRemediationService();
+    const result = await service.suggestPermissionFix({
+      errorMessage: 'not authorized to perform: s3:PutBucketEncryption',
+      failedStep,
+    });
+
+    // Model-supplied Resource is untrusted free text — the merge always
+    // scopes the new Allow to the remediation role policy instead.
+    expect(result.policyStatement.Resource).toBe('*');
+    expect(result.fixScript).not.toContain(scopedArn);
+    expect(result.fixScript).toContain('get-role-policy');
+    expect(result.fixScript).toContain('MERGED=');
+  });
+
+  it('drops a quote-breaking model Resource from the fix script', async () => {
+    const hostileResource = `*'; touch /tmp/pwned-echo-test; echo '`;
+    generateObjectMock.mockResolvedValueOnce({
+      object: {
+        missingActions: ['s3:PutBucketEncryption'],
+        policyStatement: {
+          Effect: 'Allow',
+          Action: ['s3:PutBucketEncryption'],
+          Resource: hostileResource,
+        },
+      },
+    });
+
+    const service = new AiRemediationService();
+    const result = await service.suggestPermissionFix({
+      errorMessage: 'not authorized to perform: s3:PutBucketEncryption',
+      failedStep,
+    });
+
+    // Hostile Resource text reaches neither the grant list nor the script —
+    // the merge carries only validated action tokens.
+    const newLine = result.fixScript.match(/^NEW='(.*)'$/m)?.[1];
+    expect(JSON.parse(newLine as string)).toEqual(['s3:PutBucketEncryption']);
+    expect(result.fixScript).not.toContain('touch /tmp/pwned-echo-test');
+    expect(result.fixScript).not.toContain("'; touch");
+  });
+});

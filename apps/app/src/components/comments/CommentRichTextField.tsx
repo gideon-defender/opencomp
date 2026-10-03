@@ -51,21 +51,21 @@ export function CommentRichTextField({
       const currentMembers = latestMembers;
       if (!currentMembers || currentMembers.length === 0) return [];
 
-    // Show first 20 members immediately when query is empty
-    if (!query || query.trim() === '') {
-      return currentMembers.slice(0, 20);
-    }
+      // Show first 20 members immediately when query is empty
+      if (!query || query.trim() === '') {
+        return currentMembers.slice(0, 20);
+      }
 
-    // Filter members based on query
-    const lowerQuery = query.toLowerCase();
-    return currentMembers
-      .filter(
-        (member) =>
-          member.name?.toLowerCase().includes(lowerQuery) ||
-          member.email?.toLowerCase().includes(lowerQuery) ||
-          member.id?.toLowerCase().includes(lowerQuery),
-      )
-      .slice(0, 20);
+      // Filter members based on query
+      const lowerQuery = query.toLowerCase();
+      return currentMembers
+        .filter(
+          (member) =>
+            member.name?.toLowerCase().includes(lowerQuery) ||
+            member.email?.toLowerCase().includes(lowerQuery) ||
+            member.id?.toLowerCase().includes(lowerQuery),
+        )
+        .slice(0, 20);
     },
     [latestMembers],
   );

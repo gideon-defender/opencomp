@@ -138,13 +138,15 @@ export { matchesSyncFilterTerms, parseSyncFilterTerms } from './sync-filter/emai
 
 // AWS credential helpers (used by frontend setup dialogs)
 export {
-  awsRemediationScript,
   getAwsCloudShellScript,
   getAwsCloudShellUrl,
-  getAwsRemediationScript,
   normalizeAwsEnvironment,
 } from './manifests/aws/credentials';
 export type { AwsEnvironment } from './manifests/aws/credentials';
+
+// AWS remediation role script (split from credentials to respect the
+// 300-line file limit) — same public import path as before.
+export { awsRemediationScript, getAwsRemediationScript } from './manifests/aws/remediation-script';
 
 // Shared AWS STS AssumeRole retry (transient / IAM-eventual-consistency safe),
 // reused by the Cloud Tests scanner in apps/api.

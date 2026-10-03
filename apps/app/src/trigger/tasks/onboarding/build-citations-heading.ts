@@ -120,14 +120,10 @@ export function buildCitationsHeading({
   const gapCount = citations.filter((c) => c.kind === 'gap').length;
   const parts: string[] = [];
   if (policyCount > 0) {
-    parts.push(
-      `${policyCount} ${policyCount === 1 ? copy.policyOne : copy.policyMany}`,
-    );
+    parts.push(`${policyCount} ${policyCount === 1 ? copy.policyOne : copy.policyMany}`);
   }
   if (gapCount > 0) {
-    parts.push(
-      `${gapCount} ${gapCount === 1 ? copy.recommendedGapOne : copy.recommendedGapMany}`,
-    );
+    parts.push(`${gapCount} ${gapCount === 1 ? copy.recommendedGapOne : copy.recommendedGapMany}`);
   }
   if (parts.length === 0) {
     return copy.introBare;

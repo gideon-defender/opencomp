@@ -30,7 +30,7 @@ comp/
 │   └── portal/          # Next.js portal
 ├── packages/
 │   ├── db/              # Prisma (@gideon-defender/db)
-│   ├── ui/              # Legacy UI (@gideon-defender/ui); prefer @trycompai/design-system
+ │   ├── ui/              # UI component library (@gideon-defender/ui)
 │   └── ...
 ├── turbo.json
 └── package.json
@@ -55,7 +55,7 @@ turbo build --filter=@gideon-defender/ui
 
 ```tsx
 // ✅ Import from package name
-import { Button } from '@trycompai/design-system';
+import { Button } from '@gideon-defender/ui/button';
 import { prisma } from '@gideon-defender/db';
 
 // ❌ Never relative paths across packages

@@ -193,9 +193,7 @@ export function DeviceAgentAccordionItem({
         </div>
         <AccordionContent>
           <div className="px-4 pb-4 space-y-4">
-            <p className="text-sm">
-              {t('description')}
-            </p>
+            <p className="text-sm">{t('description')}</p>
 
             {agentDevices.length > 0 && (
               <div className="space-y-3">
@@ -222,9 +220,7 @@ export function DeviceAgentAccordionItem({
                             </div>
                           )}
                           <span className="text-sm">
-                            {device.isCompliant
-                              ? t('allPassing')
-                              : t('needsAttention')}
+                            {device.isCompliant ? t('allPassing') : t('needsAttention')}
                           </span>
                         </div>
                         <p className="text-muted-foreground text-xs">
@@ -279,9 +275,7 @@ export function DeviceAgentAccordionItem({
                         ))}
                       </>
                     ) : (
-                      <p className="text-muted-foreground text-sm">
-                        {t('noPoliciesForDevice')}
-                      </p>
+                      <p className="text-muted-foreground text-sm">{t('noPoliciesForDevice')}</p>
                     )}
                   </div>
                 </CardContent>
@@ -295,9 +289,7 @@ export function DeviceAgentAccordionItem({
               <ol className="list-decimal space-y-4 pl-5 text-sm">
                 <li>
                   <strong>{t('stepDownloadTitle')}</strong>
-                  <p className="mt-1">
-                    {t('stepDownloadBody')}
-                  </p>
+                  <p className="mt-1">{t('stepDownloadBody')}</p>
                   <div className="flex items-center gap-2 mt-2">
                     {isMacOS && (
                       <div className="w-[136px]">
@@ -334,9 +326,7 @@ export function DeviceAgentAccordionItem({
                 </li>
                 <li>
                   <strong>{t('stepLoginTitle')}</strong>
-                  <p className="mt-1">
-                    {t('stepLoginBody')}
-                  </p>
+                  <p className="mt-1">{t('stepLoginBody')}</p>
                 </li>
               </ol>
             </div>
@@ -352,15 +342,9 @@ export function DeviceAgentAccordionItem({
                     </div>
                     <AccordionContent>
                       <div className="px-4 pb-4 text-muted-foreground space-y-2 text-sm">
-                        <p>
-                          {t('reqOs')}
-                        </p>
-                        <p>
-                          {t('reqMemory')}
-                        </p>
-                        <p>
-                          {t('reqStorage')}
-                        </p>
+                        <p>{t('reqOs')}</p>
+                        <p>{t('reqMemory')}</p>
+                        <p>{t('reqStorage')}</p>
                       </div>
                     </AccordionContent>
                   </AccordionItem>
@@ -377,18 +361,10 @@ export function DeviceAgentAccordionItem({
                     </div>
                     <AccordionContent>
                       <div className="px-4 pb-4 text-muted-foreground space-y-2 text-sm">
-                        <p>
-                          {t('aboutBody1')}
-                        </p>
-                        <p>
-                          {t('aboutBody2')}
-                        </p>
-                        <p>
-                          {t('aboutBody3')}
-                        </p>
-                        <p className="text-xs">
-                          {t('aboutContact')}
-                        </p>
+                        <p>{t('aboutBody1')}</p>
+                        <p>{t('aboutBody2')}</p>
+                        <p>{t('aboutBody3')}</p>
+                        <p className="text-xs">{t('aboutContact')}</p>
                       </div>
                     </AccordionContent>
                   </AccordionItem>

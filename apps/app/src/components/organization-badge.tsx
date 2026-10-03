@@ -1,7 +1,7 @@
 'use client';
 
 import { getInitials } from '@/lib/utils';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 interface OrganizationBadgeProps {
   organization: { id: string; name: string } | null;
@@ -20,9 +20,13 @@ export function OrganizationBadge({
 
   // A new logo URL (e.g. fresh presigned URL after navigation) clears a
   // previous load failure so a valid logo is never hidden by stale state.
-  useEffect(() => {
+  // Synced during render (not in an effect): an effect that calls setState
+  // unconditionally retriggers render and trips the cascading-render lint.
+  const [lastLogoUrl, setLastLogoUrl] = useState(logoUrl);
+  if (lastLogoUrl !== logoUrl) {
+    setLastLogoUrl(logoUrl);
     setHasLogoError(false);
-  }, [logoUrl]);
+  }
 
   if (!organization) {
     return null;

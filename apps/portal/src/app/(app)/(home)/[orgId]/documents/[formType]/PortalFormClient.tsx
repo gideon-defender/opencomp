@@ -17,8 +17,8 @@ import {
   Text,
   Textarea,
 } from '@trycompai/design-system';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 
@@ -119,7 +119,11 @@ export function PortalFormClient({
                     {field.type === 'select' && (
                       <Select name={field.key} required={field.required}>
                         <SelectTrigger>
-                          <SelectValue placeholder={t('selectPlaceholder', { label: field.label.toLowerCase() })} />
+                          <SelectValue
+                            placeholder={t('selectPlaceholder', {
+                              label: field.label.toLowerCase(),
+                            })}
+                          />
                         </SelectTrigger>
                         <SelectContent>
                           {(field.options ?? []).map((option) => (
@@ -163,9 +167,7 @@ export function PortalFormClient({
                         placeholder={field.placeholder}
                         rows={12}
                       />
-                      <p className="text-xs text-muted-foreground">
-                        {t('charLimit')}
-                      </p>
+                      <p className="text-xs text-muted-foreground">{t('charLimit')}</p>
                     </div>
                   )}
 
@@ -173,12 +175,8 @@ export function PortalFormClient({
                     <div className="space-y-2">
                       <label htmlFor={field.key} className="block cursor-pointer">
                         <div className="rounded-md border-2 border-dashed border-border bg-muted/20 p-6 text-center transition hover:bg-muted/40">
-                          <p className="text-sm font-medium text-foreground">
-                            {t('dropFile')}
-                          </p>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {t('maxFileSize')}
-                          </p>
+                          <p className="text-sm font-medium text-foreground">{t('dropFile')}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">{t('maxFileSize')}</p>
                         </div>
                       </label>
                       <input

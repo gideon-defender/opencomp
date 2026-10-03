@@ -19,7 +19,7 @@
     "prettier-plugin-organize-imports": "^4.3.0",
     "prettier-plugin-tailwindcss": "^0.7.4",
     "react-dnd": "^16.0.1",
-    "react-hook-form": "^7.81.0",
+    "react-hook-form": "^7.88.0",
     "semantic-release": "^25.0.7",
     "sharp": "^0.35.4",
     "syncpack": "^13.0.4",
@@ -65,9 +65,9 @@
     "packages/*"
   ],
   "dependencies": {
-    "@trycompai/design-system": "1.1.19",
+    "@trycompai/design-system": "*",
     "@types/react-syntax-highlighter": "^15.5.13",
-    "zod": "^4.4.3"
+    "zod": "^4.6.5"
   },
   "pnpm": {
     "overrides": {

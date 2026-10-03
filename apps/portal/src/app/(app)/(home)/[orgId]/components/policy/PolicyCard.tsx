@@ -86,7 +86,9 @@ export function PolicyCard({ policy, onNext, onComplete, member, isLastPolicy }:
             <Text variant="muted" size="sm">
               {t('statusLabel', { status: policy.status })}{' '}
               {policy.updatedAt && (
-                <span>({t('lastUpdated', { date: new Date(policy.updatedAt).toLocaleDateString() })})</span>
+                <span>
+                  ({t('lastUpdated', { date: new Date(policy.updatedAt).toLocaleDateString() })})
+                </span>
               )}
             </Text>
           </div>

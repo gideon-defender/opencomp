@@ -3,7 +3,7 @@ name: Publish
 #
 # WHY THIS PUBLISHES ON `release`, NOT `main`:
 # Speakeasy's default is to publish on push to main, but our convention is that
-# `main` = staging/dev (database-migrations-main.yml, trigger-*-deploy-main.yml,
+# `main` = staging/dev (database-migrations.yml, trigger-*-deploy-main.yml,
 # etc.) and `release` = production. npm publish is a production action — every
 # customer running `npx @gideon-defender/mcp-server` gets the new version — so it
 # belongs on the release branch alongside the other *-release.yml workflows.

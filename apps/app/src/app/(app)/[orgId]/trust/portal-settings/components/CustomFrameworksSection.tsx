@@ -50,8 +50,7 @@ export function CustomFrameworksSection({
   // is created). The prop reference is stable across client-only re-renders, so
   // this won't clobber in-session optimistic edits — it only fires on fresh
   // server data. Mirrors the certificate-file resync in TrustPortalSwitch.
-  const [prevCustomFrameworks, setPrevCustomFrameworks] =
-    useState(initialCustomFrameworks);
+  const [prevCustomFrameworks, setPrevCustomFrameworks] = useState(initialCustomFrameworks);
   if (prevCustomFrameworks !== initialCustomFrameworks) {
     setPrevCustomFrameworks(initialCustomFrameworks);
     setFrameworks(initialCustomFrameworks);

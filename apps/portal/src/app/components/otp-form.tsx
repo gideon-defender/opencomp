@@ -6,8 +6,8 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '@gideon-def
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@gideon-defender/ui/input-otp';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Spinner } from '@trycompai/design-system';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';

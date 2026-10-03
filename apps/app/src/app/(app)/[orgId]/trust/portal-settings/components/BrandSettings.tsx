@@ -107,10 +107,19 @@ export function BrandSettings({
   const [primaryColorValue, setPrimaryColorValue] = useState(form.getValues('primaryColor') || '');
   const debouncedPrimaryColor = useDebounce(primaryColorValue, 800);
 
+  // Prop→state sync during render (not in an effect): an effect that calls
+  // setState unconditionally retriggers render and trips the
+  // cascading-render lint. The form reset + ref bookkeeping stay in the
+  // effect below — only the useState sync moves to render.
+  const [syncedPrimaryColor, setSyncedPrimaryColor] = useState(primaryColor);
+  if (syncedPrimaryColor !== primaryColor) {
+    setSyncedPrimaryColor(primaryColor);
+    setPrimaryColorValue(normalizePrimaryColor(primaryColor) ?? '');
+  }
+
   useEffect(() => {
     const normalizedPrimaryColor = normalizePrimaryColor(primaryColor);
     form.reset({ primaryColor: normalizedPrimaryColor ?? undefined });
-    setPrimaryColorValue(normalizedPrimaryColor ?? '');
     lastSaved.current.primaryColor = normalizedPrimaryColor ?? null;
   }, [form, primaryColor]);
 

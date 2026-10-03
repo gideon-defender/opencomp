@@ -1580,6 +1580,7 @@
       "cloudTests_proposedState": "Propuesto",
       "cloudTests_providerDisconnected": "Proveedor en la nube desconectado",
       "cloudTests_recheck": "Recomprobar",
+      "cloudTests_freshPreview": "Vista previa nueva",
       "cloudTests_regionCount": "{count, plural, one {# región} other {# regiones}}",
       "cloudTests_regions": "Regiones",
       "cloudTests_remediateTitle": "Pasos de corrección",

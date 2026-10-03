@@ -2,8 +2,8 @@
 
 import { Button } from '@trycompai/design-system';
 import { Checkmark } from '@trycompai/design-system/icons';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 

@@ -67,16 +67,11 @@ export type ActionValidationKey = keyof typeof actionValidationMessages;
 const m = actionValidationMessages;
 
 const organizationSchema = z.object({
-  frameworkIds: z
-    .array(z.string())
-    .min(1, m.selectFrameworkToStart),
+  frameworkIds: z.array(z.string()).min(1, m.selectFrameworkToStart),
 });
 
 export const organizationNameSchema = z.object({
-  name: z
-    .string()
-    .min(1, m.organizationNameRequired)
-    .max(255, m.organizationNameTooLong),
+  name: z.string().min(1, m.organizationNameRequired).max(255, m.organizationNameTooLong),
 });
 
 export const subdomainAvailabilitySchema = z.object({
@@ -352,10 +347,7 @@ export const updatePolicyFormSchema = z.object({
 });
 
 export const apiKeySchema = z.object({
-  name: z
-    .string()
-    .min(1, { message: m.nameRequired })
-    .max(64, { message: m.nameTooLong }),
+  name: z.string().min(1, { message: m.nameRequired }).max(64, { message: m.nameTooLong }),
   expiresAt: z.enum(['30days', '90days', '1year', 'never']),
 });
 

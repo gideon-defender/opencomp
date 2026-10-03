@@ -119,4 +119,55 @@ describe('classifyExecuteResult', () => {
     });
     expect(result.type).toBe('needs_permissions');
   });
+
+  it('forwards blocked permissions for the manual-review banner', () => {
+    const result = classifyExecuteResult({
+      status: 'failed',
+      error: 'Access denied',
+      permissionError: {
+        missingActions: ['s3:CreateBucket'],
+        fixScript: 'aws iam put-role-policy ...',
+        blockedPermissions: ['iam:PassRole'],
+        blockedPermissionsMessage: 'Some permissions need manual review.',
+      },
+    });
+    expect(result).toEqual({
+      type: 'needs_permissions',
+      error: 'Access denied',
+      permissionError: {
+        missingActions: ['s3:CreateBucket'],
+        fixScript: 'aws iam put-role-policy ...',
+        blockedPermissions: ['iam:PassRole'],
+        blockedPermissionsMessage: 'Some permissions need manual review.',
+      },
+    });
+  });
+
+  it('classifies an all-blocked failure as needs_permissions, not generic failed', () => {
+    // Every required action was refused for manual review, so the backend
+    // sends an empty grantable list with a guidance-only script.
+    const result = classifyExecuteResult({
+      status: 'failed',
+      error: 'Access denied for iam:PassRole',
+      permissionError: {
+        missingActions: [],
+        fixScript: '# WARNING: 1 required permission(s) need manual review',
+        blockedPermissions: ['iam:PassRole'],
+        blockedPermissionsMessage: 'Some permissions need manual review.',
+      },
+    });
+    expect(result.type).toBe('needs_permissions');
+    if (result.type !== 'needs_permissions') return;
+    expect(result.permissionError.blockedPermissions).toEqual(['iam:PassRole']);
+  });
+
+  it('still rejects an empty permission error with no signal', () => {
+    expect(
+      classifyExecuteResult({
+        status: 'failed',
+        error: 'Access denied',
+        permissionError: { missingActions: [] },
+      }).type,
+    ).toBe('failed');
+  });
 });

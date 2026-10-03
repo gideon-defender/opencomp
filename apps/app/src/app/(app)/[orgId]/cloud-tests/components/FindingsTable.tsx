@@ -116,9 +116,7 @@ export function FindingsTable({ findings }: FindingsTableProps) {
                 </TableCell>
                 <TableCell>
                   <Badge variant={statusVariant[statusKey] || 'secondary'}>
-                    {finding.status === 'success'
-                      ? t('passed')
-                      : finding.status || t('unknown')}
+                    {finding.status === 'success' ? t('passed') : finding.status || t('unknown')}
                   </Badge>
                 </TableCell>
                 <TableCell>

@@ -37,7 +37,9 @@ export function UserMenuClient({ name, email, image, userInitials }: UserMenuCli
               <span className="line-clamp-1 block max-w-[155px] truncate">{name}</span>
               <span className="text-muted-foreground truncate text-xs font-normal">{email}</span>
             </div>
-            <div className="rounded-full border px-3 py-0.5 text-[11px] font-normal">{t('beta')}</div>
+            <div className="rounded-full border px-3 py-0.5 text-[11px] font-normal">
+              {t('beta')}
+            </div>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

@@ -1,9 +1,16 @@
-name: Database Migrations Main
+name: Database Migrations
 on:
-  push: # Runs AFTER merge to main (never during PR review!)
+  pull_request: # Validates migrations on PRs to main — ephemeral DB only, no real data at risk
+    branches:
+      - main
+  push: # Runs AFTER merge to main
     branches:
       - main
   workflow_dispatch: # Allows manual triggering
+
+concurrency:
+  group: db-migrations-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read # only needs to check out the repo to validate migrations

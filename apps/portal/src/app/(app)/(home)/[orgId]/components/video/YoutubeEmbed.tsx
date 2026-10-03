@@ -40,7 +40,6 @@ export function YoutubeEmbed({
 }: YoutubeEmbedProps) {
   const [isRewatching, setIsRewatching] = useState(false);
   const t = useTranslations('training');
-  
 
   const handleVideoEnded = () => {
     setIsRewatching(false);

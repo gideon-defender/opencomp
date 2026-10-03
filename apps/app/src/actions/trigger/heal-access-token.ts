@@ -1,8 +1,8 @@
 'use server';
 
 import { auth as appAuth } from '@/utils/auth';
-import { auth, runs } from '@gideon-defender/trigger-local';
 import { db } from '@db/server';
+import { auth, runs } from '@gideon-defender/trigger-local';
 import { cookies, headers } from 'next/headers';
 
 /**
@@ -12,10 +12,7 @@ import { cookies, headers } from 'next/headers';
  * trigger-local run ids: an onboarding job, a knowledge base document's
  * processing run, or a cloud security remediation batch.
  */
-async function isRunOwnedByOrganization(
-  runId: string,
-  organizationId: string,
-): Promise<boolean> {
+async function isRunOwnedByOrganization(runId: string, organizationId: string): Promise<boolean> {
   const [onboarding, knowledgeBaseDocument, remediationBatch] = await Promise.all([
     db.onboarding.findFirst({
       where: { organizationId, triggerJobId: runId },

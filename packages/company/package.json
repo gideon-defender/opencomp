@@ -2,13 +2,13 @@
   "name": "@gideon-defender/company",
   "version": "1.0.0",
   "dependencies": {
-    "zod": "^4.3.6"
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@gideon-defender/tsconfig": "*",
-    "@types/node": "^24.0.3",
+    "@types/node": "^24.2.0",
     "tsup": "^8.5.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.3"
   },
   "exports": {
     ".": {

@@ -51,9 +51,7 @@ export function PhaseRow({ index, register, errors, onRemove }: PhaseRowProps) {
 
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2 flex flex-col gap-1">
-          <Label htmlFor={`phases.${index}.name`}>
-            {t('timelineTemplates.editor.nameLabel')}
-          </Label>
+          <Label htmlFor={`phases.${index}.name`}>{t('timelineTemplates.editor.nameLabel')}</Label>
           <Input
             id={`phases.${index}.name`}
             {...register(`phases.${index}.name`)}

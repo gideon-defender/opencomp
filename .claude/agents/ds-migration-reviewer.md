@@ -1,6 +1,6 @@
 ---
 name: ds-migration-reviewer
-description: Checks files for @gideon-defender/ui and lucide-react imports that can be migrated to @trycompai/design-system
+description: Checks files for @trycompai/design-system and @trycompai/design-system/icons imports that can be migrated to @gideon-defender/ui and lucide-react
 tools: Read, Grep, Glob, Bash
 ---
 
@@ -10,34 +10,30 @@ You review frontend files for design system migration opportunities.
 
 For each file provided, identify:
 
-1. **`@gideon-defender/ui` imports** — check if `@trycompai/design-system` has an equivalent:
+1. **`@trycompai/design-system` imports** — migrate to the `@gideon-defender/ui` equivalent:
 
    ```bash
-   node -e "console.log(Object.keys(require('@trycompai/design-system')))"
+   ls packages/ui/src/components/
    ```
 
-2. **`lucide-react` imports** — find matching Carbon icons:
+2. **`@trycompai/design-system/icons` (Carbon) imports** — find matching `lucide-react` icons (e.g., `Add` → `Plus`, `Close` → `X`, `Checkmark` → `Check`, `TrashCan` → `Trash`, `Launch` → `ExternalLink`).
 
-   ```bash
-   node -e "const i = require('@trycompai/design-system/icons'); console.log(Object.keys(i).filter(k => k.match(/SearchTerm/i)))"
-   ```
+3. **`@trycompai/design-system` Button with `loading`/`iconLeft`/`iconRight` props** — `@gideon-defender/ui` Button uses variants + `className` (merged via `cn()`); render spinners/icons as children with `disabled` state instead.
 
-3. **`@gideon-defender/ui/button` Button** — DS Button has `loading`, `iconLeft`, `iconRight` props. Manual spinner/icon rendering inside buttons should use these props instead.
-
-4. **Raw HTML layout** (`<div className="flex ...">`) — check if `Stack`, `HStack`, `PageLayout`, `PageHeader`, `Section` could replace it.
+4. **DS layout primitives** (`Stack`, `HStack`, `PageLayout`, `PageHeader`, `Section`) — replace with Tailwind flex/grid utilities and `@gideon-defender/ui` Card/Section equivalents.
 
 ## Important rules
 
-- DS `Text`, `Stack`, `HStack`, `Badge`, `Button` do NOT accept `className` — wrap in `<div>` if styling needed
-- Icons come from `@trycompai/design-system/icons` (Carbon icons)
-- Only flag migrations where a DS equivalent actually exists — verify by checking exports
-- Don't flag `@gideon-defender/ui` usage for components that have no DS equivalent yet
+- `@gideon-defender/ui` components accept `className` (merged via `cn()`)
+- Icons come from `lucide-react`
+- Only flag migrations where a `@gideon-defender/ui` equivalent actually exists — verify by checking `packages/ui/src/components/`
+- Don't flag `@trycompai/design-system` usage for components that have no `@gideon-defender/ui` equivalent yet
 
 ## Output format
 
 For each file, report:
 
 - File path
-- Each import that can be migrated, with the DS replacement
-- Specific icon mappings (e.g., `Trash2` → `TrashCan`, `ExternalLink` → `Launch`)
-- Any Button instances that should use `loading`/`iconLeft`/`iconRight` props
+- Each import that can be migrated, with the `@gideon-defender/ui` / `lucide-react` replacement
+- Specific icon mappings (e.g., `TrashCan` → `Trash2`, `Launch` → `ExternalLink`)
+- Any Button instances that should use variants + `disabled` + inline icons instead of `loading`/`iconLeft`/`iconRight` props

@@ -1,8 +1,8 @@
-import { render, screen } from '@testing-library/react';
-import type { Column } from '@tanstack/react-table';
-import { describe, expect, it, vi } from 'vitest';
 import { mockNextIntl } from '@/test-utils/mocks/next-intl';
 import type { ExtendedColumnFilter } from '@/types/data-table';
+import type { Column } from '@tanstack/react-table';
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import { DataTableRangeFilter } from './data-table-range-filter';
 
 const { useLocale: mockUseLocale } = mockNextIntl();

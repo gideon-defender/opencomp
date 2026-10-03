@@ -641,7 +641,9 @@ function onFilterInputRender<TData>({
             >
               <FacetedBadgeList
                 options={columnMeta?.options}
-                placeholder={columnMeta?.placeholder ?? (multiple ? t('selectOptions') : t('selectOption'))}
+                placeholder={
+                  columnMeta?.placeholder ?? (multiple ? t('selectOptions') : t('selectOption'))
+                }
               />
             </Button>
           </FacetedTrigger>

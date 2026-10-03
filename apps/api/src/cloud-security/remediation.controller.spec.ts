@@ -261,6 +261,33 @@ describe('RemediationController', () => {
         controller.rollback(actionId, orgId, userId),
       ).rejects.toThrow(HttpException);
     });
+
+    it('forwards blocked denylist fields on structured permission errors', async () => {
+      // The service splits refused actions out of the grant — the response
+      // must carry them so the client never renders a bare one-click grant.
+      mockService.rollbackRemediation.mockRejectedValue(
+        new Error(
+          JSON.stringify({
+            message: 'Rollback failed: missing permissions',
+            missingActions: ['s3:GetObject'],
+            script: 'grant-script',
+            blockedPermissions: ['iam:PassRole'],
+            blockedPermissionsMessage: 'manual review needed',
+          }),
+        ),
+      );
+
+      await expect(
+        controller.rollback(actionId, orgId, userId),
+      ).rejects.toMatchObject({
+        status: HttpStatus.BAD_REQUEST,
+        response: {
+          missingActions: ['s3:GetObject'],
+          blockedPermissions: ['iam:PassRole'],
+          blockedPermissionsMessage: 'manual review needed',
+        },
+      });
+    });
   });
 
   describe('getActions', () => {
@@ -302,4 +329,8 @@ describe('RemediationController', () => {
       );
     });
   });
+
+  // Batch endpoints (createBatch, getActiveBatch, updateBatch, skipFinding)
+  // moved to RemediationBatchController/RemediationBatchService — see
+  // remediation-batch.service.spec.ts for coverage.
 });
