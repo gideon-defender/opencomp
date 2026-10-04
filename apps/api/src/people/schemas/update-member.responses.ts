@@ -1,4 +1,5 @@
 import { ApiResponseOptions } from '@nestjs/swagger';
+import { ApiErrorResponseDto } from '../../openapi/common-responses';
 
 export const UPDATE_MEMBER_RESPONSES: Record<string, ApiResponseOptions> = {
   200: {
@@ -33,84 +34,28 @@ export const UPDATE_MEMBER_RESPONSES: Record<string, ApiResponseOptions> = {
   400: {
     status: 400,
     description: 'Bad Request - Invalid update data or user conflict',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example:
-                'User user@example.com is already a member of this organization',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
   401: {
     status: 401,
     description:
       'Unauthorized - Invalid authentication or insufficient permissions',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: { type: 'string', example: 'Unauthorized' },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
   409: {
     status: 409,
     description:
       'Conflict - Login email already used by another account, or the member belongs to other organizations',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example: 'That email is already used by another account',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
   404: {
     status: 404,
     description: 'Organization, member, or user not found',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example:
-                'Member with ID mem_abc123def456 not found in organization org_abc123def456',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
   500: {
     status: 500,
     description: 'Internal server error',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: { type: 'string', example: 'Internal server error' },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
 };

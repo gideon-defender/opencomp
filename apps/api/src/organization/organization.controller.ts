@@ -12,6 +12,8 @@ import {
 } from '@nestjs/common';
 import {
   ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiQuery,
   ApiResponse,
@@ -39,6 +41,7 @@ import {
 import { ORGANIZATION_OPERATIONS } from './schemas/organization-operations';
 
 import { authEnvelope } from '@/utils/auth-response';
+import { ApiAuthErrors, ApiForbiddenError } from '../openapi/common-responses';
 @ApiTags('Organization')
 @Controller({ path: 'organization', version: '1' })
 @UseGuards(HybridAuthGuard, PermissionGuard)
@@ -59,6 +62,7 @@ export class OrganizationController {
   })
   @ApiResponse(GET_ORGANIZATION_RESPONSES[200])
   @ApiResponse(GET_ORGANIZATION_RESPONSES[401])
+  @ApiForbiddenError()
   async getOrganization(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -88,6 +92,10 @@ export class OrganizationController {
   @Get('onboarding')
   @RequirePermission('organization', 'read')
   @ApiOperation({ summary: 'Get organization onboarding status' })
+  @ApiOkResponse({
+    description: 'Organization onboarding status retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getOnboarding(@OrganizationId() organizationId: string) {
     return this.organizationService.findOnboarding(organizationId);
   }
@@ -100,6 +108,7 @@ export class OrganizationController {
   @ApiResponse(UPDATE_ORGANIZATION_RESPONSES[400])
   @ApiResponse(UPDATE_ORGANIZATION_RESPONSES[401])
   @ApiResponse(UPDATE_ORGANIZATION_RESPONSES[404])
+  @ApiForbiddenError()
   async updateOrganization(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -174,6 +183,7 @@ export class OrganizationController {
   @ApiResponse(DELETE_ORGANIZATION_RESPONSES[200])
   @ApiResponse(DELETE_ORGANIZATION_RESPONSES[401])
   @ApiResponse(DELETE_ORGANIZATION_RESPONSES[404])
+  @ApiForbiddenError()
   async deleteOrganization(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -221,6 +231,10 @@ export class OrganizationController {
       },
     },
   })
+  @ApiOkResponse({
+    description: 'Role notification settings updated successfully',
+  })
+  @ApiAuthErrors()
   async updateRoleNotifications(
     @OrganizationId() organizationId: string,
     @Body()
@@ -251,6 +265,8 @@ export class OrganizationController {
   @Get('api-keys')
   @RequirePermission('apiKey', 'read')
   @ApiOperation({ summary: 'List active API keys' })
+  @ApiOkResponse({ description: 'API keys retrieved successfully' })
+  @ApiAuthErrors()
   async listApiKeys(@OrganizationId() organizationId: string) {
     return this.organizationService.listApiKeys(organizationId);
   }
@@ -258,6 +274,8 @@ export class OrganizationController {
   @Get('api-keys/available-scopes')
   @RequirePermission('apiKey', 'read')
   @ApiOperation({ summary: 'Get available API key scopes' })
+  @ApiOkResponse({ description: 'API key scopes retrieved successfully' })
+  @ApiAuthErrors()
   getAvailableScopes() {
     return { data: this.apiKeyService.getAvailableScopes() };
   }
@@ -265,6 +283,10 @@ export class OrganizationController {
   @Get('role-notifications')
   @RequirePermission('organization', 'read')
   @ApiOperation({ summary: 'Get role notification settings' })
+  @ApiOkResponse({
+    description: 'Role notification settings retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getRoleNotifications(@OrganizationId() organizationId: string) {
     return this.organizationService.getRoleNotificationSettings(organizationId);
   }
@@ -282,6 +304,7 @@ export class OrganizationController {
   @ApiResponse(GET_ORGANIZATION_PRIMARY_COLOR_RESPONSES[200])
   @ApiResponse(GET_ORGANIZATION_PRIMARY_COLOR_RESPONSES[401])
   @ApiResponse(GET_ORGANIZATION_PRIMARY_COLOR_RESPONSES[404])
+  @ApiForbiddenError()
   async getPrimaryColor(
     @Query('token') token: string | undefined,
     @OrganizationId() organizationId?: string,
@@ -316,6 +339,10 @@ export class OrganizationController {
   @Post('logo')
   @RequirePermission('organization', 'update')
   @ApiOperation({ summary: 'Upload organization logo' })
+  @ApiCreatedResponse({
+    description: 'Organization logo uploaded successfully',
+  })
+  @ApiAuthErrors()
   async uploadLogo(
     @OrganizationId() organizationId: string,
     @Body() body: { fileName: string; fileType: string; fileData: string },
@@ -331,6 +358,8 @@ export class OrganizationController {
   @Delete('logo')
   @RequirePermission('organization', 'update')
   @ApiOperation({ summary: 'Remove organization logo' })
+  @ApiOkResponse({ description: 'Organization logo removed successfully' })
+  @ApiAuthErrors()
   async removeLogo(@OrganizationId() organizationId: string) {
     return this.organizationService.removeLogo(organizationId);
   }
@@ -338,6 +367,8 @@ export class OrganizationController {
   @Post('api-keys')
   @RequirePermission('apiKey', 'create')
   @ApiOperation({ summary: 'Create a new API key' })
+  @ApiCreatedResponse({ description: 'API key created successfully' })
+  @ApiAuthErrors()
   async createApiKey(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -360,6 +391,8 @@ export class OrganizationController {
   @Post('api-keys/revoke')
   @RequirePermission('apiKey', 'delete')
   @ApiOperation({ summary: 'Revoke an API key' })
+  @ApiCreatedResponse({ description: 'API key revoked successfully' })
+  @ApiAuthErrors()
   async revokeApiKey(
     @OrganizationId() organizationId: string,
     @Body() body: { id: string },

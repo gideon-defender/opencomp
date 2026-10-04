@@ -23,6 +23,10 @@ import { RequirePermission } from '../auth/require-permission.decorator';
 import { OrgChartService } from './org-chart.service';
 import { UpsertOrgChartDto } from './dto/upsert-org-chart.dto';
 import { UploadOrgChartDto } from './dto/upload-org-chart.dto';
+import {
+  ApiForbiddenError,
+  ApiUnauthorizedError,
+} from '../openapi/common-responses';
 
 @ApiTags('Org Chart')
 @Controller({ path: 'org-chart', version: '1' })
@@ -41,6 +45,8 @@ export class OrgChartController {
   @RequirePermission('organization', 'read')
   @ApiOperation({ summary: 'Get the organization chart' })
   @ApiResponse({ status: 200, description: 'The organization chart' })
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   async getOrgChart(@OrganizationId() organizationId: string) {
     return await this.orgChartService.findByOrganization(organizationId);
   }
@@ -52,6 +58,8 @@ export class OrgChartController {
   })
   @ApiResponse({ status: 200, description: 'The saved organization chart' })
   @UsePipes(new ValidationPipe({ whitelist: false, transform: false }))
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   async upsertOrgChart(
     @OrganizationId() organizationId: string,
     @Body() body: Record<string, unknown>,
@@ -69,6 +77,8 @@ export class OrgChartController {
   @ApiOperation({ summary: 'Upload an image as the organization chart' })
   @ApiResponse({ status: 201, description: 'The uploaded organization chart' })
   @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   async uploadOrgChart(
     @OrganizationId() organizationId: string,
     @Body() dto: UploadOrgChartDto,
@@ -80,6 +90,8 @@ export class OrgChartController {
   @RequirePermission('organization', 'delete')
   @ApiOperation({ summary: 'Delete the organization chart' })
   @ApiResponse({ status: 200, description: 'Deletion confirmation' })
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   async deleteOrgChart(@OrganizationId() organizationId: string) {
     return await this.orgChartService.delete(organizationId);
   }

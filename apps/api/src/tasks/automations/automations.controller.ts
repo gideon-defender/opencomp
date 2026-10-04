@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBody,
+  ApiCreatedResponse,
   ApiOperation,
   ApiParam,
   ApiResponse,
@@ -28,6 +29,10 @@ import { UpdateAutomationDto } from './dto/update-automation.dto';
 import { AUTOMATION_OPERATIONS } from './schemas/automation-operations';
 import { CREATE_AUTOMATION_RESPONSES } from './schemas/create-automation.responses';
 import { UPDATE_AUTOMATION_RESPONSES } from './schemas/update-automation.responses';
+import {
+  ApiAuthErrors,
+  ApiForbiddenError,
+} from '../../openapi/common-responses';
 
 @ApiTags('Task Automations')
 @Controller({ path: 'tasks/:taskId/automations', version: '1' })
@@ -54,6 +59,7 @@ export class AutomationsController {
     status: 200,
     description: 'Automations retrieved successfully',
   })
+  @ApiAuthErrors()
   async getTaskAutomations(
     @OrganizationId() organizationId: string,
     @Param('taskId') taskId: string,
@@ -84,6 +90,7 @@ export class AutomationsController {
     status: 200,
     description: 'Automation details retrieved successfully',
   })
+  @ApiAuthErrors()
   async getAutomation(
     @OrganizationId() organizationId: string,
     @Param('taskId') taskId: string,
@@ -111,6 +118,7 @@ export class AutomationsController {
   @ApiResponse(CREATE_AUTOMATION_RESPONSES[400])
   @ApiResponse(CREATE_AUTOMATION_RESPONSES[401])
   @ApiResponse(CREATE_AUTOMATION_RESPONSES[404])
+  @ApiForbiddenError()
   async createAutomation(
     @OrganizationId() organizationId: string,
     @Param('taskId') taskId: string,
@@ -138,6 +146,7 @@ export class AutomationsController {
   @ApiResponse(UPDATE_AUTOMATION_RESPONSES[400])
   @ApiResponse(UPDATE_AUTOMATION_RESPONSES[401])
   @ApiResponse(UPDATE_AUTOMATION_RESPONSES[404])
+  @ApiForbiddenError()
   async updateAutomation(
     @OrganizationId() organizationId: string,
     @Param('taskId') taskId: string,
@@ -175,6 +184,7 @@ export class AutomationsController {
     status: 200,
     description: 'Automation deleted successfully',
   })
+  @ApiAuthErrors()
   async deleteAutomation(
     @OrganizationId() organizationId: string,
     @Param('taskId') taskId: string,
@@ -199,6 +209,7 @@ export class AutomationsController {
   @ApiParam({ name: 'taskId', description: 'Task ID' })
   @ApiParam({ name: 'automationId', description: 'Automation ID' })
   @ApiResponse({ status: 200, description: 'Runs retrieved successfully' })
+  @ApiAuthErrors()
   async getAutomationRuns(
     @OrganizationId() organizationId: string,
     @Param('taskId') taskId: string,
@@ -250,6 +261,7 @@ export class AutomationsController {
       },
     },
   })
+  @ApiAuthErrors()
   async getAutomationVersions(
     @OrganizationId() organizationId: string,
     @Param('taskId') taskId: string,
@@ -277,6 +289,11 @@ export class AutomationsController {
   @ApiParam({ name: 'taskId', description: 'Task ID' })
   @ApiParam({ name: 'automationId', description: 'Automation ID' })
   @ApiBody({ type: CreateVersionDto })
+  @ApiCreatedResponse({
+    description:
+      'A published version record for an automation created successfully',
+  })
+  @ApiAuthErrors()
   async createVersion(
     @OrganizationId() organizationId: string,
     @Param('taskId') taskId: string,
@@ -338,6 +355,7 @@ export class AutomationsController {
       },
     },
   })
+  @ApiAuthErrors()
   async getTaskAutomationRuns(
     @OrganizationId() organizationId: string,
     @Param('taskId') taskId: string,

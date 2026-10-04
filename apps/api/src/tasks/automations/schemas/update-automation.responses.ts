@@ -1,3 +1,4 @@
+import { ApiErrorResponseDto } from '../../../openapi/common-responses';
 export const UPDATE_AUTOMATION_RESPONSES = {
   200: {
     status: 200,
@@ -24,46 +25,16 @@ export const UPDATE_AUTOMATION_RESPONSES = {
   400: {
     status: 400,
     description: 'Bad request - Invalid automation ID or data',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example: 'Invalid automation data',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
   401: {
     status: 401,
     description: 'Unauthorized - Invalid authentication',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: { type: 'string', example: 'Unauthorized' },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
   404: {
     status: 404,
     description: 'Automation not found',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: { type: 'string', example: 'Automation not found' },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
 };

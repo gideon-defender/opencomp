@@ -27,6 +27,7 @@ import { PermissionGuard } from '../../auth/permission.guard';
 import { RequirePermission } from '../../auth/require-permission.decorator';
 import { EvidenceExportService } from './evidence-export.service';
 import { TasksService } from '../tasks.service';
+import { ApiAuthErrors } from '../../openapi/common-responses';
 
 @ApiTags('Evidence Export')
 @Controller({ path: 'tasks', version: '1' })
@@ -63,6 +64,7 @@ export class EvidenceExportController {
     status: 404,
     description: 'Task not found',
   })
+  @ApiAuthErrors()
   async getTaskEvidenceSummary(
     @OrganizationId() organizationId: string,
     @Param('taskId') taskId: string,
@@ -105,6 +107,7 @@ export class EvidenceExportController {
     status: 404,
     description: 'Task or automation not found',
   })
+  @ApiAuthErrors()
   async exportAutomationPDF(
     @OrganizationId() organizationId: string,
     @Param('taskId') taskId: string,
@@ -164,6 +167,7 @@ export class EvidenceExportController {
     status: 404,
     description: 'Task not found',
   })
+  @ApiAuthErrors()
   async exportTaskEvidenceZip(
     @OrganizationId() organizationId: string,
     @Param('taskId') taskId: string,
@@ -232,6 +236,7 @@ export class AuditorEvidenceExportController {
     status: 201,
     description: 'Export job started',
   })
+  @ApiAuthErrors()
   async exportAllEvidence(
     @OrganizationId() organizationId: string,
     @Query('includeJson') includeJson: string,

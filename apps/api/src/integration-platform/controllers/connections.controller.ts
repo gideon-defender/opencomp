@@ -15,6 +15,8 @@ import {
 } from '@nestjs/common';
 import {
   ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiProperty,
   ApiPropertyOptional,
@@ -64,6 +66,7 @@ import {
 import { getProviderSummary } from '../utils/provider-summary';
 import { validateRemediationRoleTrust } from './remediation-trust.validator';
 import { generateAwsExternalId } from './external-id.utils';
+import { ApiAuthErrors } from '../../openapi/common-responses';
 
 /**
  * AWS credential fields that must never carry leading/trailing whitespace
@@ -257,6 +260,10 @@ export class ConnectionsController {
   @Get('providers')
   @ApiOperation({ summary: 'List available integration providers' })
   @RequirePermission('integration', 'read')
+  @ApiOkResponse({
+    description: 'Integration providers retrieved successfully',
+  })
+  @ApiAuthErrors()
   async listProviders(@Query('activeOnly') activeOnly?: string) {
     const manifests =
       activeOnly === 'true' ? getActiveManifests() : getAllManifests();
@@ -387,6 +394,10 @@ export class ConnectionsController {
   @Get('providers/:slug')
   @ApiOperation({ summary: 'Get an integration provider by slug' })
   @RequirePermission('integration', 'read')
+  @ApiOkResponse({
+    description: 'An integration provider by slug retrieved successfully',
+  })
+  @ApiAuthErrors()
   getProvider(@Param('slug') slug: string) {
     const manifest = getManifest(slug);
     if (!manifest) {
@@ -483,6 +494,10 @@ export class ConnectionsController {
   @Get()
   @ApiOperation({ summary: 'List integration connections' })
   @RequirePermission('integration', 'read')
+  @ApiOkResponse({
+    description: 'Integration connections retrieved successfully',
+  })
+  @ApiAuthErrors()
   async listConnections(@OrganizationId() organizationId: string) {
     const connections =
       await this.connectionService.getOrganizationConnections(organizationId);
@@ -515,6 +530,10 @@ export class ConnectionsController {
   @Get(':id')
   @ApiOperation({ summary: 'Get an integration connection by ID' })
   @RequirePermission('integration', 'read')
+  @ApiOkResponse({
+    description: 'An integration connection by ID retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getConnection(
     @Param('id') id: string,
     @OrganizationId() organizationId: string,
@@ -616,6 +635,10 @@ export class ConnectionsController {
   @ApiOperation({ summary: 'Create an integration connection' })
   @ApiBody({ type: CreateConnectionDto })
   @RequirePermission('integration', 'create')
+  @ApiCreatedResponse({
+    description: 'Integration connection created successfully',
+  })
+  @ApiAuthErrors()
   async createConnection(
     @OrganizationId() organizationId: string,
     @Body() body: CreateConnectionDto,
@@ -1150,6 +1173,10 @@ export class ConnectionsController {
   @Post(':id/test')
   @ApiOperation({ summary: 'Test an integration connection' })
   @RequirePermission('integration', 'update')
+  @ApiCreatedResponse({
+    description: 'Test an integration connection completed successfully',
+  })
+  @ApiAuthErrors()
   async testConnection(
     @Param('id') id: string,
     @OrganizationId() organizationId: string,
@@ -1245,6 +1272,10 @@ export class ConnectionsController {
   @Post(':id/pause')
   @ApiOperation({ summary: 'Pause an integration connection' })
   @RequirePermission('integration', 'update')
+  @ApiCreatedResponse({
+    description: 'Pause an integration connection completed successfully',
+  })
+  @ApiAuthErrors()
   async pauseConnection(
     @Param('id') id: string,
     @OrganizationId() organizationId: string,
@@ -1260,6 +1291,10 @@ export class ConnectionsController {
   @Post(':id/resume')
   @ApiOperation({ summary: 'Resume an integration connection' })
   @RequirePermission('integration', 'update')
+  @ApiCreatedResponse({
+    description: 'Resume an integration connection completed successfully',
+  })
+  @ApiAuthErrors()
   async resumeConnection(
     @Param('id') id: string,
     @OrganizationId() organizationId: string,
@@ -1275,6 +1310,10 @@ export class ConnectionsController {
   @Post(':id/disconnect')
   @ApiOperation({ summary: 'Disconnect an integration' })
   @RequirePermission('integration', 'delete')
+  @ApiCreatedResponse({
+    description: 'Disconnect an integration completed successfully',
+  })
+  @ApiAuthErrors()
   async disconnectConnection(
     @Param('id') id: string,
     @OrganizationId() organizationId: string,
@@ -1290,6 +1329,10 @@ export class ConnectionsController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete an integration connection' })
   @RequirePermission('integration', 'delete')
+  @ApiOkResponse({
+    description: 'An integration connection deleted successfully',
+  })
+  @ApiAuthErrors()
   async deleteConnection(
     @Param('id') id: string,
     @OrganizationId() organizationId: string,
@@ -1306,6 +1349,10 @@ export class ConnectionsController {
   @ApiOperation({ summary: 'Update an integration connection' })
   @ApiBody({ type: UpdateConnectionDto })
   @RequirePermission('integration', 'update')
+  @ApiOkResponse({
+    description: 'An integration connection updated successfully',
+  })
+  @ApiAuthErrors()
   async updateConnection(
     @Param('id') id: string,
     @OrganizationId() organizationId: string,
@@ -1525,6 +1572,10 @@ export class ConnectionsController {
   @ApiOperation({ summary: 'Set services enabled on a connection' })
   @ApiBody({ type: UpdateConnectionServicesDto })
   @RequirePermission('integration', 'update')
+  @ApiOkResponse({
+    description: 'Services enabled on a connection updated successfully',
+  })
+  @ApiAuthErrors()
   async updateConnectionServices(
     @Param('id') id: string,
     @Body() body: UpdateConnectionServicesDto,

@@ -1,4 +1,5 @@
 import type { ApiResponseOptions } from '@nestjs/swagger';
+import { ApiErrorResponseDto } from '../../openapi/common-responses';
 
 export const CREATE_VENDOR_RESPONSES: Record<number, ApiResponseOptions> = {
   201: {
@@ -148,52 +149,16 @@ export const CREATE_VENDOR_RESPONSES: Record<number, ApiResponseOptions> = {
     status: 401,
     description:
       'Unauthorized - Invalid authentication or insufficient permissions',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example: 'Invalid or expired API key',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
   404: {
     status: 404,
     description: 'Organization not found',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example: 'Organization with ID org_abc123def456 not found',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
   500: {
     status: 500,
     description: 'Internal server error',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example: 'Internal server error',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
 };

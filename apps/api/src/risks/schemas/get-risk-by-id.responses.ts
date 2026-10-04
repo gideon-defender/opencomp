@@ -1,4 +1,5 @@
 import type { ApiResponseOptions } from '@nestjs/swagger';
+import { ApiErrorResponseDto } from '../../openapi/common-responses';
 
 export const GET_RISK_BY_ID_RESPONSES: Record<number, ApiResponseOptions> = {
   200: {
@@ -138,71 +139,22 @@ export const GET_RISK_BY_ID_RESPONSES: Record<number, ApiResponseOptions> = {
     status: 401,
     description:
       'Unauthorized - Invalid authentication or insufficient permissions',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example: 'Invalid or expired API key',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
   403: {
     status: 403,
     description:
       'Forbidden - User does not have permission to access this risk',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example: 'You do not have access to view this risk',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
   404: {
     status: 404,
     description: 'Risk not found',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example:
-                'Risk with ID rsk_abc123def456 not found in organization org_abc123def456',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
   500: {
     status: 500,
     description: 'Internal server error',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example: 'Internal server error',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
 };

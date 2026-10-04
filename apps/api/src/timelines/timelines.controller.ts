@@ -1,14 +1,21 @@
 import { Controller, Get, Post, Param, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import {
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiSecurity,
+  ApiTags,
+} from '@nestjs/swagger';
 import { HybridAuthGuard } from '../auth/hybrid-auth.guard';
 import { PermissionGuard } from '../auth/permission.guard';
 import { RequirePermission } from '../auth/require-permission.decorator';
 import { OrganizationId } from '../auth/auth-context.decorator';
 import { TimelinesService } from './timelines.service';
 import { notifyReadyForReview } from './timelines-slack.helper';
+import { ApiAuthErrors } from '../openapi/common-responses';
 
 @ApiTags('Timelines')
-@ApiBearerAuth()
+@ApiSecurity('apikey')
 @UseGuards(HybridAuthGuard, PermissionGuard)
 @Controller({ path: 'timelines', version: '1' })
 export class TimelinesController {
@@ -17,6 +24,10 @@ export class TimelinesController {
   @Get()
   @RequirePermission('framework', 'read')
   @ApiOperation({ summary: 'List timelines for the organization' })
+  @ApiOkResponse({
+    description: 'Timelines for the organization retrieved successfully',
+  })
+  @ApiAuthErrors()
   async findAll(@OrganizationId() organizationId: string) {
     const data =
       await this.timelinesService.findAllForOrganization(organizationId);
@@ -26,6 +37,11 @@ export class TimelinesController {
   @Get(':id')
   @RequirePermission('framework', 'read')
   @ApiOperation({ summary: 'Get a single timeline instance with phases' })
+  @ApiOkResponse({
+    description:
+      'A single timeline instance with phases retrieved successfully',
+  })
+  @ApiAuthErrors()
   async findOne(
     @OrganizationId() organizationId: string,
     @Param('id') id: string,
@@ -36,6 +52,10 @@ export class TimelinesController {
   @Post(':id/phases/:phaseId/ready')
   @RequirePermission('framework', 'update')
   @ApiOperation({ summary: 'Mark a phase as ready for review' })
+  @ApiCreatedResponse({
+    description: 'Mark a phase as ready for review completed successfully',
+  })
+  @ApiAuthErrors()
   async markReadyForReview(
     @OrganizationId() organizationId: string,
     @Param('id') id: string,

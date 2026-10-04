@@ -12,6 +12,8 @@ import {
 } from '@nestjs/common';
 import {
   ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiProperty,
   ApiPropertyOptional,
@@ -53,6 +55,7 @@ import {
 } from '../utils/run-history-limits';
 import { db } from '@db';
 import type { IntegrationConnection, Prisma } from '@db';
+import { ApiAuthErrors } from '../../openapi/common-responses';
 
 /** Manifest + check types derived from the integration-platform registry. */
 type IntegrationManifest = NonNullable<ReturnType<typeof getManifest>>;
@@ -173,6 +176,10 @@ export class TaskIntegrationsController {
   @Get('template/:templateId/checks')
   @ApiOperation({ summary: 'List checks for a task template' })
   @RequirePermission('integration', 'read')
+  @ApiOkResponse({
+    description: 'Checks for a task template retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getChecksForTaskTemplate(
     @Param('templateId') templateId: string,
     @OrganizationId() organizationId: string,
@@ -270,6 +277,10 @@ export class TaskIntegrationsController {
   @Get(':taskId/checks')
   @ApiOperation({ summary: 'List checks attached to a task' })
   @RequirePermission('integration', 'read')
+  @ApiOkResponse({
+    description: 'Checks attached to a task retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getChecksForTask(
     @Param('taskId') taskId: string,
     @OrganizationId() organizationId: string,
@@ -314,6 +325,10 @@ export class TaskIntegrationsController {
   @ApiOperation({ summary: 'Run a check for a task' })
   @ApiBody({ type: RunCheckForTaskDto })
   @RequirePermission('integration', 'update')
+  @ApiCreatedResponse({
+    description: 'Run a check for a task completed successfully',
+  })
+  @ApiAuthErrors()
   async runCheckForTask(
     @Param('taskId') taskId: string,
     @OrganizationId() organizationId: string,
@@ -763,6 +778,10 @@ export class TaskIntegrationsController {
   @ApiOperation({ summary: 'Disconnect checks from a task' })
   @ApiBody({ type: ToggleCheckForTaskDto })
   @RequirePermission('integration', 'update')
+  @ApiCreatedResponse({
+    description: 'Disconnect checks from a task completed successfully',
+  })
+  @ApiAuthErrors()
   async disconnectCheckFromTask(
     @Param('taskId') taskId: string,
     @OrganizationId() organizationId: string,
@@ -785,6 +804,10 @@ export class TaskIntegrationsController {
   @ApiOperation({ summary: 'Reconnect checks to a task' })
   @ApiBody({ type: ToggleCheckForTaskDto })
   @RequirePermission('integration', 'update')
+  @ApiCreatedResponse({
+    description: 'Reconnect checks to a task completed successfully',
+  })
+  @ApiAuthErrors()
   async reconnectCheckToTask(
     @Param('taskId') taskId: string,
     @OrganizationId() organizationId: string,
@@ -805,6 +828,10 @@ export class TaskIntegrationsController {
   @Get(':taskId/runs')
   @ApiOperation({ summary: 'List check runs for a task' })
   @RequirePermission('integration', 'read')
+  @ApiOkResponse({
+    description: 'Check runs for a task retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getTaskCheckRuns(
     @Param('taskId') taskId: string,
     @OrganizationId() organizationId: string,

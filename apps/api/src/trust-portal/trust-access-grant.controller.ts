@@ -21,6 +21,7 @@ import { OrganizationId } from '../auth/auth-context.decorator';
 import { Throttle } from '@nestjs/throttler';
 import { TrustFramework } from '@db';
 import { TrustAccessService } from './trust-access.service';
+import { ApiAuthErrors } from '../openapi/common-responses';
 @ApiTags('Trust Access')
 // Public portal routes send emails and mint tokens: hold them below the
 // global limit so one client cannot spam org inboxes or enumerate grants.
@@ -279,6 +280,7 @@ export class TrustAccessGrantController {
     status: HttpStatus.OK,
     description: 'Access email resent',
   })
+  @ApiAuthErrors()
   async resendAccessEmail(
     @OrganizationId() organizationId: string,
     @Param('id') grantId: string,

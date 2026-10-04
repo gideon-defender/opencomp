@@ -30,6 +30,11 @@ import { CommentResponseDto } from './dto/comment-responses.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { DeleteCommentDto } from './dto/delete-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
+import {
+  ApiAuthErrors,
+  ApiErrorResponseDto,
+  ApiForbiddenError,
+} from '../openapi/common-responses';
 
 @ApiTags('Comments')
 @Controller({ path: 'comments', version: '1' })
@@ -64,6 +69,7 @@ export class CommentsController {
     description: 'Comments retrieved successfully',
     type: [CommentResponseDto],
   })
+  @ApiAuthErrors()
   async getComments(
     @OrganizationId() organizationId: string,
     @Query('entityId') entityId: string,
@@ -87,6 +93,7 @@ export class CommentsController {
     description: 'Comment created successfully',
     type: CommentResponseDto,
   })
+  @ApiAuthErrors()
   async createComment(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -134,6 +141,7 @@ export class CommentsController {
     description: 'Comment updated successfully',
     type: CommentResponseDto,
   })
+  @ApiAuthErrors()
   async updateComment(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -215,32 +223,14 @@ export class CommentsController {
   @ApiResponse({
     status: 401,
     description: 'Unauthorized - Invalid authentication',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: { message: { type: 'string', example: 'Unauthorized' } },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   })
   @ApiResponse({
     status: 404,
     description: 'Comment not found',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example: 'Comment with ID cmt_abc123def456 not found',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   })
+  @ApiForbiddenError()
   async deleteComment(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,

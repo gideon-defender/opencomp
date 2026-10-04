@@ -1,4 +1,5 @@
 import { ApiResponseOptions } from '@nestjs/swagger';
+import { ApiErrorResponseDto } from '../../openapi/common-responses';
 
 export const BULK_CREATE_MEMBERS_RESPONSES: Record<string, ApiResponseOptions> =
   {
@@ -129,64 +130,22 @@ export const BULK_CREATE_MEMBERS_RESPONSES: Record<string, ApiResponseOptions> =
     400: {
       status: 400,
       description: 'Bad Request - Invalid bulk data or validation errors',
-      content: {
-        'application/json': {
-          schema: {
-            type: 'object',
-            properties: {
-              message: {
-                type: 'string',
-                example: 'Members array cannot be empty',
-              },
-            },
-          },
-        },
-      },
+      type: ApiErrorResponseDto,
     },
     401: {
       status: 401,
       description:
         'Unauthorized - Invalid authentication or insufficient permissions',
-      content: {
-        'application/json': {
-          schema: {
-            type: 'object',
-            properties: {
-              message: { type: 'string', example: 'Unauthorized' },
-            },
-          },
-        },
-      },
+      type: ApiErrorResponseDto,
     },
     404: {
       status: 404,
       description: 'Organization not found',
-      content: {
-        'application/json': {
-          schema: {
-            type: 'object',
-            properties: {
-              message: {
-                type: 'string',
-                example: 'Organization with ID org_abc123def456 not found',
-              },
-            },
-          },
-        },
-      },
+      type: ApiErrorResponseDto,
     },
     500: {
       status: 500,
       description: 'Internal server error',
-      content: {
-        'application/json': {
-          schema: {
-            type: 'object',
-            properties: {
-              message: { type: 'string', example: 'Bulk creation failed' },
-            },
-          },
-        },
-      },
+      type: ApiErrorResponseDto,
     },
   };

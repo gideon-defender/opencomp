@@ -6,13 +6,19 @@ import {
   HttpStatus,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiSecurity, ApiOperation } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiSecurity,
+  ApiTags,
+} from '@nestjs/swagger';
 import { HybridAuthGuard } from '../../auth/hybrid-auth.guard';
 import { PermissionGuard } from '../../auth/permission.guard';
 import { RequirePermission } from '../../auth/require-permission.decorator';
 import { OrganizationId } from '../../auth/auth-context.decorator';
 import { ConnectionService } from '../services/connection.service';
 import { getManifest } from '@gideon-defender/integration-platform';
+import { ApiAuthErrors } from '../../openapi/common-responses';
 
 @Controller({ path: 'integrations/connections', version: '1' })
 @ApiTags('Integrations')
@@ -27,6 +33,10 @@ export class ServicesController {
   @Get(':id/services')
   @ApiOperation({ summary: 'List services enabled on a connection' })
   @RequirePermission('integration', 'read')
+  @ApiOkResponse({
+    description: 'Services enabled on a connection retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getConnectionServices(
     @Param('id') id: string,
     @OrganizationId() organizationId: string,

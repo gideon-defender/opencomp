@@ -1,6 +1,7 @@
 import { Controller, Get, HttpCode, HttpStatus, Param } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import { ApiNotFoundError } from '../openapi/common-responses';
 import { TrustPublicService } from './trust-public.service';
 import { TrustPublicCatalogService } from './trust-public-catalog.service';
 @ApiTags('Trust Access')
@@ -72,6 +73,7 @@ export class TrustPublicController {
     status: HttpStatus.OK,
     description: 'Overview retrieved successfully',
   })
+  @ApiNotFoundError('Trust portal not found')
   async getPublicOverview(@Param('friendlyUrl') friendlyUrl: string) {
     return this.trustPublicService.getPublicOverview(friendlyUrl);
   }
@@ -98,6 +100,7 @@ export class TrustPublicController {
       },
     },
   })
+  @ApiNotFoundError('Trust portal not found')
   async getPublicSecurityQuestionnaire(
     @Param('friendlyUrl') friendlyUrl: string,
   ) {
@@ -124,6 +127,7 @@ export class TrustPublicController {
     status: HttpStatus.OK,
     description: 'Custom links retrieved successfully',
   })
+  @ApiNotFoundError('Trust portal not found')
   async getPublicCustomLinks(@Param('friendlyUrl') friendlyUrl: string) {
     return this.trustPublicService.getPublicCustomLinks(friendlyUrl);
   }
@@ -153,6 +157,7 @@ export class TrustPublicController {
       },
     },
   })
+  @ApiNotFoundError('Trust portal not found')
   async getPublicFavicon(@Param('friendlyUrl') friendlyUrl: string) {
     const faviconUrl =
       await this.trustPublicService.getPublicFavicon(friendlyUrl);
@@ -175,6 +180,7 @@ export class TrustPublicController {
     status: HttpStatus.OK,
     description: 'Vendors retrieved successfully',
   })
+  @ApiNotFoundError('Trust portal not found')
   async getPublicVendors(@Param('friendlyUrl') friendlyUrl: string) {
     return this.trustPublicCatalogService.getPublicVendors(friendlyUrl);
   }
@@ -195,6 +201,7 @@ export class TrustPublicController {
     status: HttpStatus.OK,
     description: 'Custom frameworks retrieved successfully',
   })
+  @ApiNotFoundError('Trust portal not found')
   async getPublicCustomFrameworks(@Param('friendlyUrl') friendlyUrl: string) {
     return this.trustPublicService.getPublicCustomFrameworks(friendlyUrl);
   }
@@ -215,6 +222,7 @@ export class TrustPublicController {
     status: HttpStatus.OK,
     description: 'Public portal profile retrieved successfully',
   })
+  @ApiNotFoundError('Trust portal not found')
   async getPublicProfile(@Param('friendlyUrl') friendlyUrl: string) {
     return this.trustPublicService.getPublicProfile(friendlyUrl);
   }
@@ -235,6 +243,7 @@ export class TrustPublicController {
     status: HttpStatus.OK,
     description: 'Enabled frameworks retrieved successfully',
   })
+  @ApiNotFoundError('Trust portal not found')
   async getPublicFrameworks(@Param('friendlyUrl') friendlyUrl: string) {
     return this.trustPublicCatalogService.getPublicFrameworks(friendlyUrl);
   }
@@ -255,6 +264,7 @@ export class TrustPublicController {
     status: HttpStatus.OK,
     description: 'Published policies retrieved successfully',
   })
+  @ApiNotFoundError('Trust portal not found')
   async getPublicPolicies(@Param('friendlyUrl') friendlyUrl: string) {
     return this.trustPublicService.getPublicPolicies(friendlyUrl);
   }
@@ -275,6 +285,7 @@ export class TrustPublicController {
     status: HttpStatus.OK,
     description: 'Controls retrieved successfully',
   })
+  @ApiNotFoundError('Trust portal not found')
   async getPublicControls(@Param('friendlyUrl') friendlyUrl: string) {
     return this.trustPublicService.getPublicControls(friendlyUrl);
   }

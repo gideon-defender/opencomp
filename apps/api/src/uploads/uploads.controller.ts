@@ -1,6 +1,7 @@
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import {
   ApiBody,
+  ApiCreatedResponse,
   ApiHeader,
   ApiOperation,
   ApiResponse,
@@ -17,6 +18,7 @@ import {
 import { UploadsService } from './uploads.service';
 
 import { authEnvelope } from '@/utils/auth-response';
+import { ApiAuthErrors } from '../openapi/common-responses';
 /**
  * General file-upload entry point for API/MCP clients.
  *
@@ -52,6 +54,10 @@ export class UploadsController {
   })
   @ApiBody({ type: CreateUploadUrlDto })
   @ApiResponse({ status: 201, type: UploadUrlResponseDto })
+  @ApiCreatedResponse({
+    description: 'A presigned URL to upload a file retrieved successfully',
+  })
+  @ApiAuthErrors()
   async createUploadUrl(
     @Body() dto: CreateUploadUrlDto,
     @OrganizationId() organizationId: string,

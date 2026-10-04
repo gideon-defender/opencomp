@@ -16,6 +16,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiResponse,
   ApiSecurity,
@@ -46,6 +49,12 @@ import { DOWNLOAD_MAC_AGENT_RESPONSES } from './schemas/download-mac-agent.respo
 import { DOWNLOAD_WINDOWS_AGENT_RESPONSES } from './schemas/download-windows-agent.responses';
 import type { Response as ExpressResponse } from 'express';
 import type { Request as ExpressRequest } from 'express';
+import {
+  ApiAuthErrors,
+  ApiForbiddenError,
+  ApiNotFoundError,
+  ApiUnauthorizedError,
+} from '../openapi/common-responses';
 
 @ApiTags('Device Agent')
 @Controller({ path: 'device-agent', version: '1' })
@@ -60,6 +69,10 @@ export class DeviceAgentController {
   @Post('exchange-code')
   @Public()
   @ApiOperation({ summary: 'Exchange an auth code for device credentials' })
+  @ApiCreatedResponse({
+    description:
+      'Exchange an auth code for device credentials completed successfully',
+  })
   async exchangeCode(@Body() dto: ExchangeCodeDto) {
     return this.deviceAgentAuthService.exchangeCode({ code: dto.code });
   }
@@ -67,6 +80,10 @@ export class DeviceAgentController {
   @Get('updates/:filename')
   @Public()
   @ApiOperation({ summary: 'Download a device-agent update' })
+  @ApiOkResponse({
+    description: 'Download a device-agent update completed successfully',
+  })
+  @ApiNotFoundError('Device-agent update file not found')
   async getUpdateFile(
     @Param('filename') filename: string,
     @Response({ passthrough: true }) res: ExpressResponse,
@@ -93,6 +110,10 @@ export class DeviceAgentController {
   @Head('updates/:filename')
   @Public()
   @ApiOperation({ summary: "Check a device-agent update's metadata" })
+  @ApiOkResponse({
+    description: 'Device-agent update metadata retrieved successfully',
+  })
+  @ApiNotFoundError('Device-agent update file not found')
   async headUpdateFile(
     @Param('filename') filename: string,
     @Response({ passthrough: true }) res: ExpressResponse,
@@ -122,6 +143,10 @@ export class DeviceAgentController {
   @UseGuards(HybridAuthGuard)
   @SkipOrgCheck()
   @ApiOperation({ summary: 'Create a device-agent auth code' })
+  @ApiCreatedResponse({
+    description: 'A device-agent auth code created successfully',
+  })
+  @ApiUnauthorizedError()
   async generateAuthCode(@Req() req: ExpressRequest, @Body() dto: AuthCodeDto) {
     // Construct Web API Headers from Express IncomingHttpHeaders
     const headers = new Headers();
@@ -140,6 +165,10 @@ export class DeviceAgentController {
   @UseGuards(HybridAuthGuard)
   @SkipOrgCheck()
   @ApiOperation({ summary: 'List organizations for the current device' })
+  @ApiOkResponse({
+    description: 'Organizations for the current device retrieved successfully',
+  })
+  @ApiUnauthorizedError()
   async getMyOrganizations(@UserId() userId: string) {
     return this.deviceAgentAuthService.getMyOrganizations({ userId });
   }
@@ -148,6 +177,8 @@ export class DeviceAgentController {
   @UseGuards(HybridAuthGuard)
   @SkipOrgCheck()
   @ApiOperation({ summary: 'Register a device agent' })
+  @ApiCreatedResponse({ description: 'Device agent registered successfully' })
+  @ApiUnauthorizedError()
   async registerDevice(
     @Req() req: AuthenticatedRequest,
     @UserId() userId: string,
@@ -168,6 +199,10 @@ export class DeviceAgentController {
   @UseGuards(HybridAuthGuard)
   @SkipOrgCheck()
   @ApiOperation({ summary: 'Submit a device check-in' })
+  @ApiCreatedResponse({
+    description: 'Device compliance check-in submitted successfully',
+  })
+  @ApiUnauthorizedError()
   async checkIn(
     @Req() req: AuthenticatedRequest,
     @UserId() userId: string,
@@ -189,6 +224,8 @@ export class DeviceAgentController {
   @UseGuards(HybridAuthGuard)
   @SkipOrgCheck()
   @ApiOperation({ summary: 'Get device-agent status' })
+  @ApiOkResponse({ description: 'Device-agent status retrieved successfully' })
+  @ApiUnauthorizedError()
   async getDeviceStatus(
     @UserId() userId: string,
     @Query('deviceId') deviceId?: string,
@@ -212,6 +249,7 @@ export class DeviceAgentController {
   @ApiResponse(DOWNLOAD_MAC_AGENT_RESPONSES[401])
   @ApiResponse(DOWNLOAD_MAC_AGENT_RESPONSES[404])
   @ApiResponse(DOWNLOAD_MAC_AGENT_RESPONSES[500])
+  @ApiForbiddenError()
   async downloadMacAgent(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -240,6 +278,7 @@ export class DeviceAgentController {
   @ApiResponse(DOWNLOAD_WINDOWS_AGENT_RESPONSES[401])
   @ApiResponse(DOWNLOAD_WINDOWS_AGENT_RESPONSES[404])
   @ApiResponse(DOWNLOAD_WINDOWS_AGENT_RESPONSES[500])
+  @ApiForbiddenError()
   async downloadWindowsAgent(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -264,6 +303,8 @@ export class DeviceAgentController {
   @RequirePermission('member', 'update')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Revoke a device agent session' })
+  @ApiNoContentResponse({ description: 'Device agent session revoked' })
+  @ApiAuthErrors()
   async revokeAgentAccess(
     @OrganizationId() organizationId: string,
     @Param('deviceId') deviceId: string,

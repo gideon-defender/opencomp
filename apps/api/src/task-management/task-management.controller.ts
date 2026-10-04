@@ -35,6 +35,7 @@ import { AttachmentsService } from '../attachments/attachments.service';
 import { UploadTaskItemAttachmentDto } from './dto/upload-task-item-attachment.dto';
 import { AttachmentResponseDto } from '../tasks/dto/task-responses.dto';
 import { TaskItemAuditService } from './task-item-audit.service';
+import { ApiAuthErrors } from '../openapi/common-responses';
 
 @ApiTags('Task Management')
 @Controller({ path: 'task-management', version: '1' })
@@ -85,6 +86,7 @@ export class TaskManagementController {
       },
     },
   })
+  @ApiAuthErrors()
   async getTaskItemsStats(
     @OrganizationId() organizationId: string,
     @Query() query: GetTaskItemStatsQueryDto,
@@ -107,6 +109,7 @@ export class TaskManagementController {
     description: 'Task items retrieved successfully',
     type: PaginatedTaskItemResponseDto,
   })
+  @ApiAuthErrors()
   async getTaskItems(
     @OrganizationId() organizationId: string,
     @Query() query: GetTaskItemQueryDto,
@@ -125,6 +128,7 @@ export class TaskManagementController {
     description: 'Task item created successfully',
     type: TaskItemResponseDto,
   })
+  @ApiAuthErrors()
   async createTaskItem(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -153,6 +157,7 @@ export class TaskManagementController {
     description: 'Task item updated successfully',
     type: TaskItemResponseDto,
   })
+  @ApiAuthErrors()
   async updateTaskItem(
     @Param('id') taskItemId: string,
     @OrganizationId() organizationId: string,
@@ -181,6 +186,7 @@ export class TaskManagementController {
     status: 204,
     description: 'Task item deleted successfully',
   })
+  @ApiAuthErrors()
   async deleteTaskItem(
     @Param('id') taskItemId: string,
     @OrganizationId() organizationId: string,
@@ -205,6 +211,7 @@ export class TaskManagementController {
     description: 'Attachment uploaded successfully',
     type: AttachmentResponseDto,
   })
+  @ApiAuthErrors()
   async uploadTaskItemAttachment(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -243,6 +250,7 @@ export class TaskManagementController {
     status: 204,
     description: 'Attachment deleted successfully',
   })
+  @ApiAuthErrors()
   async deleteTaskItemAttachment(
     @OrganizationId() organizationId: string,
     @Param('attachmentId') attachmentId: string,
@@ -267,6 +275,7 @@ export class TaskManagementController {
     status: 200,
     description: 'Activity logs retrieved successfully',
   })
+  @ApiAuthErrors()
   async getTaskItemActivity(
     @Param('id') taskItemId: string,
     @OrganizationId() organizationId: string,

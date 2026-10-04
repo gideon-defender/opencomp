@@ -6,37 +6,32 @@ Model Context Protocol (MCP) Server for the _@gideon-defender/mcp-server_ API.
 [![License: MIT](https://img.shields.io/badge/LICENSE_//_MIT-3b5bdb?style=for-the-badge&labelColor=eff6ff)](https://opensource.org/licenses/MIT)
 
 <!-- Start Summary [summary] -->
-
 ## Summary
 
 OpenComp API: Compliance automation API for SOC 2, ISO 27001, HIPAA, GDPR, evidence collection, policy workflows, Trust Access, security questionnaires, integrations, cloud checks, and device compliance.
 <!-- End Summary [summary] -->
 
 <!-- Start Table of Contents [toc] -->
-
 ## Table of Contents
-
 <!-- $toc-max-depth=2 -->
-
-- [@gideon-defender/mcp-server](#trycompaimcp-server)
-  - [Installation](#installation)
-  - [Progressive Discovery](#progressive-discovery)
-  - [Development](#development)
-  - [Publishing to Anthropic MCP Registry](#publishing-to-anthropic-mcp-registry)
-  - [Contributions](#contributions)
+* [@gideon-defender/mcp-server](#gideon-defendermcp-server)
+  * [Installation](#installation)
+  * [Progressive Discovery](#progressive-discovery)
+  * [Development](#development)
+  * [Publishing to Anthropic MCP Registry](#publishing-to-anthropic-mcp-registry)
+  * [Contributions](#contributions)
 
 <!-- End Table of Contents [toc] -->
 
 <!-- Start Installation [installation] -->
-
 ## Installation
 
 <details>
 <summary>Claude Desktop</summary>
 
-Install the MCP server as a Desktop Extension using the pre-built [`mcp-server.mcpb`](https://github.com/gideon-security/opencomp/releases/download/v0.2.5/mcp-server.mcpb) file:
+Install the MCP server as a Desktop Extension using the pre-built [`mcp-server.mcpb`](https://github.com/trycompai/comp/releases/download/v0.2.6/mcp-server.mcpb) file:
 
-Simply drag and drop the [`mcp-server.mcpb`](https://github.com/gideon-security/opencomp/releases/download/v0.2.5/mcp-server.mcpb) file onto Claude Desktop to install the extension.
+Simply drag and drop the [`mcp-server.mcpb`](https://github.com/trycompai/comp/releases/download/v0.2.6/mcp-server.mcpb) file onto Claude Desktop to install the extension.
 
 The MCP bundle package includes the MCP server and all necessary configuration. Once installed, the server will be available without additional setup.
 
@@ -48,7 +43,7 @@ The MCP bundle package includes the MCP server and all necessary configuration. 
 <details>
 <summary>Cursor</summary>
 
-[![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](cursor://anysphere.cursor-deeplink/mcp/install?name=CompAi&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyJAdHJ5Y29tcGFpL21jcC1zZXJ2ZXIiLCJzdGFydCIsIi0tYXBpa2V5IiwiIl19)
+[![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](cursor://anysphere.cursor-deeplink/mcp/install?name=CompAi&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyJAZ2lkZW9uLWRlZmVuZGVyL21jcC1zZXJ2ZXIiLCJzdGFydCIsIi0tYXBpa2V5IiwiIl19)
 
 Or manually:
 
@@ -60,7 +55,12 @@ Or manually:
 ```json
 {
   "command": "npx",
-  "args": ["@gideon-defender/mcp-server", "start", "--apikey", ""]
+  "args": [
+    "@gideon-defender/mcp-server",
+    "start",
+    "--apikey",
+    ""
+  ]
 }
 ```
 
@@ -70,7 +70,7 @@ Or manually:
 <summary>Claude Code CLI</summary>
 
 ```bash
-claude mcp add CompAi -- npx -y @gideon-defender/mcp-server start --apikey
+claude mcp add CompAi -- npx -y @gideon-defender/mcp-server start --apikey 
 ```
 
 </details>
@@ -78,7 +78,7 @@ claude mcp add CompAi -- npx -y @gideon-defender/mcp-server start --apikey
 <summary>Gemini</summary>
 
 ```bash
-gemini mcp add CompAi -- npx -y @gideon-defender/mcp-server start --apikey
+gemini mcp add CompAi -- npx -y @gideon-defender/mcp-server start --apikey 
 ```
 
 </details>
@@ -104,12 +104,11 @@ Refer to [Official Windsurf documentation](https://docs.windsurf.com/windsurf/ca
   ]
 }
 ```
-
 </details>
 <details>
 <summary>VS Code</summary>
 
-[![Install in VS Code](https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install%20CompAi%20MCP&color=0098FF)](vscode://ms-vscode.vscode-mcp/install?name=CompAi&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyJAdHJ5Y29tcGFpL21jcC1zZXJ2ZXIiLCJzdGFydCIsIi0tYXBpa2V5IiwiIl19)
+[![Install in VS Code](https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install%20CompAi%20MCP&color=0098FF)](vscode://ms-vscode.vscode-mcp/install?name=CompAi&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyJAZ2lkZW9uLWRlZmVuZGVyL21jcC1zZXJ2ZXIiLCJzdGFydCIsIi0tYXBpa2V5IiwiIl19)
 
 Or manually:
 
@@ -117,7 +116,7 @@ Refer to [Official VS Code documentation](https://code.visualstudio.com/api/exte
 
 1. Open [Command Palette](https://code.visualstudio.com/docs/getstarted/userinterface#_command-palette)
 1. Search and open `MCP: Open User Configuration`. This should open mcp.json file
-1. If the configuration file is empty paste the full json
+2. If the configuration file is empty paste the full json
 
 ```bash
 {
@@ -137,7 +136,7 @@ Refer to [Official VS Code documentation](https://code.visualstudio.com/api/exte
 To start the MCP server, run:
 
 ```bash
-npx @gideon-defender/mcp-server start --apikey
+npx @gideon-defender/mcp-server start --apikey 
 ```
 
 For a full list of server arguments, run:
@@ -150,7 +149,6 @@ npx @gideon-defender/mcp-server --help
 <!-- End Installation [installation] -->
 
 <!-- Start Progressive Discovery [dynamic-mode] -->
-
 ## Progressive Discovery
 
 MCP servers with many tools can bloat LLM context windows, leading to increased token usage and tool confusion. Dynamic mode solves this by exposing only a small set of meta-tools that let agents progressively discover and invoke tools on demand.
@@ -164,8 +162,8 @@ To enable dynamic mode, pass the `--mode dynamic` flag when starting your server
       "command": "npx",
       "args": ["@gideon-defender/mcp-server", "start", "--mode", "dynamic"],
       // ... other server arguments
-    },
-  },
+    }
+  }
 }
 ```
 

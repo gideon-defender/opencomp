@@ -5,7 +5,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiCreatedResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthContext, OrganizationId } from '../auth/auth-context.decorator';
 import { HybridAuthGuard } from '../auth/hybrid-auth.guard';
 import { PermissionGuard } from '../auth/permission.guard';
@@ -15,6 +15,7 @@ import {
   AutoApproveResult,
   OrganizationAccessService,
 } from './organization-access.service';
+import { ApiAuthErrors } from '../openapi/common-responses';
 
 @ApiTags('Organization')
 @Controller({ path: 'organization-access', version: '1' })
@@ -32,6 +33,11 @@ export class OrganizationAccessController {
     description:
       'Grants hasAccess on the active organization if the requesting user is an internal gideondefender.com user, the deployment is self-hosted, or the user email domain matches the organization website domain and is an active Stripe customer.',
   })
+  @ApiCreatedResponse({
+    description:
+      'Auto-approve organization access via domain or self-hosted check completed successfully',
+  })
+  @ApiAuthErrors()
   async autoApprove(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,

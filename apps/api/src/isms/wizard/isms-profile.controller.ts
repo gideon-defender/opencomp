@@ -26,6 +26,7 @@ import { RequirePermission } from '../../auth/require-permission.decorator';
 import { IsmsProfileService } from './isms-profile.service';
 import { GenerateAllDto } from './dto/generate-all.dto';
 import { saveWizardProfileSchema } from './wizard-schema';
+import { ApiAuthErrors } from '../../openapi/common-responses';
 
 /**
  * OpenAPI body contract for POST /v1/isms/profile. It reads `req.body` directly
@@ -74,6 +75,7 @@ export class IsmsProfileController {
     summary: 'Get the ISMS wizard profile, defaults and members',
   })
   @ApiOkResponse({ description: 'Wizard profile, defaults and member options' })
+  @ApiAuthErrors()
   async getProfile(
     @Query('frameworkId') frameworkId: string,
     @OrganizationId() organizationId: string,
@@ -91,6 +93,7 @@ export class IsmsProfileController {
   @ApiConsumes('application/json')
   @ApiBody(SAVE_PROFILE_BODY)
   @ApiOkResponse({ description: 'Saved profile' })
+  @ApiAuthErrors()
   async saveProfile(
     // Read req.body directly: ValidationPipe with transform mangles the nested
     // answers JSON. We validate with the shared Zod schema instead.
@@ -117,6 +120,7 @@ export class IsmsProfileController {
   @ApiOperation({ summary: 'Ensure and regenerate all ISMS documents' })
   @ApiConsumes('application/json')
   @ApiOkResponse({ description: 'Regenerated ISMS documents' })
+  @ApiAuthErrors()
   async generateAll(
     @Body() dto: GenerateAllDto,
     @OrganizationId() organizationId: string,

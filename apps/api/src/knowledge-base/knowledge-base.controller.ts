@@ -28,6 +28,7 @@ import { ProcessDocumentsDto } from './dto/process-documents.dto';
 import { DeleteManualAnswerDto } from './dto/delete-manual-answer.dto';
 import { DeleteAllManualAnswersDto } from './dto/delete-all-manual-answers.dto';
 import { SaveManualAnswerDto } from './dto/save-manual-answer.dto';
+import { ApiAuthErrors } from '../openapi/common-responses';
 
 @Controller({ path: 'knowledge-base', version: '1' })
 @ApiTags('Knowledge Base')
@@ -42,6 +43,7 @@ export class KnowledgeBaseController {
     summary: 'List all knowledge base documents for an organization',
   })
   @ApiOkResponse({ description: 'List of knowledge base documents' })
+  @ApiAuthErrors()
   async listDocuments(@OrganizationId() organizationId: string) {
     return this.knowledgeBaseService.listDocuments(organizationId);
   }
@@ -50,6 +52,7 @@ export class KnowledgeBaseController {
   @RequirePermission('questionnaire', 'read')
   @ApiOperation({ summary: 'List all manual answers for an organization' })
   @ApiOkResponse({ description: 'List of manual answers' })
+  @ApiAuthErrors()
   async listManualAnswers(@OrganizationId() organizationId: string) {
     return this.knowledgeBaseService.listManualAnswers(organizationId);
   }
@@ -60,6 +63,7 @@ export class KnowledgeBaseController {
   @ApiOperation({ summary: 'Save or update a manual answer' })
   @ApiConsumes('application/json')
   @ApiOkResponse({ description: 'Manual answer saved' })
+  @ApiAuthErrors()
   async saveManualAnswer(
     @OrganizationId() organizationId: string,
     @Body() dto: SaveManualAnswerDto,
@@ -78,6 +82,7 @@ export class KnowledgeBaseController {
   @ApiOperation({ summary: 'Upload a knowledge base document' })
   @ApiConsumes('application/json')
   @ApiOkResponse({ description: 'Document uploaded successfully' })
+  @ApiAuthErrors()
   async uploadDocument(
     @OrganizationId() organizationId: string,
     @Body() dto: UploadDocumentDto,
@@ -91,6 +96,7 @@ export class KnowledgeBaseController {
   @ApiOperation({ summary: 'Get a signed download URL for a document' })
   @ApiConsumes('application/json')
   @ApiOkResponse({ description: 'Signed download URL generated' })
+  @ApiAuthErrors()
   async getDownloadUrl(
     @Param('documentId') documentId: string,
     @OrganizationId() organizationId: string,
@@ -109,6 +115,7 @@ export class KnowledgeBaseController {
   @ApiOperation({ summary: 'Get a signed view URL for a document' })
   @ApiConsumes('application/json')
   @ApiOkResponse({ description: 'Signed view URL generated' })
+  @ApiAuthErrors()
   async getViewUrl(
     @Param('documentId') documentId: string,
     @OrganizationId() organizationId: string,
@@ -127,6 +134,7 @@ export class KnowledgeBaseController {
   @ApiOperation({ summary: 'Delete a knowledge base document' })
   @ApiConsumes('application/json')
   @ApiOkResponse({ description: 'Document deleted successfully' })
+  @ApiAuthErrors()
   async deleteDocument(
     @Param('documentId') documentId: string,
     @OrganizationId() organizationId: string,
@@ -144,6 +152,7 @@ export class KnowledgeBaseController {
   @ApiOperation({ summary: 'Trigger processing of knowledge base documents' })
   @ApiConsumes('application/json')
   @ApiOkResponse({ description: 'Document processing triggered' })
+  @ApiAuthErrors()
   async processDocuments(
     @OrganizationId() organizationId: string,
     @Body() dto: ProcessDocumentsDto,
@@ -160,6 +169,7 @@ export class KnowledgeBaseController {
   @ApiOperation({ summary: 'Delete a manual answer' })
   @ApiConsumes('application/json')
   @ApiOkResponse({ description: 'Manual answer deleted' })
+  @ApiAuthErrors()
   async deleteManualAnswer(
     @Param('manualAnswerId') manualAnswerId: string,
     @OrganizationId() organizationId: string,
@@ -178,6 +188,7 @@ export class KnowledgeBaseController {
   @ApiOperation({ summary: 'Delete all manual answers for an organization' })
   @ApiConsumes('application/json')
   @ApiOkResponse({ description: 'All manual answers deleted' })
+  @ApiAuthErrors()
   async deleteAllManualAnswers(
     @OrganizationId() organizationId: string,
     @Body() dto: DeleteAllManualAnswersDto,

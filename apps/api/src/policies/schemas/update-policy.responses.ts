@@ -1,4 +1,5 @@
 import { ApiResponseOptions } from '@nestjs/swagger';
+import { ApiErrorResponseDto } from '../../openapi/common-responses';
 
 export const UPDATE_POLICY_RESPONSES: Record<string, ApiResponseOptions> = {
   200: {
@@ -38,47 +39,17 @@ export const UPDATE_POLICY_RESPONSES: Record<string, ApiResponseOptions> = {
   400: {
     status: 400,
     description: 'Bad Request - Invalid update data',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: { type: 'string', example: 'Validation failed' },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
   401: {
     status: 401,
     description:
       'Unauthorized - Invalid authentication or insufficient permissions',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: { type: 'string', example: 'Unauthorized' },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
   404: {
     status: 404,
     description: 'Policy not found',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example: 'Policy with ID pol_abc123def456 not found',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
 };
