@@ -177,8 +177,10 @@ export {
 export type { RemediationAssetClass } from './manifests/aws/remediation-roles';
 
 // Customer-side CloudTrail detection for the remediator roles (EventBridge
-// patterns, Lake queries, SNS wiring script) — consumed by support tooling
-// and the docs so the alerts and the queries cannot drift apart.
+// patterns, Lake queries, SNS wiring script) — served to customers via
+// `pnpm run generate:remediation-detection-script` (see
+// docs/runbooks/remediation-detection-script.md) so the alerts and the
+// queries cannot drift apart.
 export {
   REMEDIATION_DETECTION_RULES,
   REMEDIATION_DETECTION_SUBJECTS,
