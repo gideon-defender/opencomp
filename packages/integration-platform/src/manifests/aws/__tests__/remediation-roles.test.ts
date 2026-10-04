@@ -5,6 +5,7 @@ import {
   findingToAssetClass,
   FIX_FORWARD_ALLOWLIST,
   getRemediationRolesParseError,
+  isApprovalGatedAssetClass,
   isRemediationRoleKey,
   NEVER_ALLOW_REMEDIATION_ACTIONS,
   parseRemediationRolesMap,
@@ -54,6 +55,16 @@ describe('findingToAssetClass', () => {
     expect(findingToAssetClass('constructor')).toBe('Security-Global');
     expect(findingToAssetClass('__proto__')).toBe('Security-Global');
     expect(findingToAssetClass('hasOwnProperty')).toBe('Security-Global');
+  });
+});
+
+describe('isApprovalGatedAssetClass', () => {
+  it('gates Network and Security-Global only', () => {
+    expect(isApprovalGatedAssetClass('Network')).toBe(true);
+    expect(isApprovalGatedAssetClass('Security-Global')).toBe(true);
+    expect(isApprovalGatedAssetClass('Storage')).toBe(false);
+    expect(isApprovalGatedAssetClass('Compute')).toBe(false);
+    expect(isApprovalGatedAssetClass('Data')).toBe(false);
   });
 });
 
