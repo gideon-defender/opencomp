@@ -2,8 +2,13 @@
 
 import { CloudShellSetup } from '@/components/integrations/CloudShellSetup';
 import { CredentialInput } from '@/components/integrations/CredentialInput';
+import { buildAwsPhase2Credentials, useAwsTwoStepConnect } from '@/hooks/use-aws-two-step-connect';
 import type { IntegrationProvider } from '@/hooks/use-integration-platform';
-import { useIntegrationMutations } from '@/hooks/use-integration-platform';
+import {
+  useIntegrationConnections,
+  useIntegrationMutations,
+} from '@/hooks/use-integration-platform';
+import { usePendingAwsConnection } from '@/hooks/use-pending-aws-connection';
 import {
   getAwsCloudShellScript,
   getAwsCloudShellUrl,
@@ -514,6 +519,24 @@ function CloudSetup({
   // connection. Sent in createConnection's credentials payload as the
   // `awsScanMode` variable, then read on every scan in cloud-security.service.
   const [awsScanMode, setAwsScanMode] = useState<AwsScanModeChoice>(DEFAULT_AWS_SCAN_MODE_CHOICE);
+  // Phase 1 of the AWS two-step: the pending connection minted by the
+  // server to issue this connection's External ID. The hook keeps the
+  // show-once value in session storage (and falls back to the newest
+  // pending row from the list below), so a refresh never orphans the
+  // connection or mints a duplicate. The global connections cache is NOT
+  // invalidated here, so the parent keeps showing onboarding until phase 2
+  // validates.
+  const { connections } = useIntegrationConnections();
+  const { pendingConnection, setPendingConnection, clearPendingConnection } =
+    usePendingAwsConnection({ orgId, providerId: provider.id, connections });
+  const { startPendingConnection, completePendingConnection } = useAwsTwoStepConnect({
+    providerId: provider.id,
+    orgId,
+  });
+  const isAwsProvider = provider.id === 'aws';
+  // Setup scripts must carry the server-issued value — never the org ID.
+  // Before phase 1 the placeholder renders literally (copy is disabled).
+  const setupExternalId = pendingConnection?.externalId ?? 'YOUR_EXTERNAL_ID';
 
   const allFields = provider.credentialFields ?? [];
   const visibleFields = allFields.filter(
@@ -536,14 +559,43 @@ function CloudSetup({
   };
 
   const handleConnect = useCallback(async () => {
-    const finalCredentials = { ...credentials };
-    if (!finalCredentials.externalId) finalCredentials.externalId = orgId;
-    if (!finalCredentials.connectionName) {
-      const arnMatch = String(finalCredentials.roleArn ?? '').match(/:(\d{12}):/);
-      finalCredentials.connectionName = arnMatch ? `AWS ${arnMatch[1]}` : 'AWS Account';
+    // AWS connects in two steps: the External ID is minted server-side, so
+    // the IAM role can only be created AFTER phase 1 returns it. Non-AWS
+    // providers keep the one-shot flow.
+    if (isAwsProvider && !pendingConnection) {
+      if (typeof credentials.awsType !== 'string' || !credentials.awsType) {
+        setErrors({ awsType: 'Select an AWS environment first' });
+        return;
+      }
+      setConnecting(true);
+      try {
+        const result = await startPendingConnection({
+          fields: {
+            ...(typeof credentials.awsType === 'string' ? { awsType: credentials.awsType } : {}),
+            ...(Array.isArray(credentials.regions) ? { regions: credentials.regions } : {}),
+            awsScanMode,
+          },
+        });
+        if (!result.success || !result.id || !result.externalId) {
+          toast.error(result.error || 'Failed to start connection');
+          return;
+        }
+        setPendingConnection({
+          id: result.id,
+          externalId: result.externalId,
+        });
+        toast.success('External ID issued — run the setup script, then paste your Role ARN.');
+      } catch {
+        toast.error('Failed to start connection');
+      } finally {
+        setConnecting(false);
+      }
+      return;
     }
+
+    const finalCredentials = buildAwsPhase2Credentials(credentials);
     // AWS only — persist the customer's scan engine choice on the
-    // connection. The scan service reads this from variables on every
+    // connection. The scan service reads this from metadata on every
     // run. resolveAwsScanMode() handles the missing-field case for
     // every other provider and for pre-feature historical connections.
     if (provider.id === 'aws') {
@@ -569,20 +621,50 @@ function CloudSetup({
 
     setConnecting(true);
     try {
-      const result = await createConnection(provider.id, finalCredentials);
+      // Phase 2 of the AWS flow completes the pending connection (validates
+      // the Role ARN against the minted External ID and activates).
+      // Every other case is the legacy one-shot create.
+      const result =
+        isAwsProvider && pendingConnection
+          ? await completePendingConnection({
+              pendingId: pendingConnection.id,
+              credentials: finalCredentials,
+            })
+          : await createConnection(provider.id, finalCredentials);
       if (!result.success) {
-        toast.error(result.error || 'Failed to connect');
+        if (isAwsProvider && 'notFound' in result && result.notFound) {
+          // The stored pending row is gone — drop it so the next click
+          // returns to phase 1 instead of retrying a dead ID forever.
+          clearPendingConnection();
+          toast.error('That pending connection no longer exists — generate a new External ID.');
+        } else {
+          toast.error(result.error || 'Failed to connect');
+        }
         return;
       }
       toast.success(`${provider.name} connected and verified!`);
       setCredentials({});
+      clearPendingConnection();
       onConnected();
     } catch {
       toast.error('Failed to connect');
     } finally {
       setConnecting(false);
     }
-  }, [allFields, awsScanMode, credentials, createConnection, provider, orgId, onConnected]);
+  }, [
+    allFields,
+    awsScanMode,
+    credentials,
+    createConnection,
+    completePendingConnection,
+    startPendingConnection,
+    setPendingConnection,
+    clearPendingConnection,
+    provider,
+    onConnected,
+    isAwsProvider,
+    pendingConnection,
+  ]);
 
   const connectionFields = visibleFields.filter(
     (f) => f.id !== 'remediationRoleArn' && f.id !== 'regions' && f.id !== 'awsType',
@@ -661,9 +743,14 @@ function CloudSetup({
               <StepHeader step={3} title="Create IAM Role" />
               <CloudShellSetup
                 script={setupScript}
-                externalId={orgId}
+                externalId={setupExternalId}
                 cloudShellUrl={cloudShellUrl}
-                disabled={!hasSelectedAwsEnvironment}
+                disabled={!hasSelectedAwsEnvironment || (isAwsProvider && !pendingConnection)}
+                disabledMessage={
+                  isAwsProvider && !pendingConnection
+                    ? 'Generate your External ID below first — the script needs your issued value.'
+                    : undefined
+                }
               />
               <p className="text-[11px] text-muted-foreground/60">
                 Connecting multiple accounts? Run the script in each account and add them one by
@@ -711,16 +798,33 @@ function CloudSetup({
 
           {/* CTA */}
           <div className="border-t bg-muted/30 px-6 py-5 rounded-b-xl">
-            <Button onClick={handleConnect} disabled={connecting} loading={connecting}>
-              {connecting ? (
-                'Connecting...'
-              ) : (
-                <>
-                  Connect Account
-                  <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-                </>
+            <div className="flex items-center gap-2">
+              <Button onClick={handleConnect} disabled={connecting} loading={connecting}>
+                {connecting ? (
+                  'Connecting...'
+                ) : isAwsProvider && !pendingConnection ? (
+                  <>
+                    Generate External ID
+                    <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                  </>
+                ) : (
+                  <>
+                    Connect Account
+                    <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                  </>
+                )}
+              </Button>
+              {isAwsProvider && pendingConnection && (
+                <Button
+                  variant="ghost"
+                  onClick={clearPendingConnection}
+                  disabled={connecting}
+                  title="Discard this pending connection and generate a new External ID"
+                >
+                  Start over
+                </Button>
               )}
-            </Button>
+            </div>
           </div>
         </div>
 
@@ -744,9 +848,9 @@ function CloudSetup({
                 </p>
                 <CloudShellSetup
                   script={remediationScript}
-                  externalId={orgId}
+                  externalId={setupExternalId}
                   cloudShellUrl={cloudShellUrl}
-                  disabled={!hasSelectedAwsEnvironment}
+                  disabled={!hasSelectedAwsEnvironment || (isAwsProvider && !pendingConnection)}
                   title="Remediation Role"
                   subtitle="Write-access role for auto-fix"
                   footnote=""

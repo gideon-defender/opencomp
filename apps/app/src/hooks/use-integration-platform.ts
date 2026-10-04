@@ -229,18 +229,33 @@ export function useIntegrationMutations() {
   );
 
   /**
-   * Create a connection with API key credentials
+   * Create a connection with API key credentials.
+   *
+   * For AWS without a Role ARN this creates a *pending* connection: the
+   * server mints the External ID and returns it show-once for the setup
+   * script. The caller then collects the Role ARN and completes the
+   * connection via updateConnectionCredentials (which validates + activates).
    */
   const createConnection = useCallback(
     async (
       providerSlug: string,
       credentials?: Record<string, string | string[]>,
-    ): Promise<{ success: boolean; connectionId?: string; error?: string }> => {
+    ): Promise<{
+      success: boolean;
+      connectionId?: string;
+      status?: string;
+      externalId?: string;
+      error?: string;
+    }> => {
       if (!orgId) {
         return { success: false, error: 'No organization selected' };
       }
 
-      const response = await api.post<{ id: string }>('/v1/integrations/connections', {
+      const response = await api.post<{
+        id: string;
+        status?: string;
+        externalId?: string;
+      }>('/v1/integrations/connections', {
         providerSlug,
         organizationId: orgId,
         credentials,
@@ -253,7 +268,12 @@ export function useIntegrationMutations() {
       // Invalidate connections cache
       globalMutate(['integration-connections', orgId]);
 
-      return { success: true, connectionId: response.data?.id };
+      return {
+        success: true,
+        connectionId: response.data?.id,
+        status: response.data?.status,
+        externalId: response.data?.externalId,
+      };
     },
     [orgId],
   );
