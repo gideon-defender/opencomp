@@ -209,7 +209,11 @@ describe('EmployeeBackgroundCheck — V1 two-paths', () => {
     // open Select dropdown and pick a reason via keyboard
     const trigger = screen.getByRole('combobox');
     await user.click(trigger);
-    await user.click(screen.getByRole('option', { name: /Local law prohibits check/i }));
+    // The options render in a portal after the menu opens — wait for them
+    // instead of querying synchronously, which flakes under full-suite load.
+    await user.click(
+      await screen.findByRole('option', { name: /Local law prohibits check/i }),
+    );
 
     await user.click(screen.getByRole('button', { name: /Confirm exemption/i }));
 

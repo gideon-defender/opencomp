@@ -5,6 +5,23 @@ import { Check, Copy, ExternalLink } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
+export function getSetupScriptDisabledMessage({
+  isAws,
+  hasSelectedEnvironment,
+}: {
+  isAws: boolean;
+  hasSelectedEnvironment: boolean;
+}): string | undefined {
+  // The script box is disabled in two states with different unblock steps:
+  // no environment yet (pick one above) vs environment picked but no pending
+  // connection (click Generate External ID below). One static message lies
+  // about the second state, so pick per state.
+  if (!isAws || !hasSelectedEnvironment) {
+    return undefined;
+  }
+  return 'Generate your External ID below first — the script needs your issued value.';
+}
+
 export function CloudShellSetup({
   script,
   externalId,
@@ -26,6 +43,17 @@ export function CloudShellSetup({
 }) {
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(false);
+
+  // Collapse when the script becomes unavailable so re-enabling returns to
+  // the preview instead of a stale full-script view. Adjusted during render
+  // (same pattern as the dialog's open-state init) — no effect needed.
+  const [wasDisabled, setWasDisabled] = useState(disabled);
+  if (disabled !== wasDisabled) {
+    setWasDisabled(disabled);
+    if (disabled) {
+      setExpanded(false);
+    }
+  }
 
   // The External ID is stored caller-controlled text interpolated into an
   // `EXTERNAL_ID="..."` assignment — escape it so a value saved before
@@ -116,7 +144,10 @@ export function CloudShellSetup({
           <pre className="text-[11px] font-mono leading-relaxed text-foreground/70 whitespace-pre-wrap break-all">
             {disabled ? disabledMessage : expanded ? finalScript : previewLines}
           </pre>
-          {!expanded && (
+          {/* No expand toggle while disabled: the preview shows the
+              disabled message in both states, so the toggle would visibly do
+              nothing. It returns once the script is available. */}
+          {!disabled && !expanded && (
             <button
               type="button"
               onClick={() => setExpanded(true)}
@@ -125,7 +156,7 @@ export function CloudShellSetup({
               Show full script...
             </button>
           )}
-          {expanded && (
+          {!disabled && expanded && (
             <button
               type="button"
               onClick={() => setExpanded(false)}

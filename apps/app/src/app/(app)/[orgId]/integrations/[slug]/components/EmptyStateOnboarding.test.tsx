@@ -28,11 +28,25 @@ vi.mock('@/lib/api-client', () => ({
   },
 }));
 
-vi.mock('@/components/integrations/CloudShellSetup', () => ({
-  CloudShellSetup: ({ externalId }: { externalId: string }) => (
-    <div data-testid="cloud-shell-setup" data-external-id={externalId} />
-  ),
-}));
+vi.mock('@/components/integrations/CloudShellSetup', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/components/integrations/CloudShellSetup')>();
+  return {
+    ...actual,
+    CloudShellSetup: ({
+      externalId,
+      disabledMessage,
+    }: {
+      externalId: string;
+      disabledMessage?: string;
+    }) => (
+      <div
+        data-testid="cloud-shell-setup"
+        data-external-id={externalId}
+        data-disabled-message={disabledMessage ?? ''}
+      />
+    ),
+  };
+});
 
 vi.mock('@/components/integrations/CredentialInput', () => ({
   CredentialInput: ({ field, value, onChange }: any) => (
@@ -256,6 +270,25 @@ describe('EmptyStateOnboarding', () => {
       expect(scripts.length).toBeGreaterThan(0);
       for (const script of scripts) {
         expect(script).toHaveAttribute('data-external-id', 'org_org_1_issued');
+      }
+    });
+
+    it('shows the environment-first message until an environment is picked', () => {
+      renderAws();
+
+      // Pre-selection no script claims Generate is the next step — each box
+      // falls back to the component's environment-first default.
+      const scripts = screen.getAllByTestId('cloud-shell-setup');
+      expect(scripts.length).toBeGreaterThan(0);
+      for (const script of scripts) {
+        expect(script).toHaveAttribute('data-disabled-message', '');
+      }
+
+      // Picking the environment (without generating) switches every script
+      // to the Generate-first instruction.
+      fireEvent.change(screen.getByLabelText('AWS Environment'), { target: { value: 'aws' } });
+      for (const script of screen.getAllByTestId('cloud-shell-setup')) {
+        expect(script.getAttribute('data-disabled-message')).toContain('Generate');
       }
     });
 
