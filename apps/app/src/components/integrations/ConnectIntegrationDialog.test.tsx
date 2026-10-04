@@ -469,4 +469,15 @@ describe('ConnectIntegrationDialog AWS server-generated External ID', () => {
     // Editable fields still render.
     expect(screen.getByText('Role ARN')).toBeInTheDocument();
   });
+
+  it('offers per-pair remediation setup and never the deprecated single role field', () => {
+    render(<ConnectIntegrationDialog {...defaultProps} initialView="form" />);
+
+    // The deprecated monolith field must not render in the new-connection
+    // form — the server rejects it with 400, so offering it funnels users
+    // into a dead end. The per-pair flow renders instead.
+    expect(screen.queryByText('Remediation Role ARN')).not.toBeInTheDocument();
+    expect(screen.getByText('Auto-Remediation (Optional)')).toBeInTheDocument();
+    expect(screen.getByText('Asset class')).toBeInTheDocument();
+  });
 });

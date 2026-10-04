@@ -23,8 +23,8 @@ import {
 import { Loader2, Terminal } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { RemediationPairPicker } from './RemediationPairPicker';
-import { RemediationScriptPanel } from './RemediationScriptPanel';
+import { RemediationPairPicker } from '@/components/remediation/RemediationPairPicker';
+import { RemediationScriptPanel } from '@/components/remediation/RemediationScriptPanel';
 
 export function RemediationSetupDialog({
   open,

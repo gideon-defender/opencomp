@@ -15,10 +15,10 @@ import { usePendingAwsConnection } from '@/hooks/use-pending-aws-connection';
 import {
   getAwsCloudShellScript,
   getAwsCloudShellUrl,
-  getAwsRemediationScript,
   normalizeAwsEnvironment,
 } from '@gideon-defender/integration-platform';
 import { Button, Label } from '@trycompai/design-system';
+import { RemediationPairSetup } from '@/components/remediation/RemediationPairSetup';
 import { ArrowRight, Shield } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
@@ -693,7 +693,6 @@ function CloudSetup({
     (f) => f.id !== 'remediationRoleArn' && f.id !== 'regions' && f.id !== 'awsType',
   );
   const regionFields = visibleFields.filter((f) => f.id === 'regions');
-  const remediationFields = visibleFields.filter((f) => f.id === 'remediationRoleArn');
   const awsTypeFields = visibleFields.filter((f) => f.id === 'awsType');
   const hasSelectedAwsEnvironment =
     provider.id !== 'aws' || typeof credentials.awsType === 'string';
@@ -713,10 +712,12 @@ function CloudSetup({
       : regionOptions;
   const setupScript =
     provider.id === 'aws' ? getAwsCloudShellScript(awsEnvironment) : (provider.setupScript ?? '');
-  const remediationScript = getAwsRemediationScript(awsEnvironment);
   const cloudShellUrl = getAwsCloudShellUrl(awsEnvironment);
 
-  const hasRemediation = provider.id === 'aws' && remediationFields.length > 0;
+  // Auto-remediation is offered per asset-class/region pair on every AWS
+  // connection. The deprecated single `remediationRoleArn` is never rendered
+  // here — the server rejects it for new connections with 400.
+  const hasRemediation = provider.id === 'aws';
 
   return (
     <div className="py-6 space-y-6">
@@ -866,28 +867,22 @@ function CloudSetup({
               </div>
               <div className="px-5 pb-5 space-y-3">
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Enable one-click fixes for security findings. This creates a separate write-access
-                  role — your audit role stays read-only.
+                  Enable one-click fixes for security findings. This creates separate write-access
+                  roles — your audit role stays read-only.
                 </p>
-                <CloudShellSetup
-                  script={remediationScript}
+                <RemediationPairSetup
+                  awsEnvironment={awsEnvironment}
                   externalId={setupExternalId}
-                  cloudShellUrl={cloudShellUrl}
-                  disabled={!hasSelectedAwsEnvironment || (isAwsProvider && !pendingConnection)}
+                  regions={Array.isArray(credentials.regions) ? credentials.regions : []}
+                  value={
+                    typeof credentials.remediationRoles === 'string'
+                      ? credentials.remediationRoles
+                      : ''
+                  }
+                  onChange={(next) => updateCredential('remediationRoles', next)}
+                  scriptEnabled={hasSelectedAwsEnvironment && !!pendingConnection}
                   disabledMessage={setupScriptDisabledMessage}
-                  title="Remediation Role"
-                  subtitle="Write-access role for auto-fix"
-                  footnote=""
                 />
-                {remediationFields.map((field) => (
-                  <FieldRow
-                    key={field.id}
-                    field={field}
-                    value={credentials[field.id] || ''}
-                    error={errors[field.id]}
-                    onChange={(v) => updateCredential(field.id, v)}
-                  />
-                ))}
               </div>
             </div>
             <p className="text-[10px] text-muted-foreground/50 px-1">

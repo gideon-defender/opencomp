@@ -78,6 +78,9 @@ vi.mock('lucide-react', () => ({
   Shield: () => <span data-testid="shield-icon" />,
   Cloud: () => <span data-testid="cloud-icon" />,
   ShieldCheck: () => <span data-testid="shield-check-icon" />,
+  Check: () => <span data-testid="check-icon" />,
+  Copy: () => <span data-testid="copy-icon" />,
+  ExternalLink: () => <span data-testid="external-link-icon" />,
 }));
 
 vi.mock('@gideon-defender/integration-platform', () => ({
@@ -86,6 +89,16 @@ vi.mock('@gideon-defender/integration-platform', () => ({
   getAwsCloudShellScript: () => '',
   getAwsRemediationScript: () => '',
   normalizeAwsEnvironment: (value: unknown) => (value === 'aws-us-gov' ? 'aws-us-gov' : 'aws'),
+  REMEDIATION_ASSET_CLASSES: ['Storage', 'Compute', 'Network', 'Data', 'Security-Global'],
+  getAwsRemediationScriptForPair: () => 'pair-script',
+  parseRemediationRolesMap: () => ({}),
+  serializeRemediationRolesMap: () => '{}',
+  remediationRoleKey: ({ assetClass, region }: { assetClass: string; region: string }) =>
+    `${assetClass}:${region}`,
+  remediationRoleName: ({ assetClass, region }: { assetClass: string; region: string }) =>
+    `OpenComp-Remediator-${assetClass}-${region}`,
+  isApprovalGatedAssetClass: (assetClass: string) =>
+    assetClass === 'Network' || assetClass === 'Security-Global',
 }));
 
 vi.mock('sonner', () => ({
@@ -375,6 +388,22 @@ describe('EmptyStateOnboarding', () => {
       });
       expect(screen.getByRole('button', { name: /generate external id/i })).toBeInTheDocument();
       expect(mockApiPost).not.toHaveBeenCalled();
+    });
+
+    it('offers per-pair remediation setup and never the deprecated single role field', () => {
+      renderAws();
+
+      // The deprecated monolith field must not render — the server rejects
+      // it for new connections, so offering it funnels users into a 400.
+      expect(screen.queryByText('Remediation Role ARN')).not.toBeInTheDocument();
+      expect(screen.getByText('Asset class')).toBeInTheDocument();
+
+      // Once scan regions are picked, the pair flow names the exact role.
+      fireEvent.change(screen.getByLabelText('AWS Environment'), { target: { value: 'aws' } });
+      fireEvent.change(screen.getByLabelText('Regions'), { target: { value: 'us-east-1' } });
+      expect(
+        screen.getByText(/Role: OpenComp-Remediator-Storage-us-east-1/),
+      ).toBeInTheDocument();
     });
   });
 });
