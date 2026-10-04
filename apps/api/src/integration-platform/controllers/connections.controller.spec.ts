@@ -709,6 +709,30 @@ describe('ConnectionsController', () => {
       };
     }
 
+    function mockRemediationTrustProbe() {
+      // Trust probe needs the negative case to fail: a remediation assume
+      // without an External ID must be rejected, like a correct trust policy.
+      stsSend.mockImplementation(async (cmd: unknown) => {
+        const input = (cmd as { input?: Record<string, unknown> }).input;
+        if (!input) {
+          return {
+            Arn: 'arn:aws:sts::123456789012:assumed-role/OpenComp-Auditor/CompValidation',
+            Account: '123456789012',
+          };
+        }
+        if (
+          typeof input.RoleArn === 'string' &&
+          input.RoleArn.includes('Remediator') &&
+          input.ExternalId === undefined
+        ) {
+          throw new Error(
+            'AccessDenied: is not authorized to perform: sts:AssumeRole',
+          );
+        }
+        return storedCreds();
+      });
+    }
+
     beforeEach(() => {
       process.env.SECURITY_HUB_ROLE_ASSUMER_ARN =
         'arn:aws:iam::999999999999:role/CompRoleAssumer';
@@ -762,6 +786,216 @@ describe('ConnectionsController', () => {
       expect(result.externalId).toBe(stored.externalId);
       expect(mockConnectionService.activateConnection).toHaveBeenCalledWith(
         'conn_new',
+      );
+    });
+
+    it('rejects the legacy remediationRoleArn on create before any STS call or row', async () => {
+      const err = await controller
+        .createConnection('org_1', {
+          providerSlug: 'aws',
+          credentials: {
+            connectionName: 'Prod',
+            awsType: 'aws',
+            roleArn: AUDITOR_ARN,
+            regions: ['us-east-1'],
+            remediationRoleArn:
+              'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+          },
+        })
+        .catch((e: unknown) => e);
+
+      expect(err).toBeInstanceOf(HttpException);
+      expect((err as HttpException).getStatus()).toBe(HttpStatus.BAD_REQUEST);
+      expect((err as HttpException).message).toContain('remediationRoles');
+      // Fail fast: no validation traffic, no provider upsert, no row, no vault write.
+      expect(stsCtor).not.toHaveBeenCalled();
+      expect(mockProviderRepository.upsert).not.toHaveBeenCalled();
+      expect(mockConnectionService.createConnection).not.toHaveBeenCalled();
+      expect(
+        mockCredentialVaultService.storeApiKeyCredentials,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('treats a blank legacy remediationRoleArn as absent on create', async () => {
+      const result = await controller.createConnection('org_1', {
+        providerSlug: 'aws',
+        credentials: {
+          connectionName: 'Prod',
+          awsType: 'aws',
+          roleArn: AUDITOR_ARN,
+          regions: ['us-east-1'],
+          remediationRoleArn: '   ',
+        },
+      });
+
+      expect(result.status).toBe('active');
+      // Blank is trim-normalized to inert: validation still ran and stored
+      // no meaningful legacy value.
+      expect(stsCtor).toHaveBeenCalled();
+      expect(mockProviderRepository.upsert).toHaveBeenCalled();
+      expect(
+        mockCredentialVaultService.storeApiKeyCredentials,
+      ).toHaveBeenCalled();
+      const stored =
+        mockCredentialVaultService.storeApiKeyCredentials.mock.calls[0][1];
+      expect(
+        typeof stored.remediationRoleArn === 'string'
+          ? stored.remediationRoleArn.trim()
+          : '',
+      ).toBe('');
+    });
+
+    it('accepts the pair map without a legacy ARN on create', async () => {
+      mockRemediationTrustProbe();
+
+      const pairArn =
+        'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1';
+      const result = await controller.createConnection('org_1', {
+        providerSlug: 'aws',
+        credentials: {
+          connectionName: 'Prod',
+          awsType: 'aws',
+          roleArn: AUDITOR_ARN,
+          regions: ['us-east-1'],
+          remediationRoles: JSON.stringify({ 'Storage:us-east-1': pairArn }),
+        },
+      });
+
+      expect(result.status).toBe('active');
+      const stored =
+        mockCredentialVaultService.storeApiKeyCredentials.mock.calls[0][1];
+      expect(JSON.parse(stored.remediationRoles)).toEqual({
+        'Storage:us-east-1': pairArn,
+      });
+      expect(stored.remediationRoleArn).toBeUndefined();
+    });
+
+    it('still accepts the legacy remediationRoleArn on credential updates (dual-read window)', async () => {
+      mockRemediationTrustProbe();
+      mockConnectionService.getConnectionForOrg.mockResolvedValue({
+        id: 'conn_aws',
+        organizationId: 'org_1',
+        status: 'active',
+        provider: { slug: 'aws' },
+      });
+      mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue({
+        roleArn: AUDITOR_ARN,
+        externalId: 'org_org_1_existing',
+        regions: ['us-east-1'],
+        awsType: 'aws',
+      });
+      const legacyArn = 'arn:aws:iam::123456789012:role/OpenComp-Remediator';
+
+      const result = await controller.updateCredentials('conn_aws', 'org_1', {
+        credentials: { remediationRoleArn: legacyArn },
+      });
+
+      expect(result).toEqual({ success: true });
+      const stored =
+        mockCredentialVaultService.storeApiKeyCredentials.mock.calls[0][1];
+      expect(stored.remediationRoleArn).toBe(legacyArn);
+      expect(mockConnectionRepository.update).toHaveBeenCalledWith(
+        'conn_aws',
+        expect.objectContaining({
+          metadata: expect.objectContaining({
+            remediationRoleArn: legacyArn,
+          }),
+        }),
+      );
+    });
+
+    it('rejects legacy plus pair map together on create (legacy takes precedence)', async () => {
+      const err = await controller
+        .createConnection('org_1', {
+          providerSlug: 'aws',
+          credentials: {
+            connectionName: 'Prod',
+            awsType: 'aws',
+            roleArn: AUDITOR_ARN,
+            regions: ['us-east-1'],
+            remediationRoleArn:
+              'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+            remediationRoles: JSON.stringify({
+              'Storage:us-east-1':
+                'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1',
+            }),
+          },
+        })
+        .catch((e: unknown) => e);
+
+      expect(err).toBeInstanceOf(HttpException);
+      expect((err as HttpException).getStatus()).toBe(HttpStatus.BAD_REQUEST);
+      expect((err as HttpException).message).toContain('remediationRoles');
+      expect(stsCtor).not.toHaveBeenCalled();
+      expect(mockConnectionService.createConnection).not.toHaveBeenCalled();
+      expect(
+        mockCredentialVaultService.storeApiKeyCredentials,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('rejects the legacy remediationRoleArn on pending creates without a Role ARN', async () => {
+      const err = await controller
+        .createConnection('org_1', {
+          providerSlug: 'aws',
+          credentials: {
+            connectionName: 'Prod',
+            awsType: 'aws',
+            regions: ['us-east-1'],
+            remediationRoleArn:
+              'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+          },
+        })
+        .catch((e: unknown) => e);
+
+      // The guard runs before the pending-shape branch, so no legacy-shaped
+      // pending row can be minted for later activation via update.
+      expect(err).toBeInstanceOf(HttpException);
+      expect((err as HttpException).getStatus()).toBe(HttpStatus.BAD_REQUEST);
+      expect(stsCtor).not.toHaveBeenCalled();
+      expect(mockConnectionService.createConnection).not.toHaveBeenCalled();
+      expect(
+        mockCredentialVaultService.storeApiKeyCredentials,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('does not reject remediationRoleArn for non-AWS providers', async () => {
+      mockedGetManifest.mockReturnValue({
+        id: 'datadog',
+        name: 'Datadog',
+        category: 'monitoring',
+        auth: { type: 'api_key', config: { name: 'api_key' } },
+        capabilities: ['checks'],
+        isActive: true,
+        credentialFields: [],
+        checks: [],
+      } as never);
+      mockConnectionService.createConnection.mockResolvedValue({
+        id: 'conn_new',
+        providerId: 'prov_dd',
+        authStrategy: 'api_key',
+        createdAt: new Date(),
+      });
+
+      const result = await controller.createConnection('org_1', {
+        providerSlug: 'datadog',
+        credentials: {
+          api_key: 'test-key',
+          remediationRoleArn:
+            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+        },
+      });
+
+      // Guard is AWS-scoped: unrelated providers pass the field through.
+      expect(result.status).toBe('active');
+      expect(stsCtor).not.toHaveBeenCalled();
+      expect(
+        mockCredentialVaultService.storeApiKeyCredentials,
+      ).toHaveBeenCalledWith(
+        'conn_new',
+        expect.objectContaining({
+          remediationRoleArn:
+            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+        }),
       );
     });
 
