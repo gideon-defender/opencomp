@@ -90,7 +90,7 @@ export const generateRiskMitigation = task({
         const metadataHandle = metadata.root ?? metadata.parent ?? metadata;
         metadataHandle.set(`risk_${riskId}_status`, 'processing');
 
-        await createRiskMitigationComment(risk, policies, organizationId, authorId ?? '');
+        await createRiskMitigationComment(risk, policies, organizationId);
 
         // Apply onboarding defaults without clobbering a user-managed risk — the
         // AI drafted a plan, but the user owns the status/assignee. See

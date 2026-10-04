@@ -156,16 +156,8 @@ export function permanenceHint(args: {
   }
 }
 
-const HUES = ['#1a1e22', '#0b6bcb', '#b7791f', '#5f4b8b', '#3d2f6b', '#2f6b4b', '#6b2f3d'];
-
 /** Two-letter monogram from the vendor host (github.com -> GH). */
 export function monogram(hostname: string): string {
   const name = hostname.replace(/^www\./, '').split('.')[0] || hostname;
   return name.slice(0, 2).toUpperCase();
-}
-
-interface ConnectionSummary {
-  total: number;
-  active: number;
-  needAttention: number;
 }

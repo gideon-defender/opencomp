@@ -39,7 +39,7 @@ const REMOVE_FILTER_SHORTCUTS = ['backspace', 'delete'];
 
 type DataTableTranslations = ReturnType<typeof useDataTableTranslations>;
 
-function useDataTableTranslations() {
+export function useDataTableTranslations() {
   return useTranslations('dataTable');
 }
 
@@ -96,7 +96,7 @@ export function DataTableFilterMenu<TData>({
     [inputValue, selectedColumn],
   );
 
-  const { filters, setFilters, debouncedSetFilters } = useDebouncedFilters<TData>({
+  const { filters, debouncedSetFilters } = useDebouncedFilters<TData>({
     columnIds: columns.map((field) => field.id),
     debounceMs,
     throttleMs,

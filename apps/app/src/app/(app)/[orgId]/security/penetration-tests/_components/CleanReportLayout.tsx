@@ -38,7 +38,6 @@ interface CleanReportLayoutProps {
  */
 export function CleanReportLayout({
   run,
-  events: _events,
   onDownloadMarkdown,
   onDownloadPdf,
   onReRun,

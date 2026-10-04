@@ -541,7 +541,7 @@ export function RemediationDialog({
         setIsLoadingPreview(false);
       }
     },
-    [connectionId, checkResultId, remediationKey],
+    [connectionId, checkResultId, remediationKey, t],
   );
 
   // Reset dialog state when a new remediation is opened — applied during render

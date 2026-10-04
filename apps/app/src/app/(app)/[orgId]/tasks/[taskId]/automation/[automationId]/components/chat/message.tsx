@@ -47,26 +47,6 @@ export const Message = memo(function Message({
   }
 
   const renderMessageParts = () => {
-    const hasStreamingReasoning = message.parts.some(
-      (part) => part.type === 'reasoning' && (part as any)?.state === 'streaming',
-    );
-
-    const hasTextContent = message.parts.some((part) => part.type === 'text');
-
-    const allReasoningParts = message.parts.filter((part) => part.type === 'reasoning');
-    const allResearchParts = message.parts.filter(
-      (part) => part.type === 'tool-exaSearch' || part.type === 'tool-firecrawl',
-    );
-
-    // Show thinking only if actively streaming reasoning AND no other content yet
-    const hasAnyOtherContent = hasTextContent || allResearchParts.length > 0;
-    const isStillThinking = hasStreamingReasoning && !hasAnyOtherContent;
-
-    const hasStreamingResearch = allResearchParts.some(
-      (part) =>
-        (part as any)?.state === 'input-streaming' || (part as any)?.state === 'input-available',
-    );
-
     const result = [];
     let thinkingSessionCount = 0;
     let researchSessionCount = 0;

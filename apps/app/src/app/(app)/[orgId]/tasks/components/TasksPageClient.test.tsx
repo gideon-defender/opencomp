@@ -82,8 +82,6 @@ vi.mock('@trycompai/design-system', () => ({
   Button: ({
     children,
     onClick,
-    iconLeft: _iconLeft,
-    width: _width,
     ...props
   }: {
     children: React.ReactNode;
@@ -117,17 +115,15 @@ vi.mock('@trycompai/design-system', () => ({
   Switch: () => <input type="checkbox" />,
   Tabs: ({
     children,
-    defaultValue: _dv,
-    onValueChange: _ovc,
   }: {
     children: React.ReactNode;
     defaultValue?: string;
     onValueChange?: (v: string) => void;
   }) => <div>{children}</div>,
-  TabsList: ({ children, variant: _v }: { children: React.ReactNode; variant?: string }) => (
+  TabsList: ({ children }: { children: React.ReactNode; variant?: string }) => (
     <div>{children}</div>
   ),
-  TabsTrigger: ({ children, value: _val }: { children: React.ReactNode; value: string }) => (
+  TabsTrigger: ({ children }: { children: React.ReactNode; value: string }) => (
     <div>{children}</div>
   ),
 }));

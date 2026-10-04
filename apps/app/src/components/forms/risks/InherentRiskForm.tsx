@@ -55,7 +55,7 @@ export function InherentRiskForm({
   const { updateRisk } = useRiskActions();
   const { mutate: globalMutate } = useSWRConfig();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [_, setOpen] = useQueryState('inherent-risk-sheet');
+  const [, setOpen] = useQueryState('inherent-risk-sheet');
 
   const form = useForm<z.infer<typeof updateInherentRiskSchema>>({
     resolver: zodResolver(updateInherentRiskSchema),

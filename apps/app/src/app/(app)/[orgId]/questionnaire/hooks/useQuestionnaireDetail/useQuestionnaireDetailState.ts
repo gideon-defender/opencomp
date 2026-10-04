@@ -10,7 +10,6 @@ interface UseQuestionnaireDetailStateProps {
 
 export function useQuestionnaireDetailState({
   initialQuestions,
-  questionnaireId,
 }: UseQuestionnaireDetailStateProps) {
   // Initialize results from database
   const [results, setResults] = useState<QuestionnaireResult[]>(() =>
@@ -40,8 +39,8 @@ export function useQuestionnaireDetailState({
   const [isAutoAnswerProcessStarted, setIsAutoAnswerProcessStarted] = useState(false);
   const [isParseProcessStarted, setIsParseProcessStarted] = useState(false);
   const [hasClickedAutoAnswer, setHasClickedAutoAnswer] = useState(false);
-  const [autoAnswerToken, setAutoAnswerToken] = useState<string | null>(null);
-  const [singleAnswerToken, setSingleAnswerToken] = useState<string | null>(null);
+  const [autoAnswerToken] = useState<string | null>(null);
+  const [singleAnswerToken] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const isAutoAnswerProcessStartedRef = useRef(false);
 

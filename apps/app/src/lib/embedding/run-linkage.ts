@@ -90,7 +90,6 @@ interface RunLinkageOutput {
   };
 }
 
-const RISK_QUERY_TOP_K = 25;
 // In review-before-apply mode we go wide on recall (50 candidates from the
 // vector store, no threshold filter, top-30 by cosine fed to the reranker),
 // then let the LLM reranker do the precision step and surface the final 15.

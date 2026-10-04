@@ -7,15 +7,10 @@ import { toast } from 'sonner';
 
 interface PolicyEditorClientProps {
   policyId: string;
-  policyName: string; // For display purposes
   initialContent: JSONContent | JSONContent[] | null | undefined; // From DB
 }
 
-export function PolicyEditorClient({
-  policyId,
-  policyName,
-  initialContent,
-}: PolicyEditorClientProps) {
+export function PolicyEditorClient({ policyId, initialContent }: PolicyEditorClientProps) {
   const handleSavePolicy = async (contentToSave: JSONContent): Promise<void> => {
     if (!policyId) return;
 

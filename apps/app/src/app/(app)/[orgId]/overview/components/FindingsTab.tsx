@@ -169,7 +169,7 @@ export function FindingsTab({
     {},
     initialFindings ? { fallbackData: { data: initialFindings, status: 200 } } : {},
   );
-  const findings: Finding[] = Array.isArray(data?.data) ? data.data : [];
+  const findings: Finding[] = useMemo(() => (Array.isArray(data?.data) ? data.data : []), [data]);
 
   // Mirror the Create Finding form: the framework filter must offer every
   // framework the org has actually enabled — not a hardcoded SOC 2 / ISO 27001

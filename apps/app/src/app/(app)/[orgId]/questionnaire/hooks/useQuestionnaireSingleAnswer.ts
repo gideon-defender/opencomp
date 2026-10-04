@@ -17,12 +17,10 @@ interface UseQuestionnaireSingleAnswerProps {
 }
 
 export function useQuestionnaireSingleAnswer({
-  results,
   answeringQuestionIndices,
   setResults,
   setQuestionStatuses,
   setAnsweringQuestionIndices,
-  questionnaireId,
 }: UseQuestionnaireSingleAnswerProps) {
   // Track active requests to prevent duplicate calls
   const activeRequestsRef = useRef<Set<number>>(new Set());

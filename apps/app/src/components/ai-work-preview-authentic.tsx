@@ -132,11 +132,8 @@ export function AiWorkPreviewAuthentic() {
     // Simulate very slow progress for realism - actually takes 2-7 minutes
     const progressInterval = setInterval(() => {
       setWorkItems((items) => {
-        let hasChanges = false;
         const updated = items.map((item, index) => {
           if (item.status === 'processing') {
-            hasChanges = true;
-
             // Last task gets stuck at 94%
             if (index === 4 && item.progress >= 94) {
               return item;

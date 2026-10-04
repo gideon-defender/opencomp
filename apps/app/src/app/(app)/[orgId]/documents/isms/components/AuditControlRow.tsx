@@ -138,7 +138,7 @@ export function AuditControlRow({
             <Controller
               control={control}
               name="controlRef"
-              render={({ field: { ref: _ref, ...field }, fieldState }) => (
+              render={({ field: { ...field }, fieldState }) => (
                 <>
                   <Input {...field} aria-label="Control reference" />
                   <FieldError>{fieldState.error?.message}</FieldError>
@@ -151,7 +151,7 @@ export function AuditControlRow({
           <Controller
             control={control}
             name="whatWasTested"
-            render={({ field: { ref: _ref, ...field } }) => (
+            render={({ field: { ...field } }) => (
               <Textarea {...field} rows={2} aria-label="What was tested" />
             )}
           />
@@ -160,7 +160,7 @@ export function AuditControlRow({
           <Controller
             control={control}
             name="whereToFind"
-            render={({ field: { ref: _ref, ...field } }) => (
+            render={({ field: { ...field } }) => (
               <Textarea {...field} rows={2} aria-label="Where to find it" />
             )}
           />
@@ -170,7 +170,7 @@ export function AuditControlRow({
           <Controller
             control={control}
             name="notes"
-            render={({ field: { ref: _ref, ...field } }) => (
+            render={({ field: { ...field } }) => (
               <Textarea {...field} rows={2} aria-label="Notes" />
             )}
           />

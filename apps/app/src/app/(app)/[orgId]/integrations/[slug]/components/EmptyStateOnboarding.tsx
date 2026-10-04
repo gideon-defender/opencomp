@@ -21,6 +21,7 @@ import {
 import { Button, Label } from '@trycompai/design-system';
 import { ArrowRight, Shield } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import Image from 'next/image';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
@@ -274,7 +275,13 @@ function ComingSoonState({ provider }: { provider: IntegrationProvider }) {
         <div className="p-6 space-y-4">
           <div className="flex items-center gap-3">
             {provider.logoUrl && (
-              <img src={provider.logoUrl} alt="" className="h-9 w-9 rounded-lg" />
+              <Image
+                src={provider.logoUrl}
+                alt=""
+                width={36}
+                height={36}
+                className="h-9 w-9 rounded-lg"
+              />
             )}
             <div>
               <h3 className="text-sm font-semibold">{provider.name}</h3>
@@ -307,7 +314,15 @@ function OAuthSetup({
     <div className="py-6">
       <div className="flex items-center justify-between rounded-xl border bg-background shadow-sm px-6 py-5">
         <div className="flex items-center gap-4">
-          {provider.logoUrl && <img src={provider.logoUrl} alt="" className="h-9 w-9 rounded-lg" />}
+          {provider.logoUrl && (
+            <Image
+              src={provider.logoUrl}
+              alt=""
+              width={36}
+              height={36}
+              className="h-9 w-9 rounded-lg"
+            />
+          )}
           <div>
             <h3 className="text-sm font-semibold">
               {t('onboarding.connectProvider', { name: provider.name })}
@@ -328,7 +343,6 @@ function OAuthSetup({
 
 function CredentialSetup({
   provider,
-  orgId,
   onConnected,
 }: {
   provider: IntegrationProvider;
@@ -486,7 +500,13 @@ function CredentialSetup({
         <div className="rounded-xl border bg-background shadow-sm lg:sticky lg:top-20 overflow-hidden">
           <div className="flex items-center gap-2.5 px-5 pt-5 pb-3">
             {provider.logoUrl && (
-              <img src={provider.logoUrl} alt="" className="h-7 w-7 rounded-lg" />
+              <Image
+                src={provider.logoUrl}
+                alt=""
+                width={28}
+                height={28}
+                className="h-7 w-7 rounded-lg"
+              />
             )}
             <h4 className="text-sm font-semibold">Setup guide</h4>
           </div>
@@ -541,7 +561,7 @@ function CloudSetup({
   // Before phase 1 the placeholder renders literally (copy is disabled).
   const setupExternalId = pendingConnection?.externalId ?? 'YOUR_EXTERNAL_ID';
 
-  const allFields = provider.credentialFields ?? [];
+  const allFields = useMemo(() => provider.credentialFields ?? [], [provider.credentialFields]);
   const visibleFields = allFields.filter(
     (field) => field.id !== 'externalId' && field.id !== 'connectionName',
   );

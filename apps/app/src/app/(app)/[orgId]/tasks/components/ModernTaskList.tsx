@@ -40,7 +40,6 @@ const statusConfig = {
 export function ModernTaskList({
   tasks,
   members,
-  statusFilter,
   evidenceApprovalEnabled = false,
 }: ModernTaskListProps) {
   const router = useRouter();

@@ -59,8 +59,7 @@ export function AppOnboarding({
   ctaDisabled = false,
   ctaTooltip,
 }: Props) {
-  const [open, setOpen] = useQueryState(sheetName ?? 'sheet');
-  const isOpen = Boolean(open);
+  const [, setOpen] = useQueryState(sheetName ?? 'sheet');
   const { theme } = useTheme();
 
   return (

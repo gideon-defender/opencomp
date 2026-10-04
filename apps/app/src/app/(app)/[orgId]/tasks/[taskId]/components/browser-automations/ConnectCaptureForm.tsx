@@ -87,6 +87,7 @@ export function ConnectCaptureForm({
     },
   });
   const { fields, append, remove } = useFieldArray({ control, name: 'fields' });
+  // eslint-disable-next-line react-hooks/incompatible-library -- RHF watch() is not memoizable by React Compiler
   const use2fa = watch('use2fa');
 
   // Map the flat field list back to the sign-in contract the runtime expects.

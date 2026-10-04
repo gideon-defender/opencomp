@@ -156,7 +156,7 @@ export function ReviewActionRow({
             <Controller
               control={control}
               name="description"
-              render={({ field: { ref: _ref, ...field }, fieldState }) => (
+              render={({ field: { ...field }, fieldState }) => (
                 <>
                   {/* Part of the signed minutes — frozen once the chair signs. */}
                   <Textarea {...field} rows={2} aria-label="Action description" disabled={locked} />
@@ -194,7 +194,7 @@ export function ReviewActionRow({
           <Controller
             control={control}
             name="dueDate"
-            render={({ field: { ref: _ref, ...field } }) => (
+            render={({ field: { ...field } }) => (
               <Input {...field} type="date" aria-label="Action due date" />
             )}
           />

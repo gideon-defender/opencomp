@@ -31,7 +31,7 @@ export const mockHasPermission = vi.fn((resource: string, action: string): boole
   return _permissions[resource]?.includes(action) ?? false;
 });
 
-const mockPermissions: UserPermissions = new Proxy(
+export const mockPermissions: UserPermissions = new Proxy(
   {},
   {
     get(_target, prop: string) {

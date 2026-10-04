@@ -65,11 +65,7 @@ export function WorkflowVisualizerSimple({ className }: Props) {
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [confirmRestore, setConfirmRestore] = useState<EvidenceAutomationVersion | null>(null);
-  const {
-    automation,
-    mutate: mutateAutomation,
-    isLoading: isLoadingAutomation,
-  } = useTaskAutomation();
+  const { automation, mutate: mutateAutomation } = useTaskAutomation();
   const { versions } = useAutomationVersions();
 
   // Keep the shared ref in sync outside of render; render from derived state below.

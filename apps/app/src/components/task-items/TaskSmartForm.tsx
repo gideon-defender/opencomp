@@ -80,7 +80,7 @@ export function TaskSmartForm({
   const { hasPermission } = usePermissions();
   const canCreate = hasPermission('task', 'create');
 
-  const { optimisticCreate, optimisticUpdate } = useOptimisticTaskItems(
+  const { optimisticCreate } = useOptimisticTaskItems(
     entityId,
     entityType,
     page,

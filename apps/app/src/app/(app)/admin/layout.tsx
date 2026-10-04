@@ -7,6 +7,7 @@ interface AuthMeResponse {
   organizations: Array<{ id: string }>;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Next.js layout contract requires the children prop; this gate always redirects before rendering.
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth.api.getSession({
     headers: await headers(),

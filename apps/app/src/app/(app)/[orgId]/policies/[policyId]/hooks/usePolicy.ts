@@ -36,6 +36,8 @@ export function usePolicy({ policyId, organizationId, initialData }: UsePolicyOp
         authenticatedUser: _authenticatedUser,
         ...policy
       } = response.data;
+      void _authType;
+      void _authenticatedUser;
       return policy as PolicyWithApprover;
     },
     {

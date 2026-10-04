@@ -1,26 +1,21 @@
 'use client';
 
-import { CheckCircle2, Globe, Loader2, Search, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface ResearchActivityProps {
   toolName: 'exaSearch' | 'firecrawl';
-  input: any;
+  input: unknown;
   state: string;
-  output?: any;
+  output?: {
+    results?: unknown[];
+    summary?: string;
+  };
   isAnimating: boolean;
 }
 
-export function ResearchActivity({
-  toolName,
-  input,
-  state,
-  output,
-  isAnimating,
-}: ResearchActivityProps) {
+export function ResearchActivity({ toolName, state, output }: ResearchActivityProps) {
   const isComplete = state === 'output-available';
   const isError = state === 'output-error';
-  const isLoading = state === 'input-streaming' || state === 'input-available';
   const [startTime] = useState(() => Date.now());
   const [duration, setDuration] = useState<number | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -34,17 +29,6 @@ export function ResearchActivity({
       });
     }
   }, [isComplete, isError, startTime, duration]);
-
-  const getIcon = () => {
-    if (isError) return <XCircle className="h-4 w-4 text-muted-foreground" />;
-    if (isComplete) return <CheckCircle2 className="h-4 w-4 text-muted-foreground" />;
-    if (isLoading) return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
-    return toolName === 'exaSearch' ? (
-      <Search className="h-4 w-4 text-muted-foreground" />
-    ) : (
-      <Globe className="h-4 w-4 text-muted-foreground" />
-    );
-  };
 
   const getTitle = () => {
     if (isError) {
@@ -66,17 +50,6 @@ export function ResearchActivity({
       return `Researched for ${duration}s - Successfully gathered information`;
     }
     return 'Researching...';
-  };
-
-  const getResultSummary = () => {
-    // Only show summary when complete and available
-    if (!isComplete || !output?.summary) return null;
-
-    return (
-      <div className="mt-2">
-        <p className="text-xs text-muted-foreground">{output.summary}</p>
-      </div>
-    );
   };
 
   return (

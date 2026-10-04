@@ -20,7 +20,7 @@ interface UseRolesOptions {
 }
 
 export function useRoles({ initialData }: UseRolesOptions = {}) {
-  const { data, error, isLoading, mutate } = useSWR(
+  const { data, error, mutate } = useSWR(
     rolesListKey(),
     async () => {
       const response = await apiClient.get<RolesResponse>('/v1/roles');

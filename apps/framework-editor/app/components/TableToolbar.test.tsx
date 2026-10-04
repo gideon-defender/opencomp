@@ -7,10 +7,7 @@ vi.mock('@gideon-defender/ui', () => ({
   Button: ({ children, ...props }: React.ComponentProps<'button'>) => (
     <button {...props}>{children}</button>
   ),
-  Input: ({
-    leftIcon: _icon,
-    ...props
-  }: { leftIcon?: React.ReactNode } & React.ComponentProps<'input'>) => <input {...props} />,
+  Input: (props: React.ComponentProps<'input'>) => <input {...props} />,
   Select: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   SelectContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   SelectItem: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,

@@ -14,7 +14,7 @@ import {
 } from '@trycompai/design-system';
 import { useTranslations } from 'next-intl';
 import { useQueryState } from 'nuqs';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 
 export function CreateVendorTaskSheet() {
   const isDesktop = useMediaQuery('(min-width: 768px)');
@@ -31,10 +31,6 @@ export function CreateVendorTaskSheet() {
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
   };
-
-  const _handleSuccess = useCallback(() => {
-    setIsOpen(false);
-  }, []);
 
   if (isDesktop) {
     return (

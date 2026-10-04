@@ -20,7 +20,7 @@ interface ActivityLog {
 export function useTaskItemActivity(taskItemId: string | null) {
   const { orgId } = useParams<{ orgId: string }>();
 
-  const { data, error, isLoading, mutate } = useSWR<ActivityLog[]>(
+  const { data, error, mutate } = useSWR<ActivityLog[]>(
     taskItemId && orgId ? [`/v1/task-management/${taskItemId}/activity`, orgId] : null,
     async ([endpoint]: [string, string]) => {
       const response = await api.get<ActivityLog[]>(endpoint);

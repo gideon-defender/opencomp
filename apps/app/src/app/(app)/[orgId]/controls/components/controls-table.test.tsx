@@ -90,7 +90,6 @@ const mockControlsData = [
 ];
 
 // Mock React.use to return data synchronously
-const originalReact = await vi.importActual<typeof import('react')>('react');
 vi.mock('react', async () => {
   const actual = await vi.importActual<typeof import('react')>('react');
   return {

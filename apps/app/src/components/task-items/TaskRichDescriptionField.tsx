@@ -38,8 +38,6 @@ export function TaskRichDescriptionField({
   onMentionSelect,
   onFileSelectStart,
   onFileSelectEnd,
-  entityId,
-  entityType,
 }: TaskRichDescriptionFieldProps) {
   // Hooks must be called unconditionally and in the same order
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -100,24 +98,27 @@ export function TaskRichDescriptionField({
   }, []);
 
   // Search function - no debounce for empty query (show immediately)
-  const searchMembers = (query: string): MentionUser[] => {
-    if (!members || members.length === 0) return [];
+  const searchMembers = useCallback(
+    (query: string): MentionUser[] => {
+      if (!members || members.length === 0) return [];
 
-    // Show first 10 members immediately when query is empty
-    if (!query || query.trim() === '') {
-      return members.slice(0, 10);
-    }
+      // Show first 10 members immediately when query is empty
+      if (!query || query.trim() === '') {
+        return members.slice(0, 10);
+      }
 
-    // Filter members based on query
-    const lowerQuery = query.toLowerCase();
-    return members
-      .filter(
-        (member) =>
-          member.name.toLowerCase().includes(lowerQuery) ||
-          member.email.toLowerCase().includes(lowerQuery),
-      )
-      .slice(0, 10);
-  };
+      // Filter members based on query
+      const lowerQuery = query.toLowerCase();
+      return members
+        .filter(
+          (member) =>
+            member.name.toLowerCase().includes(lowerQuery) ||
+            member.email.toLowerCase().includes(lowerQuery),
+        )
+        .slice(0, 10);
+    },
+    [members],
+  );
 
   // Create mention extension with member search
   const mentionExtension = useMemo(
@@ -134,7 +135,7 @@ export function TaskRichDescriptionField({
           },
         },
       }),
-    [members, searchMembers, onMentionSelect],
+    [searchMembers, onMentionSelect],
   );
 
   const resolveDownloadUrl = useCallback(
@@ -211,7 +212,8 @@ export function TaskRichDescriptionField({
         }
       },
       editorProps: {
-        handleDrop: (view, event, _slice, moved) => {
+        handleDrop: (view, event, slice, moved) => {
+          void slice;
           if (!moved && event.dataTransfer && event.dataTransfer.files) {
             const files = Array.from(event.dataTransfer.files);
             if (files.length > 0) {
@@ -279,7 +281,7 @@ export function TaskRichDescriptionField({
           }
           return false;
         },
-        handlePaste: (view, event, _slice) => {
+        handlePaste: (view, event) => {
           const items = Array.from(event.clipboardData?.items || []);
           const files = items
             .filter((item) => item.kind === 'file')
@@ -412,8 +414,7 @@ export function TaskRichDescriptionField({
       // Insert skeletons at cursor position
       editor.chain().focus().setTextSelection(startPos).insertContent(skeletonPlaceholders).run();
 
-      // Store the position and count for replacement
-      const skeletonCount = fileList.length;
+      // Store the position for replacement
 
       try {
         const results = await onFileUpload(fileList);

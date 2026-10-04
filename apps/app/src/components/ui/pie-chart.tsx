@@ -24,7 +24,7 @@ export function PieChart({ data }: PieChartProps) {
           paddingAngle={5}
           dataKey="value"
         >
-          {data.map((entry, index) => (
+          {data.map((entry) => (
             <Cell key={entry.name} fill={entry.color} />
           ))}
         </Pie>

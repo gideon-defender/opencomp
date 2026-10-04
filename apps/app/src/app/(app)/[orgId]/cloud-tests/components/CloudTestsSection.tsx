@@ -215,9 +215,10 @@ export function CloudTestsSection({
     { revalidateOnFocus: true },
   );
 
-  const allFindings = Array.isArray(findingsResponse.data?.data?.data)
-    ? findingsResponse.data.data.data
-    : [];
+  const allFindings = useMemo(
+    () => (Array.isArray(findingsResponse.data?.data?.data) ? findingsResponse.data.data.data : []),
+    [findingsResponse.data],
+  );
   const hasLoadedFindings =
     findingsResponse.data !== undefined || findingsResponse.error !== undefined;
 
@@ -420,7 +421,7 @@ export function CloudTestsSection({
     } finally {
       setIsScanning(false);
     }
-  }, [connectionId, api, findingsResponse, onScanComplete]);
+  }, [connectionId, api, findingsResponse, onScanComplete, t]);
 
   const toggleExpanded = (id: string) => {
     setExpandedIds((prev) => {

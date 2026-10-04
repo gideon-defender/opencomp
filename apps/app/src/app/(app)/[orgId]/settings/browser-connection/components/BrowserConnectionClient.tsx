@@ -91,7 +91,7 @@ export function BrowserConnectionClient({
       return;
     }
     setProfiles(Array.isArray(res.data) ? res.data : []);
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     let cancelled = false;
@@ -248,7 +248,7 @@ export function BrowserConnectionClient({
       await mutateTotpStatuses().catch(() => undefined);
       return true;
     },
-    [mutateTotpStatuses],
+    [mutateTotpStatuses, t],
   );
 
   const handleRemove = useCallback(

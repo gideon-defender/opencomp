@@ -120,7 +120,7 @@ export function RequirementsRow({ requirement, canEdit, onSave, onDelete }: Requ
               <Controller
                 control={control}
                 name="partyName"
-                render={({ field: { ref: _ref, ...field } }) => (
+                render={({ field: { ...field } }) => (
                   <Input {...field} aria-label="Requirement party" />
                 )}
               />
@@ -132,7 +132,7 @@ export function RequirementsRow({ requirement, canEdit, onSave, onDelete }: Requ
               <Controller
                 control={control}
                 name="requirement"
-                render={({ field: { ref: _ref, ...field } }) => (
+                render={({ field: { ...field } }) => (
                   <Textarea {...field} rows={3} aria-label="Requirement description" />
                 )}
               />
@@ -144,7 +144,7 @@ export function RequirementsRow({ requirement, canEdit, onSave, onDelete }: Requ
               <Controller
                 control={control}
                 name="treatment"
-                render={({ field: { ref: _ref, ...field } }) => (
+                render={({ field: { ...field } }) => (
                   <Textarea {...field} rows={3} aria-label="Requirement treatment" />
                 )}
               />

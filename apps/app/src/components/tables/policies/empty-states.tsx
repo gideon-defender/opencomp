@@ -23,7 +23,7 @@ export function NoPolicies() {
   );
 }
 
-export function NoResults({ hasFilters }: { hasFilters: boolean }) {
+export function NoResults() {
   return (
     <Card className="w-full">
       <CardContent className="flex flex-col items-center justify-center p-6 text-center">

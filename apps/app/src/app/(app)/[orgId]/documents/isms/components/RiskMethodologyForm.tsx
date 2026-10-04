@@ -123,7 +123,7 @@ export function RiskMethodologyForm({ narrative, canEdit, onSave }: RiskMethodol
             <Controller
               control={control}
               name={name}
-              render={({ field: { ref: _ref, ...field } }) => (
+              render={({ field: { ...field } }) => (
                 <Textarea {...field} id={`methodology-${name}`} rows={rows} aria-label={label} />
               )}
             />
@@ -151,6 +151,7 @@ export function RiskMethodologyForm({ narrative, canEdit, onSave }: RiskMethodol
         name="likelihoodDescriptions"
         control={control}
         canEdit={canEdit}
+        // eslint-disable-next-line react-hooks/incompatible-library -- React Compiler intentional skip: RHF watch() cannot be memoized safely
         values={watch('likelihoodDescriptions')}
         rowErrors={errors.likelihoodDescriptions?.map?.((e) => e?.message)}
       />

@@ -7,7 +7,7 @@ import { type RiskRegisterType, useColumns as getColumns } from './columns';
 import { DataTableHeader } from './data-table-header';
 import { DataTablePagination } from './data-table-pagination';
 
-interface DataTableProps<TData, TValue> {
+interface DataTableProps<TData> {
   columnHeaders: {
     title: string;
     status: string;
@@ -19,18 +19,19 @@ interface DataTableProps<TData, TValue> {
   currentPage: number;
 }
 
-export function DataTable<TData, TValue>({
+export function DataTable<TData>({
   columnHeaders,
   data,
   pageCount,
   currentPage,
-}: DataTableProps<TData, TValue>) {
+}: DataTableProps<TData>) {
   const clientColumns = getColumns();
   const columns = clientColumns.map((col) => ({
     ...col,
     header: columnHeaders[col.id as keyof typeof columnHeaders],
   }));
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack useReactTable returns non-memoizable functions, skip React Compiler memoization
   const table = useReactTable({
     data: data as RiskRegisterType[],
     columns,

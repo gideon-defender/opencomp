@@ -4,7 +4,6 @@ import { cn } from '@gideon-defender/ui/cn';
 import { motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 
-const LINE_LENGTH_TARGET = 85;
 const NUM_LINES = 8;
 const LINE_HEIGHT = 16;
 const SCROLL_DURATION = 1; // 1 second per line

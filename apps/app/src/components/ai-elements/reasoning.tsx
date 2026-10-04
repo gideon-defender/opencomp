@@ -193,8 +193,12 @@ type ReasoningContentProps = ComponentProps<typeof CollapsibleContent> & {
   children: string;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const streamdownPlugins = { cjk, code, math, mermaid } as any;
+const streamdownPlugins: ComponentProps<typeof Streamdown>['plugins'] = {
+  cjk,
+  code,
+  math,
+  mermaid,
+};
 
 export const ReasoningContent = memo(({ className, children, ...props }: ReasoningContentProps) => (
   <CollapsibleContent

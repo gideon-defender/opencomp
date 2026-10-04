@@ -61,7 +61,6 @@ export function AddSecretDialog() {
     control,
     register,
     reset,
-    setError,
     formState: { errors, isSubmitting },
   } = useForm<SecretFormValues>({
     resolver: zodResolver(secretSchema),

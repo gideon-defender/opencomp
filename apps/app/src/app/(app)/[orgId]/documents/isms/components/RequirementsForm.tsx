@@ -51,7 +51,7 @@ function RequirementsFields({ onAdd, onClose }: RequirementsFormProps & { onClos
         <Controller
           control={control}
           name="partyName"
-          render={({ field: { ref: _ref, ...field } }) => (
+          render={({ field: { ...field } }) => (
             <Input {...field} placeholder="Interested party" aria-label="New requirement party" />
           )}
         />
@@ -62,7 +62,7 @@ function RequirementsFields({ onAdd, onClose }: RequirementsFormProps & { onClos
           <Controller
             control={control}
             name="requirement"
-            render={({ field: { ref: _ref, ...field } }) => (
+            render={({ field: { ...field } }) => (
               <Textarea
                 {...field}
                 rows={2}
@@ -77,7 +77,7 @@ function RequirementsFields({ onAdd, onClose }: RequirementsFormProps & { onClos
           <Controller
             control={control}
             name="treatment"
-            render={({ field: { ref: _ref, ...field } }) => (
+            render={({ field: { ...field } }) => (
               <Textarea
                 {...field}
                 rows={2}

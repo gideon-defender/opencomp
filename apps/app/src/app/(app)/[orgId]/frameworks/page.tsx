@@ -27,7 +27,11 @@ export default async function FrameworksPage({ params }: { params: Promise<{ org
   const frameworksData = frameworksRes.data?.data ?? [];
   const allFrameworks = availableRes.data?.data ?? [];
 
-  const frameworksWithControls = frameworksData.map(({ complianceScore: _, ...fw }) => fw);
+  const frameworksWithControls = frameworksData.map((item) => {
+    const fw = { ...item };
+    delete (fw as { complianceScore?: unknown }).complianceScore;
+    return fw;
+  });
   const complianceMap = new Map(frameworksData.map((fw) => [fw.id, fw.complianceScore ?? 0]));
 
   const availableToAdd = allFrameworks.filter(

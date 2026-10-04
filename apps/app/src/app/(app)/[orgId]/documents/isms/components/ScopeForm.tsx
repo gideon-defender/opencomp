@@ -48,6 +48,7 @@ export function ScopeForm({ narrative, canEdit, onSave }: ScopeFormProps) {
     defaultValues: toDefaults(narrative),
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- React Compiler intentional skip: RHF watch() cannot be memoized safely
   const interfaces = watch('interfaces');
   const dependencies = watch('dependencies');
   const exclusions = watch('exclusions');
@@ -103,7 +104,7 @@ export function ScopeForm({ narrative, canEdit, onSave }: ScopeFormProps) {
             <Controller
               control={control}
               name="certificateScopeSentence"
-              render={({ field: { ref: _ref, ...field } }) => (
+              render={({ field: { ...field } }) => (
                 <Textarea
                   {...field}
                   rows={3}
@@ -135,7 +136,7 @@ export function ScopeForm({ narrative, canEdit, onSave }: ScopeFormProps) {
             <Controller
               control={control}
               name="inScope"
-              render={({ field: { ref: _ref, ...field } }) => (
+              render={({ field: { ...field } }) => (
                 <Textarea
                   {...field}
                   id="scope-in-scope"
@@ -195,7 +196,7 @@ export function ScopeForm({ narrative, canEdit, onSave }: ScopeFormProps) {
           <Controller
             control={control}
             name="justification"
-            render={({ field: { ref: _ref, ...field } }) => (
+            render={({ field: { ...field } }) => (
               <Textarea
                 {...field}
                 id="scope-justification"

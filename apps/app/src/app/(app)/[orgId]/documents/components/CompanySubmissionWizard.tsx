@@ -829,6 +829,8 @@ export function CompanySubmissionWizard({
                   />
                 ))}
                 {matrixFields.map((field) => {
+                  // React Compiler skips memoization for RHF watch() — intentional
+                  // eslint-disable-next-line react-hooks/incompatible-library
                   const rows = normalizeMatrixRows(watch(field.key as never));
                   const rowValues = rows.length > 0 ? rows : [createEmptyMatrixRow(field.columns)];
                   const matrixError = errors[field.key as keyof typeof errors];

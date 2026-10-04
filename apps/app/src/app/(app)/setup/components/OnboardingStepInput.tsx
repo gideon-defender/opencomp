@@ -24,7 +24,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { Controller, useFieldArray } from 'react-hook-form';
 import type { CompanyDetails, CustomVendor, Step } from '../lib/types';
@@ -594,15 +594,16 @@ function SoftwareVendorInput({
 
   // Cleanup timers on unmount
   useEffect(() => {
+    const timers = validationTimersRef.current;
     return () => {
-      validationTimersRef.current.forEach((timer) => clearTimeout(timer));
-      validationTimersRef.current.clear();
+      timers.forEach((timer) => clearTimeout(timer));
+      timers.clear();
     };
   }, []);
 
   // Get custom vendors from form
-  const customVendorsForCallback =
-    (form.watch('customVendors') as CustomVendor[] | undefined) || [];
+  const customVendorsRaw = form.watch('customVendors') as CustomVendor[] | undefined;
+  const customVendorsForCallback = useMemo(() => customVendorsRaw || [], [customVendorsRaw]);
 
   // Notify parent about touched invalid URLs
   useEffect(() => {

@@ -315,12 +315,10 @@ export function TimelinePhaseBar({
 function PhaseSegment({
   phase,
   className = '',
-  inGroup = false,
   style,
 }: {
   phase: Phase;
   className?: string;
-  inGroup?: boolean;
   style?: React.CSSProperties;
 }) {
   const flexStyle = style ?? { flex: phase.durationWeeks };

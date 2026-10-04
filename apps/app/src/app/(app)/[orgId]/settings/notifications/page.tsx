@@ -3,13 +3,7 @@ import type { Metadata } from 'next';
 import { RoleNotificationSettings } from './components/RoleNotificationSettings';
 import type { RoleNotificationConfig } from './data/getRoleNotificationSettings';
 
-export default async function NotificationsSettings({
-  params,
-}: {
-  params: Promise<{ orgId: string }>;
-}) {
-  const { orgId } = await params;
-
+export default async function NotificationsSettings() {
   const res = await serverApi.get<{
     data: RoleNotificationConfig[];
   }>('/v1/organization/role-notifications');

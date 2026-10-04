@@ -97,7 +97,7 @@ export function TasksClientPage({ initialTasks, emptyMessage, frameworkId }: Tas
     isDirty,
     createdIds,
     changesSummary,
-  } = useTaskChangeTracking(initialGridData, frameworkId);
+  } = useTaskChangeTracking(initialGridData);
 
   const fetchAllControls = useCallback(
     () => apiClient<Array<{ id: string; name: string }>>('/control-template'),
@@ -299,6 +299,7 @@ export function TasksClientPage({ initialTasks, emptyMessage, frameworkId }: Tas
 
   const [sorting, setSorting] = useState<SortingState>([]);
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack useReactTable returns unmemoizable functions; skip React Compiler memoization
   const table = useReactTable({
     data,
     columns,

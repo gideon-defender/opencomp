@@ -30,7 +30,7 @@ export function TestResultsPanel({
   evaluationCriteria,
 }: Props) {
   const [activeSection, setActiveSection] = useState<ActiveSection>('reasoning');
-  const [animateSuccess, setAnimateSuccess] = useState(false);
+  const [, setAnimateSuccess] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const { resolvedAutomationId } = useSharedChatContext();
@@ -129,37 +129,6 @@ export function TestResultsPanel({
   if (!result) return null;
 
   if (!testState) return null;
-
-  const getColorClasses = () => {
-    switch (testState.color) {
-      case 'success':
-        return {
-          bg: 'bg-gradient-to-br from-green-500/5 via-green-500/10 to-green-500/5 border-green-500/20',
-          iconBg: 'bg-green-500',
-          iconGradient: 'from-green-500 to-green-600',
-          glow1: 'bg-gradient-to-br from-green-500/20 to-green-500/10',
-          glow2: 'bg-gradient-to-tr from-green-500/10 to-green-500/20',
-        };
-      case 'destructive':
-        return {
-          bg: 'bg-gradient-to-br from-destructive/5 via-destructive/10 to-destructive/5 border-destructive/20',
-          iconBg: 'bg-destructive',
-          iconGradient: 'from-destructive to-destructive/80',
-          glow1: 'bg-gradient-to-br from-destructive/20 to-destructive/10',
-          glow2: 'bg-gradient-to-tr from-destructive/10 to-destructive/20',
-        };
-      default:
-        return {
-          bg: 'bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border-primary/20',
-          iconBg: 'bg-primary',
-          iconGradient: 'from-primary to-primary/80',
-          glow1: 'bg-gradient-to-br from-primary/20 to-primary/10',
-          glow2: 'bg-gradient-to-tr from-primary/10 to-primary/20',
-        };
-    }
-  };
-
-  const colors = getColorClasses();
 
   return (
     <div ref={containerRef} className="h-full flex flex-col p-8">

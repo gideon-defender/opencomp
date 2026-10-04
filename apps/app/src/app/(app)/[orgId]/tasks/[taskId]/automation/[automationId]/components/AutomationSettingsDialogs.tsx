@@ -10,22 +10,10 @@ import {
   DialogTitle,
 } from '@gideon-defender/ui/dialog';
 import { useTranslations } from 'next-intl';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useTaskAutomation } from '../hooks/use-task-automation';
-
-interface EditNameDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSuccess?: () => void;
-}
-
-interface EditDescriptionDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSuccess?: () => void;
-}
 
 interface DeleteDialogProps {
   open: boolean;
@@ -33,8 +21,9 @@ interface DeleteDialogProps {
   onSuccess?: () => void;
 }
 
-export function DeleteAutomationDialog({ open, onOpenChange, onSuccess }: DeleteDialogProps) {
+export function DeleteAutomationDialog({ open, onOpenChange }: DeleteDialogProps) {
   const t = useTranslations('tasks');
+  const router = useRouter();
   const { automation, deleteAutomation } = useTaskAutomation();
   const { orgId, taskId } = useParams<{
     orgId: string;
@@ -51,7 +40,7 @@ export function DeleteAutomationDialog({ open, onOpenChange, onSuccess }: Delete
       toast.success(t('settingsDialogs.deletedToast'));
 
       // Redirect back to task page after successful deletion
-      window.location.href = `/${orgId}/tasks/${taskId}`;
+      router.push(`/${orgId}/tasks/${taskId}`);
     } catch {
       toast.error(t('settingsDialogs.deleteFailedToast'));
     } finally {

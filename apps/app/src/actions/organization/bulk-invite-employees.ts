@@ -36,7 +36,6 @@ export const bulkInviteEmployees = createSafeActionClient()
     }
 
     const results: InviteResult[] = [];
-    let allSuccess = true;
 
     console.info('[bulkInviteEmployees] start', {
       requestId,
@@ -56,7 +55,6 @@ export const bulkInviteEmployees = createSafeActionClient()
         });
         results.push({ email, success: true });
       } catch (error) {
-        allSuccess = false;
         console.error('[bulkInviteEmployees] invite failed', {
           requestId,
           organizationId,

@@ -51,7 +51,7 @@ export function PolicyDeleteDialog({ isOpen, onClose, policy }: PolicyDeleteDial
     },
   });
 
-  const handleSubmit = async (_values: FormValues) => {
+  const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
       await deletePolicy();

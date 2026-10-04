@@ -52,7 +52,7 @@ vi.mock('@gideon-defender/ui/dialog', () => ({
   DialogFooter: ({ children }: any) => <div>{children}</div>,
   DialogHeader: ({ children }: any) => <div>{children}</div>,
   DialogTitle: ({ children }: any) => <h2>{children}</h2>,
-  DialogTrigger: ({ children, asChild }: any) => <div data-testid="dialog-trigger">{children}</div>,
+  DialogTrigger: ({ children }: any) => <div data-testid="dialog-trigger">{children}</div>,
 }));
 
 vi.mock('@gideon-defender/ui/input', () => ({

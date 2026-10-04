@@ -14,7 +14,7 @@ import {
   Text,
 } from '@trycompai/design-system';
 import { Time } from '@trycompai/design-system/icons';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   AttachmentsSection,
   AutomationRunsSection,
@@ -158,16 +158,6 @@ export function TaskDetailSheet({
 }) {
   const [details, setDetails] = useState<TaskDetails | null>(null);
   const [loading, setLoading] = useState(false);
-
-  const fetchDetails = useCallback(async () => {
-    if (!taskId) return;
-    setLoading(true);
-    const res = await api.get<TaskDetails>(
-      `/v1/admin/organizations/${orgId}/tasks/${taskId}/details`,
-    );
-    if (res.data) setDetails(res.data);
-    setLoading(false);
-  }, [orgId, taskId]);
 
   const [prevTaskId, setPrevTaskId] = useState(taskId);
   if (prevTaskId !== taskId) {

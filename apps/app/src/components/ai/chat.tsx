@@ -127,13 +127,12 @@ export default function Chat() {
     [resolvedOrganizationId],
   );
 
-  const { messages, sendMessage, error, status, stop, setMessages } = useChat({
+  const { messages, sendMessage, error, status, setMessages } = useChat({
     id:
       resolvedOrganizationId && userId
         ? `assistant-chat:v1:${resolvedOrganizationId}:${userId}`
         : undefined,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    transport: transport as any,
+    transport,
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
   });
 
@@ -177,8 +176,7 @@ export default function Chat() {
         parts: [{ type: 'text' as const, text: m.text }],
       }));
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      setMessages(uiMessages as any);
+      setMessages(uiMessages as UIMessage[]);
       isHydratingRef.current = false;
     })();
 

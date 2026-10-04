@@ -155,6 +155,7 @@ export function TrustPortalDomain({
   const handleCheckDnsRecord = async () => {
     setIsCheckingDns(true);
     try {
+      // eslint-disable-next-line react-hooks/incompatible-library -- watch() returns unstable fn, intentionally not memoized
       const data = await checkDns(form.watch('domain'));
       // Update SWR cache with the result directly — no duplicate request
       recheckDns(data, { revalidate: false });

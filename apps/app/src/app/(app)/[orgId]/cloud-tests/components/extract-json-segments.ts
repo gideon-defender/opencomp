@@ -22,8 +22,6 @@
 
 type Segment = { type: 'text'; value: string } | { type: 'json'; raw: string; pretty: string };
 
-const OPEN: Record<string, string> = { '{': '}', '[': ']' };
-
 /**
  * Try to find the index of the matching closing bracket for the
  * opener at `start`. Returns the index of the closer, or null if the

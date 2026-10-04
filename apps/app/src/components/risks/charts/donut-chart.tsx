@@ -18,7 +18,6 @@ interface DonutChartProps {
 export function DonutChart({
   data,
   colors = ['#7e4cfe', '#895cfc', '#956bff', '#a37fff', '#b291fd', '#b597ff'],
-  showLabels = true,
 }: DonutChartProps) {
   const radius = 420; // Chart base dimensions
   const gap = 0.01; // Gap between slices
@@ -46,14 +45,6 @@ export function DonutChart({
   const arcLabel = arc<PieArcDatum<ChartItem>>().innerRadius(labelRadius).outerRadius(labelRadius);
 
   const arcs = pieLayout(data);
-
-  // Calculate the angle for each slice
-  function computeAngle(d: PieArcDatum<ChartItem>) {
-    return ((d.endAngle - d.startAngle) * 180) / Math.PI;
-  }
-
-  // Minimum angle to display text
-  const minAngle = 20; // Adjust this value as needed
 
   // If no data or all values are 0, return null
   if (data.length === 0 || data.every((item) => item.value === 0)) {
@@ -87,7 +78,6 @@ export function DonutChart({
 
         {/* Slices */}
         {arcs.map((d, i) => {
-          const angle = computeAngle(d);
           const centroid = arcLabel.centroid(d);
           if (d.endAngle > Math.PI) {
             centroid[0] += 10;

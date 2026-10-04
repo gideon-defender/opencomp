@@ -116,7 +116,6 @@ vi.mock('@gideon-defender/ui/dropdown-menu', () => ({
   DropdownMenuTrigger: ({
     children,
     disabled,
-    asChild,
   }: {
     children: React.ReactNode;
     disabled?: boolean;

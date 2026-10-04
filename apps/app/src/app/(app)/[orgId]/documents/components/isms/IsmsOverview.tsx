@@ -53,7 +53,7 @@ export function IsmsOverview({ organizationId }: { organizationId: string }) {
     iso27001FrameworkId
       ? (['/v1/isms/ensure-setup', organizationId, iso27001FrameworkId] as const)
       : null,
-    async ([endpoint, orgId, frameworkId]: readonly [string, string, string]) => {
+    async ([endpoint, , frameworkId]: readonly [string, string, string]) => {
       const response = await api.post<IsmsEnsureSetupResponse>(endpoint, {
         frameworkId,
       });

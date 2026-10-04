@@ -266,7 +266,7 @@ export function useTaskAutomationExecution({
       onError?.(error);
       throw error;
     }
-  }, [orgId, taskId, onSuccess, onError]);
+  }, [orgId, taskId, onError, automationIdRef]);
 
   /**
    * Reset the execution state

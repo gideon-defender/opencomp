@@ -35,7 +35,7 @@ vi.mock('remark-gfm', () => ({
 
 // Mock design system
 vi.mock('@trycompai/design-system', () => ({
-  Button: ({ children, onClick, disabled, loading, ...props }: any) => (
+  Button: ({ children, onClick, disabled, ...props }: any) => (
     <button onClick={onClick} disabled={disabled} {...props}>
       {children}
     </button>

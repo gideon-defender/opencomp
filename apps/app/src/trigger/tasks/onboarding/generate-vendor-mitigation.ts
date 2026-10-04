@@ -52,7 +52,7 @@ export const generateVendorMitigation = task({
         const metadataHandle = metadata.root ?? metadata.parent ?? metadata;
         metadataHandle.set(`vendor_${vendorId}_status`, 'processing');
 
-        await createVendorRiskComment(vendor, policies, organizationId, authorId ?? '');
+        await createVendorRiskComment(vendor, policies, organizationId);
 
         // Mark vendor as assessed. Only reassign if we have an author;
         // platform admins are hidden from the assignee UI, so skip them too.

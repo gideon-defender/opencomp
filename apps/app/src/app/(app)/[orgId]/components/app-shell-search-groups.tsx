@@ -67,13 +67,11 @@ export const getAppShellSearchGroups = ({
   organizationId,
   router,
   permissions,
-  hasAuditorRole,
   isOnlyAuditor,
   canAccessAuditorView,
   isQuestionnaireEnabled,
   isTrustNdaEnabled,
   isSecurityEnabled,
-  isAdvancedModeEnabled,
 }: AppShellSearchGroupsParams): CommandSearchGroup[] => {
   const can = (route: string) => canAccessRoute(permissions, route);
 

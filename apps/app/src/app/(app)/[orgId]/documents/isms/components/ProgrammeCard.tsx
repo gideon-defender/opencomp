@@ -120,7 +120,7 @@ export function ProgrammeCard({ narrative, canEdit, onSave }: ProgrammeCardProps
           <Controller
             control={control}
             name="programme"
-            render={({ field: { ref: _ref, ...field }, fieldState }) => (
+            render={({ field: { ...field }, fieldState }) => (
               <>
                 <Textarea {...field} rows={4} aria-label="Audit programme" />
                 <FieldError>{fieldState.error?.message}</FieldError>

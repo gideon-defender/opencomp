@@ -30,17 +30,7 @@ vi.mock('./create-vendor-form', () => ({
 
 // Mock design system components
 vi.mock('@trycompai/design-system', () => ({
-  Button: ({
-    children,
-    iconLeft,
-    iconRight,
-    loading,
-    variant,
-    size,
-    width,
-    asChild,
-    ...props
-  }: any) => <button {...props}>{children}</button>,
+  Button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
   Sheet: ({ children }: any) => <div>{children}</div>,
   SheetContent: ({ children }: any) => <div>{children}</div>,
   SheetHeader: ({ children }: any) => <div>{children}</div>,

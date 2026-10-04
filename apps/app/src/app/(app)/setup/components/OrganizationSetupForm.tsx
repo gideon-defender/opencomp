@@ -4,7 +4,6 @@ import { AnimatedWrapper } from '@/components/animated-wrapper';
 import { LogoSpinner } from '@/components/logo-spinner';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@gideon-defender/ui/form';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useOnboardingForm } from '../hooks/useOnboardingForm';
 import { OnboardingFormActions } from './OnboardingFormActions';
@@ -23,8 +22,7 @@ export function OrganizationSetupForm({
   hasOtherOrgs = false,
 }: OrganizationSetupFormProps) {
   const t = useTranslations('setup');
-  const [isLoadingFrameworks, setIsLoadingFrameworks] = useState(false);
-  const router = useRouter();
+  const [, setIsLoadingFrameworks] = useState(false);
 
   const {
     stepIndex,
@@ -34,7 +32,6 @@ export function OrganizationSetupForm({
     savedAnswers,
     isOnboarding,
     isFinalizing,
-    mounted,
     onSubmit,
     handleBack,
     handlePrefillAll,
@@ -134,7 +131,7 @@ export function OrganizationSetupForm({
                 ) : (
                   <FormField
                     name={step.key}
-                    render={({ field }) => (
+                    render={() => (
                       <FormItem>
                         <FormControl>
                           <OnboardingStepInput

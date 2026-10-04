@@ -73,12 +73,7 @@ function frequencyDescription(
   }
 }
 
-export function MetricsSection({
-  initialVersions,
-  initialRuns,
-  scheduleFrequency,
-  lastRunAt,
-}: MetricsSectionProps) {
+export function MetricsSection({ initialRuns, scheduleFrequency, lastRunAt }: MetricsSectionProps) {
   const t = useTranslations('tasks');
   const thisWeekRuns = useMemo(() => {
     const now = new Date();

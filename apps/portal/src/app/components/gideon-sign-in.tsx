@@ -24,8 +24,12 @@ export function GideonSignIn({
     const params = new URLSearchParams();
     if (inviteCode) params.set('inviteCode', inviteCode);
     if (redirectTo) params.set('redirectTo', toAbsoluteUrl(redirectTo));
+    const loginUrl = new URL('/v1/auth/gideon/login', apiBase);
     const query = params.toString();
-    window.location.href = `${apiBase}/v1/auth/gideon/login${query ? `?${query}` : ''}`;
+    if (query) loginUrl.search = query;
+    // External OIDC endpoint on another origin — needs a full document load,
+    // router.push only handles internal navigation.
+    window.location.href = loginUrl.toString();
   };
 
   return (

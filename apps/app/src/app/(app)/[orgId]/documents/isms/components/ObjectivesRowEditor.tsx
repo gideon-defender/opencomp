@@ -39,7 +39,7 @@ export function ObjectivesRowEditor({ control, ownerOptions }: ObjectivesRowEdit
           <Controller
             control={control}
             name="objective"
-            render={({ field: { ref: _ref, ...field }, fieldState }) => (
+            render={({ field: { ...field }, fieldState }) => (
               <>
                 <Textarea {...field} rows={3} aria-label="Objective" />
                 <FieldError>{fieldState.error?.message}</FieldError>
@@ -53,9 +53,7 @@ export function ObjectivesRowEditor({ control, ownerOptions }: ObjectivesRowEdit
           <Controller
             control={control}
             name="target"
-            render={({ field: { ref: _ref, ...field } }) => (
-              <Input {...field} aria-label="Objective target" />
-            )}
+            render={({ field: { ...field } }) => <Input {...field} aria-label="Objective target" />}
           />
         </IsmsFieldLabel>
         <IsmsFieldLabel label="Owner">
@@ -86,7 +84,7 @@ export function ObjectivesRowEditor({ control, ownerOptions }: ObjectivesRowEdit
           <Controller
             control={control}
             name="cadence"
-            render={({ field: { ref: _ref, ...field } }) => (
+            render={({ field: { ...field } }) => (
               <Input {...field} aria-label="Objective cadence" />
             )}
           />
@@ -95,7 +93,7 @@ export function ObjectivesRowEditor({ control, ownerOptions }: ObjectivesRowEdit
           <Controller
             control={control}
             name="measurementMethod"
-            render={({ field: { ref: _ref, ...field } }) => (
+            render={({ field: { ...field } }) => (
               <Input {...field} aria-label="Objective measurement method" />
             )}
           />
@@ -105,7 +103,7 @@ export function ObjectivesRowEditor({ control, ownerOptions }: ObjectivesRowEdit
         <Controller
           control={control}
           name="plan"
-          render={({ field: { ref: _ref, ...field } }) => (
+          render={({ field: { ...field } }) => (
             <Textarea {...field} rows={3} aria-label="Objective plan" />
           )}
         />

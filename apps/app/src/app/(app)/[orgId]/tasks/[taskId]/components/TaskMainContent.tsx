@@ -8,6 +8,6 @@ interface TaskMainContentProps {
   showComments?: boolean;
 }
 
-export function TaskMainContent({ task, showComments = true }: TaskMainContentProps) {
+export function TaskMainContent({ task }: TaskMainContentProps) {
   return <TaskBody taskId={task.id} />;
 }

@@ -114,7 +114,10 @@ export function ConnectIntegrationDialog({
 
   const provider = providers?.find((p) => p.id === integrationId);
   const authType = provider?.authType;
-  const credentialFields = provider?.credentialFields ?? [];
+  const credentialFields = useMemo(
+    () => provider?.credentialFields ?? [],
+    [provider?.credentialFields],
+  );
   const supportsMultipleConnections = provider?.supportsMultipleConnections ?? false;
   const hasSelectedAwsEnvironment =
     integrationId !== 'aws' || typeof credentials.awsType === 'string';
@@ -502,7 +505,8 @@ export function ConnectIntegrationDialog({
       // Update credentials (API validates before saving for AWS). The AWS
       // External ID is server-owned — strip any prefilled value so the PUT
       // never carries one (the server pins the stored value regardless).
-      const { externalId: _ignoredExternalId, ...credentialsToSend } = credentials;
+      const credentialsToSend = { ...credentials };
+      delete credentialsToSend.externalId;
       const credResult = await updateConnectionCredentials(
         configureConnectionId,
         credentialsToSend,

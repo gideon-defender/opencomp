@@ -76,11 +76,10 @@ export function useQuestionnaireActions({
   setParseTaskId,
   setParseToken,
   uploadFileAction,
-  parseAction,
   triggerAutoAnswer,
   triggerSingleAnswer,
 }: UseQuestionnaireActionsProps) {
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [isExporting, setIsExporting] = useState(false);
 
   const handleFileSelect = useCallback(

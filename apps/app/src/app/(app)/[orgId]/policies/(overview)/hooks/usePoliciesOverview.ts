@@ -28,7 +28,7 @@ interface UsePoliciesOverviewOptions {
 }
 
 export function usePoliciesOverview({ organizationId, initialData }: UsePoliciesOverviewOptions) {
-  const { data, error, isLoading, mutate } = useSWR(
+  const { data, error, mutate } = useSWR(
     ['/v1/policies?includeArchived=true', organizationId],
     async ([endpoint]) => {
       const response = await apiClient.get<{ data: PolicyFromApi[] }>(endpoint);

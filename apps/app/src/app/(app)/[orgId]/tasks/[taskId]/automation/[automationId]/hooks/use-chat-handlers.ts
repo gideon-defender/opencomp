@@ -1,5 +1,4 @@
 import { api } from '@/lib/api-client';
-import { useRouter } from 'next/navigation';
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 import { mutate } from 'swr';
@@ -23,8 +22,6 @@ export function useChatHandlers({
   isEphemeral,
   updateAutomationId,
 }: UseChatHandlersProps) {
-  const router = useRouter();
-
   const validateAndSubmitMessage = useCallback(
     async (text: string) => {
       if (!text.trim()) return;

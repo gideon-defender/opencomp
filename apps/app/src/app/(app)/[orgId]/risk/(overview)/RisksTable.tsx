@@ -179,7 +179,7 @@ export const RisksTable = ({
   const [riskToDelete, setRiskToDelete] = useState<RiskRow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const { itemStatuses, progress, itemsInfo, isActive, isLoading } = useOnboardingStatus(
+  const { itemStatuses, progress, itemsInfo, isActive } = useOnboardingStatus(
     onboardingRunId,
     'risks',
   );

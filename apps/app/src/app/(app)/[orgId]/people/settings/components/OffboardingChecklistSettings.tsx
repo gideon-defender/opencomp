@@ -42,7 +42,7 @@ export function OffboardingChecklistSettings() {
   const t = useTranslations('people');
   const { hasPermission } = usePermissions();
   const canUpdate = hasPermission('organization', 'update');
-  const { post, patch, delete: deleteReq } = useApi();
+  const { patch, delete: deleteReq } = useApi();
 
   const { data, mutate } = useApiSWR<TemplateItem[]>(TEMPLATE_ENDPOINT);
   const items = Array.isArray(data?.data) ? data.data : [];

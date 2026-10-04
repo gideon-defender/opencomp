@@ -13,7 +13,6 @@ interface Props {
 }
 
 export function PoliciesStatus({
-  totalPolicies,
   publishedPolicies,
   draftPolicies,
   archivedPolicies,

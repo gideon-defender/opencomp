@@ -18,7 +18,6 @@ export function AnimatedWrapper({
   direction = 'up',
   className,
   duration = 500,
-  animationKey,
 }: AnimatedWrapperProps) {
   const [isVisible, setIsVisible] = useState(false);
 

@@ -5,13 +5,7 @@ import type { BundledLanguage, BundledTheme, HighlighterGeneric, ThemedToken } f
 
 import { Button } from '@gideon-defender/ui/button';
 import { cn } from '@gideon-defender/ui/cn';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@gideon-defender/ui/select';
+import { SelectTrigger } from '@gideon-defender/ui/select';
 import { CheckIcon, CopyIcon } from 'lucide-react';
 import {
   createContext,
@@ -484,8 +478,6 @@ export const CodeBlockCopyButton = ({
   );
 };
 
-type CodeBlockLanguageSelectorProps = ComponentProps<typeof Select>;
-
 type CodeBlockLanguageSelectorTriggerProps = ComponentProps<typeof SelectTrigger>;
 
 export const CodeBlockLanguageSelectorTrigger = ({
@@ -497,9 +489,3 @@ export const CodeBlockLanguageSelectorTrigger = ({
     {...props}
   />
 );
-
-type CodeBlockLanguageSelectorValueProps = ComponentProps<typeof SelectValue>;
-
-type CodeBlockLanguageSelectorContentProps = ComponentProps<typeof SelectContent>;
-
-type CodeBlockLanguageSelectorItemProps = ComponentProps<typeof SelectItem>;

@@ -15,7 +15,7 @@ import {
   Text,
 } from '@trycompai/design-system';
 import { ArrowLeft, View } from '@trycompai/design-system/icons';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface FormStatus {
   lastSubmittedAt: string | null;
@@ -48,15 +48,6 @@ export function EvidenceTab({ orgId }: { orgId: string }) {
   const [statuses, setStatuses] = useState<Record<string, FormStatus>>({});
   const [loading, setLoading] = useState(true);
   const [selectedFormType, setSelectedFormType] = useState<string | null>(null);
-
-  const fetchStatuses = useCallback(async () => {
-    setLoading(true);
-    const res = await api.get<Record<string, FormStatus>>(
-      `/v1/admin/organizations/${orgId}/evidence-forms`,
-    );
-    if (res.data) setStatuses(res.data);
-    setLoading(false);
-  }, [orgId]);
 
   useEffect(() => {
     let cancelled = false;

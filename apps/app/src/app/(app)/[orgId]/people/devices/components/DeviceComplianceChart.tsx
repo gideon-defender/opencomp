@@ -97,7 +97,7 @@ export function DeviceComplianceChart({ fleetDevices, agentDevices }: DeviceComp
       // partially-verified imported devices keep the familiar two-entry legend.
       legendDisplayData: allItems.filter((item) => item.name !== 'Unverified' || item.value > 0),
     };
-  }, [agentDevices, fleetDevices]);
+  }, [agentDevices, fleetDevices, devices.length]);
 
   const totalDevices = devices.length;
 

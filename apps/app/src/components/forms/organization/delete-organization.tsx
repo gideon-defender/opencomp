@@ -28,13 +28,7 @@ import { redirect } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-export function DeleteOrganization({
-  organizationId,
-  isOwner,
-}: {
-  organizationId: string;
-  isOwner: boolean;
-}) {
+export function DeleteOrganization({ isOwner }: { organizationId: string; isOwner: boolean }) {
   const { deleteOrganization } = useOrganizationMutations();
   const { hasPermission } = usePermissions();
   const [value, setValue] = useState('');

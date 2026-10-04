@@ -8,10 +8,7 @@ export function Reasoning({ part, partIndex }: { part: ReasoningUIPart; partInde
   const [startTime] = useState(() => Date.now());
   const [duration, setDuration] = useState<number | null>(null);
 
-  const text = part.text || '';
   const isStreaming = part.state === 'streaming';
-  const firstLine = text.split('\n')[0].replace(/\*\*/g, '');
-  const hasMoreContent = text.includes('\n') || text.length > 80;
 
   // Snapshot the elapsed time once reasoning finishes (deferred out of the effect body).
   useEffect(() => {
@@ -33,21 +30,6 @@ export function Reasoning({ part, partIndex }: { part: ReasoningUIPart; partInde
     if (duration !== null) return `Thought for ${duration}s`;
     return 'Thinking...';
   };
-
-  const summarize = (s: string) => {
-    let t = (s || '').trim();
-    t = t.replace(/^(_|\*)*thinking:?(_|\*)*\s*/i, '');
-    t = t.replace(/^i\s*(?:'m| am)\s+/i, '');
-    t = t.replace(/^i\s*(?:'ll| will)\s+/i, '');
-    t = t.replace(/^let me\s+/i, '');
-    t = t.replace(/^now\s+/i, '');
-    t = t.replace(/^okay,?\s*/i, '');
-    t = t.replace(/^i\s+(?:need|want|will|can|should)\s+to\s+/i, '');
-    t = t.replace(/^i\s+/i, '');
-    if (t.length > 80) t = t.slice(0, 77) + '…';
-    return t;
-  };
-  const summary = summarize(firstLine);
 
   const handleClick = () => {
     if (context) {

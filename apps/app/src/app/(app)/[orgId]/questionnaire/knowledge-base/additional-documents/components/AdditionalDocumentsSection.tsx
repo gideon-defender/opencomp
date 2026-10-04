@@ -82,7 +82,7 @@ export function AdditionalDocumentsSection({
     setActiveProcessingRun(null);
     void revalidate();
     toast.success(t('additionalDocs.uploadCompleted'));
-  }, [revalidate]);
+  }, [revalidate, t]);
 
   const handleDeletionComplete = useCallback(() => {
     setActiveDeletionRun(null);

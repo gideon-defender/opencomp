@@ -31,7 +31,7 @@ export function WizardStepCommitments({ control, regulatorOptions }: WizardStepC
       <Controller
         control={control}
         name="certificationBody"
-        render={({ field: { ref: _ref, ...field } }) => (
+        render={({ field: { ...field } }) => (
           <WizardField
             label="Certification body"
             helper="The accredited body that will audit and issue your certificate. Suggestions: BSI, A-LIGN, Schellman, Coalfire, Prescient Assurance."

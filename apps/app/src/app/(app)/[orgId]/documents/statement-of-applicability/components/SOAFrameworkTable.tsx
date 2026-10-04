@@ -75,7 +75,6 @@ function toAnswerData(answer: SOAAnswerRecord): SOATableAnswerData {
 type SOADocumentInfoDocument = Parameters<typeof SOADocumentInfo>[0]['document'];
 
 export function SOAFrameworkTable({
-  framework,
   configuration,
   document,
   organizationId,
@@ -83,7 +82,6 @@ export function SOAFrameworkTable({
   canApprove = false,
   approver = null,
   isPendingApproval = false,
-  canCurrentUserApprove = false,
   currentMemberId = null,
   ownerAdminMembers = [],
 }: SOAFrameworkTableProps) {

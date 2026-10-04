@@ -24,7 +24,7 @@ export function VendorRiskAssessmentView({ source }: { source: VendorRiskAssessm
     return parseVendorRiskAssessmentDescription(source.description);
   }, [source.description]);
 
-  const certifications = data?.certifications ?? [];
+  const certifications = useMemo(() => data?.certifications ?? [], [data]);
   const filteredCerts = useMemo(() => filterCertifications(certifications), [certifications]);
   const verifiedCount = useMemo(
     () => filteredCerts.filter((c) => c.status === 'verified').length,

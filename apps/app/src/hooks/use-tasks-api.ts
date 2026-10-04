@@ -21,36 +21,6 @@ interface Attachment {
   description: string | null;
 }
 
-interface Task {
-  id: string;
-  title: string;
-  description: string | null;
-  status: string;
-  priority: string;
-  assigneeId: string | null;
-  organizationId: string;
-  createdAt: string; // ISO string from API
-  updatedAt: string; // ISO string from API
-}
-
-interface Comment {
-  id: string;
-  content: string;
-  author: {
-    id: string;
-    name: string;
-    email: string;
-  };
-  attachments: Array<{
-    id: string;
-    name: string;
-    type: string;
-    downloadUrl: string;
-    createdAt: string; // ISO string from API
-  }>;
-  createdAt: string; // ISO string from API
-}
-
 /**
  * Hook to fetch task attachments using SWR
  */

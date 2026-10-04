@@ -37,7 +37,7 @@ export function NoResults({ hasFilters }: Props) {
 }
 
 export function NoRisks() {
-  const [open, setOpen] = useQueryState('create-risk-sheet');
+  const [, setOpen] = useQueryState('create-risk-sheet');
 
   return (
     <div className="absolute top-0 left-0 z-20 mt-24 flex w-full items-center justify-center">

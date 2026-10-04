@@ -66,10 +66,6 @@ export type ActionValidationKey = keyof typeof actionValidationMessages;
 
 const m = actionValidationMessages;
 
-const organizationSchema = z.object({
-  frameworkIds: z.array(z.string()).min(1, m.selectFrameworkToStart),
-});
-
 export const organizationNameSchema = z.object({
   name: z.string().min(1, m.organizationNameRequired).max(255, m.organizationNameTooLong),
 });
@@ -413,29 +409,4 @@ export const updateContextEntrySchema = z.object({
 
 export const deleteContextEntrySchema = z.object({
   id: z.string().min(1, m.idRequired),
-});
-
-// Comment schemas for the new generic comments API
-const createCommentSchema = z.object({
-  content: z.string().min(1, m.commentContentRequired),
-  entityId: z.string(),
-  entityType: z.nativeEnum(CommentEntityType),
-  attachments: z
-    .array(
-      z.object({
-        fileName: z.string(),
-        fileType: z.string(),
-        fileData: z.string(), // base64
-      }),
-    )
-    .optional(),
-});
-
-const updateCommentSchema = z.object({
-  commentId: z.string(),
-  content: z.string().min(1, m.commentContentRequired),
-});
-
-const deleteCommentSchema = z.object({
-  commentId: z.string(),
 });

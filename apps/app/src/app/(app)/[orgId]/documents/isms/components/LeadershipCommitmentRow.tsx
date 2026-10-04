@@ -88,7 +88,7 @@ export function LeadershipCommitmentRow({
           <Controller
             control={control}
             name={`commitments.${index}.text`}
-            render={({ field: { ref: _ref, ...field } }) => (
+            render={({ field: { ...field } }) => (
               <Textarea
                 {...field}
                 rows={3}

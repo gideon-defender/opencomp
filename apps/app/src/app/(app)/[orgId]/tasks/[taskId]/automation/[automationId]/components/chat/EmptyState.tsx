@@ -1,4 +1,5 @@
 import { Card, CardContent, Skeleton, Text } from '@trycompai/design-system';
+import Image from 'next/image';
 import { useState } from 'react';
 import { AUTOMATION_EXAMPLES, AutomationExample } from '../../constants/automation-examples';
 
@@ -78,7 +79,7 @@ function VendorCard({
         <CardContent>
           <div className="flex items-start gap-3">
             <div className="relative shrink-0">
-              <img
+              <Image
                 src={imageUrl}
                 alt={example.title}
                 width={24}

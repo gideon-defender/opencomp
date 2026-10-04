@@ -62,12 +62,11 @@ export function TasksPageClient({
   controls,
   frameworkInstances,
   activeTab,
-  orgId,
   organizationName,
   hasEvidenceExportAccess,
   evidenceApprovalEnabled,
 }: TasksPageClientProps) {
-  const { tasks, createTask, mutate: mutateTasks } = useTasks({ initialData: initialTasks });
+  const { tasks, createTask } = useTasks({ initialData: initialTasks });
   const { hasPermission } = usePermissions();
   const t = useTranslations('tasks');
   const [isCreateSheetOpen, setIsCreateSheetOpen] = useState(false);

@@ -6,10 +6,9 @@ import { VERTICAL_COOKIE } from './sizing';
 interface HProps {
   left: React.ReactNode;
   right: React.ReactNode;
-  defaultLayout?: number[]; // Now optional since we're not using it
 }
 
-export function Horizontal({ defaultLayout, left, right }: HProps) {
+export function Horizontal({ left, right }: HProps) {
   return (
     <div className="h-full w-full flex">
       <div className="w-1/2 h-full flex-shrink-0">{left}</div>

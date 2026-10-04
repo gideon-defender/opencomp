@@ -87,6 +87,7 @@ export function UpdateRiskOverview({
           <Stack gap="sm">
             <Label>Assignee</Label>
             <SelectAssignee
+              // eslint-disable-next-line react-hooks/incompatible-library -- watch() returns unstable fn, intentionally not memoized
               assigneeId={form.watch('assigneeId') ?? ''}
               assignees={assignees}
               onAssigneeChange={(id) => form.setValue('assigneeId', id, { shouldDirty: true })}

@@ -19,7 +19,7 @@ export const cancelOnboarding = authActionClientWithoutOrg
       channel: 'server',
     },
   })
-  .action(async ({ parsedInput, ctx }) => {
+  .action(async ({ parsedInput }) => {
     const session = await auth.api.getSession({
       headers: await headers(),
     });

@@ -39,7 +39,7 @@ interface AllowedDomainsManagerProps {
 
 const domainRegex = /^[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,}$/i;
 
-export function AllowedDomainsManager({ initialDomains, orgId }: AllowedDomainsManagerProps) {
+export function AllowedDomainsManager({ initialDomains }: AllowedDomainsManagerProps) {
   const { hasPermission } = usePermissions();
   const canUpdate = hasPermission('trust', 'update');
   const { updateAllowedDomains } = useTrustPortalSettings();

@@ -11,7 +11,7 @@ interface PolicyEditorProps {
 }
 
 export function PolicyEditor({ content, onSave }: PolicyEditorProps) {
-  const [editorContent, setEditorContent] = useState<JSONContent | null>(null);
+  const [, setEditorContent] = useState<JSONContent | null>(null);
 
   const documentContent = {
     type: 'doc',

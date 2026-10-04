@@ -80,21 +80,6 @@ const Item = ({ item, isActive, onSelect, disabled }: ItemProps) => {
   );
 };
 
-const listVariant = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.04,
-    },
-  },
-};
-
-const itemVariant = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1 },
-};
-
 type Props = {
   initialItems?: { path: string; name: string; disabled: boolean }[];
   onSelect?: () => void;
@@ -113,8 +98,6 @@ export function MainMenu({ initialItems, onSelect }: Props) {
   const [items, setItems] = useState(initialItems ?? defaultItems);
   const pathname = usePathname();
   const part = pathname?.split('/')[1];
-
-  const hiddenItems = defaultItems.filter((item) => !items.some((i) => i.path === item.path));
 
   const onReorder = (
     items: {

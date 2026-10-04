@@ -10,11 +10,7 @@ interface OnboardingLayoutProps {
   currentOrganization?: Organization | null;
 }
 
-export async function OnboardingLayout({
-  children,
-  variant = 'setup',
-  currentOrganization = null,
-}: OnboardingLayoutProps) {
+export async function OnboardingLayout({ children }: OnboardingLayoutProps) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });

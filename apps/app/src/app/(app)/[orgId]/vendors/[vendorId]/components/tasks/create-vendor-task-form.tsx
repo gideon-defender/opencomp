@@ -37,7 +37,7 @@ import { z } from 'zod';
 
 export function CreateVendorTaskForm({ assignees }: { assignees: (Member & { user: User })[] }) {
   const { hasPermission } = usePermissions();
-  const [_, setCreateVendorTaskSheet] = useQueryState('create-vendor-task-sheet');
+  const [, setCreateVendorTaskSheet] = useQueryState('create-vendor-task-sheet');
   const params = useParams<{ vendorId: string }>();
   const { createTask } = useTaskMutations();
   const [isSubmitting, setIsSubmitting] = useState(false);

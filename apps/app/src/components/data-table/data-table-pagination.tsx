@@ -38,7 +38,7 @@ export function DataTablePagination<TData>({
     try {
       const parsed = Number.parseInt(page, 10);
       return Number.isNaN(parsed) ? table.getState().pagination.pageIndex : parsed - 1;
-    } catch (e) {
+    } catch {
       return table.getState().pagination.pageIndex;
     }
   }, [page, table]);
@@ -48,7 +48,7 @@ export function DataTablePagination<TData>({
     try {
       const parsed = Number.parseInt(perPage, 10);
       return Number.isNaN(parsed) ? table.getState().pagination.pageSize : parsed;
-    } catch (e) {
+    } catch {
       return table.getState().pagination.pageSize;
     }
   }, [perPage, table]);

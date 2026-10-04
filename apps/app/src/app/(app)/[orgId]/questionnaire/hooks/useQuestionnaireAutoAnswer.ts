@@ -21,7 +21,6 @@ interface UseQuestionnaireAutoAnswerProps {
 
 export function useQuestionnaireAutoAnswer({
   results,
-  answeringQuestionIndex,
   isAutoAnswerProcessStarted,
   isAutoAnswerProcessStartedRef,
   setIsAutoAnswerProcessStarted,

@@ -21,7 +21,7 @@ export async function proxy(request: NextRequest) {
             response.headers.set('x-pathname', request.nextUrl.pathname);
             return response;
           }
-        } catch (e) {
+        } catch {
           // Invalid test auth header, continue with normal auth flow
         }
       }

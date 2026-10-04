@@ -93,19 +93,6 @@ const FRAMEWORK_KEY_TO_API_SLUG: Record<string, string> = {
   nist80053: 'nist_800_53',
 };
 
-interface ComplianceResourceResponse {
-  framework: string;
-  fileName: string;
-  fileSize: number;
-  updatedAt: string;
-}
-
-interface ComplianceResourceUrlResponse {
-  signedUrl: string;
-  fileName: string;
-  fileSize: number;
-}
-
 type TrustOverviewData = {
   overviewTitle: string | null;
   overviewContent: string | null;
@@ -151,9 +138,6 @@ type TrustVendor = {
 
 export function TrustPortalSwitch({
   enabled,
-  slug,
-  domainVerified,
-  domain,
   contactEmail,
   primaryColor,
   orgId,
@@ -419,7 +403,7 @@ export function TrustPortalSwitch({
     const payload = await getComplianceResourceUrl(orgId, apiFramework);
     window.open(payload.signedUrl, '_blank', 'noopener,noreferrer');
   };
-  const [isToggling, setIsToggling] = useState(false);
+  const [, setIsToggling] = useState(false);
 
   const form = useForm<z.infer<typeof trustPortalSwitchSchema>>({
     resolver: zodResolver(trustPortalSwitchSchema),
@@ -480,12 +464,8 @@ export function TrustPortalSwitch({
         setIsToggling(false);
       }
     },
-    [updateToggleSettings],
+    [updateToggleSettings, t],
   );
-
-  const portalUrl = domainVerified
-    ? `https://${domain}`
-    : `https://trust.gideondefender.com/${slug}`;
 
   const lastSaved = useRef<{ [key: string]: string | boolean | null }>({
     contactEmail: contactEmail ?? '',
@@ -529,10 +509,10 @@ export function TrustPortalSwitch({
     [form, onSubmit],
   );
 
-  const [contactEmailValue, setContactEmailValue] = useState(form.getValues('contactEmail') || '');
+  const [contactEmailValue] = useState(form.getValues('contactEmail') || '');
   const debouncedContactEmail = useDebounce(contactEmailValue, 800);
 
-  const [primaryColorValue, setPrimaryColorValue] = useState(form.getValues('primaryColor') || '');
+  const [primaryColorValue] = useState(form.getValues('primaryColor') || '');
   const debouncedPrimaryColor = useDebounce(primaryColorValue, 800);
 
   useEffect(() => {
@@ -556,34 +536,6 @@ export function TrustPortalSwitch({
       void autoSave('primaryColor', debouncedPrimaryColor || null);
     }
   }, [debouncedPrimaryColor, autoSave, form]);
-
-  const handleContactEmailBlur = useCallback(
-    (e: React.FocusEvent<HTMLInputElement>) => {
-      const value = e.target.value;
-      form.setValue('contactEmail', value);
-      autoSave('contactEmail', value);
-    },
-    [form, autoSave],
-  );
-
-  const handlePrimaryColorBlur = useCallback(
-    (e: React.FocusEvent<HTMLInputElement>) => {
-      const value = e.target.value;
-      if (value) {
-        form.setValue('primaryColor', value);
-      }
-      void autoSave('primaryColor', value || null);
-    },
-    [form, autoSave],
-  );
-
-  const handleEnabledChange = useCallback(
-    (val: boolean) => {
-      form.setValue('enabled', val);
-      autoSave('enabled', val);
-    },
-    [form, autoSave],
-  );
 
   return (
     <Form {...form}>

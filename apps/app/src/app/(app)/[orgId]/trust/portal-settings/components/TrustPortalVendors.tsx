@@ -207,7 +207,7 @@ function VendorLogo({
 
 const ITEMS_PER_PAGE = 5;
 
-export function TrustPortalVendors({ initialVendors, orgId }: TrustPortalVendorsProps) {
+export function TrustPortalVendors({ initialVendors }: TrustPortalVendorsProps) {
   const { updateVendorTrustSettings } = useTrustPortalSettings();
   const { hasPermission } = usePermissions();
   const canUpdate = hasPermission('trust', 'update');

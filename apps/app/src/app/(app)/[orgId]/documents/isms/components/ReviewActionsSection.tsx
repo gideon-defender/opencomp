@@ -158,7 +158,7 @@ function AddActionForm({
           <Controller
             control={control}
             name="description"
-            render={({ field: { ref: _ref, ...field }, fieldState }) => (
+            render={({ field: { ...field }, fieldState }) => (
               <>
                 <Textarea
                   {...field}
@@ -200,7 +200,7 @@ function AddActionForm({
         <Controller
           control={control}
           name="dueDate"
-          render={({ field: { ref: _ref, ...field } }) => (
+          render={({ field: { ...field } }) => (
             <Input {...field} type="date" aria-label="Action due date" />
           )}
         />

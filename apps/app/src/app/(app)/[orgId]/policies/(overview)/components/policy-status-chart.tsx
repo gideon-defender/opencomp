@@ -31,13 +31,6 @@ const CHART_COLORS = {
   archived: 'var(--muted-foreground)',
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  published: 'Published',
-  draft: 'Draft',
-  needs_review: 'Review',
-  archived: 'Archived',
-};
-
 export function PolicyStatusChart({ data }: PolicyStatusChartProps) {
   // All statuses for the legend (always show all)
   const allStatuses = React.useMemo(() => {

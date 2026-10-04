@@ -112,6 +112,7 @@ export function RoleForm({
                   <PermissionMatrix
                     value={permissionsField.value as Record<string, string[]>}
                     onChange={permissionsField.onChange}
+                    // eslint-disable-next-line react-hooks/incompatible-library -- react-hook-form watch returns a non-memoizable function
                     obligations={form.watch('obligations') as Record<string, boolean>}
                     onObligationsChange={(val) => form.setValue('obligations', val)}
                     disabled={isSubmitting}

@@ -44,7 +44,6 @@ export function TaskItemScrollableDescription({
     resizeObserver.observe(el);
 
     return () => resizeObserver.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shouldConstrain, description]);
 
   const hintText = useMemo(() => {

@@ -28,6 +28,8 @@ export function ControlRequirementsTable({ data }: DataTableProps) {
 
   const columns = useMemo(() => getControlRequirementsColumns(t, tCommon), [t, tCommon]);
 
+  // TanStack Table returns non-memoizable functions — intentional
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,

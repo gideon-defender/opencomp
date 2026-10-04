@@ -120,7 +120,7 @@ export function ProcedureCard({ narrative, canEdit, onSave }: ProcedureCardProps
           <Controller
             control={control}
             name="procedure"
-            render={({ field: { ref: _ref, ...field }, fieldState }) => (
+            render={({ field: { ...field }, fieldState }) => (
               <>
                 <Textarea {...field} rows={4} aria-label="Review procedure" />
                 <FieldError>{fieldState.error?.message}</FieldError>

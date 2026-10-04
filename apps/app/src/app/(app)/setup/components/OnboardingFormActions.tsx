@@ -2,6 +2,7 @@ import { Button } from '@gideon-defender/ui/button';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 interface OnboardingFormActionsProps {
@@ -26,6 +27,7 @@ export function OnboardingFormActions({
   hasOtherOrgs = false,
 }: OnboardingFormActionsProps) {
   const t = useTranslations('setup');
+  const router = useRouter();
   // Check if we're on localhost - use useState/useEffect to avoid hydration mismatch
   const [isLocalhost, setIsLocalhost] = useState(false);
 
@@ -51,7 +53,7 @@ export function OnboardingFormActions({
           variant="ghost"
           className="text-muted-foreground"
           onClick={() => {
-            window.location.assign('/');
+            router.push('/');
           }}
           disabled={isSubmitting}
         >

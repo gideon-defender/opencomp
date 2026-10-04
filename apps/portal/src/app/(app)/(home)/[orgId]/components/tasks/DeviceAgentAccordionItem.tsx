@@ -53,7 +53,6 @@ export function DeviceAgentAccordionItem({
   const [detectedOS, setDetectedOS] = useState<SupportedOS | null>(null);
   const t = useTranslations('deviceAgent');
   const tTasks = useTranslations('tasks');
-  const tToasts = useTranslations('toasts');
 
   const isMacOS = useMemo(
     () => detectedOS === 'macos' || detectedOS === 'macos-intel',

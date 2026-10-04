@@ -44,7 +44,7 @@ export function InherentRiskForm({
   const { updateVendor } = useVendorActions();
   const { mutate: globalMutate } = useSWRConfig();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [_, setOpen] = useQueryState('inherent-risk-sheet');
+  const [, setOpen] = useQueryState('inherent-risk-sheet');
   const t = useTranslations('vendor');
   const tCommon = useTranslations('overview');
 

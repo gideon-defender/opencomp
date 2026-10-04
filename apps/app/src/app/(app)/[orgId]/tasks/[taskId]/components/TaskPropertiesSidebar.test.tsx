@@ -128,7 +128,7 @@ vi.mock('next/link', () => ({
 
 // Mock date-fns
 vi.mock('date-fns', () => ({
-  format: (date: Date, fmt: string) => '1/1/2024',
+  format: () => '1/1/2024',
 }));
 
 import { TaskPropertiesSidebar } from './TaskPropertiesSidebar';

@@ -181,10 +181,8 @@ export function PolicyContentManager({
   policyContent,
   isPendingApproval,
   displayFormat = 'EDITOR',
-  pdfUrl,
   aiAssistantEnabled = false,
   hasUnpublishedChanges = false,
-  currentVersionNumber,
   currentVersionId,
   pendingVersionId,
   versions = [],
@@ -215,7 +213,6 @@ export function PolicyContentManager({
 
   const [showAiAssistant, setShowAiAssistant] = useState(false);
   const isWideDesktop = useMediaQuery('(min-width: 1280px)');
-  const isDesktop = useMediaQuery('(min-width: 1024px)');
   const [editorKey, setEditorKey] = useState(0);
   const [activeTab, setActiveTab] = useState<string>(displayFormat);
   const previousTabRef = useRef<string>(displayFormat);
@@ -232,7 +229,7 @@ export function PolicyContentManager({
   const [chatErrorMessage, setChatErrorMessage] = useState<string | null>(null);
 
   const [isPublishDialogOpen, setIsPublishDialogOpen] = useState(false);
-  const [localHasChanges, setLocalHasChanges] = useState(hasUnpublishedChanges);
+  const [, setLocalHasChanges] = useState(hasUnpublishedChanges);
 
   // Publish approval state
   const [isPublishApprovalDialogOpen, setIsPublishApprovalDialogOpen] = useState(false);
@@ -251,7 +248,7 @@ export function PolicyContentManager({
     return '';
   });
   // Track if we're editing from a version (for publish button visibility)
-  const [editingFromVersion, setEditingFromVersion] = useState<number | null>(null);
+  const [, setEditingFromVersion] = useState<number | null>(null);
   // Track pending version to switch to (set when creating new version, before data is refetched)
   const [pendingVersionSwitch, setPendingVersionSwitch] = useState<string | null>(null);
   // Track previous initialVersionId to detect actual changes (not just data refreshes)
@@ -573,11 +570,14 @@ export function PolicyContentManager({
   }, [suggestions.isActive, activeProposal]);
 
   // Reset loading state when AI finishes responding or errors
+  // Destructure the stable callback so the effect does not depend on the
+  // whole suggestions object, which gets a fresh identity every render.
+  const { resetLoading: resetSuggestionLoading } = suggestions;
   useEffect(() => {
     if (status === 'ready' || status === 'error') {
-      suggestions.resetLoading();
+      resetSuggestionLoading();
     }
-  }, [status, suggestions.resetLoading]);
+  }, [status, resetSuggestionLoading]);
 
   // Filter out per-hunk feedback messages (and their AI responses) from chat display
   // Track local changes made in editor (after save)
@@ -1126,7 +1126,6 @@ export function PolicyContentManager({
 }
 
 function PolicyEditorWrapper({
-  policyId,
   versionId,
   policyContent,
   isPendingApproval,

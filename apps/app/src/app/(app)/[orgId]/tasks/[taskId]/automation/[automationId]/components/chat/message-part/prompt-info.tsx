@@ -24,7 +24,6 @@ interface PromptInfoProps {
 
 export const PromptInfo = memo(function PromptInfo({
   input,
-  output,
   state,
   errorText,
   onInfoProvided,

@@ -56,7 +56,10 @@ vi.mock('lucide-react', () => ({
 vi.mock('@trycompai/design-system', () => ({
   Avatar: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   AvatarFallback: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
-  AvatarImage: () => <img />,
+  AvatarImage: () => (
+    // eslint-disable-next-line @next/next/no-img-element -- test mock for AvatarImage must render plain img
+    <img alt="" />
+  ),
   HStack: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   InputGroup: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   InputGroupAddon: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,

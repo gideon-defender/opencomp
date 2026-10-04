@@ -61,7 +61,7 @@ export function PdfViewer({
   const isReadOnly = isPendingApproval || isVersionReadOnly;
   const t = useTranslations('policies.pdfViewer');
   const api = useApi();
-  const [files, setFiles] = useState<File[]>([]);
+  const [, setFiles] = useState<File[]>([]);
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [isUrlLoading, setUrlLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
@@ -113,7 +113,7 @@ export function PdfViewer({
     return () => {
       cancelled = true;
     };
-  }, [pdfUrl, policyId, versionId]);
+  }, [pdfUrl, policyId, versionId, api, t]);
 
   const handleReplaceClick = () => {
     fileInputRef.current?.click();

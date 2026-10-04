@@ -50,7 +50,7 @@ export function EvaluationCriteriaCard({
       } else {
         toast.error(result.error || 'Failed to update criteria');
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to update criteria');
     } finally {
       setIsSaving(false);
@@ -95,9 +95,10 @@ export function EvaluationCriteriaCard({
     return { formatted: formatCriteriaText(text), hasStructure: false };
   };
 
-  const { formatted, hasStructure } = criteria
-    ? parseConditions(criteria)
-    : { formatted: null, hasStructure: false };
+  // Hoisted so the inline literal below is not excess-property-checked
+  // against the destructuring pattern (hasStructure is intentionally unused).
+  const noCriteria = { formatted: null, hasStructure: false };
+  const { formatted } = criteria ? parseConditions(criteria) : noCriteria;
 
   return (
     <div className="relative group">

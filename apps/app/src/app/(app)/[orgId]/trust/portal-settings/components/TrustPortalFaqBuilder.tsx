@@ -28,7 +28,6 @@ const createTempFaqId = (): string => {
 
 export function TrustPortalFaqBuilder({
   initialFaqs,
-  orgId,
 }: {
   initialFaqs: FaqItem[] | null;
   orgId: string;

@@ -164,27 +164,6 @@ export function useSuggestions({
     [editor],
   );
 
-  const recomputeRanges = useCallback(
-    (prevRanges: SuggestionRange[]) => {
-      if (!editor || !proposedMarkdownRef.current) return [];
-      const positionMap = buildPositionMap(editor.state.doc);
-      const freshRanges = computeSuggestionRanges(positionMap, proposedMarkdownRef.current);
-      // Carry over decisions by matching content identity
-      const decisionMap = new Map<string, SuggestionRange['decision']>();
-      for (const r of prevRanges) {
-        if (r.decision !== 'pending') {
-          decisionMap.set(`${r.originalText}::${r.proposedText}`, r.decision);
-        }
-      }
-      return freshRanges.map((r) => {
-        const key = `${r.originalText}::${r.proposedText}`;
-        const prevDecision = decisionMap.get(key);
-        return prevDecision ? { ...r, decision: prevDecision } : r;
-      });
-    },
-    [editor],
-  );
-
   // Reset undo history and auto-scroll when a new proposal (or editor)
   // arrives. No setState here — range state syncs in the adjust-during-render
   // block above; the refs-sync effect above runs first, so rangesRef already

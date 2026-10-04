@@ -109,7 +109,7 @@ export function ConfettiEffect({
         }
       };
     }
-  }, [trigger, particleCount]);
+  }, [trigger, particleCount, containerRef]);
 
   if (!trigger) return null;
 

@@ -164,7 +164,6 @@ export function ComplianceFramework({
   onBadgeUpload,
   onBadgeRemove,
   frameworkKey,
-  orgId,
   disabled,
 }: {
   title: string;

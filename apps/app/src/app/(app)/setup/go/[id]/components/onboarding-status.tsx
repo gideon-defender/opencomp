@@ -9,7 +9,7 @@ import { useEffect } from 'react';
 
 export function OnboardingStatus({ runId }: { runId: string }) {
   const t = useTranslations('setup');
-  const { run, error, isLoading } = useRun<typeof onboardOrganization>(runId, {
+  const { run } = useRun<typeof onboardOrganization>(runId, {
     refreshInterval: 1000,
   });
 

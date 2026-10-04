@@ -25,7 +25,7 @@ export function VersionsCard() {
     taskId: string;
     automationId: string;
   }>();
-  const { versions, isLoading, mutate } = useAutomationVersions();
+  const { versions, isLoading } = useAutomationVersions();
   const [restoring, setRestoring] = useState<number | null>(null);
   const [confirmRestore, setConfirmRestore] = useState<EvidenceAutomationVersion | null>(null);
 

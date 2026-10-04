@@ -115,7 +115,7 @@ export const onboardOrganization = task({
       // Extract vendors + risks in parallel (both are independent LLM calls).
       metadata.set('currentStep', 'Creating Vendors...');
 
-      const [vendors, risks] = await Promise.all([
+      const [vendors] = await Promise.all([
         (async () => {
           // No resume skip here by design: createVendors dedupes against
           // existing rows by name, and skipping on any-row-exists would

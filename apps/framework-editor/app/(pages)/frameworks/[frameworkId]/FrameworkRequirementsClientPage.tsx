@@ -281,6 +281,7 @@ export function FrameworkRequirementsClientPage({
     if (Object.keys(saved).length > 0) setColumnSizing(saved);
   }, []);
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack useReactTable returns unmemoizable functions; skip React Compiler memoization
   const table = useReactTable({
     data,
     columns,

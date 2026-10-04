@@ -33,7 +33,6 @@ import { VendorNameAutocompleteField } from './VendorNameAutocompleteField';
 
 export function CreateVendorForm({
   assignees,
-  organizationId,
   onSuccess,
 }: {
   assignees: (Member & { user: User })[];

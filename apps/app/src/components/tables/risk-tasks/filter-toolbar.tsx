@@ -6,36 +6,14 @@ import { Input } from '@gideon-defender/ui/input';
 import { Skeleton } from '@gideon-defender/ui/skeleton';
 import { Search } from 'lucide-react';
 import { useQueryState } from 'nuqs';
-import { useTransition } from 'react';
 
 type Props = {
   isEmpty?: boolean;
   assignees: (Member & { user: User })[];
 };
 
-export function FilterToolbar({ isEmpty, assignees }: Props) {
-  const [isPending, startTransition] = useTransition();
-  const [open, setOpen] = useQueryState('create-task-sheet');
-
+export function FilterToolbar({ isEmpty }: Props) {
   const [search, setSearch] = useQueryState('search', {
-    shallow: false,
-    history: 'push',
-    parse: (value) => value || null,
-  });
-
-  const [category, setCategory] = useQueryState('category', {
-    shallow: false,
-    history: 'push',
-    parse: (value) => value || null,
-  });
-
-  const [status, setStatus] = useQueryState('status', {
-    shallow: false,
-    history: 'push',
-    parse: (value) => value || null,
-  });
-
-  const [assigneeId, setAssigneeId] = useQueryState('assigneeId', {
     shallow: false,
     history: 'push',
     parse: (value) => value || null,

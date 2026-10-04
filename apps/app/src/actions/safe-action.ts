@@ -64,7 +64,8 @@ export const authActionClient = actionClientWithMeta
       },
     });
 
-    const { fileData: _, ...inputForLog } = (clientInput || {}) as any;
+    const inputForLog = { ...((clientInput || {}) as Record<string, unknown>) };
+    delete inputForLog.fileData;
     // Logger will automatically skip GCP logs to avoid credential exposure
     logger.info('Input ->', inputForLog);
     logger.info('Result ->', result.data);
@@ -153,7 +154,8 @@ export const authActionClient = actionClientWithMeta
       throw new Error('Member not found');
     }
 
-    const { fileData: _, ...inputForAuditLog } = (clientInput || {}) as any;
+    const inputForAuditLog = { ...((clientInput || {}) as Record<string, unknown>) };
+    delete inputForAuditLog.fileData;
 
     const data = {
       userId: ctx.user!.id,
@@ -276,7 +278,8 @@ export const authActionClientWithoutOrg = actionClientWithMeta
       },
     });
 
-    const { fileData: _, ...inputForLog } = (clientInput || {}) as any;
+    const inputForLog = { ...((clientInput || {}) as Record<string, unknown>) };
+    delete inputForLog.fileData;
     // Logger will automatically skip GCP logs to avoid credential exposure
     logger.info('Input ->', inputForLog);
     logger.info('Result ->', result.data);

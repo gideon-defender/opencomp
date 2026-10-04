@@ -34,7 +34,6 @@ export function MultiRoleComboboxTrigger({
   getRoleLabel,
   onClick,
   ariaExpanded,
-  customRoles = [],
 }: MultiRoleComboboxTriggerProps) {
   // Check if a role is a custom role (not a built-in one)
   const isCustomRole = (role: string): boolean => {

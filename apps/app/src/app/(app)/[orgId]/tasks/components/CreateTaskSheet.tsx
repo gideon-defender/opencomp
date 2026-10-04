@@ -147,6 +147,7 @@ export function CreateTaskSheet({
   const frameworkEditorTaskTemplates = useMemo(() => taskTemplates?.data || [], [taskTemplates]);
 
   // Watch for task template selection
+  // eslint-disable-next-line react-hooks/incompatible-library -- RHF watch() is not memoizable by React Compiler
   const selectedTaskTemplateId = form.watch('taskTemplateId');
   const selectedTaskTemplate = useMemo(
     () => frameworkEditorTaskTemplates.find((template) => template.id === selectedTaskTemplateId),

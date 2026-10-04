@@ -66,7 +66,7 @@ function SignoffSlot({
         <Controller
           control={control}
           name={nameField}
-          render={({ field: { ref: _ref, ...field } }) => (
+          render={({ field: { ...field } }) => (
             <Input
               {...field}
               aria-label={`${role} signatory name`}
@@ -80,7 +80,7 @@ function SignoffSlot({
         <Controller
           control={control}
           name={dateField}
-          render={({ field: { ref: _ref, ...field } }) => (
+          render={({ field: { ...field } }) => (
             <Input
               {...field}
               type="date"

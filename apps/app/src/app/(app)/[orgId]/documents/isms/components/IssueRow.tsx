@@ -135,7 +135,7 @@ export function IssueRow({ issue, canEdit, onSave, onDelete }: IssueRowProps) {
               <Controller
                 control={control}
                 name="description"
-                render={({ field: { ref: _ref, ...field } }) => (
+                render={({ field: { ...field } }) => (
                   <Textarea {...field} rows={3} aria-label="Issue description" />
                 )}
               />
@@ -147,7 +147,7 @@ export function IssueRow({ issue, canEdit, onSave, onDelete }: IssueRowProps) {
               <Controller
                 control={control}
                 name="effect"
-                render={({ field: { ref: _ref, ...field } }) => (
+                render={({ field: { ...field } }) => (
                   <Textarea {...field} rows={3} aria-label="Issue effect" />
                 )}
               />

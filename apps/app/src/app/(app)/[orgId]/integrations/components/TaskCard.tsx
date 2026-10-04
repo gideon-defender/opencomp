@@ -3,6 +3,7 @@
 import { Skeleton } from '@gideon-defender/ui/skeleton';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -17,6 +18,7 @@ interface RelevantTask {
 export function TaskCard({ task, orgId }: { task: RelevantTask; orgId: string }) {
   const [isNavigating, setIsNavigating] = useState(false);
   const t = useTranslations('integrations.list');
+  const router = useRouter();
 
   const handleCardClick = () => {
     setIsNavigating(true);
@@ -24,7 +26,7 @@ export function TaskCard({ task, orgId }: { task: RelevantTask; orgId: string })
 
     // Navigate directly using the task ID we already have
     const url = `/${orgId}/tasks/${task.taskId}/automation/new?prompt=${encodeURIComponent(task.prompt)}`;
-    window.location.href = url;
+    router.push(url);
   };
 
   return (

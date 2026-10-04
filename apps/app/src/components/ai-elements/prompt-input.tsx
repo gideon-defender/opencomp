@@ -144,7 +144,7 @@ type PromptInputProviderProps = PropsWithChildren<{
  * Optional global provider that lifts PromptInput state outside of PromptInput.
  * If you don't use it, PromptInput stays fully self-managed.
  */
-const PromptInputProvider = ({
+export const PromptInputProvider = ({
   initialInput: initialTextInput = '',
   children,
 }: PromptInputProviderProps) => {
@@ -628,7 +628,6 @@ export const PromptInput = ({
         }
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- cleanup only on unmount; filesRef always current
     [usingProvider],
   );
 
@@ -691,7 +690,7 @@ export const PromptInput = ({
       try {
         // Convert blob URLs to data URLs asynchronously
         const convertedFiles: FileUIPart[] = await Promise.all(
-          files.map(async ({ id: _id, ...item }) => {
+          files.map(async ({ ...item }) => {
             if (item.url?.startsWith('blob:')) {
               const dataUrl = await convertBlobUrlToDataUrl(item.url);
               // If conversion failed, keep the original blob URL
@@ -921,7 +920,7 @@ type PromptInputButtonProps = ComponentProps<typeof InputGroupButton> & {
   tooltip?: PromptInputButtonTooltip;
 };
 
-const PromptInputButton = ({
+export const PromptInputButton = ({
   variant = 'ghost',
   className,
   size,
@@ -959,9 +958,9 @@ const PromptInputButton = ({
   );
 };
 
-type PromptInputActionMenuProps = ComponentProps<typeof DropdownMenu>;
+export type PromptInputActionMenuProps = ComponentProps<typeof DropdownMenu>;
 
-type PromptInputActionMenuTriggerProps = PromptInputButtonProps;
+export type PromptInputActionMenuTriggerProps = PromptInputButtonProps;
 
 type PromptInputActionMenuContentProps = ComponentProps<typeof DropdownMenuContent>;
 export const PromptInputActionMenuContent = ({
@@ -1034,7 +1033,7 @@ export const PromptInputSubmit = ({
   );
 };
 
-type PromptInputSelectProps = ComponentProps<typeof Select>;
+export type PromptInputSelectProps = ComponentProps<typeof Select>;
 
 type PromptInputSelectTriggerProps = ComponentProps<typeof SelectTrigger>;
 
@@ -1071,11 +1070,11 @@ export const PromptInputSelectValue = ({ className, ...props }: PromptInputSelec
   <SelectValue className={cn(className)} {...props} />
 );
 
-type PromptInputHoverCardProps = ComponentProps<typeof HoverCard>;
+export type PromptInputHoverCardProps = ComponentProps<typeof HoverCard>;
 
-type PromptInputHoverCardTriggerProps = ComponentProps<typeof HoverCardTrigger>;
+export type PromptInputHoverCardTriggerProps = ComponentProps<typeof HoverCardTrigger>;
 
-type PromptInputHoverCardContentProps = ComponentProps<typeof HoverCardContent>;
+export type PromptInputHoverCardContentProps = ComponentProps<typeof HoverCardContent>;
 
 type PromptInputTabsListProps = HTMLAttributes<HTMLDivElement>;
 

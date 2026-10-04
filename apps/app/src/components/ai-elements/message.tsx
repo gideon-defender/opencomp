@@ -51,11 +51,6 @@ export const MessageActions = ({ className, children, ...props }: MessageActions
   </div>
 );
 
-type MessageActionProps = ComponentProps<typeof Button> & {
-  tooltip?: string;
-  label?: string;
-};
-
 interface MessageBranchContextType {
   currentBranch: number;
   totalBranches: number;
@@ -82,7 +77,7 @@ type MessageBranchProps = HTMLAttributes<HTMLDivElement> & {
   onBranchChange?: (branchIndex: number) => void;
 };
 
-const MessageBranch = ({
+export const MessageBranch = ({
   defaultBranch = 0,
   onBranchChange,
   className,
@@ -237,8 +232,12 @@ export const MessageBranchPage = ({ className, ...props }: MessageBranchPageProp
 
 type MessageResponseProps = ComponentProps<typeof Streamdown>;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const streamdownPlugins = { cjk, code, math, mermaid } as any;
+const streamdownPlugins: ComponentProps<typeof Streamdown>['plugins'] = {
+  cjk,
+  code,
+  math,
+  mermaid,
+};
 
 export const MessageResponse = memo(
   ({ className, ...props }: MessageResponseProps) => (

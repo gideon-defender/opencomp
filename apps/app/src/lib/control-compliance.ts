@@ -249,8 +249,3 @@ export function getFrameworkAggregatePercent(
   const completed = counts.policies.completed + counts.tasks.completed + counts.documents.completed;
   return Math.round((completed / total) * 100);
 }
-
-function isPolicyCompleted(policy: SelectedPolicy): boolean {
-  if (!policy) return false;
-  return policy.status === 'published';
-}

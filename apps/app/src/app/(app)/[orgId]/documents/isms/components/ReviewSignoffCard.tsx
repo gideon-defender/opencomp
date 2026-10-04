@@ -87,7 +87,7 @@ export function ReviewSignoffCard({ review, canEdit, onSave }: ReviewSignoffCard
           <Controller
             control={control}
             name="signoffChairName"
-            render={({ field: { ref: _ref, ...field } }) => (
+            render={({ field: { ...field } }) => (
               <Input
                 {...field}
                 aria-label="Chair signatory name"
@@ -101,7 +101,7 @@ export function ReviewSignoffCard({ review, canEdit, onSave }: ReviewSignoffCard
           <Controller
             control={control}
             name="signoffChairDate"
-            render={({ field: { ref: _ref, ...field } }) => (
+            render={({ field: { ...field } }) => (
               <Input {...field} type="date" aria-label="Chair sign-off date" disabled={!canEdit} />
             )}
           />

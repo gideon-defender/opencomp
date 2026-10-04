@@ -127,9 +127,6 @@ function getAccessLevel(resourceKey: ResourceKey, permissions: string[]): Access
     return 'none';
   }
 
-  const editActions = ACCESS_LEVEL_MAPPING[resourceKey].edit;
-  const viewActions = ACCESS_LEVEL_MAPPING[resourceKey].view;
-
   // Check if it has edit-level permissions (includes create, update, or delete)
   const hasEditPermissions = permissions.some(
     (p) => p === 'create' || p === 'update' || p === 'delete',

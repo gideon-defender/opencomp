@@ -22,8 +22,10 @@ export function GideonSignIn({ inviteCode, redirectTo }: GideonSignInProps) {
     const params = new URLSearchParams();
     if (inviteCode) params.set('inviteCode', inviteCode);
     if (redirectTo) params.set('redirectTo', redirectTo);
+    const loginUrl = new URL('/v1/auth/gideon/login', apiBase);
     const query = params.toString();
-    window.location.href = `${apiBase}/v1/auth/gideon/login${query ? `?${query}` : ''}`;
+    if (query) loginUrl.search = query;
+    window.location.href = loginUrl.toString();
   };
 
   return (

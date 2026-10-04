@@ -97,6 +97,8 @@ export function TimelinePhaseEditor({
     reset(phaseDefaults(phase));
   }, [phase, reset]);
 
+  // React Compiler skips memoization for RHF watch() — intentional
+  // eslint-disable-next-line react-hooks/incompatible-library
   const watchedStart = watch('startDate');
   const watchedDuration = watch('durationWeeks');
   const watchedLock = watch('locksTimelineOnComplete');

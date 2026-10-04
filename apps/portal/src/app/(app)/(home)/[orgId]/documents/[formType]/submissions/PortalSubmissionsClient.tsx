@@ -36,7 +36,6 @@ interface PortalSubmissionsClientProps {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const t = useTranslations('submissions');
   switch (status) {
     case 'approved':
       return (

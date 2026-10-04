@@ -29,7 +29,7 @@ export const createOrganizationMinimal = authActionClientWithoutOrg
       channel: 'server',
     },
   })
-  .action(async ({ parsedInput, ctx }) => {
+  .action(async ({ parsedInput }) => {
     let createdOrgId: string | undefined;
 
     try {

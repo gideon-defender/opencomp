@@ -80,7 +80,6 @@ function CertificationRow({ cert }: { cert: VendorRiskAssessmentCertification })
 
 export function VendorRiskAssessmentCertificationsCard({
   certifications,
-  verifiedCount,
   previewCount = 4,
 }: {
   certifications: VendorRiskAssessmentCertification[];

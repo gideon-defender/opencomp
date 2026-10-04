@@ -53,7 +53,7 @@ export function MethodologyLabelledList<T extends FieldValues>({
                 <Controller
                   control={control}
                   name={`${name}.${index}` as Path<T>}
-                  render={({ field: { ref: _ref, ...field } }) => (
+                  render={({ field: { ...field } }) => (
                     <Textarea {...field} rows={2} aria-label={`${title}: ${label}`} />
                   )}
                 />

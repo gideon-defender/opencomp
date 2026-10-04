@@ -37,8 +37,8 @@ export function NoResults({ hasFilters }: Props) {
   );
 }
 
-export function NoTasks({ isEmpty }: { isEmpty: boolean }) {
-  const [open, setOpen] = useQueryState('create-task-sheet');
+export function NoTasks() {
+  const [, setOpen] = useQueryState('create-task-sheet');
 
   return (
     <div className="absolute top-0 left-0 z-20 flex w-full items-center justify-center">

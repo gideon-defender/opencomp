@@ -81,6 +81,8 @@ export function SubPhaseRow({
     },
   });
 
+  // React Compiler skips memoization for RHF watch() — intentional
+  // eslint-disable-next-line react-hooks/incompatible-library
   const completionType = watch('completionType');
 
   const handleSave = async (values: SubPhaseFormValues) => {

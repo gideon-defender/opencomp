@@ -44,7 +44,7 @@ vi.mock('nuqs', () => ({
       withDefault: () => ({}),
     }),
   },
-  useQueryState: (key: string, parser: any) => {
+  useQueryState: (key: string) => {
     if (key === 'title') return ['', vi.fn()];
     if (key === 'sort') return [[{ id: 'title', desc: false }], vi.fn()];
     return ['', vi.fn()];
@@ -159,7 +159,7 @@ vi.mock('@trycompai/design-system', () => ({
   SelectValue: ({ placeholder }: any) => <span>{placeholder}</span>,
   Spinner: () => <span data-testid="spinner" />,
   Stack: ({ children }: any) => <div>{children}</div>,
-  Table: ({ children, pagination }: any) => <table>{children}</table>,
+  Table: ({ children }: any) => <table>{children}</table>,
   TableBody: ({ children }: any) => <tbody>{children}</tbody>,
   TableCell: ({ children }: any) => <td>{children}</td>,
   TableHead: ({ children }: any) => <th>{children}</th>,

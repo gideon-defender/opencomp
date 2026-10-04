@@ -41,6 +41,8 @@ export function MetricsDueCard({ entries, showMetricName, onSaveAll }: MetricsDu
     defaultValues: { rows: entries.map(() => ({ value: '' })) },
   });
 
+  // React Compiler skips memoization for RHF watch() — intentional
+  // eslint-disable-next-line react-hooks/incompatible-library
   const rows = watch('rows');
   const filledCount = rows.filter((row) => row.value.trim()).length;
 
@@ -92,7 +94,7 @@ export function MetricsDueCard({ entries, showMetricName, onSaveAll }: MetricsDu
             <Controller
               control={control}
               name={`rows.${index}.value`}
-              render={({ field: { ref: _ref, ...field } }) => (
+              render={({ field: { ...field } }) => (
                 <Input
                   {...field}
                   aria-label={`Value for ${entry.metric.name}, ${entry.periodText}`}

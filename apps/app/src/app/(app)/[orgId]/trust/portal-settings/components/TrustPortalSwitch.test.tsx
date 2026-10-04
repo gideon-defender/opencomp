@@ -101,7 +101,7 @@ vi.mock('@dnd-kit/utilities', () => ({
 
 // Mock design system
 vi.mock('@trycompai/design-system', () => ({
-  Button: ({ children, onClick, disabled, iconLeft, iconRight, loading, ...props }: any) => (
+  Button: ({ children, onClick, disabled, iconLeft, iconRight, ...props }: any) => (
     <button onClick={onClick} disabled={disabled} {...props}>
       {iconLeft}
       {children}
@@ -207,6 +207,7 @@ vi.mock('./TrustPortalBrandingSettings', () => ({
 
 vi.mock('next/image', () => ({
   default: (props: Record<string, unknown>) => (
+    // eslint-disable-next-line @next/next/no-img-element -- test mock for next/image must render plain img
     <img alt={props.alt as string} src={props.src as string} />
   ),
 }));

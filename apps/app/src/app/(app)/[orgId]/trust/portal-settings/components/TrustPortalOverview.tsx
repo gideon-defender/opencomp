@@ -171,7 +171,7 @@ export function TrustPortalOverview({ initialData, orgId }: TrustPortalOverviewP
                         {children}
                       </a>
                     ),
-                    code: ({ children, className, ...props }) => (
+                    code: ({ children, ...props }) => (
                       <code className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono" {...props}>
                         {children}
                       </code>

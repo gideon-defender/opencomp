@@ -12,12 +12,6 @@ export interface TaskAutomationScript {
   key: string;
 }
 
-interface TaskAutomationScriptItem {
-  key: string;
-  lastModified: string;
-  size: number;
-}
-
 // ============================================================================
 // Execution Types
 // ============================================================================

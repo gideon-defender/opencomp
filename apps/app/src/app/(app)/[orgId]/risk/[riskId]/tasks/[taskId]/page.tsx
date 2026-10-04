@@ -9,7 +9,7 @@ interface PageProps {
 }
 
 export default async function RiskPage({ params }: PageProps) {
-  const { riskId, taskId } = await params;
+  const { taskId } = await params;
 
   const [taskResult, peopleResult] = await Promise.all([
     serverApi.get<any>(`/v1/tasks/${taskId}`),

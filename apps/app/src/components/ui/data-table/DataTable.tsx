@@ -104,6 +104,7 @@ export function DataTable<TData>({
     };
   }, [searchValue, search]);
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack useReactTable returns non-memoizable functions, skip React Compiler memoization
   const table = useReactTable({
     data,
     columns,

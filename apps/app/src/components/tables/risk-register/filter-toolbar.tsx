@@ -25,16 +25,9 @@ type Props = {
   users: (Member & { user: User })[];
 };
 
-const statusTranslationKeys = {
-  open: 'common.status.open',
-  pending: 'common.status.pending',
-  closed: 'common.status.closed',
-  archived: 'common.status.archived',
-} as const;
-
 export function FilterToolbar({ isEmpty, users }: Props) {
   const [isPending, startTransition] = useTransition();
-  const [open, setOpen] = useQueryState('create-risk-sheet');
+  const [, setOpen] = useQueryState('create-risk-sheet');
 
   const [search, setSearch] = useQueryState('search', {
     shallow: false,

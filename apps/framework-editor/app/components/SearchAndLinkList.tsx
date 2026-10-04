@@ -34,12 +34,10 @@ export function SearchAndLinkList({
 }: SearchAndLinkListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [availableItems, setAvailableItems] = useState<SearchableItemForLinking[]>([]);
-  const [isLoadingInitial, setIsLoadingInitial] = useState(true); // For the initial fetch of all items
   const [isLoadingAction, setIsLoadingAction] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchAll = async () => {
-      setIsLoadingInitial(true);
       try {
         const results = await getAllItemsFunction();
         setAvailableItems(results);
@@ -47,7 +45,6 @@ export function SearchAndLinkList({
         console.error(`Error fetching all ${itemTypeLabel}s:`, error);
         setAvailableItems([]);
       }
-      setIsLoadingInitial(false);
     };
     fetchAll();
   }, [getAllItemsFunction, itemTypeLabel]); // getAllItemsFunction identity is important

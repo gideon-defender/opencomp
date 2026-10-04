@@ -2,10 +2,6 @@ import { serverApi } from '@/lib/api-server';
 import { Card, CardContent, CardHeader, CardTitle } from '@gideon-defender/ui/card';
 import type { CSSProperties } from 'react';
 
-interface Props {
-  organizationId: string;
-}
-
 interface UserTestStats {
   user: {
     id: string;
@@ -25,7 +21,7 @@ const testStatus = {
   unsupported: 'bg-[hsl(var(--muted-foreground))]',
 };
 
-export async function TestsByAssignee({ organizationId }: Props) {
+export async function TestsByAssignee() {
   const res = await serverApi.get<{ data: UserTestStats[] }>('/v1/people/test-stats/by-assignee');
   const stats = Array.isArray(res.data?.data) ? res.data.data : [];
   stats.sort((a, b) => b.totalTests - a.totalTests);

@@ -14,7 +14,6 @@ import {
 import { Skeleton } from '@gideon-defender/ui/skeleton';
 import { User } from 'better-auth';
 import { Plus, Search, X } from 'lucide-react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQueryState } from 'nuqs';
 import { useCallback, useEffect, useState, useTransition } from 'react';
 
@@ -24,10 +23,7 @@ interface FilterToolbarProps {
 }
 
 export function FilterToolbar({ isEmpty = false, users }: FilterToolbarProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const [open, setOpen] = useQueryState('create-policy-sheet');
+  const [, setOpen] = useQueryState('create-policy-sheet');
   const [isPending, startTransition] = useTransition();
   const [searchInput, setSearchInput] = useState<string>('');
 

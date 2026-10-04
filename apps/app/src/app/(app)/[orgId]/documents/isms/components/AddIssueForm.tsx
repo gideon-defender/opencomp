@@ -83,7 +83,7 @@ function AddIssueFields({ kind, onAdd, onClose }: AddIssueFormProps & { onClose:
           <Controller
             control={control}
             name="description"
-            render={({ field: { ref: _ref, ...field } }) => (
+            render={({ field: { ...field } }) => (
               <Textarea
                 {...field}
                 rows={2}
@@ -98,7 +98,7 @@ function AddIssueFields({ kind, onAdd, onClose }: AddIssueFormProps & { onClose:
           <Controller
             control={control}
             name="effect"
-            render={({ field: { ref: _ref, ...field } }) => (
+            render={({ field: { ...field } }) => (
               <Textarea
                 {...field}
                 rows={2}

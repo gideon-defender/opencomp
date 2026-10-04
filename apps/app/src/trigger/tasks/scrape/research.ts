@@ -65,7 +65,7 @@ export const researchVendor = schemaTask({
       .optional(),
   }),
   maxDuration: 1000 * 60 * 10, // 10 minutes total task duration
-  run: async (payload, { ctx }) => {
+  run: async (payload) => {
     const queueScoring = async () => {
       if (!payload.scoreContext) return;
       try {

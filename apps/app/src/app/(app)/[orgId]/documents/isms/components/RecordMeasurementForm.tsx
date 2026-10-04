@@ -96,7 +96,7 @@ export function RecordMeasurementForm({ metric, onRecord }: RecordMeasurementFor
         <Controller
           control={control}
           name="value"
-          render={({ field: { ref: _ref, ...field } }) => (
+          render={({ field: { ...field } }) => (
             <Field>
               <Input {...field} placeholder="Value" aria-label="Measurement value" />
               <FieldError>{errors.value?.message}</FieldError>
@@ -106,7 +106,7 @@ export function RecordMeasurementForm({ metric, onRecord }: RecordMeasurementFor
         <Controller
           control={control}
           name="note"
-          render={({ field: { ref: _ref, ...field } }) => (
+          render={({ field: { ...field } }) => (
             <Input {...field} placeholder="Note (optional)" aria-label="Measurement note" />
           )}
         />
