@@ -1,6 +1,6 @@
 'use client';
 
-import { CloudShellSetup } from '@/components/integrations/CloudShellSetup';
+import { CloudShellSetup, getSetupScriptDisabledMessage } from '@/components/integrations/CloudShellSetup';
 import { CredentialInput } from '@/components/integrations/CredentialInput';
 import { buildAwsPhase2Credentials, useAwsTwoStepConnect } from '@/hooks/use-aws-two-step-connect';
 import type { IntegrationProvider } from '@/hooks/use-integration-platform';
@@ -674,6 +674,10 @@ function CloudSetup({
   const awsTypeFields = visibleFields.filter((f) => f.id === 'awsType');
   const hasSelectedAwsEnvironment =
     provider.id !== 'aws' || typeof credentials.awsType === 'string';
+  const setupScriptDisabledMessage = getSetupScriptDisabledMessage({
+    isAws: isAwsProvider,
+    hasSelectedEnvironment: hasSelectedAwsEnvironment,
+  });
   const awsEnvironment = normalizeAwsEnvironment(credentials.awsType);
   const regionOptions = regionFields[0]?.options ?? [];
   const filteredRegionOptions =
@@ -746,11 +750,7 @@ function CloudSetup({
                 externalId={setupExternalId}
                 cloudShellUrl={cloudShellUrl}
                 disabled={!hasSelectedAwsEnvironment || (isAwsProvider && !pendingConnection)}
-                disabledMessage={
-                  isAwsProvider && !pendingConnection
-                    ? 'Generate your External ID below first — the script needs your issued value.'
-                    : undefined
-                }
+                disabledMessage={setupScriptDisabledMessage}
               />
               <p className="text-[11px] text-muted-foreground/60">
                 Connecting multiple accounts? Run the script in each account and add them one by
@@ -851,6 +851,7 @@ function CloudSetup({
                   externalId={setupExternalId}
                   cloudShellUrl={cloudShellUrl}
                   disabled={!hasSelectedAwsEnvironment || (isAwsProvider && !pendingConnection)}
+                  disabledMessage={setupScriptDisabledMessage}
                   title="Remediation Role"
                   subtitle="Write-access role for auto-fix"
                   footnote=""

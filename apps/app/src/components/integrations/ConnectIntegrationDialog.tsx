@@ -32,7 +32,7 @@ import { useParams } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
-import { CloudShellSetup, SectionDivider } from './CloudShellSetup';
+import { CloudShellSetup, SectionDivider, getSetupScriptDisabledMessage } from './CloudShellSetup';
 import { CredentialInput } from './CredentialInput';
 
 interface ConnectIntegrationDialogProps {
@@ -118,6 +118,10 @@ export function ConnectIntegrationDialog({
   const supportsMultipleConnections = provider?.supportsMultipleConnections ?? false;
   const hasSelectedAwsEnvironment =
     integrationId !== 'aws' || typeof credentials.awsType === 'string';
+  const setupScriptDisabledMessage = getSetupScriptDisabledMessage({
+    isAws: isAwsForm,
+    hasSelectedEnvironment: hasSelectedAwsEnvironment,
+  });
   const awsEnvironment = normalizeAwsEnvironment(credentials.awsType);
   const regionField = credentialFields.find((field) => field.id === 'regions');
   const regionOptions = regionField?.options ?? [];
@@ -720,12 +724,30 @@ export function ConnectIntegrationDialog({
               </Button>
             )}
             {setupScript && (
-              <CloudShellSetup
-                script={setupScript}
-                externalId={integrationId === 'aws' ? setupExternalId : orgId}
-                cloudShellUrl={cloudShellUrl}
-                disabled={!hasSelectedAwsEnvironment || (isAwsForm && !pendingConnection)}
-              />
+              <>
+                <CloudShellSetup
+                  script={setupScript}
+                  externalId={integrationId === 'aws' ? setupExternalId : orgId}
+                  cloudShellUrl={cloudShellUrl}
+                  disabled={!hasSelectedAwsEnvironment || (isAwsForm && !pendingConnection)}
+                  disabledMessage={setupScriptDisabledMessage}
+                />
+                {/* Phase 1 lives next to the box it unlocks: the action must
+                    sit beside its effect, not at the bottom of the form while
+                    the gated script sits at the top. Single action at a time —
+                    the bottom button takes over (as Connect) once phase 1
+                    completes, so it stays hidden until then. */}
+                {isAwsForm && !pendingConnection && (
+                  <Button
+                    onClick={handleCredentialConnect}
+                    disabled={connecting || !canCreate}
+                    width="full"
+                    loading={connecting}
+                  >
+                    {connecting ? 'Generating...' : 'Generate External ID'}
+                  </Button>
+                )}
+              </>
             )}
             {!provider?.setupScript && provider?.setupInstructions && (
               <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md max-h-32 overflow-y-auto overflow-x-hidden">
@@ -753,6 +775,7 @@ export function ConnectIntegrationDialog({
                           externalId={integrationId === 'aws' ? setupExternalId : orgId}
                           cloudShellUrl={cloudShellUrl}
                           disabled={!hasSelectedAwsEnvironment || (isAwsForm && !pendingConnection)}
+                          disabledMessage={setupScriptDisabledMessage}
                           title="Remediation Role Setup"
                           subtitle="Create a write-access role for auto-fix"
                           footnote="The remediation role is separate from your audit role — your audit role stays read-only."
@@ -785,18 +808,16 @@ export function ConnectIntegrationDialog({
                   </div>
                 </div>
               ))}
-            <Button
-              onClick={handleCredentialConnect}
-              disabled={connecting || !canCreate}
-              width="full"
-              loading={connecting}
-            >
-              {connecting
-                ? 'Connecting...'
-                : isAwsForm && !pendingConnection
-                  ? 'Generate External ID'
-                  : 'Connect'}
-            </Button>
+            {!(isAwsForm && !pendingConnection) && (
+              <Button
+                onClick={handleCredentialConnect}
+                disabled={connecting || !canCreate}
+                width="full"
+                loading={connecting}
+              >
+                {connecting ? 'Connecting...' : 'Connect'}
+              </Button>
+            )}
             {isAwsForm && pendingConnection && (
               <Button
                 variant="ghost"

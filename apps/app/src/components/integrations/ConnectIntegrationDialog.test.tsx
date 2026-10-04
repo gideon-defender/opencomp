@@ -72,6 +72,13 @@ const mockProviders = [
         placeholder: 'arn:...',
       },
       {
+        id: 'remediationRoleArn',
+        label: 'Remediation Role ARN',
+        type: 'text',
+        required: false,
+        placeholder: 'arn:...',
+      },
+      {
         id: 'externalId',
         label: 'External ID',
         type: 'text',
@@ -338,6 +345,37 @@ describe('ConnectIntegrationDialog AWS server-generated External ID', () => {
     expect(screen.queryByRole('button', { name: /^connect$/i })).not.toBeInTheDocument();
   });
 
+  it('shows a single phase-1 action beside the script, not a duplicate at the bottom', () => {
+    render(<ConnectIntegrationDialog {...defaultProps} initialView="form" />);
+
+    // The phase-1 action sits next to the box it unlocks; the bottom
+    // Connect button stays hidden until phase 1 completes.
+    const generateButtons = screen.getAllByRole('button', { name: /generate external id/i });
+    expect(generateButtons).toHaveLength(1);
+    // Placement pin: the action must precede the credential fields. A bottom
+    // button follows them, so this fails if the action moves back down.
+    // ('Regions' is the last field; 'Role ARN' also matches the script
+    // instructions, so it cannot anchor here.)
+    const generateButton = generateButtons[0] as HTMLElement;
+    const regionsLabel = screen.getByText('Regions');
+    expect(generateButton.compareDocumentPosition(regionsLabel)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+  });
+
+  it('moves the action to a bottom Connect button once phase 1 completes', async () => {
+    window.sessionStorage.setItem(
+      'pending-aws-connection:org_123:aws',
+      JSON.stringify({ id: 'conn_pending', externalId: 'org_org_123_restored' }),
+    );
+    render(<ConnectIntegrationDialog {...defaultProps} initialView="form" />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /^connect$/i })).toBeInTheDocument();
+    });
+    expect(screen.queryByRole('button', { name: /generate external id/i })).not.toBeInTheDocument();
+  });
+
   it('refuses phase 1 without an AWS environment and makes no request', async () => {
     render(<ConnectIntegrationDialog {...defaultProps} initialView="form" />);
 
@@ -348,6 +386,18 @@ describe('ConnectIntegrationDialog AWS server-generated External ID', () => {
     });
     expect(dialogMocks.apiPost).not.toHaveBeenCalled();
     expect(dialogMocks.createConnection).not.toHaveBeenCalled();
+  });
+
+  it('shows the environment-first message with no expand toggle before an environment is picked', () => {
+    render(<ConnectIntegrationDialog {...defaultProps} initialView="form" />);
+
+    // Pre-selection every script box is disabled by design — each must say
+    // which step unblocks it, and none may offer a toggle that does nothing.
+    const messages = screen.getAllByText(
+      'Select an AWS environment before copying the setup script.',
+    );
+    expect(messages.length).toBeGreaterThan(1);
+    expect(screen.queryByRole('button', { name: /show full script/i })).not.toBeInTheDocument();
   });
 
   it('resumes a stored pending connection instead of minting a duplicate', async () => {
