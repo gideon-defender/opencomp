@@ -680,6 +680,415 @@ describe('ConnectionsController', () => {
     });
   });
 
+  describe('AWS server-generated External IDs', () => {
+    const stsCtor = STSClient as unknown as jest.Mock;
+    const stsSend = jest.fn();
+    const previousAssumerArn = process.env.SECURITY_HUB_ROLE_ASSUMER_ARN;
+
+    const AUDITOR_ARN = 'arn:aws:iam::123456789012:role/OpenComp-Auditor';
+
+    function awsManifest() {
+      return {
+        id: 'aws',
+        name: 'AWS',
+        category: 'Cloud',
+        auth: { type: 'custom', config: {} },
+        capabilities: ['checks'],
+        isActive: true,
+        checks: [],
+      } as never;
+    }
+
+    function storedCreds() {
+      return {
+        Credentials: {
+          AccessKeyId: 'AKIAIOSFODNN7EXAMPLE',
+          SecretAccessKey: 'secret',
+          SessionToken: 'token',
+        },
+      };
+    }
+
+    beforeEach(() => {
+      process.env.SECURITY_HUB_ROLE_ASSUMER_ARN =
+        'arn:aws:iam::999999999999:role/CompRoleAssumer';
+      stsCtor.mockImplementation(() => ({ send: stsSend }));
+      stsSend.mockImplementation(async (cmd: unknown) => {
+        const input = (cmd as { input?: Record<string, unknown> }).input;
+        if (!input) {
+          return {
+            Arn: `arn:aws:sts::123456789012:assumed-role/OpenComp-Auditor/CompValidation`,
+            Account: '123456789012',
+          };
+        }
+        return storedCreds();
+      });
+      mockedGetManifest.mockReturnValue(awsManifest());
+      mockProviderRepository.upsert.mockResolvedValue(undefined);
+      mockConnectionService.createConnection.mockResolvedValue({
+        id: 'conn_new',
+        providerId: 'prov_aws',
+        authStrategy: 'custom',
+        createdAt: new Date(),
+      });
+      mockConnectionService.activateConnection.mockResolvedValue(undefined);
+    });
+
+    afterAll(() => {
+      if (previousAssumerArn === undefined) {
+        delete process.env.SECURITY_HUB_ROLE_ASSUMER_ARN;
+      } else {
+        process.env.SECURITY_HUB_ROLE_ASSUMER_ARN = previousAssumerArn;
+      }
+    });
+
+    it('ignores a client-supplied externalId on create and mints one', async () => {
+      const result = await controller.createConnection('org_1', {
+        providerSlug: 'aws',
+        credentials: {
+          connectionName: 'Prod',
+          awsType: 'aws',
+          roleArn: AUDITOR_ARN,
+          externalId: 'user-typed-guessable',
+          regions: ['us-east-1'],
+        },
+      });
+
+      const stored =
+        mockCredentialVaultService.storeApiKeyCredentials.mock.calls[0][1];
+      expect(stored.externalId).toMatch(/^org_org_1_[0-9a-f-]{36}$/);
+      expect(stored.externalId).not.toBe('user-typed-guessable');
+      expect(result.status).toBe('active');
+      expect(result.externalId).toBe(stored.externalId);
+      expect(mockConnectionService.activateConnection).toHaveBeenCalledWith(
+        'conn_new',
+      );
+    });
+
+    it('creates a pending connection without validation when no Role ARN is sent', async () => {
+      const result = await controller.createConnection('org_1', {
+        providerSlug: 'aws',
+        credentials: {
+          connectionName: 'Prod',
+          awsType: 'aws',
+          regions: ['us-east-1'],
+        },
+      });
+
+      // No STS traffic: the IAM role cannot exist yet.
+      expect(stsCtor).not.toHaveBeenCalled();
+      expect(mockConnectionService.activateConnection).not.toHaveBeenCalled();
+      const stored =
+        mockCredentialVaultService.storeApiKeyCredentials.mock.calls[0][1];
+      expect(stored.externalId).toMatch(/^org_org_1_[0-9a-f-]{36}$/);
+      expect(result.status).toBe('pending');
+      expect(result.externalId).toBe(stored.externalId);
+      // The setup UI reads the display value from metadata.
+      const created = mockConnectionService.createConnection.mock.calls[0][0];
+      expect(created.metadata.externalId).toBe(stored.externalId);
+    });
+
+    it('mints an externalId for AWS even when no credentials are sent', async () => {
+      const result = await controller.createConnection('org_1', {
+        providerSlug: 'aws',
+      });
+
+      // No STS traffic: the IAM role cannot exist yet.
+      expect(stsCtor).not.toHaveBeenCalled();
+      expect(mockConnectionService.activateConnection).not.toHaveBeenCalled();
+      const stored =
+        mockCredentialVaultService.storeApiKeyCredentials.mock.calls[0][1];
+      expect(stored.externalId).toMatch(/^org_org_1_[0-9a-f-]{36}$/);
+      expect(result.status).toBe('pending');
+      expect(result.externalId).toBe(stored.externalId);
+      // The vault holds the minted value, so phase 2 can pin it.
+      const created = mockConnectionService.createConnection.mock.calls[0][0];
+      expect(created.metadata.externalId).toBe(stored.externalId);
+    });
+
+    it('pins the stored externalId on update and ignores client rotation', async () => {
+      mockConnectionService.getConnectionForOrg.mockResolvedValue({
+        id: 'conn_aws',
+        organizationId: 'org_1',
+        status: 'active',
+        provider: { slug: 'aws' },
+      });
+      const storedExternalId = `org_org_1_${'a'.repeat(8)}-${'b'.repeat(4)}-${'c'.repeat(4)}-${'d'.repeat(4)}-${'e'.repeat(12)}`;
+      mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue({
+        roleArn: AUDITOR_ARN,
+        externalId: storedExternalId,
+        regions: ['us-east-1'],
+        awsType: 'aws',
+      });
+
+      await controller.updateCredentials('conn_aws', 'org_1', {
+        credentials: {
+          roleArn: AUDITOR_ARN,
+          externalId: 'attacker-chosen-value',
+          regions: ['us-east-1'],
+        },
+      });
+
+      const stored =
+        mockCredentialVaultService.storeApiKeyCredentials.mock.calls[0][1];
+      expect(stored.externalId).toBe(storedExternalId);
+    });
+
+    it('lets a legacy connection without a stored externalId adopt the client value', async () => {
+      mockConnectionService.getConnectionForOrg.mockResolvedValue({
+        id: 'conn_legacy',
+        organizationId: 'org_1',
+        status: 'active',
+        provider: { slug: 'aws' },
+      });
+      // No externalId on file: nothing to pin, so the client value flows
+      // into validation and the vault instead of being dropped.
+      mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue({
+        roleArn: AUDITOR_ARN,
+        regions: ['us-east-1'],
+        awsType: 'aws',
+      });
+
+      await controller.updateCredentials('conn_legacy', 'org_1', {
+        credentials: {
+          roleArn: AUDITOR_ARN,
+          externalId: 'org_org_1_legacy-typed',
+          regions: ['us-east-1'],
+        },
+      });
+
+      const stored =
+        mockCredentialVaultService.storeApiKeyCredentials.mock.calls[0][1];
+      expect(stored.externalId).toBe('org_org_1_legacy-typed');
+    });
+
+    it('syncs the pinned externalId to metadata on credential updates', async () => {
+      mockConnectionService.getConnectionForOrg.mockResolvedValue({
+        id: 'conn_aws',
+        organizationId: 'org_1',
+        status: 'active',
+        metadata: { connectionName: 'Prod' },
+        provider: { slug: 'aws' },
+      });
+      const storedExternalId = `org_org_1_${'a'.repeat(8)}-${'b'.repeat(4)}-${'c'.repeat(4)}-${'d'.repeat(4)}-${'e'.repeat(12)}`;
+      mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue({
+        roleArn: AUDITOR_ARN,
+        externalId: storedExternalId,
+        regions: ['us-east-1'],
+        awsType: 'aws',
+      });
+
+      await controller.updateCredentials('conn_aws', 'org_1', {
+        credentials: { roleArn: AUDITOR_ARN },
+      });
+
+      // The display value follows the vault, never the client.
+      expect(mockConnectionRepository.update).toHaveBeenCalledWith(
+        'conn_aws',
+        expect.objectContaining({
+          metadata: expect.objectContaining({ externalId: storedExternalId }),
+        }),
+      );
+    });
+
+    it('activates a pending AWS connection once credentials validate', async () => {
+      mockConnectionService.getConnectionForOrg.mockResolvedValue({
+        id: 'conn_aws',
+        organizationId: 'org_1',
+        status: 'pending',
+        provider: { slug: 'aws' },
+      });
+      mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue({
+        roleArn: AUDITOR_ARN,
+        externalId: 'org_org_1_secret',
+        regions: ['us-east-1'],
+        awsType: 'aws',
+      });
+
+      const result = await controller.updateCredentials('conn_aws', 'org_1', {
+        credentials: { roleArn: AUDITOR_ARN },
+      });
+
+      expect(result).toEqual({ success: true });
+      expect(mockConnectionService.activateConnection).toHaveBeenCalledWith(
+        'conn_aws',
+      );
+    });
+
+    it('does not auto-activate pending connections for unverified providers', async () => {
+      mockConnectionService.getConnectionForOrg.mockResolvedValue({
+        id: 'conn_1',
+        organizationId: 'org_1',
+        status: 'pending',
+        provider: { slug: 'datadog' },
+      });
+      mockedGetManifest.mockReturnValue({
+        id: 'datadog',
+        auth: { type: 'api_key', config: { name: 'api_key' } },
+      } as never);
+      mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue({});
+
+      await controller.updateCredentials('conn_1', 'org_1', {
+        credentials: { api_key: 'new-key' },
+      });
+
+      expect(mockConnectionService.activateConnection).not.toHaveBeenCalled();
+    });
+
+    it('strips externalId from PATCH metadata updates', async () => {
+      mockConnectionService.getConnectionForOrg.mockResolvedValue({
+        id: 'conn_1',
+        organizationId: 'org_1',
+        metadata: { existing: 'value' },
+      });
+
+      await controller.updateConnection('conn_1', 'org_1', {
+        metadata: { connectionName: 'Renamed', externalId: 'spoofed' },
+      });
+
+      expect(
+        mockConnectionService.updateConnectionMetadata,
+      ).toHaveBeenCalledWith('conn_1', {
+        existing: 'value',
+        connectionName: 'Renamed',
+      });
+    });
+
+    it('deletes the row when the vault write fails (no orphan pending row)', async () => {
+      mockCredentialVaultService.storeApiKeyCredentials.mockRejectedValueOnce(
+        new Error('vault down'),
+      );
+
+      await expect(
+        controller.createConnection('org_1', {
+          providerSlug: 'aws',
+          credentials: {
+            awsType: 'aws',
+            regions: ['us-east-1'],
+          },
+        }),
+      ).rejects.toThrow('vault down');
+      expect(mockConnectionService.deleteConnection).toHaveBeenCalledWith(
+        'conn_new',
+      );
+    });
+
+    it('mints a fresh externalId on update when neither stored nor client value exists', async () => {
+      mockConnectionService.getConnectionForOrg.mockResolvedValue({
+        id: 'conn_legacy',
+        organizationId: 'org_1',
+        status: 'active',
+        provider: { slug: 'aws' },
+      });
+      // Legacy vault row with no externalId, and the UI sends none either.
+      mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue({
+        roleArn: AUDITOR_ARN,
+        regions: ['us-east-1'],
+        awsType: 'aws',
+      });
+
+      const result = await controller.updateCredentials(
+        'conn_legacy',
+        'org_1',
+        {
+          credentials: { roleArn: AUDITOR_ARN },
+        },
+      );
+
+      expect(result).toEqual({ success: true });
+      const stored =
+        mockCredentialVaultService.storeApiKeyCredentials.mock.calls[0][1];
+      expect(stored.externalId).toMatch(/^org_org_1_[0-9a-f-]{36}$/);
+      expect(mockConnectionRepository.update).toHaveBeenCalledWith(
+        'conn_legacy',
+        expect.objectContaining({
+          metadata: expect.objectContaining({
+            externalId: stored.externalId,
+          }),
+        }),
+      );
+    });
+
+    it('does not activate paused connections on credential updates', async () => {
+      mockConnectionService.getConnectionForOrg.mockResolvedValue({
+        id: 'conn_1',
+        organizationId: 'org_1',
+        status: 'paused',
+        provider: { slug: 'datadog' },
+      });
+      mockedGetManifest.mockReturnValue({
+        id: 'datadog',
+        auth: { type: 'api_key', config: { name: 'api_key' } },
+      } as never);
+      mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue({});
+
+      await controller.updateCredentials('conn_1', 'org_1', {
+        credentials: { api_key: 'new-key' },
+      });
+
+      expect(mockConnectionService.activateConnection).not.toHaveBeenCalled();
+    });
+
+    it('syncs connectionName and awsScanMode to metadata on credential updates', async () => {
+      mockConnectionService.getConnectionForOrg.mockResolvedValue({
+        id: 'conn_aws',
+        organizationId: 'org_1',
+        status: 'active',
+        metadata: {},
+        provider: { slug: 'aws' },
+      });
+      const storedExternalId = `org_org_1_${'a'.repeat(8)}-${'b'.repeat(4)}-${'c'.repeat(4)}-${'d'.repeat(4)}-${'e'.repeat(12)}`;
+      mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue({
+        roleArn: AUDITOR_ARN,
+        externalId: storedExternalId,
+        regions: ['us-east-1'],
+        awsType: 'aws',
+      });
+
+      await controller.updateCredentials('conn_aws', 'org_1', {
+        credentials: {
+          roleArn: AUDITOR_ARN,
+          connectionName: 'Prod Renamed',
+          awsScanMode: 'security_hub',
+        },
+      });
+
+      expect(mockConnectionRepository.update).toHaveBeenCalledWith(
+        'conn_aws',
+        expect.objectContaining({
+          metadata: expect.objectContaining({
+            connectionName: 'Prod Renamed',
+            awsScanMode: 'security_hub',
+          }),
+        }),
+      );
+    });
+
+    it('rejects stored externalIds outside the STS charset before any STS call', async () => {
+      mockConnectionService.getConnectionForOrg.mockResolvedValue({
+        id: 'conn_aws',
+        organizationId: 'org_1',
+        status: 'active',
+        provider: { slug: 'aws' },
+      });
+      // Legacy vault row with a value that predates server-side minting and
+      // carries characters the CloudShell scripts cannot safely interpolate.
+      mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue({
+        roleArn: AUDITOR_ARN,
+        externalId: 'evil value with spaces',
+        regions: ['us-east-1'],
+        awsType: 'aws',
+      });
+
+      await expect(
+        controller.updateCredentials('conn_aws', 'org_1', {
+          credentials: { roleArn: AUDITOR_ARN },
+        }),
+      ).rejects.toThrow(HttpException);
+      expect(stsCtor).not.toHaveBeenCalled();
+    });
+  });
+
   describe('testConnection (AWS validation)', () => {
     const stsCtor = STSClient as unknown as jest.Mock;
     const assumeCmd = AssumeRoleCommand as unknown as jest.Mock;

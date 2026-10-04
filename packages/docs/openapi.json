@@ -28768,13 +28768,12 @@
           },
           "credentials": {
             "type": "object",
-            "description": "Provider-specific credential fields. Keys differ by provider — call get-provider-details for the exact shape. For AWS (Cloud Tests) the fields are: connectionName (display name), awsType ('aws-commercial' or 'aws-govcloud'), roleArn (auditor role), externalId (typically your org id), regions (string array), remediationRoleArn (legacy single remediation role) and/or remediationRoles (JSON string map of '<AssetClass>:<region>' to remediation role ARN, e.g. '{\"Storage:us-east-1\":\"arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1\"}'), and awsScanMode ('comp_scanners' or 'security_hub'). Omit credentials for OAuth providers — use POST /v1/integrations/oauth/start instead.",
+            "description": "Provider-specific credential fields. Keys differ by provider — call get-provider-details for the exact shape. For AWS (Cloud Tests) the fields are: connectionName (display name), awsType ('aws-commercial' or 'aws-govcloud'), roleArn (auditor role), regions (string array), remediationRoleArn (legacy single remediation role) and/or remediationRoles (JSON string map of '<AssetClass>:<region>' to remediation role ARN, e.g. '{\"Storage:us-east-1\":\"arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1\"}'), and awsScanMode ('comp_scanners' or 'security_hub'). The externalId is always minted server-side (org_<orgId>_<uuid>) — any client-supplied value is ignored. Omit roleArn to create a pending connection: the response returns the minted externalId show-once for the CloudShell setup script, then PUT credentials with the Role ARN to validate and activate. Omit credentials for OAuth providers — use POST /v1/integrations/oauth/start instead.",
             "additionalProperties": true,
             "example": {
               "connectionName": "Production AWS",
               "awsType": "aws-commercial",
               "roleArn": "arn:aws:iam::123456789012:role/OpenComp-Auditor",
-              "externalId": "org_abc123",
               "regions": [
                 "us-east-1",
                 "us-west-2"

@@ -30,12 +30,13 @@ export function AwsAccountSettingsBody({
   open,
   connectionId,
   provider,
-  orgId,
   onUpdated,
 }: {
   open: boolean;
   connectionId: string;
   provider: IntegrationProvider;
+  // orgId intentionally not destructured: the External ID shown here is the
+  // server-minted value from metadata, never the organization ID.
   orgId: string;
   onUpdated?: () => void;
 }) {
@@ -59,7 +60,10 @@ export function AwsAccountSettingsBody({
   const displayName =
     (metadata.connectionName as string) ?? (metadata.accountId as string) ?? connectionId;
   const accountId = metadata.accountId as string | undefined;
-  const externalId = (metadata.externalId as string) ?? orgId;
+  // The External ID shown here is the server-minted value synced from the
+  // vault (create-time + backfill). Never fall back to the org ID: a wrong
+  // value in the setup script creates a role the server will reject.
+  const externalId = (metadata.externalId as string) ?? '';
   // Pair map syncs from the server as a parsed record (see the credentials
   // update endpoint); the legacy single ARN stays as dual-read fallback.
   const remediationRolesMap = parseRemediationRolesMap(metadata.remediationRoles);
@@ -120,21 +124,27 @@ export function AwsAccountSettingsBody({
       metaUpdates: Record<string, unknown>,
       setLoading: (v: boolean) => void,
       successMsg: string,
-    ) => {
+    ): Promise<boolean> => {
       setLoading(true);
       try {
         const result = await updateConnectionCredentials(connectionId, creds);
         if (!result.success) {
           toast.error(result.error || t('awsSettings.saveFailed'));
-          return;
+          return false;
         }
         if (Object.keys(metaUpdates).length > 0) {
-          await updateConnectionMetadata(connectionId, metaUpdates);
+          const metaResult = await updateConnectionMetadata(connectionId, metaUpdates);
+          if (!metaResult.success) {
+            toast.error(metaResult.error || t('awsSettings.saveFailed'));
+            return false;
+          }
         }
         toast.success(successMsg);
         onUpdated?.();
+        return true;
       } catch {
         toast.error(t('awsSettings.saveFailed'));
+        return false;
       } finally {
         setLoading(false);
       }
@@ -201,13 +211,21 @@ export function AwsAccountSettingsBody({
       toast.error(t('awsSettings.selectEnvironment'));
       return;
     }
-    await saveField(
-      { awsType, regions: [] },
-      { awsType, regions: [] },
+    // Send only the environment: the server merges with the stored vault
+    // credentials and validates the full set, so wiping regions here would
+    // guarantee a "No AWS regions selected" failure. A genuine partition
+    // switch also needs a matching Role ARN and regions — the server's
+    // partition-mismatch message tells the user exactly that.
+    const saved = await saveField(
+      { awsType },
+      { awsType },
       setSavingAwsType,
       t('awsSettings.environmentSaved'),
     );
-    setRegions([]);
+    // Only drop the local selection once the server accepts the switch —
+    // clearing on failure orphans the user's region picks. On success the
+    // refetch resyncs from metadata (filtered to the new partition).
+    if (saved) setRegions([]);
   }, [awsType, saveField, t]);
 
   const handleDisconnect = useCallback(async () => {
@@ -323,7 +341,7 @@ export function AwsAccountSettingsBody({
         </AccountSettingsFieldGroup>
         <AccountSettingsFieldGroup label={t('awsSettings.externalId')}>
           <p className="rounded-md border bg-muted/30 px-2.5 py-1.5 font-mono text-xs text-muted-foreground">
-            {externalId}
+            {externalId || '—'}
           </p>
         </AccountSettingsFieldGroup>
         <Button
@@ -369,8 +387,10 @@ export function AwsAccountSettingsBody({
         )}
         <CloudShellSetup
           script={remediationScript}
-          externalId={orgId}
+          externalId={externalId}
           cloudShellUrl={cloudShellUrl}
+          disabled={!externalId}
+          disabledMessage="No External ID on file for this connection — reconnect to issue one."
           title={t('awsSettings.setupScript')}
           subtitle={t('awsSettings.setupScriptSubtitle')}
           footnote=""

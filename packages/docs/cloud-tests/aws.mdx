@@ -26,8 +26,7 @@ Once connected, OpenComp scans the regions you select and produces findings mapp
 Before you begin, make sure you have:
 
 1. An AWS account with permission to create IAM roles
-2. Your OpenComp **organization ID** (used as the External ID — OpenComp's connection form pre-fills this for you)
-3. Admin access to your OpenComp workspace
+2. Admin access to your OpenComp workspace (OpenComp issues a unique External ID per connection during setup — you never invent one)
 
 ## Connect AWS
 
@@ -35,7 +34,7 @@ The OpenComp UI walks you through the full flow and displays the exact CloudShel
 
 <Steps>
   <Step title="Start the connection in OpenComp">
-    Go to **Cloud Tests → AWS → Connect**. OpenComp displays a CloudShell script pre-filled with your External ID.
+    Go to **Cloud Tests → AWS → Connect**, pick your AWS environment, and generate the connection. OpenComp issues a unique External ID and displays a CloudShell script pre-filled with it.
   </Step>
   <Step title="Run the script in AWS CloudShell">
     Open [AWS CloudShell](https://console.aws.amazon.com/cloudshell) in the account you want to scan and paste the script. It:
@@ -48,7 +47,7 @@ The OpenComp UI walks you through the full flow and displays the exact CloudShel
 
   </Step>
   <Step title="Paste the Role ARN and pick regions">
-    Copy the Role ARN from the script output and paste it into the OpenComp connection form. Choose the regions you want scanned. The External ID is already filled in.
+    Copy the Role ARN from the script output and paste it into the OpenComp connection form. Choose the regions you want scanned. The External ID is already on file — paste only the Role ARN.
   </Step>
   <Step title="(Optional) Enable auto-remediation">
     If you want OpenComp to be able to apply fixes, run one CloudShell script per asset-class x region pair shown in the UI (start with the classes and regions you want auto-fix in). Each script creates a separate `OpenComp-Remediator-{AssetClass}-{Region}` role with narrow fix-forward write permissions for that class. Paste each Role ARN into the matching row of the remediation roles table.
@@ -88,7 +87,7 @@ Findings are mapped to the controls used by:
 ## Security model
 
 - **Read-only by default** — the audit role cannot create, modify, or delete resources
-- **External ID enforced** — OpenComp refuses to connect unless the External ID in your trust policy matches the one stored against your OpenComp organization
+- **External ID enforced** — OpenComp refuses to connect unless the External ID in your trust policy matches the server-issued value stored against your connection
 - **No static credentials** — OpenComp never stores AWS access keys; short-lived credentials are issued by STS on each scan
 - **Revocable at any time** — deleting the IAM role in your account immediately cuts off access
 
@@ -96,8 +95,8 @@ Findings are mapped to the controls used by:
 
 <Accordion title="Access denied during AssumeRole" icon="warning">
   The most common cause is an External ID mismatch. Confirm the value in your role's trust policy
-  matches the External ID shown in the OpenComp connection form. If you recently rotated it, re-run
-  the CloudShell script.
+  matches the External ID shown in the connection settings. If they differ, re-run the
+  CloudShell script from the settings — the External ID cannot be typed or rotated by hand.
 </Accordion>
 
 <Accordion title="Role ARN format error" icon="circle-exclamation">

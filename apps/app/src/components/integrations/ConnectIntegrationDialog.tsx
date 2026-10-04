@@ -1,10 +1,16 @@
 'use client';
 
 import {
+  buildAwsPhase2Credentials,
+  defaultAwsConnectionName,
+  useAwsTwoStepConnect,
+} from '@/hooks/use-aws-two-step-connect';
+import {
   useIntegrationConnections,
   useIntegrationMutations,
   useIntegrationProviders,
 } from '@/hooks/use-integration-platform';
+import { usePendingAwsConnection } from '@/hooks/use-pending-aws-connection';
 import { usePermissions } from '@/hooks/use-permissions';
 import {
   getAwsCloudShellScript,
@@ -83,6 +89,24 @@ export function ConnectIntegrationDialog({
   const [connecting, setConnecting] = useState(false);
   const [credentials, setCredentials] = useState<Record<string, string | string[]>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // Phase 1 of the AWS two-step: the pending connection minted by the
+  // server to issue this connection's External ID. Phase 2 completes it
+  // via updateConnectionCredentials (validates + activates). The hook
+  // survives refresh and dialog close/reopen (session storage + newest
+  // pending row), so resuming never mints a duplicate.
+  const { pendingConnection, setPendingConnection, clearPendingConnection } =
+    usePendingAwsConnection({
+      orgId: orgId ?? '',
+      providerId: integrationId,
+      connections: allConnections,
+    });
+  const { startPendingConnection, completePendingConnection } = useAwsTwoStepConnect({
+    providerId: integrationId,
+    orgId: orgId ?? '',
+  });
+  const isAwsForm = integrationId === 'aws';
+  // Setup scripts must carry the server-issued value — never the org ID.
+  const setupExternalId = pendingConnection?.externalId ?? 'YOUR_EXTERNAL_ID';
   const [view, setView] = useState<'list' | 'form' | 'configure'>('list');
   const [isDisconnecting, setIsDisconnecting] = useState<string | null>(null);
   const [configureConnectionId, setConfigureConnectionId] = useState<string | null>(null);
@@ -160,6 +184,9 @@ export function ConnectIntegrationDialog({
     setCredentials({});
     setErrors({});
     setConfigureConnectionId(null);
+    // The pending AWS connection is owned by usePendingAwsConnection and
+    // survives close/reopen — never reset it here, or the show-once
+    // External ID is lost and reopening mints a duplicate row.
   }
 
   const allFields = useMemo(() => {
@@ -223,18 +250,59 @@ export function ConnectIntegrationDialog({
   }, [integrationId, startOAuth]);
 
   const handleCredentialConnect = useCallback(async () => {
-    // Auto-fill fields when setupScript is present
-    const finalCredentials = { ...credentials };
-    if (provider?.setupScript) {
-      if (!finalCredentials.externalId) {
-        finalCredentials.externalId = orgId;
+    // AWS connects in two steps: the External ID is minted server-side, so
+    // the IAM role can only be created AFTER phase 1 returns it.
+    if (isAwsForm && !pendingConnection) {
+      if (typeof credentials.awsType !== 'string' || !credentials.awsType) {
+        setErrors({ awsType: 'Select an AWS environment first' });
+        return;
       }
-      if (!finalCredentials.connectionName) {
-        // Extract account ID from Role ARN: arn:aws:iam::123456789012:role/Name
-        const arnMatch = String(finalCredentials.roleArn ?? '').match(/:(\d{12}):/);
-        finalCredentials.connectionName = arnMatch ? `AWS ${arnMatch[1]}` : `AWS Account`;
+      if (!orgId) {
+        toast.error('No organization selected');
+        return;
+      }
+      setConnecting(true);
+      setErrors({});
+      try {
+        const result = await startPendingConnection({
+          fields: {
+            ...(typeof credentials.awsType === 'string' ? { awsType: credentials.awsType } : {}),
+            ...(Array.isArray(credentials.regions) ? { regions: credentials.regions } : {}),
+          },
+        });
+        if (!result.success || !result.id || !result.externalId) {
+          toast.error(result.error || 'Failed to start connection');
+          setConnecting(false);
+          return;
+        }
+        setPendingConnection({
+          id: result.id,
+          externalId: result.externalId,
+        });
+        toast.success('External ID issued — run the setup script, then paste your Role ARN.');
+      } catch {
+        toast.error('Failed to start connection');
+      } finally {
+        setConnecting(false);
+      }
+      return;
+    }
+
+    // Auto-fill fields when setupScript is present
+    const autofilled = { ...credentials };
+    if (provider?.setupScript && integrationId !== 'aws') {
+      if (!autofilled.externalId) {
+        autofilled.externalId = orgId;
+      }
+      if (!autofilled.connectionName) {
+        autofilled.connectionName = defaultAwsConnectionName(autofilled.roleArn);
       }
     }
+    // The server owns the AWS External ID (mints on create, pins on
+    // update) — never send a client value, even if one lingers in state.
+    // AWS connection names default from the Role ARN (shared helper).
+    const finalCredentials =
+      integrationId === 'aws' ? buildAwsPhase2Credentials(autofilled) : autofilled;
 
     const newErrors: Record<string, string> = {};
     for (const field of allFields) {
@@ -262,10 +330,33 @@ export function ConnectIntegrationDialog({
     setErrors({});
 
     try {
-      const result = await createConnection(integrationId, finalCredentials);
+      // Phase 2 of the AWS flow completes the pending connection (validates
+      // the Role ARN against the minted External ID and activates).
+      // Every other case is the legacy one-shot create.
+      const result =
+        isAwsForm && pendingConnection
+          ? await completePendingConnection({
+              pendingId: pendingConnection.id,
+              credentials: finalCredentials,
+            }).then((update) =>
+              update.success
+                ? {
+                    success: true as const,
+                    connectionId: pendingConnection.id,
+                  }
+                : { success: false as const, error: update.error, notFound: update.notFound },
+            )
+          : await createConnection(integrationId, finalCredentials);
 
       if (!result.success) {
-        toast.error(result.error || 'Failed to create connection');
+        if (isAwsForm && 'notFound' in result && result.notFound) {
+          // The stored pending row is gone — drop it so the next click
+          // returns to phase 1 instead of retrying a dead ID forever.
+          clearPendingConnection();
+          toast.error('That pending connection no longer exists — generate a new External ID.');
+        } else {
+          toast.error(result.error || 'Failed to create connection');
+        }
         setConnecting(false);
         return;
       }
@@ -276,6 +367,7 @@ export function ConnectIntegrationDialog({
 
       await refreshConnections();
       setCredentials({});
+      clearPendingConnection();
 
       // After connecting, go back to list if multi-connection
       if (supportsMultipleConnections) {
@@ -294,12 +386,20 @@ export function ConnectIntegrationDialog({
     allFields,
     credentials,
     createConnection,
+    completePendingConnection,
+    startPendingConnection,
+    setPendingConnection,
+    clearPendingConnection,
     integrationId,
     integrationName,
     onConnected,
     onOpenChange,
     refreshConnections,
     supportsMultipleConnections,
+    isAwsForm,
+    pendingConnection,
+    provider,
+    orgId,
   ]);
 
   const handleDisconnect = useCallback(
@@ -351,9 +451,9 @@ export function ConnectIntegrationDialog({
       if (typeof metadata.roleArn === 'string') {
         prefillCredentials.roleArn = metadata.roleArn;
       }
-      if (typeof metadata.externalId === 'string') {
-        prefillCredentials.externalId = metadata.externalId;
-      }
+      // No externalId prefill: the display value is server-owned (minted at
+      // create, pinned on update). Prefilling it into editable state feeds a
+      // field the save path must strip, so the configure form hides it.
       if (typeof metadata.awsType === 'string') {
         prefillCredentials.awsType = metadata.awsType;
       }
@@ -395,8 +495,14 @@ export function ConnectIntegrationDialog({
 
     setSavingCredentials(true);
     try {
-      // Update credentials (API validates before saving for AWS)
-      const credResult = await updateConnectionCredentials(configureConnectionId, credentials);
+      // Update credentials (API validates before saving for AWS). The AWS
+      // External ID is server-owned — strip any prefilled value so the PUT
+      // never carries one (the server pins the stored value regardless).
+      const { externalId: _ignoredExternalId, ...credentialsToSend } = credentials;
+      const credResult = await updateConnectionCredentials(
+        configureConnectionId,
+        credentialsToSend,
+      );
 
       if (!credResult.success) {
         toast.error(credResult.error || 'Failed to update credentials');
@@ -424,9 +530,8 @@ export function ConnectIntegrationDialog({
       if (typeof credentials.awsType === 'string' && credentials.awsType.trim()) {
         metadataUpdates.awsType = credentials.awsType.trim();
       }
-      if (typeof credentials.externalId === 'string' && credentials.externalId.trim()) {
-        metadataUpdates.externalId = credentials.externalId.trim();
-      }
+      // No externalId here: the display value is server-owned (minted at
+      // create, synced from the vault). PATCH rejects client-supplied values.
       // Azure-specific metadata updates
       if (typeof credentials.tenantId === 'string' && credentials.tenantId.trim()) {
         metadataUpdates.tenantId = credentials.tenantId.trim();
@@ -617,9 +722,9 @@ export function ConnectIntegrationDialog({
             {setupScript && (
               <CloudShellSetup
                 script={setupScript}
-                externalId={orgId}
+                externalId={integrationId === 'aws' ? setupExternalId : orgId}
                 cloudShellUrl={cloudShellUrl}
-                disabled={!hasSelectedAwsEnvironment}
+                disabled={!hasSelectedAwsEnvironment || (isAwsForm && !pendingConnection)}
               />
             )}
             {!provider?.setupScript && provider?.setupInstructions && (
@@ -645,9 +750,9 @@ export function ConnectIntegrationDialog({
                       <div className="mb-4 mt-4">
                         <CloudShellSetup
                           script={remediationScript}
-                          externalId={orgId}
+                          externalId={integrationId === 'aws' ? setupExternalId : orgId}
                           cloudShellUrl={cloudShellUrl}
-                          disabled={!hasSelectedAwsEnvironment}
+                          disabled={!hasSelectedAwsEnvironment || (isAwsForm && !pendingConnection)}
                           title="Remediation Role Setup"
                           subtitle="Create a write-access role for auto-fix"
                           footnote="The remediation role is separate from your audit role — your audit role stays read-only."
@@ -686,8 +791,24 @@ export function ConnectIntegrationDialog({
               width="full"
               loading={connecting}
             >
-              {connecting ? 'Connecting...' : 'Connect'}
+              {connecting
+                ? 'Connecting...'
+                : isAwsForm && !pendingConnection
+                  ? 'Generate External ID'
+                  : 'Connect'}
             </Button>
+            {isAwsForm && pendingConnection && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearPendingConnection}
+                disabled={connecting}
+                width="full"
+                title="Discard this pending connection and generate a new External ID"
+              >
+                Start over
+              </Button>
+            )}
           </div>
         );
 
@@ -723,19 +844,24 @@ export function ConnectIntegrationDialog({
           </p>
         </div>
 
-        {allFields.map((field) => (
-          <div key={field.id} className="space-y-2">
-            <Label htmlFor={field.id}>{field.label}</Label>
-            <CredentialInput
-              field={field}
-              value={credentials[field.id] || (field.type === 'multi-select' ? [] : '')}
-              onChange={(value) => updateCredential(field.id, value)}
-              optionsOverride={field.id === 'regions' ? filteredRegionOptions : undefined}
-              disabled={field.id === 'regions' && !hasSelectedAwsEnvironment}
-            />
-            {field.helpText && <p className="text-xs text-muted-foreground">{field.helpText}</p>}
-          </div>
-        ))}
+        {allFields
+          // The External ID is server-owned (minted at create, pinned on
+          // update) — the save path strips any client value, so rendering an
+          // editable field would silently discard the user's edit.
+          .filter((field) => field.id !== 'externalId')
+          .map((field) => (
+            <div key={field.id} className="space-y-2">
+              <Label htmlFor={field.id}>{field.label}</Label>
+              <CredentialInput
+                field={field}
+                value={credentials[field.id] || (field.type === 'multi-select' ? [] : '')}
+                onChange={(value) => updateCredential(field.id, value)}
+                optionsOverride={field.id === 'regions' ? filteredRegionOptions : undefined}
+                disabled={field.id === 'regions' && !hasSelectedAwsEnvironment}
+              />
+              {field.helpText && <p className="text-xs text-muted-foreground">{field.helpText}</p>}
+            </div>
+          ))}
 
         <Button
           onClick={handleSaveCredentials}

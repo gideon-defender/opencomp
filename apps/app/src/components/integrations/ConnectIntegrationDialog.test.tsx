@@ -4,7 +4,7 @@ import {
   mockHasPermission,
   setMockPermissions,
 } from '@/test-utils/mocks/permissions';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock usePermissions
@@ -22,6 +22,12 @@ vi.mock('next/navigation', () => ({
 }));
 
 // --- Integration hooks ---
+const dialogMocks = vi.hoisted(() => ({
+  createConnection: vi.fn(),
+  updateConnectionCredentials: vi.fn(),
+  updateConnectionMetadata: vi.fn(),
+  apiPost: vi.fn(),
+}));
 const mockExistingConnections = [
   {
     id: 'conn-1',
@@ -32,6 +38,7 @@ const mockExistingConnections = [
     metadata: {
       connectionName: 'AWS Production',
       accountId: '123456789012',
+      externalId: 'org_org_123_minted',
       regions: ['us-east-1'],
     },
   },
@@ -41,7 +48,15 @@ const mockProviders = [
   {
     id: 'aws',
     authType: 'custom',
+    setupScript: 'EXTERNAL_ID="YOUR_EXTERNAL_ID"',
     credentialFields: [
+      {
+        id: 'awsType',
+        label: 'AWS Environment',
+        type: 'select',
+        required: true,
+        options: [{ value: 'aws', label: 'Commercial AWS' }],
+      },
       {
         id: 'connectionName',
         label: 'Connection Name',
@@ -50,11 +65,25 @@ const mockProviders = [
         placeholder: 'Name',
       },
       {
-        id: 'access_key_id',
-        label: 'Access Key ID',
+        id: 'roleArn',
+        label: 'Role ARN',
         type: 'text',
         required: true,
-        placeholder: 'AKIA...',
+        placeholder: 'arn:...',
+      },
+      {
+        id: 'externalId',
+        label: 'External ID',
+        type: 'text',
+        required: false,
+        placeholder: 'Issued automatically',
+      },
+      {
+        id: 'regions',
+        label: 'Regions',
+        type: 'multi-select',
+        required: true,
+        options: [{ value: 'us-east-1', label: 'us-east-1' }],
       },
     ],
     supportsMultipleConnections: true,
@@ -92,15 +121,21 @@ vi.mock('@/hooks/use-integration-platform', () => ({
   }),
   useIntegrationMutations: () => ({
     startOAuth: vi.fn(),
-    createConnection: vi.fn(),
+    createConnection: dialogMocks.createConnection,
     deleteConnection: vi.fn(),
-    updateConnectionCredentials: vi.fn(),
-    updateConnectionMetadata: vi.fn(),
+    updateConnectionCredentials: dialogMocks.updateConnectionCredentials,
+    updateConnectionMetadata: dialogMocks.updateConnectionMetadata,
   }),
   useIntegrationProviders: () => ({
     providers: mockProviders,
     isLoading: false,
   }),
+}));
+
+vi.mock('@/lib/api-client', () => ({
+  api: {
+    post: (...args: unknown[]) => dialogMocks.apiPost(...args),
+  },
 }));
 
 // Mock @gideon-defender/ui components
@@ -170,6 +205,9 @@ vi.mock('@gideon-defender/ui/textarea', () => ({
 
 vi.mock('lucide-react', () => ({
   ArrowLeft: () => <span data-testid="arrow-left-icon" />,
+  Check: () => <span data-testid="check-icon" />,
+  Copy: () => <span data-testid="copy-icon" />,
+  ExternalLink: () => <span data-testid="external-link-icon" />,
   Eye: () => <span />,
   EyeOff: () => <span />,
   Loader2: () => <span data-testid="loader-icon" />,
@@ -190,6 +228,10 @@ vi.mock('sonner', () => ({
 }));
 
 import { ConnectIntegrationDialog } from './ConnectIntegrationDialog';
+
+beforeEach(() => {
+  window.sessionStorage.clear();
+});
 
 const defaultProps = {
   open: true,
@@ -280,5 +322,100 @@ describe('ConnectIntegrationDialog basic auth credential labels', () => {
     expect(screen.getByText('API Secret')).toBeInTheDocument();
     expect(screen.queryByText('Username')).not.toBeInTheDocument();
     expect(screen.queryByText('Password')).not.toBeInTheDocument();
+  });
+});
+
+describe('ConnectIntegrationDialog AWS server-generated External ID', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setMockPermissions(ADMIN_PERMISSIONS);
+  });
+
+  it('asks to generate the External ID first instead of one-shot connecting', () => {
+    render(<ConnectIntegrationDialog {...defaultProps} initialView="form" />);
+
+    expect(screen.getByRole('button', { name: /generate external id/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^connect$/i })).not.toBeInTheDocument();
+  });
+
+  it('refuses phase 1 without an AWS environment and makes no request', async () => {
+    render(<ConnectIntegrationDialog {...defaultProps} initialView="form" />);
+
+    fireEvent.click(screen.getByRole('button', { name: /generate external id/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Select an AWS environment first')).toBeInTheDocument();
+    });
+    expect(dialogMocks.apiPost).not.toHaveBeenCalled();
+    expect(dialogMocks.createConnection).not.toHaveBeenCalled();
+  });
+
+  it('resumes a stored pending connection instead of minting a duplicate', async () => {
+    window.sessionStorage.setItem(
+      'pending-aws-connection:org_123:aws',
+      JSON.stringify({ id: 'conn_pending', externalId: 'org_org_123_restored' }),
+    );
+    render(<ConnectIntegrationDialog {...defaultProps} initialView="form" />);
+
+    // Already past phase 1: no generate step, no new request.
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('button', { name: /generate external id/i }),
+      ).not.toBeInTheDocument();
+    });
+    expect(dialogMocks.apiPost).not.toHaveBeenCalled();
+    expect(dialogMocks.createConnection).not.toHaveBeenCalled();
+  });
+
+  it('never sends a client externalId when saving credentials in the configure view', async () => {
+    render(<ConnectIntegrationDialog {...defaultProps} />);
+
+    // Open configure for the existing connection (prefill carries the
+    // server-minted externalId, but the PUT must not send it back).
+    fireEvent.click(screen.getByTestId('settings-icon'));
+    fireEvent.click(screen.getByRole('button', { name: /update connection/i }));
+
+    await waitFor(() => {
+      expect(dialogMocks.updateConnectionCredentials).toHaveBeenCalled();
+    });
+    const sent = dialogMocks.updateConnectionCredentials.mock.calls[0][1] as Record<
+      string,
+      unknown
+    >;
+    expect(sent.externalId).toBeUndefined();
+  });
+
+  it('offers Start over to discard a stored pending connection', async () => {
+    window.sessionStorage.setItem(
+      'pending-aws-connection:org_123:aws',
+      JSON.stringify({ id: 'conn_pending', externalId: 'org_org_123_stored' }),
+    );
+    render(<ConnectIntegrationDialog {...defaultProps} initialView="form" />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /start over/i })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /start over/i }));
+
+    await waitFor(() => {
+      expect(window.sessionStorage.getItem('pending-aws-connection:org_123:aws')).toBeNull();
+    });
+    // Back at phase 1 with no duplicate mint.
+    expect(screen.getByRole('button', { name: /generate external id/i })).toBeInTheDocument();
+    expect(dialogMocks.apiPost).not.toHaveBeenCalled();
+  });
+
+  it('hides the server-owned External ID field in the configure view', () => {
+    render(<ConnectIntegrationDialog {...defaultProps} />);
+
+    // Open configure for the existing connection. The External ID is minted
+    // server-side and pinned on update, so no editable field may render —
+    // the save path strips any client value and would silently discard edits.
+    fireEvent.click(screen.getByTestId('settings-icon'));
+
+    expect(screen.queryByText('External ID')).not.toBeInTheDocument();
+    expect(screen.queryByDisplayValue('org_org_123_minted')).not.toBeInTheDocument();
+    // Editable fields still render.
+    expect(screen.getByText('Role ARN')).toBeInTheDocument();
   });
 });

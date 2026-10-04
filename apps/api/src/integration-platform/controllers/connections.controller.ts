@@ -63,6 +63,7 @@ import {
 } from '../../cloud-security/aws-partition.utils';
 import { getProviderSummary } from '../utils/provider-summary';
 import { validateRemediationRoleTrust } from './remediation-trust.validator';
+import { generateAwsExternalId } from './external-id.utils';
 
 /**
  * AWS credential fields that must never carry leading/trailing whitespace
@@ -122,14 +123,13 @@ class CreateConnectionDto {
 
   @ApiPropertyOptional({
     description:
-      "Provider-specific credential fields. Keys differ by provider — call get-provider-details for the exact shape. For AWS (Cloud Tests) the fields are: connectionName (display name), awsType ('aws-commercial' or 'aws-govcloud'), roleArn (auditor role), externalId (typically your org id), regions (string array), remediationRoleArn (legacy single remediation role) and/or remediationRoles (JSON string map of '<AssetClass>:<region>' to remediation role ARN, e.g. '{\"Storage:us-east-1\":\"arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1\"}'), and awsScanMode ('comp_scanners' or 'security_hub'). Omit credentials for OAuth providers — use POST /v1/integrations/oauth/start instead.",
+      "Provider-specific credential fields. Keys differ by provider — call get-provider-details for the exact shape. For AWS (Cloud Tests) the fields are: connectionName (display name), awsType ('aws-commercial' or 'aws-govcloud'), roleArn (auditor role), regions (string array), remediationRoleArn (legacy single remediation role) and/or remediationRoles (JSON string map of '<AssetClass>:<region>' to remediation role ARN, e.g. '{\"Storage:us-east-1\":\"arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1\"}'), and awsScanMode ('comp_scanners' or 'security_hub'). The externalId is always minted server-side (org_<orgId>_<uuid>) — any client-supplied value is ignored. Omit roleArn to create a pending connection: the response returns the minted externalId show-once for the CloudShell setup script, then PUT credentials with the Role ARN to validate and activate. Omit credentials for OAuth providers — use POST /v1/integrations/oauth/start instead.",
     type: 'object',
     additionalProperties: true,
     example: {
       connectionName: 'Production AWS',
       awsType: 'aws-commercial',
       roleArn: 'arn:aws:iam::123456789012:role/OpenComp-Auditor',
-      externalId: 'org_abc123',
       regions: ['us-east-1', 'us-west-2'],
       remediationRoleArn: 'arn:aws:iam::123456789012:role/OpenComp-Remediator',
       remediationRoles:
@@ -207,12 +207,11 @@ class UpdateConnectionCredentialsDto {
 
   @ApiProperty({
     description:
-      "New credential fields for the connection. Keys match the provider's auth shape (same shape used when the connection was created — see create-connection for the AWS field list).",
+      "New credential fields for the connection. Keys match the provider's auth shape (same shape used when the connection was created — see create-connection for the AWS field list). For AWS the stored External ID is pinned: any client-supplied externalId is ignored and the minted value is kept.",
     type: 'object',
     additionalProperties: true,
     example: {
       roleArn: 'arn:aws:iam::123456789012:role/OpenComp-Auditor',
-      externalId: 'org_abc123',
     },
   })
   @IsObject()
@@ -644,8 +643,34 @@ export class ConnectionsController {
     // ============================================================
     // VALIDATE BEFORE CREATING - For AWS, check IAM role + Security Hub
     // ============================================================
-    if (providerSlug === 'aws' && credentials) {
-      const validationResult = await this.validateAwsCredentials(credentials);
+    // Server-generated External IDs (Phase 1 item 6): any client-supplied
+    // `externalId` is replaced before anything else, so validation, the
+    // vault, and metadata all see the minted value — never a user-typed one.
+    // Without a Role ARN this is a pending create: the connection is stored
+    // inactive and the minted value is returned show-once for the setup
+    // script. The Role ARN arrives later via update-credentials (validated).
+    // Always mint from an object base for AWS — even when the caller sends
+    // no `credentials` at all — so every AWS connection (pending or not)
+    // gets an External ID and no orphan pending row can exist without one.
+    const effectiveCredentials =
+      providerSlug === 'aws'
+        ? {
+            ...(credentials ?? {}),
+            externalId: generateAwsExternalId(organizationId),
+          }
+        : credentials;
+    // Normalize before metadata, validation, and storage all read it — the
+    // vault must hold the trimmed value STS actually receives.
+    if (providerSlug === 'aws' && effectiveCredentials)
+      trimAwsCredentialStrings(effectiveCredentials);
+    const hasAwsRoleArn =
+      providerSlug === 'aws' &&
+      !!effectiveCredentials &&
+      typeof effectiveCredentials.roleArn === 'string' &&
+      effectiveCredentials.roleArn.trim().length > 0;
+    if (providerSlug === 'aws' && effectiveCredentials && hasAwsRoleArn) {
+      const validationResult =
+        await this.validateAwsCredentials(effectiveCredentials);
       if (!validationResult.success) {
         throw new HttpException(
           {
@@ -672,7 +697,9 @@ export class ConnectionsController {
     // Extract metadata from credentials for display purposes
     // These fields are also stored encrypted in credentials, but we need them in metadata for quick access
     const metadata: Record<string, unknown> = {};
-    if (credentials) {
+    const metadataSource = effectiveCredentials ?? credentials;
+    if (metadataSource) {
+      const credentials = metadataSource;
       if (typeof credentials.connectionName === 'string') {
         metadata.connectionName = credentials.connectionName;
       }
@@ -694,7 +721,8 @@ export class ConnectionsController {
         metadata.awsScanMode = credentials.awsScanMode;
       }
       // Store roleArn and externalId in metadata for pre-filling the configure form
-      // These are not secrets - roleArn is visible in AWS console, externalId is typically the org ID
+      // Neither is a secret: roleArn is visible in the AWS console, and the
+      // externalId is server-minted (unpredictable) at create time.
       if (typeof credentials.roleArn === 'string') {
         metadata.roleArn = credentials.roleArn;
         const parsedRoleArn = parseAwsRoleArn(credentials.roleArn);
@@ -725,7 +753,8 @@ export class ConnectionsController {
       }
     }
 
-    // Create connection (only after validation passes)
+    // Create connection (only after validation passes — or as a pending
+    // connection when the AWS Role ARN arrives later via update-credentials)
     const connection = await this.connectionService.createConnection({
       providerSlug,
       organizationId,
@@ -733,12 +762,55 @@ export class ConnectionsController {
       metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
     });
 
-    // Store credentials if provided
-    if (credentials && Object.keys(credentials).length > 0) {
-      await this.credentialVaultService.storeApiKeyCredentials(
-        connection.id,
-        credentials,
+    // Store credentials if provided. The row above is useless without its
+    // vault entry (phase 2 pins the External ID from the vault), so a vault
+    // failure must not leave an orphan pending row behind that can never
+    // complete — delete the row and surface the error.
+    const storedCredentials = effectiveCredentials ?? credentials;
+    if (storedCredentials && Object.keys(storedCredentials).length > 0) {
+      try {
+        await this.credentialVaultService.storeApiKeyCredentials(
+          connection.id,
+          storedCredentials,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Vault write failed for new connection ${connection.id} — deleting orphan row`,
+          error instanceof Error ? error.stack : String(error),
+        );
+        try {
+          await this.connectionService.deleteConnection(connection.id);
+        } catch (cleanupError) {
+          this.logger.error(
+            `Failed to delete orphan connection ${connection.id} after vault failure`,
+            cleanupError instanceof Error
+              ? cleanupError.stack
+              : String(cleanupError),
+          );
+        }
+        throw error;
+      }
+    }
+
+    const isPendingAwsCreate = providerSlug === 'aws' && !hasAwsRoleArn;
+    if (isPendingAwsCreate) {
+      // No Role ARN yet: the IAM role cannot exist, so there is nothing to
+      // validate or activate. The minted External ID below is the show-once
+      // value the setup UI injects into the CloudShell script.
+      this.logger.log(
+        `Created pending AWS connection ${connection.id}, org: ${organizationId}`,
       );
+      return {
+        id: connection.id,
+        providerId: connection.providerId,
+        status: 'pending',
+        authStrategy: connection.authStrategy,
+        createdAt: connection.createdAt,
+        externalId:
+          typeof storedCredentials?.externalId === 'string'
+            ? storedCredentials.externalId
+            : undefined,
+      };
     }
 
     // Mark connection as active since validation already passed
@@ -770,6 +842,13 @@ export class ConnectionsController {
       status: 'active', // We already activated it
       authStrategy: connection.authStrategy,
       createdAt: connection.createdAt,
+      // Show-once: the minted External ID, so API callers can inject it
+      // into the CloudShell script without a second round trip.
+      externalId:
+        providerSlug === 'aws' &&
+        typeof storedCredentials?.externalId === 'string'
+          ? storedCredentials.externalId
+          : undefined,
     };
   }
 
@@ -806,7 +885,7 @@ export class ConnectionsController {
       return {
         success: false,
         message:
-          'External ID must not contain line breaks. Use your organization ID or another single-line secret value.',
+          'External ID must not contain line breaks. Use the server-issued value for this connection.',
       };
     }
     if (!Array.isArray(regionsValue) || regionsValue.length === 0) {
@@ -871,7 +950,20 @@ export class ConnectionsController {
       return {
         success: false,
         message:
-          'External ID is still the placeholder from the setup instructions. Replace it with your organization ID (or another secret value) in BOTH the IAM trust policy and this form.',
+          'External ID is still the placeholder from the setup instructions. Generate a connection first and use the issued value.',
+      };
+    }
+
+    // Allowlist the External ID to the STS charset (alphanumerics plus
+    // `_+=,.@:/-`). The value is interpolated into generated CloudShell
+    // scripts, so anything outside this set (spaces, quotes, shell
+    // metacharacters) is rejected before it can persist — including values
+    // stored before server-side minting. Server-minted values always match.
+    if (!/^[A-Za-z0-9_+=,.@:/-]+$/.test(externalId)) {
+      return {
+        success: false,
+        message:
+          'External ID contains unsupported characters. Use the server-issued value for this connection.',
       };
     }
 
@@ -1214,7 +1306,13 @@ export class ConnectionsController {
         string,
         unknown
       >;
-      const updatedMetadata = { ...existingMetadata, ...body.metadata };
+      // The External ID display value is server-owned (minted at create,
+      // synced from the vault on credential updates). Dropping a
+      // client-supplied value here keeps the setup script showing the real
+      // one instead of a spoofed value that validation would reject.
+      const { externalId: _ignoredExternalId, ...clientMetadata } =
+        body.metadata;
+      const updatedMetadata = { ...existingMetadata, ...clientMetadata };
 
       await this.connectionService.updateConnectionMetadata(
         id,
@@ -1521,6 +1619,36 @@ export class ConnectionsController {
       ...body.credentials,
     } as Record<string, string | string[]>;
 
+    // Grandfather the External ID: the stored server-minted value (if any)
+    // always wins. Accepting a client-supplied rotation here would break the
+    // customer's trust policies. Legacy rows created before server minting
+    // have no stored value: adopt an explicit client value when one is sent,
+    // otherwise mint a fresh one — the new UI never sends one, and without
+    // this the update could never validate.
+    if (providerSlug === 'aws') {
+      const storedExternalId = existingCredentials?.externalId;
+      if (typeof storedExternalId === 'string' && storedExternalId.trim()) {
+        if (
+          typeof mergedCredentials.externalId === 'string' &&
+          mergedCredentials.externalId.trim() &&
+          mergedCredentials.externalId.trim() !== storedExternalId.trim()
+        ) {
+          this.logger.warn(
+            `Ignoring client-supplied externalId rotation on connection ${id} — pinned to stored value.`,
+          );
+        }
+        mergedCredentials.externalId = storedExternalId;
+      } else if (
+        typeof mergedCredentials.externalId !== 'string' ||
+        !mergedCredentials.externalId.trim()
+      ) {
+        mergedCredentials.externalId = generateAwsExternalId(organizationId);
+        this.logger.log(
+          `Minted missing External ID on credential update for connection ${id} (legacy row)`,
+        );
+      }
+    }
+
     // For AWS, validate credentials BEFORE saving
     if (providerSlug === 'aws') {
       const validationResult =
@@ -1551,6 +1679,24 @@ export class ConnectionsController {
       metaUpdates.roleArn = mergedCredentials.roleArn;
       const parsedRoleArn = parseAwsRoleArn(mergedCredentials.roleArn);
       if (parsedRoleArn) metaUpdates.accountId = parsedRoleArn.accountId;
+    }
+    if (
+      typeof mergedCredentials.connectionName === 'string' &&
+      mergedCredentials.connectionName.trim()
+    ) {
+      metaUpdates.connectionName = mergedCredentials.connectionName.trim();
+    }
+    if (
+      typeof mergedCredentials.awsScanMode === 'string' &&
+      (mergedCredentials.awsScanMode === 'comp_scanners' ||
+        mergedCredentials.awsScanMode === 'security_hub')
+    ) {
+      metaUpdates.awsScanMode = mergedCredentials.awsScanMode;
+    }
+    // The External ID display value always follows the vault (which the
+    // grandfather pin above keeps server-minted) — never client metadata.
+    if (typeof mergedCredentials.externalId === 'string') {
+      metaUpdates.externalId = mergedCredentials.externalId;
     }
     if (typeof mergedCredentials.remediationRoleArn === 'string') {
       metaUpdates.remediationRoleArn = mergedCredentials.remediationRoleArn;
@@ -1592,11 +1738,18 @@ export class ConnectionsController {
       });
     }
 
-    // Only activate the connection if it was in error state (don't resume paused connections)
-    if (connection.status === 'error') {
+    // Activate a pending AWS connection once its credentials validate (this
+    // is how pending AWS creates complete), and keep the existing behavior
+    // of reviving error-state connections. Never touch paused connections —
+    // and never auto-activate pending connections for providers whose
+    // credentials were not just verified.
+    const shouldActivate =
+      connection.status === 'error' ||
+      (connection.status === 'pending' && providerSlug === 'aws');
+    if (shouldActivate) {
       await this.connectionService.activateConnection(id);
       this.logger.log(
-        `Activated connection ${id} after credential update (was in error state)`,
+        `Activated connection ${id} after credential update (was in ${connection.status} state)`,
       );
     }
 
