@@ -26,6 +26,7 @@ import { Public } from '../auth/public.decorator';
 import { RequirePermission } from '../auth/require-permission.decorator';
 import { CreatePenetrationTestDto } from './dto/create-penetration-test.dto';
 import { SecurityPenetrationTestsService } from './security-penetration-tests.service';
+import { ApiAuthErrors } from '../openapi/common-responses';
 
 @ApiTags('Security Penetration Tests')
 @Controller({ path: 'security-penetration-tests', version: '1' })
@@ -50,6 +51,7 @@ export class SecurityPenetrationTestsController {
     status: 200,
     description: 'Penetration tests returned',
   })
+  @ApiAuthErrors()
   async list(@OrganizationId() organizationId: string) {
     return this.service.listReports(organizationId);
   }
@@ -70,6 +72,7 @@ export class SecurityPenetrationTestsController {
     status: 400,
     description: 'Invalid request payload',
   })
+  @ApiAuthErrors()
   async create(
     @OrganizationId() organizationId: string,
     @Body() body: CreatePenetrationTestDto,
@@ -91,6 +94,7 @@ export class SecurityPenetrationTestsController {
     status: 404,
     description: 'Penetration test not found',
   })
+  @ApiAuthErrors()
   async getById(
     @OrganizationId() organizationId: string,
     @Param('id') id: string,
@@ -108,6 +112,7 @@ export class SecurityPenetrationTestsController {
     status: 200,
     description: 'Progress returned',
   })
+  @ApiAuthErrors()
   async getProgress(
     @OrganizationId() organizationId: string,
     @Param('id') id: string,
@@ -123,6 +128,7 @@ export class SecurityPenetrationTestsController {
       'Returns the structured findings discovered during the run. Grows over time during a live scan as agents discover more issues.',
   })
   @ApiResponse({ status: 200, description: 'Issues returned' })
+  @ApiAuthErrors()
   async getIssues(
     @OrganizationId() organizationId: string,
     @Param('id') id: string,
@@ -138,6 +144,7 @@ export class SecurityPenetrationTestsController {
       'Returns the real-time agent activity log emitted during a run (tool calls, observations, etc.). Noisy — meant for activity feeds and debugging.',
   })
   @ApiResponse({ status: 200, description: 'Events returned' })
+  @ApiAuthErrors()
   async getEvents(
     @OrganizationId() organizationId: string,
     @Param('id') id: string,
@@ -155,6 +162,7 @@ export class SecurityPenetrationTestsController {
     status: 200,
     description: 'Markdown report output',
   })
+  @ApiAuthErrors()
   async getReport(
     @OrganizationId() organizationId: string,
     @Param('id') id: string,
@@ -178,6 +186,7 @@ export class SecurityPenetrationTestsController {
       'Returns the PDF version of a completed report. Streams the binary PDF via Maced SDK.',
   })
   @ApiResponse({ status: 200, description: 'PDF report artifact' })
+  @ApiAuthErrors()
   async getPdf(
     @OrganizationId() organizationId: string,
     @Param('id') id: string,

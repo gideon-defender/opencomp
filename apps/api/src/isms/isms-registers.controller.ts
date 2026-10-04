@@ -46,6 +46,7 @@ import {
   type IsmsRegisterKey,
   type RegisterHandler,
 } from './registers/register-registry';
+import { ApiAuthErrors } from '../openapi/common-responses';
 
 /**
  * OpenAPI body contracts for the generic register endpoints. They read `req.body`
@@ -321,6 +322,7 @@ export class IsmsRegistersController {
   @ApiConsumes('application/json')
   @ApiBody(REGISTER_ROW_BODY)
   @ApiOkResponse({ description: 'Register row created' })
+  @ApiAuthErrors()
   async createRow(
     @Param('id') id: string,
     @Param('register') register: string,
@@ -352,6 +354,7 @@ export class IsmsRegistersController {
   @ApiConsumes('application/json')
   @ApiBody(REGISTER_ROW_BODY)
   @ApiOkResponse({ description: 'Register row updated' })
+  @ApiAuthErrors()
   async updateRow(
     @Param('register') register: string,
     @Param('rowId') rowId: string,
@@ -370,6 +373,7 @@ export class IsmsRegistersController {
   @RequirePermission('evidence', 'update')
   @ApiOperation({ summary: 'Delete a row in an ISMS register' })
   @ApiOkResponse({ description: 'Register row deleted' })
+  @ApiAuthErrors()
   async deleteRow(
     @Param('register') register: string,
     @Param('rowId') rowId: string,
@@ -390,6 +394,7 @@ export class IsmsRegistersController {
   @ApiConsumes('application/json')
   @ApiBody(MEASUREMENT_BULK_BODY)
   @ApiOkResponse({ description: 'Measurements recorded' })
+  @ApiAuthErrors()
   async bulkCreateMeasurements(
     @Param('id') id: string,
     // Read req.body directly: the global ValidationPipe mangles nested JSON.
@@ -419,6 +424,7 @@ export class IsmsRegistersController {
   @ApiConsumes('application/json')
   @ApiBody(NARRATIVE_BODY)
   @ApiOkResponse({ description: 'Narrative saved' })
+  @ApiAuthErrors()
   async saveNarrative(
     @Param('id') id: string,
     // Read req.body directly: ValidationPipe with transform mangles nested JSON.

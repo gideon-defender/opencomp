@@ -27,6 +27,7 @@ import { HybridAuthGuard } from '../auth/hybrid-auth.guard';
 import { PermissionGuard } from '../auth/permission.guard';
 import { RequirePermission } from '../auth/require-permission.decorator';
 import { OrganizationId, MemberId } from '../auth/auth-context.decorator';
+import { ApiAuthErrors } from '../openapi/common-responses';
 
 @ApiTags('Training')
 @Controller({ path: 'training', version: '1' })
@@ -46,6 +47,7 @@ export class TrainingController {
     status: 200,
     description: 'List of training video completion records',
   })
+  @ApiAuthErrors()
   async getCompletions(
     @MemberId() memberId: string | undefined,
     @OrganizationId() organizationId: string,
@@ -68,6 +70,7 @@ export class TrainingController {
     status: 200,
     description: 'The updated completion record',
   })
+  @ApiAuthErrors()
   async markVideoComplete(
     @MemberId() memberId: string | undefined,
     @OrganizationId() organizationId: string,
@@ -96,6 +99,7 @@ export class TrainingController {
     description: 'Email sent or reason why it was not sent',
     type: SendTrainingCompletionResponseDto,
   })
+  @ApiAuthErrors()
   async sendTrainingCompletionEmail(
     @OrganizationId() organizationId: string,
     @Body() dto: SendTrainingCompletionDto,
@@ -122,6 +126,7 @@ export class TrainingController {
     description: 'Email sent or reason why it was not sent',
     type: SendTrainingCompletionResponseDto,
   })
+  @ApiAuthErrors()
   async sendHipaaTrainingCompletionEmail(
     @OrganizationId() organizationId: string,
     @Body() dto: SendTrainingCompletionDto,
@@ -149,6 +154,7 @@ export class TrainingController {
     status: 400,
     description: 'Training not complete or member not found',
   })
+  @ApiAuthErrors()
   async generateCertificate(
     @OrganizationId() organizationId: string,
     @Body() dto: SendTrainingCompletionDto,
@@ -185,6 +191,7 @@ export class TrainingController {
     status: 400,
     description: 'HIPAA training not complete or member not found',
   })
+  @ApiAuthErrors()
   async generateHipaaCertificate(
     @OrganizationId() organizationId: string,
     @Body() dto: SendTrainingCompletionDto,

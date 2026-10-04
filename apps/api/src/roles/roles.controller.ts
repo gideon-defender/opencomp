@@ -26,6 +26,7 @@ import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateBuiltInObligationsDto } from './dto/update-built-in-obligations.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { RolesService } from './roles.service';
+import { ApiAuthErrors, ApiForbiddenError } from '../openapi/common-responses';
 
 @ApiTags('Roles')
 @Controller({ path: 'roles', version: '1' })
@@ -126,6 +127,7 @@ export class RolesController {
     },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiForbiddenError()
   async listRoles(@OrganizationId() organizationId: string) {
     return this.rolesService.listRoles(organizationId);
   }
@@ -154,6 +156,7 @@ export class RolesController {
     },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiForbiddenError()
   async getPermissionsForRoles(
     @OrganizationId() organizationId: string,
     @Query('roles') roles: string,
@@ -199,6 +202,7 @@ export class RolesController {
       },
     },
   })
+  @ApiAuthErrors()
   async getBuiltInObligations(
     @OrganizationId() organizationId: string,
     @Param('name') name: string,
@@ -238,6 +242,7 @@ export class RolesController {
     },
   })
   @ApiResponse({ status: 400, description: 'Not a built-in role' })
+  @ApiAuthErrors()
   async updateBuiltInObligations(
     @OrganizationId() organizationId: string,
     @Param('name') name: string,
@@ -274,6 +279,7 @@ export class RolesController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Role not found' })
+  @ApiForbiddenError()
   async getRole(
     @OrganizationId() organizationId: string,
     @Param('roleId') roleId: string,
@@ -356,6 +362,7 @@ export class RolesController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Role not found' })
+  @ApiForbiddenError()
   async deleteRole(
     @OrganizationId() organizationId: string,
     @Param('roleId') roleId: string,

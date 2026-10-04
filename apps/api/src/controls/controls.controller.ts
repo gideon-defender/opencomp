@@ -10,11 +10,13 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
-  ApiTags,
-  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiQuery,
+  ApiSecurity,
+  ApiTags,
 } from '@nestjs/swagger';
 import { HybridAuthGuard } from '../auth/hybrid-auth.guard';
 import { PermissionGuard } from '../auth/permission.guard';
@@ -27,9 +29,10 @@ import { LinkTasksDto } from './dto/link-tasks.dto';
 import { LinkRequirementsToControlDto } from './dto/link-requirements.dto';
 import { LinkDocumentTypesDto } from './dto/link-document-types.dto';
 import { EvidenceFormType } from '@db';
+import { ApiAuthErrors } from '../openapi/common-responses';
 
 @ApiTags('Controls')
-@ApiBearerAuth()
+@ApiSecurity('apikey')
 @UseGuards(HybridAuthGuard, PermissionGuard)
 @Controller({ path: 'controls', version: '1' })
 export class ControlsController {
@@ -55,6 +58,8 @@ export class ControlsController {
     required: false,
     description: 'Sort descending (true/false)',
   })
+  @ApiOkResponse({ description: 'Compliance controls retrieved successfully' })
+  @ApiAuthErrors()
   async findAll(
     @OrganizationId() organizationId: string,
     @Query('page') page?: string,
@@ -75,6 +80,11 @@ export class ControlsController {
   @Get('options')
   @RequirePermission('control', 'read')
   @ApiOperation({ summary: 'Get dropdown options for creating controls' })
+  @ApiOkResponse({
+    description:
+      'Dropdown options for creating controls retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getOptions(@OrganizationId() organizationId: string) {
     return this.controlsService.getOptions(organizationId);
   }
@@ -82,6 +92,10 @@ export class ControlsController {
   @Get(':id')
   @RequirePermission('control', 'read')
   @ApiOperation({ summary: 'Get control detail with progress' })
+  @ApiOkResponse({
+    description: 'Control detail with progress retrieved successfully',
+  })
+  @ApiAuthErrors()
   async findOne(
     @OrganizationId() organizationId: string,
     @Param('id') id: string,
@@ -97,6 +111,10 @@ export class ControlsController {
   @Post()
   @RequirePermission('control', 'create')
   @ApiOperation({ summary: 'Create a new control' })
+  @ApiCreatedResponse({
+    description: 'Compliance control created successfully',
+  })
+  @ApiAuthErrors()
   async create(
     @OrganizationId() organizationId: string,
     @Body() dto: CreateControlDto,
@@ -107,6 +125,10 @@ export class ControlsController {
   @Post(':id/policies/link')
   @RequirePermission('control', 'update')
   @ApiOperation({ summary: 'Link existing policies to a control' })
+  @ApiCreatedResponse({
+    description: 'Policies to control linked successfully',
+  })
+  @ApiAuthErrors()
   async linkPolicies(
     @OrganizationId() organizationId: string,
     @Param('id') id: string,
@@ -124,6 +146,8 @@ export class ControlsController {
   @Post(':id/tasks/link')
   @RequirePermission('control', 'update')
   @ApiOperation({ summary: 'Link existing tasks to a control' })
+  @ApiCreatedResponse({ description: 'Tasks to control linked successfully' })
+  @ApiAuthErrors()
   async linkTasks(
     @OrganizationId() organizationId: string,
     @Param('id') id: string,
@@ -141,6 +165,10 @@ export class ControlsController {
   @Post(':id/requirements/link')
   @RequirePermission('control', 'update')
   @ApiOperation({ summary: 'Link existing requirements to a control' })
+  @ApiCreatedResponse({
+    description: 'Existing requirements to a control linked successfully',
+  })
+  @ApiAuthErrors()
   async linkRequirements(
     @OrganizationId() organizationId: string,
     @Param('id') id: string,
@@ -156,6 +184,10 @@ export class ControlsController {
   @Post(':id/document-types/link')
   @RequirePermission('control', 'update')
   @ApiOperation({ summary: 'Link required document types to a control' })
+  @ApiCreatedResponse({
+    description: 'Required document types to a control linked successfully',
+  })
+  @ApiAuthErrors()
   async linkDocumentTypes(
     @OrganizationId() organizationId: string,
     @Param('id') id: string,
@@ -183,6 +215,10 @@ export class ControlsController {
     description: 'Evidence form type to unlink from the control',
     enum: EvidenceFormType,
   })
+  @ApiOkResponse({
+    description: 'A required document type from a control removed successfully',
+  })
+  @ApiAuthErrors()
   async unlinkDocumentType(
     @OrganizationId() organizationId: string,
     @Param('id') id: string,
@@ -201,6 +237,8 @@ export class ControlsController {
   @Delete(':id')
   @RequirePermission('control', 'delete')
   @ApiOperation({ summary: 'Delete a control' })
+  @ApiOkResponse({ description: 'A control deleted successfully' })
+  @ApiAuthErrors()
   async delete(
     @OrganizationId() organizationId: string,
     @Param('id') id: string,

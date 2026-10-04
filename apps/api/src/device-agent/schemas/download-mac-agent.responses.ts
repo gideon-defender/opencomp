@@ -1,8 +1,10 @@
 import type { ApiResponseOptions } from '@nestjs/swagger';
+import { ApiErrorResponseDto } from '../../openapi/common-responses';
 
 export const DOWNLOAD_MAC_AGENT_RESPONSES: Record<number, ApiResponseOptions> =
   {
     200: {
+      status: 200,
       description: 'macOS agent DMG file download',
       content: {
         'application/x-apple-diskimage': {
@@ -32,36 +34,18 @@ export const DOWNLOAD_MAC_AGENT_RESPONSES: Record<number, ApiResponseOptions> =
       },
     },
     401: {
+      status: 401,
       description: 'Unauthorized - Invalid or missing authentication',
-      content: {
-        'application/json': {
-          example: {
-            message: 'Unauthorized',
-            statusCode: 401,
-          },
-        },
-      },
+      type: ApiErrorResponseDto,
     },
     404: {
+      status: 404,
       description: 'macOS agent file not found in S3',
-      content: {
-        'application/json': {
-          example: {
-            message: 'macOS agent DMG file not found in S3',
-            statusCode: 404,
-          },
-        },
-      },
+      type: ApiErrorResponseDto,
     },
     500: {
+      status: 500,
       description: 'Internal server error',
-      content: {
-        'application/json': {
-          example: {
-            message: 'Internal server error',
-            statusCode: 500,
-          },
-        },
-      },
+      type: ApiErrorResponseDto,
     },
   };

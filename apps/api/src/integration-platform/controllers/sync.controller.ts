@@ -12,6 +12,8 @@ import {
 } from '@nestjs/common';
 import {
   ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiPropertyOptional,
   ApiSecurity,
@@ -44,6 +46,7 @@ import { DynamicIntegrationRepository } from '../repositories/dynamic-integratio
 import { CheckRunRepository } from '../repositories/check-run.repository';
 import { createCheckContext } from '@gideon-defender/integration-platform';
 import { filterUsersByOrgUnits } from './sync-ou-filter';
+import { ApiAuthErrors } from '../../openapi/common-responses';
 
 interface GoogleWorkspaceUser {
   id: string;
@@ -117,6 +120,10 @@ export class SyncController {
   @Post('google-workspace/employees')
   @ApiOperation({ summary: 'Sync Google Workspace employees' })
   @RequirePermission('integration', 'update')
+  @ApiCreatedResponse({
+    description: 'Google Workspace employees synced successfully',
+  })
+  @ApiAuthErrors()
   async syncGoogleWorkspaceEmployees(
     @OrganizationId() organizationId: string,
     @Query('connectionId') connectionId: string,
@@ -596,6 +603,10 @@ export class SyncController {
   @Post('google-workspace/status')
   @ApiOperation({ summary: 'Get Google Workspace sync status' })
   @RequirePermission('integration', 'read')
+  @ApiCreatedResponse({
+    description: 'Google Workspace sync status retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getGoogleWorkspaceStatus(@OrganizationId() organizationId: string) {
     const connection = await this.connectionRepository.findBySlugAndOrg(
       'google-workspace',
@@ -625,6 +636,8 @@ export class SyncController {
   @Post('rippling/employees')
   @ApiOperation({ summary: 'Sync Rippling employees' })
   @RequirePermission('integration', 'update')
+  @ApiCreatedResponse({ description: 'Rippling employees synced successfully' })
+  @ApiAuthErrors()
   async syncRipplingEmployees(
     @OrganizationId() organizationId: string,
     @Query('connectionId') connectionId: string,
@@ -1015,6 +1028,10 @@ export class SyncController {
   @Post('rippling/status')
   @ApiOperation({ summary: 'Get Rippling sync status' })
   @RequirePermission('integration', 'read')
+  @ApiCreatedResponse({
+    description: 'Rippling sync status retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getRipplingStatus(@OrganizationId() organizationId: string) {
     const connection = await this.connectionRepository.findBySlugAndOrg(
       'rippling',
@@ -1044,6 +1061,10 @@ export class SyncController {
   @Post('jumpcloud/employees')
   @ApiOperation({ summary: 'Sync JumpCloud employees' })
   @RequirePermission('integration', 'update')
+  @ApiCreatedResponse({
+    description: 'JumpCloud employees synced successfully',
+  })
+  @ApiAuthErrors()
   async syncJumpCloudEmployees(
     @OrganizationId() organizationId: string,
     @Query('connectionId') connectionId: string,
@@ -1564,6 +1585,10 @@ export class SyncController {
   @Post('jumpcloud/status')
   @ApiOperation({ summary: 'Get JumpCloud sync status' })
   @RequirePermission('integration', 'read')
+  @ApiCreatedResponse({
+    description: 'JumpCloud sync status retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getJumpCloudStatus(@OrganizationId() organizationId: string) {
     const connection = await this.connectionRepository.findBySlugAndOrg(
       'jumpcloud',
@@ -1595,6 +1620,11 @@ export class SyncController {
     summary: 'Get the currently configured employee sync provider',
   })
   @RequirePermission('integration', 'read')
+  @ApiOkResponse({
+    description:
+      'The currently configured employee sync provider retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getEmployeeSyncProvider(@OrganizationId() organizationId: string) {
     const org = await db.organization.findUnique({
       where: { id: organizationId },
@@ -1626,6 +1656,10 @@ export class SyncController {
   @ApiOperation({ summary: 'Set the employee sync provider' })
   @ApiBody({ type: SetEmployeeSyncProviderDto })
   @RequirePermission('integration', 'update')
+  @ApiCreatedResponse({
+    description: 'The employee sync provider updated successfully',
+  })
+  @ApiAuthErrors()
   async setEmployeeSyncProvider(
     @OrganizationId() organizationId: string,
     @Body() body: SetEmployeeSyncProviderDto,
@@ -1682,6 +1716,11 @@ export class SyncController {
     summary: 'Get the currently configured device sync provider',
   })
   @RequirePermission('integration', 'read')
+  @ApiOkResponse({
+    description:
+      'The currently configured device sync provider retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getDeviceSyncProvider(@OrganizationId() organizationId: string) {
     const org = await db.organization.findUnique({
       where: { id: organizationId },
@@ -1701,6 +1740,10 @@ export class SyncController {
   @Post('device-sync-provider')
   @ApiOperation({ summary: 'Set the device sync provider' })
   @RequirePermission('integration', 'update')
+  @ApiCreatedResponse({
+    description: 'The device sync provider updated successfully',
+  })
+  @ApiAuthErrors()
   async setDeviceSyncProvider(
     @OrganizationId() organizationId: string,
     @Body() body: { provider: string | null },
@@ -1768,6 +1811,10 @@ export class SyncController {
   @Get('available-providers')
   @ApiOperation({ summary: 'List sync providers available to the org' })
   @RequirePermission('integration', 'read')
+  @ApiOkResponse({
+    description: 'Sync providers available to the org retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getAvailableSyncProviders(
     @OrganizationId() organizationId: string,
     @Query('syncType') syncType?: 'employee' | 'device',
@@ -1842,6 +1889,10 @@ export class SyncController {
   @Post('dynamic/:providerSlug/employees')
   @ApiOperation({ summary: 'Sync employees for a dynamic provider' })
   @RequirePermission('integration', 'update')
+  @ApiCreatedResponse({
+    description: 'Employees for a dynamic provider synced successfully',
+  })
+  @ApiAuthErrors()
   async syncDynamicProviderEmployees(
     @OrganizationId() organizationId: string,
     @Param('providerSlug') providerSlug: string,
@@ -2090,6 +2141,10 @@ export class SyncController {
   @Post('dynamic/:providerSlug/devices')
   @ApiOperation({ summary: 'Sync devices for a dynamic provider' })
   @RequirePermission('integration', 'update')
+  @ApiCreatedResponse({
+    description: 'Devices for a dynamic provider synced successfully',
+  })
+  @ApiAuthErrors()
   async syncDynamicProviderDevices(
     @OrganizationId() organizationId: string,
     @Param('providerSlug') providerSlug: string,

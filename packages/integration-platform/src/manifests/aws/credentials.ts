@@ -78,7 +78,7 @@ export const awsCredentialFields = [
     required: false,
     placeholder: 'arn:aws:iam::123456789012:role/OpenComp-Remediator',
     helpText:
-      'Optional: A separate IAM role with write permissions for auto-remediation. The audit role stays read-only.',
+      'Legacy single role, kept for existing connections only — new connections are rejected when it is sent. New setups use one OpenComp-Remediator-{AssetClass}-{Region} role per asset-class/region pair. The audit role stays read-only.',
   },
   {
     id: 'regions',

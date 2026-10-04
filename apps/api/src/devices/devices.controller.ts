@@ -22,6 +22,11 @@ import { DevicesByMemberResponseDto } from './dto/devices-by-member-response.dto
 import { DevicesService } from './devices.service';
 
 import { authEnvelope } from '@/utils/auth-response';
+import {
+  ApiErrorResponseDto,
+  ApiForbiddenError,
+  ApiUnauthorizedError,
+} from '../openapi/common-responses';
 @ApiTags('Devices')
 @Controller({ path: 'devices', version: '1' })
 @UseGuards(HybridAuthGuard, PermissionGuard)
@@ -82,54 +87,19 @@ export class DevicesController {
     status: 401,
     description:
       'Unauthorized - Invalid authentication or insufficient permissions',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example: 'Invalid or expired API key',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   })
   @ApiResponse({
     status: 404,
     description: 'Organization not found',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example: 'Organization with ID org_abc123def456 not found',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   })
   @ApiResponse({
     status: 500,
     description: 'Internal server error - FleetDM integration issue',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example: 'Organization does not have FleetDM configured',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   })
+  @ApiForbiddenError()
   async getAllDevices(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -164,39 +134,18 @@ export class DevicesController {
     status: 401,
     description:
       'Unauthorized - Invalid authentication or insufficient permissions',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: { type: 'string', example: 'Unauthorized' },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   })
   @ApiResponse({
     status: 404,
     description: 'Organization or member not found',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example:
-                'Member with ID mem_abc123def456 not found in organization org_abc123def456',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   })
   @ApiResponse({
     status: 500,
     description: 'Internal server error - FleetDM integration issue',
   })
+  @ApiForbiddenError()
   async getDevicesByMember(
     @Param('memberId') memberId: string,
     @OrganizationId() organizationId: string,
@@ -240,6 +189,7 @@ export class DevicesController {
     status: 404,
     description: 'Organization or device not found',
   })
+  @ApiUnauthorizedError()
   async deleteDevice(
     @Param('id') id: string,
     @OrganizationId() organizationId: string,

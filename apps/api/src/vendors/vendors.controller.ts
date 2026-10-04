@@ -13,6 +13,8 @@ import {
 } from '@nestjs/common';
 import {
   ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiQuery,
@@ -43,6 +45,7 @@ import { UPDATE_VENDOR_RESPONSES } from './schemas/update-vendor.responses';
 import { DELETE_VENDOR_RESPONSES } from './schemas/delete-vendor.responses';
 
 import { authEnvelope } from '@/utils/auth-response';
+import { ApiAuthErrors, ApiForbiddenError } from '../openapi/common-responses';
 @ApiTags('Vendors')
 @Controller({ path: 'vendors', version: '1' })
 @UseGuards(HybridAuthGuard, PermissionGuard)
@@ -65,6 +68,8 @@ export class VendorsController {
     required: false,
     description: 'Vendor name to search for',
   })
+  @ApiOkResponse({ description: 'Global vendors retrieved successfully' })
+  @ApiAuthErrors()
   async searchGlobalVendors(@Query('name') name?: string) {
     return this.vendorsService.searchGlobal(name ?? '');
   }
@@ -76,6 +81,7 @@ export class VendorsController {
   @ApiResponse(GET_ALL_VENDORS_RESPONSES[401])
   @ApiResponse(GET_ALL_VENDORS_RESPONSES[404])
   @ApiResponse(GET_ALL_VENDORS_RESPONSES[500])
+  @ApiForbiddenError()
   async getAllVendors(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -98,6 +104,7 @@ export class VendorsController {
   @ApiResponse(GET_VENDOR_BY_ID_RESPONSES[401])
   @ApiResponse(GET_VENDOR_BY_ID_RESPONSES[404])
   @ApiResponse(GET_VENDOR_BY_ID_RESPONSES[500])
+  @ApiForbiddenError()
   async getVendorById(
     @Param('id') vendorId: string,
     @OrganizationId() organizationId: string,
@@ -120,6 +127,7 @@ export class VendorsController {
   @ApiResponse(CREATE_VENDOR_RESPONSES[401])
   @ApiResponse(CREATE_VENDOR_RESPONSES[404])
   @ApiResponse(CREATE_VENDOR_RESPONSES[500])
+  @ApiForbiddenError()
   async createVendor(
     @Body() createVendorDto: CreateVendorDto,
     @OrganizationId() organizationId: string,
@@ -161,6 +169,7 @@ export class VendorsController {
   @ApiResponse(UPDATE_VENDOR_RESPONSES[401])
   @ApiResponse(UPDATE_VENDOR_RESPONSES[404])
   @ApiResponse(UPDATE_VENDOR_RESPONSES[500])
+  @ApiForbiddenError()
   async updateVendor(
     @Param('id') vendorId: string,
     @Body() updateVendorDto: UpdateVendorDto,
@@ -183,6 +192,10 @@ export class VendorsController {
   @RequirePermission('vendor', 'update')
   @ApiOperation({ summary: 'Trigger vendor risk assessment' })
   @ApiParam(VENDOR_PARAMS.vendorId)
+  @ApiCreatedResponse({
+    description: 'Trigger vendor risk assessment completed successfully',
+  })
+  @ApiAuthErrors()
   async triggerAssessment(
     @Param('id') vendorId: string,
     @OrganizationId() organizationId: string,
@@ -214,6 +227,7 @@ export class VendorsController {
   @ApiResponse(DELETE_VENDOR_RESPONSES[401])
   @ApiResponse(DELETE_VENDOR_RESPONSES[404])
   @ApiResponse(DELETE_VENDOR_RESPONSES[500])
+  @ApiForbiddenError()
   async deleteVendor(
     @Param('id') vendorId: string,
     @OrganizationId() organizationId: string,

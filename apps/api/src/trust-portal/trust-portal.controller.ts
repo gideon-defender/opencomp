@@ -14,6 +14,8 @@ import {
 } from '@nestjs/common';
 import {
   ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiProperty,
   ApiQuery,
@@ -72,6 +74,7 @@ import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { TrustPortalService } from './trust-portal.service';
 import { TrustCustomFrameworkService } from './trust-custom-framework.service';
 import { TrustCustomFrameworkBadgeService } from './trust-custom-framework-badge.service';
+import { ApiAuthErrors, ApiForbiddenError } from '../openapi/common-responses';
 
 class ListComplianceResourcesDto {
   @ApiProperty({
@@ -103,6 +106,7 @@ export class TrustPortalController {
     status: HttpStatus.OK,
     description: 'Trust portal settings retrieved successfully',
   })
+  @ApiAuthErrors()
   async getSettings(@OrganizationId() organizationId: string) {
     return this.trustPortalService.getSettings(organizationId);
   }
@@ -117,6 +121,7 @@ export class TrustPortalController {
     status: HttpStatus.CREATED,
     description: 'Favicon uploaded successfully',
   })
+  @ApiAuthErrors()
   async uploadFavicon(
     @OrganizationId() organizationId: string,
     @Body() body: { fileName: string; fileType: string; fileData: string },
@@ -134,6 +139,7 @@ export class TrustPortalController {
     status: HttpStatus.OK,
     description: 'Favicon removed successfully',
   })
+  @ApiAuthErrors()
   async removeFavicon(@OrganizationId() organizationId: string) {
     return this.trustPortalService.removeFavicon(organizationId);
   }
@@ -165,6 +171,7 @@ export class TrustPortalController {
     status: HttpStatus.UNAUTHORIZED,
     description: 'Unauthorized - Invalid or missing authentication',
   })
+  @ApiForbiddenError()
   async getDomainStatus(
     @Query() dto: GetDomainStatusDto,
   ): Promise<DomainStatusResponseDto> {
@@ -190,6 +197,7 @@ export class TrustPortalController {
     description:
       'Framework not compliant, PDF validation failed, or organization mismatch',
   })
+  @ApiAuthErrors()
   async uploadComplianceResource(
     @Body() dto: UploadComplianceResourceDto,
     @AuthContext() authContext: AuthContextType,
@@ -210,6 +218,7 @@ export class TrustPortalController {
     description: 'Signed URL generated successfully',
     type: ComplianceResourceUrlResponseDto,
   })
+  @ApiAuthErrors()
   async getComplianceResourceUrl(
     @Body() dto: ComplianceResourceSignedUrlDto,
     @AuthContext() authContext: AuthContextType,
@@ -230,6 +239,7 @@ export class TrustPortalController {
     description: 'Compliance certificates retrieved successfully',
     type: [ComplianceResourceResponseDto],
   })
+  @ApiAuthErrors()
   async listComplianceResources(
     @Body() dto: ListComplianceResourcesDto,
     @AuthContext() authContext: AuthContextType,
@@ -252,6 +262,7 @@ export class TrustPortalController {
     description: 'Document uploaded successfully',
     type: TrustDocumentResponseDto,
   })
+  @ApiAuthErrors()
   async uploadTrustDocument(
     @Body() dto: UploadTrustDocumentDto,
     @AuthContext() authContext: AuthContextType,
@@ -272,6 +283,7 @@ export class TrustPortalController {
     description: 'Documents retrieved successfully',
     type: [TrustDocumentResponseDto],
   })
+  @ApiAuthErrors()
   async listTrustDocuments(
     @Body() dto: ListComplianceResourcesDto,
     @AuthContext() authContext: AuthContextType,
@@ -292,6 +304,7 @@ export class TrustPortalController {
     description: 'Signed URL generated successfully',
     type: TrustDocumentUrlResponseDto,
   })
+  @ApiAuthErrors()
   async getTrustDocumentUrl(
     @Body() dto: TrustDocumentSignedUrlDto,
     @Param('documentId') documentId: string,
@@ -318,6 +331,7 @@ export class TrustPortalController {
       },
     },
   })
+  @ApiAuthErrors()
   async deleteTrustDocument(
     @Body() dto: DeleteTrustDocumentDto,
     @Param('documentId') documentId: string,
@@ -330,6 +344,10 @@ export class TrustPortalController {
   @Put('settings/toggle')
   @RequirePermission('trust', 'update')
   @ApiOperation({ summary: 'Enable or disable the trust portal' })
+  @ApiOkResponse({
+    description: 'Or disable the trust portal enabled successfully',
+  })
+  @ApiAuthErrors()
   async togglePortal(
     @OrganizationId() organizationId: string,
     @Body()
@@ -352,6 +370,11 @@ export class TrustPortalController {
   @ApiOperation({
     summary: 'Add or update a custom domain for the trust portal',
   })
+  @ApiCreatedResponse({
+    description:
+      'Or update a custom domain for the trust portal created successfully',
+  })
+  @ApiAuthErrors()
   async addCustomDomain(
     @OrganizationId() organizationId: string,
     @Body() body: { domain: string },
@@ -365,6 +388,10 @@ export class TrustPortalController {
   @Post('settings/check-dns')
   @RequirePermission('trust', 'update')
   @ApiOperation({ summary: 'Check DNS records for a custom domain' })
+  @ApiCreatedResponse({
+    description: 'DNS records for a custom domain checked successfully',
+  })
+  @ApiAuthErrors()
   async checkDnsRecords(
     @OrganizationId() organizationId: string,
     @Body() body: { domain: string },
@@ -400,6 +427,8 @@ export class TrustPortalController {
       },
     },
   })
+  @ApiOkResponse({ description: 'Trust portal FAQs updated successfully' })
+  @ApiAuthErrors()
   async updateFaqs(
     @OrganizationId() organizationId: string,
     @Body() body: { faqs: Array<{ question: string; answer: string }> },
@@ -410,6 +439,10 @@ export class TrustPortalController {
   @Put('settings/allowed-domains')
   @RequirePermission('trust', 'update')
   @ApiOperation({ summary: 'Update allowed domains for the trust portal' })
+  @ApiOkResponse({
+    description: 'Allowed domains for the trust portal updated successfully',
+  })
+  @ApiAuthErrors()
   async updateAllowedDomains(
     @OrganizationId() organizationId: string,
     @Body() body: { domains: string[] },
@@ -424,6 +457,10 @@ export class TrustPortalController {
   @RequirePermission('trust', 'update')
   @ApiOperation({ summary: 'Update allowed emails for the trust portal' })
   @ApiBody({ type: UpdateAllowedEmailsDto })
+  @ApiOkResponse({
+    description: 'Allowed emails for the trust portal updated successfully',
+  })
+  @ApiAuthErrors()
   async updateAllowedEmails(
     @OrganizationId() organizationId: string,
     @Body() body: UpdateAllowedEmailsDto,
@@ -437,6 +474,10 @@ export class TrustPortalController {
   @Put('settings/frameworks')
   @RequirePermission('trust', 'update')
   @ApiOperation({ summary: 'Update trust portal framework settings' })
+  @ApiOkResponse({
+    description: 'Trust portal framework settings updated successfully',
+  })
+  @ApiAuthErrors()
   async updateFrameworks(
     @OrganizationId() organizationId: string,
     @Body() body: Record<string, boolean | string | undefined>,
@@ -463,6 +504,11 @@ export class TrustPortalController {
       },
     },
   })
+  @ApiOkResponse({
+    description:
+      'Or hide the Security Questionnaire on the public trust portal retrieved successfully',
+  })
+  @ApiAuthErrors()
   async updateSecurityQuestionnaire(
     @OrganizationId() organizationId: string,
     @Body(new ZodValidationPipe(UpdateSecurityQuestionnaireSchema))
@@ -481,6 +527,11 @@ export class TrustPortalController {
     summary:
       'List org-authored custom frameworks with their trust portal selection',
   })
+  @ApiOkResponse({
+    description:
+      'Org-authored custom frameworks with their trust portal selection retrieved successfully',
+  })
+  @ApiAuthErrors()
   async listCustomFrameworks(@OrganizationId() organizationId: string) {
     return this.trustCustomFrameworkService.listForOrg(organizationId);
   }
@@ -509,6 +560,11 @@ export class TrustPortalController {
       },
     },
   })
+  @ApiOkResponse({
+    description:
+      'Enable/disable a custom framework on the trust portal and set its status completed successfully',
+  })
+  @ApiAuthErrors()
   async updateCustomFramework(
     @OrganizationId() organizationId: string,
     // Validate via the pipe so a malformed body returns 400 (matching the
@@ -537,6 +593,7 @@ export class TrustPortalController {
     description: 'Badge uploaded successfully',
     type: CustomFrameworkBadgeResponseDto,
   })
+  @ApiAuthErrors()
   async uploadCustomFrameworkBadge(
     @OrganizationId() organizationId: string,
     @Body() dto: UploadCustomFrameworkBadgeDto,
@@ -558,6 +615,11 @@ export class TrustPortalController {
     description: 'Org-authored custom framework ID whose badge to remove',
     required: true,
   })
+  @ApiOkResponse({
+    description:
+      "A custom framework's Trust Portal badge image removed successfully",
+  })
+  @ApiAuthErrors()
   async removeCustomFrameworkBadge(
     @OrganizationId() organizationId: string,
     @Query() query: RemoveCustomFrameworkBadgeQueryDto,
@@ -599,6 +661,7 @@ export class TrustPortalController {
     status: HttpStatus.OK,
     description: 'Overview updated successfully',
   })
+  @ApiAuthErrors()
   async updateOverview(
     @Body() body: UpdateTrustOverviewDto & { organizationId: string },
     @AuthContext() authContext: AuthContextType,
@@ -615,6 +678,10 @@ export class TrustPortalController {
     summary: 'Get trust portal overview',
   })
   @ApiQuery({ name: 'organizationId', required: true })
+  @ApiOkResponse({
+    description: 'Trust portal overview retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getOverview(
     @Query('organizationId') organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -652,6 +719,7 @@ export class TrustPortalController {
     status: HttpStatus.CREATED,
     description: 'Custom link created successfully',
   })
+  @ApiAuthErrors()
   async createCustomLink(
     @Body() body: CreateCustomLinkDto & { organizationId: string },
     @AuthContext() authContext: AuthContextType,
@@ -671,6 +739,7 @@ export class TrustPortalController {
     status: HttpStatus.OK,
     description: 'Custom link updated successfully',
   })
+  @ApiAuthErrors()
   async updateCustomLink(
     @Param('linkId') linkId: string,
     @Body() body: UpdateCustomLinkDto,
@@ -694,6 +763,7 @@ export class TrustPortalController {
     status: HttpStatus.OK,
     description: 'Custom link deleted successfully',
   })
+  @ApiAuthErrors()
   async deleteCustomLink(
     @Param('linkId') linkId: string,
     @AuthContext() authContext: AuthContextType,
@@ -735,6 +805,7 @@ export class TrustPortalController {
     status: HttpStatus.OK,
     description: 'Custom links reordered successfully',
   })
+  @ApiAuthErrors()
   async reorderCustomLinks(
     @Body() body: ReorderCustomLinksDto & { organizationId: string },
     @AuthContext() authContext: AuthContextType,
@@ -754,6 +825,10 @@ export class TrustPortalController {
     summary: 'List custom links for trust portal',
   })
   @ApiQuery({ name: 'organizationId', required: true })
+  @ApiOkResponse({
+    description: 'Custom links for trust portal retrieved successfully',
+  })
+  @ApiAuthErrors()
   async listCustomLinks(
     @Query('organizationId') organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -772,6 +847,7 @@ export class TrustPortalController {
     status: HttpStatus.OK,
     description: 'Vendor settings updated successfully',
   })
+  @ApiAuthErrors()
   async updateVendorTrustSettings(
     @Param('vendorId') vendorId: string,
     @Body() body: UpdateVendorTrustSettingsDto,
@@ -796,6 +872,10 @@ export class TrustPortalController {
     required: false,
     description: 'When true, returns all org vendors with sync',
   })
+  @ApiOkResponse({
+    description: 'Vendors configured for trust portal retrieved successfully',
+  })
+  @ApiAuthErrors()
   async listVendors(
     @OrganizationId() organizationId: string,
     @Query('all') all?: string,

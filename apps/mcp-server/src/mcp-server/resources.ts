@@ -6,18 +6,18 @@ import {
   McpServer,
   ResourceMetadata,
   ResourceTemplate,
-} from '@modelcontextprotocol/sdk/server/mcp.js';
-import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
-import { Variables } from '@modelcontextprotocol/sdk/shared/uriTemplate.js';
+} from "@modelcontextprotocol/sdk/server/mcp.js";
+import { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
+import { Variables } from "@modelcontextprotocol/sdk/shared/uriTemplate.js";
 import {
   ReadResourceResult,
   ServerNotification,
   ServerRequest,
-} from '@modelcontextprotocol/sdk/types.js';
-import { CompAiCore } from '../core.js';
-import { ConsoleLogger } from './console-logger.js';
-import { MCPScope } from './scopes.js';
-import { valueToBase64 } from './shared.js';
+} from "@modelcontextprotocol/sdk/types.js";
+import { CompAiCore } from "../core.js";
+import { ConsoleLogger } from "./console-logger.js";
+import { MCPScope } from "./scopes.js";
+import { valueToBase64 } from "./shared.js";
 
 export type ReadResourceCallback = (
   client: CompAiCore,
@@ -56,10 +56,10 @@ export async function formatResult(
   uri: URL,
   init?: { mimeType?: string | undefined },
 ): Promise<ReadResourceResult> {
-  let contents: ReadResourceResult['contents'] = [];
-  const mimeType = init?.mimeType ?? response.headers.get('content-type') ?? '';
+  let contents: ReadResourceResult["contents"] = [];
+  const mimeType = init?.mimeType ?? response.headers.get("content-type") ?? "";
 
-  if (mimeType.startsWith('image/') || mimeType.startsWith('audio/')) {
+  if (mimeType.startsWith("image/") || mimeType.startsWith("audio/")) {
     const blob = await valueToBase64(await response.arrayBuffer());
     contents = blob == null ? [] : [{ uri: uri.toString(), blob, mimeType }];
   } else {
@@ -82,7 +82,10 @@ export function createRegisterResource(
       return;
     }
 
-    if (allowedScopes.size > 0 && !scopes.every((s: MCPScope) => allowedScopes.has(s))) {
+    if (
+      allowedScopes.size > 0
+      && !scopes.every((s: MCPScope) => allowedScopes.has(s))
+    ) {
       return;
     }
 
@@ -91,11 +94,14 @@ export function createRegisterResource(
       description: resource.description,
     };
 
-    server.resource(resource.name, resource.resource, metadata, async (uri, ctx) =>
-      resource.read(getSDK(), uri, ctx),
+    server.resource(
+      resource.name,
+      resource.resource,
+      metadata,
+      async (uri, ctx) => resource.read(getSDK(), uri, ctx),
     );
 
-    logger.debug('Registered resource', { name: resource.name });
+    logger.debug("Registered resource", { name: resource.name });
   };
 }
 
@@ -111,7 +117,10 @@ export function createRegisterResourceTemplate(
       return;
     }
 
-    if (allowedScopes.size > 0 && !scopes.every((s: MCPScope) => allowedScopes.has(s))) {
+    if (
+      allowedScopes.size > 0
+      && !scopes.every((s: MCPScope) => allowedScopes.has(s))
+    ) {
       return;
     }
 
@@ -120,10 +129,13 @@ export function createRegisterResourceTemplate(
       description: resource.description,
     };
 
-    server.resource(resource.name, resource.resource, metadata, async (uri, vars, ctx) =>
-      resource.read(getSDK(), uri, vars, ctx),
+    server.resource(
+      resource.name,
+      resource.resource,
+      metadata,
+      async (uri, vars, ctx) => resource.read(getSDK(), uri, vars, ctx),
     );
 
-    logger.debug('Registered resource template', { name: resource.name });
+    logger.debug("Registered resource template", { name: resource.name });
   };
 }

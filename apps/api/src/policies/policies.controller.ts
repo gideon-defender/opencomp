@@ -23,15 +23,17 @@ import { withErrorCode } from '../common/i18n/error-messages';
 import {
   ApiBody,
   ApiConsumes,
+  ApiCreatedResponse,
   ApiExtension,
+  ApiExtraModels,
   ApiHeader,
+  ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiQuery,
   ApiResponse,
   ApiSecurity,
   ApiTags,
-  ApiExtraModels,
 } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { google } from '@ai-sdk/google';
@@ -90,6 +92,10 @@ import {
 import { PolicyResponseDto } from './dto/policy-responses.dto';
 
 import { authEnvelope } from '@/utils/auth-response';
+import {
+  ApiForbiddenError,
+  ApiUnauthorizedError,
+} from '../openapi/common-responses';
 function parsePolicyIdsParam(
   raw: string | string[] | undefined,
 ): string[] | undefined {
@@ -143,6 +149,7 @@ export class PoliciesController {
   @ApiExtension('x-speakeasy-mcp', { name: 'list-policies' })
   @ApiResponse(GET_ALL_POLICIES_RESPONSES[200])
   @ApiResponse(GET_ALL_POLICIES_RESPONSES[401])
+  @ApiForbiddenError()
   async getAllPolicies(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -164,6 +171,11 @@ export class PoliciesController {
   @Post('publish-all')
   @RequirePermission('policy', 'update')
   @ApiOperation({ summary: 'Publish all draft policies' })
+  @ApiCreatedResponse({
+    description: 'Publish all draft policies completed successfully',
+  })
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   async publishAllPolicies(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -203,6 +215,8 @@ export class PoliciesController {
     status: 404,
     description: 'No published policies found',
   })
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   async downloadAllPolicies(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -225,6 +239,11 @@ export class PoliciesController {
   @RequirePermission('policy', 'read')
   @ApiOperation({ summary: 'Get mapped and all controls for a policy' })
   @ApiParam(POLICY_PARAMS.policyId)
+  @ApiOkResponse({
+    description: 'Mapped and all controls for a policy retrieved successfully',
+  })
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   async getPolicyControls(
     @Param('id') id: string,
     @OrganizationId() organizationId: string,
@@ -315,6 +334,12 @@ export class PoliciesController {
       'Get tasks that serve as evidence for a policy, grouped by control',
   })
   @ApiParam(POLICY_PARAMS.policyId)
+  @ApiOkResponse({
+    description:
+      'Tasks that serve as evidence for a policy, grouped by control retrieved successfully',
+  })
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   async getPolicyEvidenceTasks(
     @Param('id') id: string,
     @OrganizationId() organizationId: string,
@@ -376,6 +401,11 @@ export class PoliciesController {
   @RequirePermission('policy', 'update')
   @ApiOperation({ summary: 'Regenerate policy content using AI' })
   @ApiParam(POLICY_PARAMS.policyId)
+  @ApiCreatedResponse({
+    description: 'Regenerate policy with AI completed successfully',
+  })
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   async regeneratePolicy(
     @Param('id') id: string,
     @OrganizationId() organizationId: string,
@@ -460,6 +490,11 @@ export class PoliciesController {
   @ApiOperation({ summary: 'Get a signed URL for the policy PDF' })
   @ApiParam(POLICY_PARAMS.policyId)
   @ApiQuery({ name: 'versionId', required: false })
+  @ApiOkResponse({
+    description: 'A signed URL for the policy PDF retrieved successfully',
+  })
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   async getPdfSignedUrl(
     @Param('id') id: string,
     @OrganizationId() organizationId: string,
@@ -576,6 +611,11 @@ export class PoliciesController {
   // Hidden from MCP so AI clients use the presigned /pdf/upload-url + /pdf/confirm flow.
   // The HTTP endpoint stays live for the web UI / direct API callers.
   @ApiExtension('x-speakeasy-mcp', { disabled: true })
+  @ApiCreatedResponse({
+    description: 'A PDF to a policy version (UI-only) uploaded successfully',
+  })
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   async uploadPolicyPdf(
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File | undefined,
@@ -728,6 +768,12 @@ export class PoliciesController {
   @ApiBody({ type: RequestPolicyPdfUploadUrlDto })
   @ApiExtension('x-speakeasy-mcp', { name: 'request-policy-pdf-upload-url' })
   @ApiResponse({ status: 201, type: PolicyPdfUploadUrlResponseDto })
+  @ApiCreatedResponse({
+    description:
+      'Request a presigned URL to upload a policy PDF completed successfully',
+  })
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   async requestPolicyPdfUploadUrl(
     @Param('id') id: string,
     @Body() body: RequestPolicyPdfUploadUrlDto,
@@ -756,6 +802,11 @@ export class PoliciesController {
   @ApiParam(POLICY_PARAMS.policyId)
   @ApiBody({ type: ConfirmPolicyPdfUploadedDto })
   @ApiExtension('x-speakeasy-mcp', { name: 'confirm-policy-pdf-uploaded' })
+  @ApiCreatedResponse({
+    description: 'Confirm a policy PDF upload completed successfully',
+  })
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   async confirmPolicyPdfUploaded(
     @Param('id') id: string,
     @Body() body: ConfirmPolicyPdfUploadedDto,
@@ -790,6 +841,9 @@ export class PoliciesController {
     description:
       'Target version ID. If omitted, targets the latest draft version.',
   })
+  @ApiOkResponse({ description: 'A policy version PDF deleted successfully' })
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   async deletePolicyPdf(
     @Param('id') id: string,
     @OrganizationId() organizationId: string,
@@ -893,6 +947,12 @@ export class PoliciesController {
   @ApiOperation({ summary: 'Get signed URL for policy PDF (alternate path)' })
   @ApiParam(POLICY_PARAMS.policyId)
   @ApiQuery({ name: 'versionId', required: false })
+  @ApiOkResponse({
+    description:
+      'Signed URL for policy PDF (alternate path) retrieved successfully',
+  })
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   async getPdfUrl(
     @Param('id') id: string,
     @OrganizationId() organizationId: string,
@@ -943,6 +1003,11 @@ export class PoliciesController {
   @RequirePermission('policy', 'update')
   @ApiOperation({ summary: 'Map controls to a policy' })
   @ApiParam(POLICY_PARAMS.policyId)
+  @ApiCreatedResponse({
+    description: 'Map controls to a policy completed successfully',
+  })
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   async addPolicyControls(
     @Param('id') id: string,
     @Body() body: { controlIds: string[] },
@@ -968,6 +1033,11 @@ export class PoliciesController {
   @RequirePermission('policy', 'update')
   @ApiOperation({ summary: 'Remove a control mapping from a policy' })
   @ApiParam(POLICY_PARAMS.policyId)
+  @ApiOkResponse({
+    description: 'A control mapping from a policy removed successfully',
+  })
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   async removePolicyControl(
     @Param('id') id: string,
     @Param('controlId') controlId: string,
@@ -1011,6 +1081,7 @@ export class PoliciesController {
   @ApiResponse(GET_POLICY_BY_ID_RESPONSES[200])
   @ApiResponse(GET_POLICY_BY_ID_RESPONSES[401])
   @ApiResponse(GET_POLICY_BY_ID_RESPONSES[404])
+  @ApiForbiddenError()
   async getPolicy(
     @Param('id') id: string,
     @OrganizationId() organizationId: string,
@@ -1031,6 +1102,7 @@ export class PoliciesController {
   @ApiResponse(CREATE_POLICY_RESPONSES[201])
   @ApiResponse(CREATE_POLICY_RESPONSES[400])
   @ApiResponse(CREATE_POLICY_RESPONSES[401])
+  @ApiForbiddenError()
   async createPolicy(
     @Body() createData: CreatePolicyDto,
     @OrganizationId() organizationId: string,
@@ -1056,6 +1128,7 @@ export class PoliciesController {
   @ApiResponse(UPDATE_POLICY_RESPONSES[400])
   @ApiResponse(UPDATE_POLICY_RESPONSES[401])
   @ApiResponse(UPDATE_POLICY_RESPONSES[404])
+  @ApiForbiddenError()
   async updatePolicy(
     @Param('id') id: string,
     @Body() updateData: UpdatePolicyDto,
@@ -1081,6 +1154,7 @@ export class PoliciesController {
   @ApiResponse(DELETE_POLICY_RESPONSES[200])
   @ApiResponse(DELETE_POLICY_RESPONSES[401])
   @ApiResponse(DELETE_POLICY_RESPONSES[404])
+  @ApiForbiddenError()
   async deletePolicy(
     @Param('id') id: string,
     @OrganizationId() organizationId: string,
@@ -1102,6 +1176,7 @@ export class PoliciesController {
   @ApiResponse(GET_POLICY_VERSIONS_RESPONSES[200])
   @ApiResponse(GET_POLICY_VERSIONS_RESPONSES[401])
   @ApiResponse(GET_POLICY_VERSIONS_RESPONSES[404])
+  @ApiForbiddenError()
   async getPolicyVersions(
     @Param('id') id: string,
     @OrganizationId() organizationId: string,
@@ -1124,6 +1199,7 @@ export class PoliciesController {
   @ApiResponse(GET_POLICY_VERSION_BY_ID_RESPONSES[200])
   @ApiResponse(GET_POLICY_VERSION_BY_ID_RESPONSES[401])
   @ApiResponse(GET_POLICY_VERSION_BY_ID_RESPONSES[404])
+  @ApiForbiddenError()
   async getPolicyVersionById(
     @Param('id') id: string,
     @Param('versionId') versionId: string,
@@ -1152,6 +1228,7 @@ export class PoliciesController {
   @ApiResponse(CREATE_POLICY_VERSION_RESPONSES[400])
   @ApiResponse(CREATE_POLICY_VERSION_RESPONSES[401])
   @ApiResponse(CREATE_POLICY_VERSION_RESPONSES[404])
+  @ApiForbiddenError()
   async createPolicyVersion(
     @Param('id') id: string,
     @Body() body: CreateVersionDto,
@@ -1182,6 +1259,7 @@ export class PoliciesController {
   @ApiResponse(UPDATE_VERSION_CONTENT_RESPONSES[400])
   @ApiResponse(UPDATE_VERSION_CONTENT_RESPONSES[401])
   @ApiResponse(UPDATE_VERSION_CONTENT_RESPONSES[404])
+  @ApiForbiddenError()
   async updateVersionContent(
     @Param('id') id: string,
     @Param('versionId') versionId: string,
@@ -1212,6 +1290,7 @@ export class PoliciesController {
   @ApiResponse(DELETE_VERSION_RESPONSES[400])
   @ApiResponse(DELETE_VERSION_RESPONSES[401])
   @ApiResponse(DELETE_VERSION_RESPONSES[404])
+  @ApiForbiddenError()
   async deletePolicyVersion(
     @Param('id') id: string,
     @Param('versionId') versionId: string,
@@ -1240,6 +1319,7 @@ export class PoliciesController {
   @ApiResponse(PUBLISH_VERSION_RESPONSES[400])
   @ApiResponse(PUBLISH_VERSION_RESPONSES[401])
   @ApiResponse(PUBLISH_VERSION_RESPONSES[404])
+  @ApiForbiddenError()
   async publishPolicyVersion(
     @Param('id') id: string,
     @Body() body: PublishVersionDto,
@@ -1268,6 +1348,7 @@ export class PoliciesController {
   @ApiResponse(SET_ACTIVE_VERSION_RESPONSES[400])
   @ApiResponse(SET_ACTIVE_VERSION_RESPONSES[401])
   @ApiResponse(SET_ACTIVE_VERSION_RESPONSES[404])
+  @ApiForbiddenError()
   async setActivePolicyVersion(
     @Param('id') id: string,
     @Param('versionId') versionId: string,
@@ -1299,6 +1380,7 @@ export class PoliciesController {
   @ApiResponse(SUBMIT_VERSION_FOR_APPROVAL_RESPONSES[400])
   @ApiResponse(SUBMIT_VERSION_FOR_APPROVAL_RESPONSES[401])
   @ApiResponse(SUBMIT_VERSION_FOR_APPROVAL_RESPONSES[404])
+  @ApiForbiddenError()
   async submitVersionForApproval(
     @Param('id') id: string,
     @Param('versionId') versionId: string,
@@ -1326,6 +1408,12 @@ export class PoliciesController {
   })
   @ApiParam(POLICY_PARAMS.policyId)
   @ApiExtension('x-speakeasy-mcp', { name: 'accept-policy-changes' })
+  @ApiCreatedResponse({
+    description:
+      'Accept pending policy changes and publish the version completed successfully',
+  })
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   async acceptPolicyChanges(
     @Param('id') id: string,
     @Body() body: { approverId: string; comment?: string },
@@ -1349,6 +1437,11 @@ export class PoliciesController {
   @RequirePermission('policy', 'update')
   @ApiOperation({ summary: 'Deny pending policy changes' })
   @ApiParam(POLICY_PARAMS.policyId)
+  @ApiCreatedResponse({
+    description: 'Pending policy changes denied successfully',
+  })
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   async denyPolicyChanges(
     @Param('id') id: string,
     @Body() body: { approverId: string; comment?: string },
@@ -1387,6 +1480,7 @@ export class PoliciesController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Policy not found' })
+  @ApiForbiddenError()
   async aiChatPolicy(
     @Param('id') id: string,
     @OrganizationId() organizationId: string,

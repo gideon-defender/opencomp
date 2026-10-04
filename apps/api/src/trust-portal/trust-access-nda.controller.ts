@@ -19,6 +19,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import { ApiNotFoundError } from '../openapi/common-responses';
 import { ReclaimAccessDto } from './dto/trust-access.dto';
 import { SignNdaDto } from './dto/nda.dto';
 import { TrustAccessService } from './trust-access.service';
@@ -127,6 +128,7 @@ export class TrustAccessNdaController {
     description:
       'Reclaim request accepted. An access link is emailed when an active grant exists.',
   })
+  @ApiNotFoundError('Trust portal not found')
   async reclaimAccess(
     // Note: friendlyUrl can be either the custom friendly URL or the organization ID
     @Param('friendlyUrl') friendlyUrl: string,

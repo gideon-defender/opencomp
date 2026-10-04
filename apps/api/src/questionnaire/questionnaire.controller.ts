@@ -19,6 +19,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBody,
   ApiConsumes,
+  ApiCreatedResponse,
   ApiExtension,
   ApiOkResponse,
   ApiOperation,
@@ -59,6 +60,7 @@ import {
   setupSSEHeaders,
   sanitizeErrorMessage,
 } from '../utils/sse-utils';
+import { ApiAuthErrors } from '../openapi/common-responses';
 
 @ApiTags('Questionnaire')
 @Controller({
@@ -79,6 +81,7 @@ export class QuestionnaireController {
   @RequirePermission('questionnaire', 'read')
   @ApiOperation({ summary: 'List questionnaires' })
   @ApiOkResponse({ description: 'List of questionnaires' })
+  @ApiAuthErrors()
   async findAll(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -95,6 +98,7 @@ export class QuestionnaireController {
   @RequirePermission('questionnaire', 'read')
   @ApiOperation({ summary: 'Get a questionnaire by ID' })
   @ApiOkResponse({ description: 'Questionnaire details' })
+  @ApiAuthErrors()
   async findById(
     @Param('id') id: string,
     @OrganizationId() organizationId: string,
@@ -126,7 +130,11 @@ export class QuestionnaireController {
       'Starts background answer generation for an already-parsed questionnaire and returns a run handle immediately. Poll GET /v1/questionnaire/:id until answeredQuestions equals totalQuestions, then read the answers from its questions.',
   })
   @ApiExtension('x-speakeasy-mcp', { name: 'generate-questionnaire-answers' })
-  @ApiOkResponse({ type: TriggerAutoAnswerResponseDto })
+  @ApiCreatedResponse({
+    description: 'Answers for a questionnaire generated successfully',
+    type: TriggerAutoAnswerResponseDto,
+  })
+  @ApiAuthErrors()
   async triggerAutoAnswer(
     @Param('id') id: string,
     @OrganizationId() organizationId: string,
@@ -138,6 +146,7 @@ export class QuestionnaireController {
   @RequirePermission('questionnaire', 'delete')
   @ApiOperation({ summary: 'Delete a questionnaire' })
   @ApiOkResponse({ description: 'Questionnaire deleted' })
+  @ApiAuthErrors()
   async deleteById(
     @Param('id') id: string,
     @OrganizationId() organizationId: string,
@@ -153,6 +162,7 @@ export class QuestionnaireController {
     description: 'Parsed questionnaire content',
     type: Object,
   })
+  @ApiAuthErrors()
   async parseQuestionnaire(
     @Body() dto: ParseQuestionnaireDto,
   ): Promise<ParsedQuestionnaireResult> {
@@ -187,6 +197,7 @@ export class QuestionnaireController {
       },
     },
   })
+  @ApiAuthErrors()
   async answerSingleQuestion(
     @Body() dto: AnswerSingleQuestionDto,
     @OrganizationId() organizationId: string,
@@ -219,6 +230,7 @@ export class QuestionnaireController {
       },
     },
   })
+  @ApiAuthErrors()
   async saveAnswer(
     @Body() dto: SaveAnswerDto,
     @OrganizationId() organizationId: string,
@@ -241,6 +253,7 @@ export class QuestionnaireController {
       },
     },
   })
+  @ApiAuthErrors()
   async deleteAnswer(
     @Body() dto: DeleteAnswerDto,
     @OrganizationId() organizationId: string,
@@ -262,6 +275,7 @@ export class QuestionnaireController {
   @ApiOkResponse({
     description: 'Export questionnaire by ID to specified format',
   })
+  @ApiAuthErrors()
   async exportById(
     @Body() dto: ExportByIdDto,
     @Res({ passthrough: true }) res: Response,
@@ -294,6 +308,7 @@ export class QuestionnaireController {
       },
     },
   })
+  @ApiAuthErrors()
   async uploadAndParse(
     @Body() dto: UploadAndParseDto,
     @OrganizationId() organizationId: string,
@@ -343,6 +358,7 @@ export class QuestionnaireController {
       },
     },
   })
+  @ApiAuthErrors()
   async uploadAndParseUpload(
     @UploadedFile() file: Express.Multer.File,
     @Body()
@@ -409,6 +425,10 @@ export class QuestionnaireController {
     'text/csv',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   )
+  @ApiCreatedResponse({
+    description: 'Auto-answer uploaded questionnaire completed successfully',
+  })
+  @ApiAuthErrors()
   async parseQuestionnaireUpload(
     @UploadedFile() file: Express.Multer.File,
     @Body()
@@ -541,6 +561,10 @@ export class QuestionnaireController {
     'text/csv',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   )
+  @ApiCreatedResponse({
+    description: 'Generated questionnaire answers exported successfully',
+  })
+  @ApiAuthErrors()
   async autoAnswerAndExport(
     @Body() dto: ExportQuestionnaireDto,
     @Res({ passthrough: true }) res: Response,
@@ -597,6 +621,10 @@ export class QuestionnaireController {
     'text/csv',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   )
+  @ApiCreatedResponse({
+    description: 'And export generated answers uploaded successfully',
+  })
+  @ApiAuthErrors()
   async autoAnswerAndExportUpload(
     @UploadedFile() file: Express.Multer.File,
     @Body() body: { organizationId: string; format?: 'pdf' | 'csv' | 'xlsx' },
@@ -636,6 +664,7 @@ export class QuestionnaireController {
   @ApiOperation({ summary: 'Auto-answer a questionnaire' })
   @ApiConsumes('application/json')
   @ApiProduces('text/event-stream')
+  @ApiAuthErrors()
   async autoAnswer(
     @Body() dto: AutoAnswerDto,
     @Res() res: Response,

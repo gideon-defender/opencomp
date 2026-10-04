@@ -1,5 +1,11 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { ApiOperation, ApiQuery, ApiSecurity, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiSecurity,
+  ApiTags,
+} from '@nestjs/swagger';
 import { db, Prisma } from '@db';
 import { AuthContext, OrganizationId } from '../auth/auth-context.decorator';
 import { HybridAuthGuard } from '../auth/hybrid-auth.guard';
@@ -9,6 +15,7 @@ import type { AuthContext as AuthContextType } from '../auth/types';
 import { MAX_AUDIT_LOG_OFFSET } from './audit-log.pagination';
 
 import { authEnvelope } from '@/utils/auth-response';
+import { ApiAuthErrors } from '../openapi/common-responses';
 @ApiTags('Audit Logs')
 @Controller({ path: 'audit-logs', version: '1' })
 @UseGuards(HybridAuthGuard, PermissionGuard)
@@ -42,6 +49,8 @@ export class AuditLogController {
     required: false,
     description: 'Number of logs to skip (default 0)',
   })
+  @ApiOkResponse({ description: 'Audit logs retrieved successfully' })
+  @ApiAuthErrors()
   async getAuditLogs(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,

@@ -1,4 +1,5 @@
 import type { ApiResponseOptions } from '@nestjs/swagger';
+import { ApiErrorResponseDto } from '../../openapi/common-responses';
 import {
   LIST_RISK_ACCEPTANCES_RESPONSES,
   RECORD_RISK_ACCEPTANCE_RESPONSES,
@@ -11,35 +12,13 @@ const vendorForbidden: ApiResponseOptions = {
   status: 403,
   description:
     'Forbidden - User does not have permission to access vendor risks',
-  content: {
-    'application/json': {
-      schema: {
-        type: 'object',
-        properties: {
-          message: { type: 'string', example: 'Forbidden' },
-        },
-      },
-    },
-  },
+  type: ApiErrorResponseDto,
 };
 
 const vendorNotFound: ApiResponseOptions = {
   status: 404,
   description: 'Vendor not found',
-  content: {
-    'application/json': {
-      schema: {
-        type: 'object',
-        properties: {
-          message: {
-            type: 'string',
-            example:
-              'Vendor with ID vnd_abc123def456 not found in organization org_abc123def456',
-          },
-        },
-      },
-    },
-  },
+  type: ApiErrorResponseDto,
 };
 
 export const LIST_VENDOR_ACCEPTANCES_RESPONSES: Record<

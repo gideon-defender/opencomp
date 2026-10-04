@@ -36,6 +36,7 @@ import { UPDATE_CONTEXT_RESPONSES } from './schemas/update-context.responses';
 import { DELETE_CONTEXT_RESPONSES } from './schemas/delete-context.responses';
 
 import { authEnvelope } from '@/utils/auth-response';
+import { ApiForbiddenError } from '../openapi/common-responses';
 @ApiTags('Context')
 @Controller({ path: 'context', version: '1' })
 @UseGuards(HybridAuthGuard, PermissionGuard)
@@ -61,6 +62,7 @@ export class ContextController {
   @ApiResponse(GET_ALL_CONTEXT_RESPONSES[401])
   @ApiResponse(GET_ALL_CONTEXT_RESPONSES[404])
   @ApiResponse(GET_ALL_CONTEXT_RESPONSES[500])
+  @ApiForbiddenError()
   async getAllContext(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -91,6 +93,7 @@ export class ContextController {
   @ApiResponse(GET_CONTEXT_BY_ID_RESPONSES[401])
   @ApiResponse(GET_CONTEXT_BY_ID_RESPONSES[404])
   @ApiResponse(GET_CONTEXT_BY_ID_RESPONSES[500])
+  @ApiForbiddenError()
   async getContextById(
     @Param('id') contextId: string,
     @OrganizationId() organizationId: string,
@@ -116,6 +119,7 @@ export class ContextController {
   @ApiResponse(CREATE_CONTEXT_RESPONSES[401])
   @ApiResponse(CREATE_CONTEXT_RESPONSES[404])
   @ApiResponse(CREATE_CONTEXT_RESPONSES[500])
+  @ApiForbiddenError()
   async createContext(
     @Body() createContextDto: CreateContextDto,
     @OrganizationId() organizationId: string,
@@ -142,6 +146,7 @@ export class ContextController {
   @ApiResponse(UPDATE_CONTEXT_RESPONSES[401])
   @ApiResponse(UPDATE_CONTEXT_RESPONSES[404])
   @ApiResponse(UPDATE_CONTEXT_RESPONSES[500])
+  @ApiForbiddenError()
   async updateContext(
     @Param('id') contextId: string,
     @Body() updateContextDto: UpdateContextDto,
@@ -168,6 +173,7 @@ export class ContextController {
   @ApiResponse(DELETE_CONTEXT_RESPONSES[401])
   @ApiResponse(DELETE_CONTEXT_RESPONSES[404])
   @ApiResponse(DELETE_CONTEXT_RESPONSES[500])
+  @ApiForbiddenError()
   async deleteContext(
     @Param('id') contextId: string,
     @OrganizationId() organizationId: string,

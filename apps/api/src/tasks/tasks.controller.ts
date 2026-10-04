@@ -14,8 +14,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
-  ApiExtraModels,
   ApiBody,
+  ApiExtraModels,
+  ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiQuery,
@@ -46,6 +47,12 @@ import { TasksService } from './tasks.service';
 import { DEPARTMENT_MAX_LENGTH } from '../policies/dto/create-policy.dto';
 
 import { authEnvelope } from '@/utils/auth-response';
+import {
+  ApiAuthErrors,
+  ApiErrorResponseDto,
+  ApiForbiddenError,
+  ApiUnauthorizedError,
+} from '../openapi/common-responses';
 /**
  * Normalises a free-form department value from a request body: trims whitespace,
  * enforces the shared max length, and rejects empty strings (use `null` to clear).
@@ -134,20 +141,14 @@ export class TasksController {
   @ApiResponse({
     status: 401,
     description: 'Unauthorized - Invalid authentication',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: { message: { type: 'string', example: 'Unauthorized' } },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   })
   @ApiQuery({
     name: 'includeRelations',
     required: false,
     description: 'Include controls and automations with runs',
   })
+  @ApiForbiddenError()
   async getTasks(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -178,6 +179,8 @@ export class TasksController {
     required: false,
     description: 'Filter templates by framework ID',
   })
+  @ApiOkResponse({ description: 'Task templates retrieved successfully' })
+  @ApiAuthErrors()
   async getTaskTemplates(@Query('frameworkId') frameworkId?: string) {
     return await this.tasksService.getTaskTemplates(frameworkId);
   }
@@ -250,6 +253,7 @@ export class TasksController {
     status: 400,
     description: 'Invalid request body',
   })
+  @ApiAuthErrors()
   async createTask(
     @OrganizationId() organizationId: string,
     @Body()
@@ -327,6 +331,7 @@ export class TasksController {
     status: 400,
     description: 'Invalid request body',
   })
+  @ApiAuthErrors()
   async updateTasksStatus(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -415,6 +420,7 @@ export class TasksController {
     status: 400,
     description: 'Invalid request body',
   })
+  @ApiAuthErrors()
   async updateTasksAssignee(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -473,6 +479,7 @@ export class TasksController {
   })
   @ApiResponse({ status: 200, description: 'Tasks reordered successfully' })
   @ApiResponse({ status: 400, description: 'Invalid request body' })
+  @ApiAuthErrors()
   async reorderTasks(
     @OrganizationId() organizationId: string,
     @Body()
@@ -512,6 +519,7 @@ export class TasksController {
   })
   @ApiResponse({ status: 200, description: 'Tasks submitted for review' })
   @ApiResponse({ status: 400, description: 'Invalid request' })
+  @ApiAuthErrors()
   async bulkSubmitForReview(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -570,6 +578,7 @@ export class TasksController {
     status: 400,
     description: 'Invalid request body',
   })
+  @ApiAuthErrors()
   async deleteTasks(
     @OrganizationId() organizationId: string,
     @Body()
@@ -590,6 +599,10 @@ export class TasksController {
   @UseGuards(PermissionGuard)
   @RequirePermission('task', 'read')
   @ApiOperation({ summary: 'Get page options for tasks overview' })
+  @ApiOkResponse({
+    description: 'Page options for tasks overview retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getTaskOptions(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -636,20 +649,9 @@ export class TasksController {
   @ApiResponse({
     status: 404,
     description: 'Task not found',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example: 'Task with ID tsk_abc123def456 not found',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   })
+  @ApiUnauthorizedError()
   async getTask(
     @OrganizationId() organizationId: string,
     @Param('taskId') taskId: string,
@@ -691,6 +693,11 @@ export class TasksController {
     description: 'Unique task identifier',
     example: 'tsk_abc123def456',
   })
+  @ApiOkResponse({
+    description:
+      'Policies that reference a task via shared controls retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getTaskPolicies(
     @OrganizationId() organizationId: string,
     @Param('taskId') taskId: string,
@@ -767,6 +774,7 @@ export class TasksController {
   })
   @ApiResponse({ status: 200, description: 'Activity retrieved successfully' })
   @ApiResponse({ status: 400, description: 'Task not found' })
+  @ApiAuthErrors()
   async getTaskActivity(
     @OrganizationId() organizationId: string,
     @Param('taskId') taskId: string,
@@ -879,6 +887,7 @@ export class TasksController {
     status: 404,
     description: 'Task not found',
   })
+  @ApiAuthErrors()
   async updateTask(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -956,6 +965,7 @@ export class TasksController {
   @ApiResponse({ status: 200, description: 'Task regenerated successfully' })
   @ApiResponse({ status: 400, description: 'Task has no associated template' })
   @ApiResponse({ status: 404, description: 'Task not found' })
+  @ApiAuthErrors()
   async regenerateTask(
     @OrganizationId() organizationId: string,
     @Param('taskId') taskId: string,
@@ -990,6 +1000,7 @@ export class TasksController {
     status: 404,
     description: 'Task not found',
   })
+  @ApiAuthErrors()
   async deleteTask(
     @OrganizationId() organizationId: string,
     @Param('taskId') taskId: string,
@@ -1027,6 +1038,7 @@ export class TasksController {
   })
   @ApiResponse({ status: 200, description: 'Task submitted for review' })
   @ApiResponse({ status: 400, description: 'Invalid request' })
+  @ApiAuthErrors()
   async submitForReview(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -1065,6 +1077,7 @@ export class TasksController {
   @ApiResponse({ status: 200, description: 'Task approved successfully' })
   @ApiResponse({ status: 400, description: 'Task is not in review' })
   @ApiResponse({ status: 403, description: 'Not the assigned approver' })
+  @ApiUnauthorizedError()
   async approveTask(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -1098,6 +1111,7 @@ export class TasksController {
   @ApiResponse({ status: 200, description: 'Task rejected successfully' })
   @ApiResponse({ status: 400, description: 'Task is not in review' })
   @ApiResponse({ status: 403, description: 'Not the assigned approver' })
+  @ApiUnauthorizedError()
   async rejectTask(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -1155,32 +1169,14 @@ export class TasksController {
   @ApiResponse({
     status: 401,
     description: 'Unauthorized - Invalid authentication',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: { message: { type: 'string', example: 'Unauthorized' } },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   })
   @ApiResponse({
     status: 404,
     description: 'Task not found',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example: 'Task with ID tsk_abc123def456 not found',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   })
+  @ApiForbiddenError()
   async getTaskAttachments(
     @OrganizationId() organizationId: string,
     @Param('taskId') taskId: string,
@@ -1229,49 +1225,19 @@ export class TasksController {
   @ApiResponse({
     status: 400,
     description: 'Invalid file data or file too large',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example: 'File exceeds maximum allowed size',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   })
   @ApiResponse({
     status: 401,
     description: 'Unauthorized - Invalid authentication',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: { message: { type: 'string', example: 'Unauthorized' } },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   })
   @ApiResponse({
     status: 404,
     description: 'Task not found',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example: 'Task with ID tsk_abc123def456 not found',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   })
+  @ApiForbiddenError()
   async uploadTaskAttachment(
     @AuthContext() authContext: AuthContextType,
     @Param('taskId') taskId: string,
@@ -1355,32 +1321,14 @@ export class TasksController {
   @ApiResponse({
     status: 401,
     description: 'Unauthorized - Invalid authentication',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: { message: { type: 'string', example: 'Unauthorized' } },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   })
   @ApiResponse({
     status: 404,
     description: 'Task or attachment not found',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example: 'Task or attachment not found',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   })
+  @ApiForbiddenError()
   async getTaskAttachmentDownloadUrl(
     @OrganizationId() organizationId: string,
     @Param('taskId') taskId: string,
@@ -1437,32 +1385,14 @@ export class TasksController {
   @ApiResponse({
     status: 404,
     description: 'Task or attachment not found',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example: 'Task or attachment not found',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   })
   @ApiResponse({
     status: 401,
     description: 'Unauthorized - Invalid authentication',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: { message: { type: 'string', example: 'Unauthorized' } },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   })
+  @ApiForbiddenError()
   async deleteTaskAttachment(
     @OrganizationId() organizationId: string,
     @Param('taskId') taskId: string,

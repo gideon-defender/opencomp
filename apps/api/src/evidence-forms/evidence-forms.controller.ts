@@ -23,9 +23,21 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { ApiHeader, ApiOperation, ApiSecurity, ApiTags } from '@nestjs/swagger';
+import {
+  ApiCreatedResponse,
+  ApiHeader,
+  ApiOkResponse,
+  ApiOperation,
+  ApiSecurity,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { Response } from 'express';
 import { EvidenceFormsService } from './evidence-forms.service';
+import {
+  ApiAuthErrors,
+  ApiForbiddenError,
+  ApiUnauthorizedError,
+} from '../openapi/common-responses';
 
 @ApiTags('Evidence Forms')
 @Controller({ path: 'evidence-forms', version: '1' })
@@ -49,6 +61,9 @@ export class EvidenceFormsController {
     summary: 'List evidence forms',
     description: 'List all available pre-built evidence forms',
   })
+  @ApiOkResponse({ description: 'Evidence forms retrieved successfully' })
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   listForms() {
     return this.evidenceFormsService.listForms();
   }
@@ -60,6 +75,11 @@ export class EvidenceFormsController {
     description:
       'Returns the latest submission date per form type for the active organization',
   })
+  @ApiOkResponse({
+    description: 'Submission statuses for all forms retrieved successfully',
+  })
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   async getFormStatuses(@OrganizationId() organizationId: string) {
     return this.evidenceFormsService.getFormStatuses(organizationId);
   }
@@ -71,6 +91,11 @@ export class EvidenceFormsController {
     description:
       'Returns organization-scoped relevance settings for evidence forms',
   })
+  @ApiOkResponse({
+    description: 'Document relevance settings retrieved successfully',
+  })
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   async getFormSettings(@OrganizationId() organizationId: string) {
     return this.evidenceFormsService.getFormSettings(organizationId);
   }
@@ -82,6 +107,11 @@ export class EvidenceFormsController {
     description:
       'Marks an evidence form as relevant or not relevant for the active organization',
   })
+  @ApiOkResponse({
+    description: 'Document relevance setting updated successfully',
+  })
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   async updateFormSetting(
     @OrganizationId() organizationId: string,
     @Param('formType') formType: string,
@@ -101,6 +131,11 @@ export class EvidenceFormsController {
     description:
       'Returns all evidence form submissions by the authenticated user for the active organization',
   })
+  @ApiOkResponse({
+    description: 'Current user submissions retrieved successfully',
+  })
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   async getMySubmissions(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -120,6 +155,12 @@ export class EvidenceFormsController {
     description:
       'Returns the count of pending evidence submissions for the authenticated user',
   })
+  @ApiOkResponse({
+    description:
+      'Pending submission count for current user retrieved successfully',
+  })
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   async getPendingSubmissionCount(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -137,6 +178,11 @@ export class EvidenceFormsController {
     description:
       'Fetch a specific form definition with submissions for the active organization',
   })
+  @ApiOkResponse({
+    description: 'Form definition and submissions retrieved successfully',
+  })
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   async getFormWithSubmissions(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -162,6 +208,9 @@ export class EvidenceFormsController {
     description:
       'Fetch one evidence form submission for the active organization',
   })
+  @ApiOkResponse({ description: 'A single submission retrieved successfully' })
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   async getSubmission(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -182,6 +231,8 @@ export class EvidenceFormsController {
     description:
       'Remove an evidence form submission for the active organization. Requires owner, admin, or auditor role.',
   })
+  @ApiOkResponse({ description: 'A submission deleted successfully' })
+  @ApiAuthErrors()
   async deleteSubmission(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -203,6 +254,9 @@ export class EvidenceFormsController {
     description:
       'Create a new organization-scoped evidence form submission using Zod-validated payloads',
   })
+  @ApiCreatedResponse({ description: 'Evidence form submitted successfully' })
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   async submitForm(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -225,6 +279,11 @@ export class EvidenceFormsController {
       'Upload a PDF or image file and create a submission for the given form type, bypassing form-specific validation. ' +
       "Accepts session, API key, or service token auth. For API key / service token callers without an explicit user attribution, the submission is attributed to the org's oldest owner.",
   })
+  @ApiCreatedResponse({
+    description: 'A file as an evidence submission uploaded successfully',
+  })
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   async uploadSubmission(
     @OrganizationId() organizationId: string,
     @Param('formType') formType: string,
@@ -252,6 +311,11 @@ export class EvidenceFormsController {
     description:
       'Approve or reject an evidence form submission with an optional reason',
   })
+  @ApiOkResponse({
+    description: 'Review evidence submission completed successfully',
+  })
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   async reviewSubmission(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -275,6 +339,11 @@ export class EvidenceFormsController {
     description:
       'Upload a file for evidence form fields and return file metadata for submission payload',
   })
+  @ApiCreatedResponse({
+    description: 'Evidence form file uploaded successfully',
+  })
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   async uploadFile(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -295,6 +364,9 @@ export class EvidenceFormsController {
     description: 'Export all form submissions for an organization as CSV',
   })
   @Header('Content-Type', 'text/csv')
+  @ApiOkResponse({ description: 'Evidence submissions exported successfully' })
+  @ApiForbiddenError()
+  @ApiUnauthorizedError()
   async exportCsv(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,

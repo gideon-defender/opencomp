@@ -22,6 +22,7 @@ import { RequirePermission } from '../auth/require-permission.decorator';
 import { OrganizationId } from '../auth/auth-context.decorator';
 import { Throttle } from '@nestjs/throttler';
 import { TrustAccessService } from './trust-access.service';
+import { ApiAuthErrors } from '../openapi/common-responses';
 
 @ApiTags('Trust Access')
 // Same throttle posture as the request controller: previews mint PDFs and
@@ -46,6 +47,7 @@ export class TrustNdaPreviewController {
     status: HttpStatus.OK,
     description: 'Preview NDA generated',
   })
+  @ApiAuthErrors()
   async previewNda(
     @OrganizationId() organizationId: string,
     @Param('id') requestId: string,
@@ -74,6 +76,7 @@ export class TrustNdaPreviewController {
     status: HttpStatus.NOT_FOUND,
     description: 'Access request not found',
   })
+  @ApiAuthErrors()
   async streamPreviewNda(
     @OrganizationId() organizationId: string,
     @Param('id') requestId: string,

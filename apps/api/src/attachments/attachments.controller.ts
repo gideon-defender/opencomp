@@ -23,6 +23,11 @@ import type { AuthContext as AuthContextType } from '../auth/types';
 import { AttachmentResponseDto } from '../tasks/dto/task-responses.dto';
 import { AttachmentsService } from './attachments.service';
 import { CreateAttachmentDto } from './create-attachment.dto';
+import {
+  ApiAuthErrors,
+  ApiErrorResponseDto,
+  ApiForbiddenError,
+} from '../openapi/common-responses';
 
 @ApiTags('Attachments')
 @Controller({ path: 'attachments', version: '1' })
@@ -47,32 +52,14 @@ export class AttachmentsController {
   @ApiResponse({
     status: 400,
     description: 'Invalid file data, unsupported file type, or file too large',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example: 'File size exceeds maximum allowed size of 100MB',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   })
   @ApiResponse({
     status: 401,
     description: 'Unauthorized - Invalid authentication',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: { message: { type: 'string', example: 'Unauthorized' } },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   })
+  @ApiForbiddenError()
   async createAttachment(
     @AuthContext() authContext: AuthContextType,
     @Body() body: CreateAttachmentDto,
@@ -143,6 +130,7 @@ export class AttachmentsController {
       },
     },
   })
+  @ApiAuthErrors()
   async getAttachmentDownloadUrl(
     @OrganizationId() organizationId: string,
     @Param('attachmentId') attachmentId: string,
