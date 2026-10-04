@@ -23,8 +23,12 @@ export function useResizableColumns(cookieName: string, defaults: Record<string,
   }, [cookieName]);
 
   // Latest widths for the drag handlers without re-binding them every render.
+  // Synced in an effect (not during render): readers only run on mouse
+  // events, long after commit, so post-commit freshness is equivalent.
   const widthsRef = useRef(widths);
-  widthsRef.current = widths;
+  useEffect(() => {
+    widthsRef.current = widths;
+  });
 
   // Teardown for an in-progress drag, so it can also run if we unmount mid-drag.
   const activeCleanupRef = useRef<(() => void) | null>(null);

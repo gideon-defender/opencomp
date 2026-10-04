@@ -41,10 +41,18 @@ export function getFamilyStatusClassName(status: FrameworkEditorFrameworkFamilyS
 export function FamilyStatusBadge({ status }: { status: FrameworkEditorFrameworkFamilyStatus }) {
   const t = useTranslations('frameworks');
 
-  if (status === 'visible') return <StatusBadge className={getFamilyStatusClassName(status)} label={t('status.visible')} />;
-  if (status === 'hidden') return <StatusBadge className={getFamilyStatusClassName(status)} label={t('status.hidden')} />;
-  if (status === 'partial') return <StatusBadge className={getFamilyStatusClassName(status)} label={t('status.partial')} />;
-  return <StatusBadge className={getFamilyStatusClassName(status)} label={t('status.underConstruction')} />;
+  if (status === 'visible')
+    return <StatusBadge className={getFamilyStatusClassName(status)} label={t('status.visible')} />;
+  if (status === 'hidden')
+    return <StatusBadge className={getFamilyStatusClassName(status)} label={t('status.hidden')} />;
+  if (status === 'partial')
+    return <StatusBadge className={getFamilyStatusClassName(status)} label={t('status.partial')} />;
+  return (
+    <StatusBadge
+      className={getFamilyStatusClassName(status)}
+      label={t('status.underConstruction')}
+    />
+  );
 }
 
 function StatusBadge({ className, label }: { className: string; label: string }) {

@@ -1,7 +1,7 @@
 import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { renderWithIntl } from '../../test-utils/render-with-intl';
 import type { AppLocale } from '../../../i18n/messages';
+import { renderWithIntl } from '../../test-utils/render-with-intl';
 import { EditableCell } from './EditableCell';
 import { clearEditorSize, saveEditorSize } from './editor-size-storage';
 
@@ -23,10 +23,7 @@ vi.mock('@gideon-defender/ui', () => ({
   DialogFooter: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
-function setup(
-  props: Partial<Parameters<typeof EditableCell>[0]> = {},
-  locale: AppLocale = 'en',
-) {
+function setup(props: Partial<Parameters<typeof EditableCell>[0]> = {}, locale: AppLocale = 'en') {
   const onUpdate = vi.fn();
   renderWithIntl(
     <EditableCell

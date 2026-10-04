@@ -151,7 +151,9 @@ export function EditFrameworkDialog({
               name="description"
               render={({ field }) => (
                 <FormItem className="grid grid-cols-4 items-center gap-2">
-                  <FormLabel className="text-right">{t('editFramework.descriptionLabel')}</FormLabel>
+                  <FormLabel className="text-right">
+                    {t('editFramework.descriptionLabel')}
+                  </FormLabel>
                   <FormControl className="col-span-3">
                     <Textarea placeholder={t('editFramework.descriptionPlaceholder')} {...field} />
                   </FormControl>

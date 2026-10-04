@@ -14,12 +14,14 @@ export function bytesToBase64(u8arr: Uint8Array): string {
 
 export async function consumeStream(stream: ReadableStream<Uint8Array>): Promise<Uint8Array> {
   const reader = stream.getReader();
-  const chunks: Uint8Array[] = [];
+  // Copy each chunk into a fresh ArrayBuffer-backed view: BlobPart requires
+  // ArrayBuffer views, but stream chunks may be SharedArrayBuffer-backed.
+  const chunks: Uint8Array<ArrayBuffer>[] = [];
 
   try {
     while (true) {
       const { done, value } = await reader.read();
-      if (value != null) chunks.push(value);
+      if (value != null) chunks.push(new Uint8Array(value));
       if (done) break;
     }
   } finally {

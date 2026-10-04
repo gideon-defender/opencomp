@@ -1,11 +1,67 @@
-import { packExtension } from '@anthropic-ai/mcpb';
+import { zipSync } from 'fflate';
 import { build } from 'esbuild';
-import { chmod, cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { chmod, cp, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
+import { join, relative, resolve, sep } from 'node:path';
 import { createConsoleLogger } from './console-logger.ts';
 import { createMCPServer } from './server.ts';
 
 const shouldPack = process.argv.includes('--pack');
+
+// Minimal .mcpb packer: a .mcpb bundle is a zip of the staged extension
+// directory. This replaces packExtension from @anthropic-ai/mcpb, which
+// pulled in node-forge (high-severity RSA verification CVE with no
+// upstream fix) through its manifest-signing module. This unsigned pack
+// never touches that path, so the dependency — and the CVE — stays out.
+async function packExtension({
+  extensionPath,
+  outputPath,
+}: {
+  extensionPath: string;
+  outputPath: string;
+}): Promise<void> {
+  const resolvedPath = resolve(extensionPath);
+  let manifest: unknown;
+  try {
+    manifest = JSON.parse(await readFile(join(resolvedPath, 'manifest.json'), 'utf8'));
+  } catch {
+    throw new Error(`Cannot pack extension without a readable manifest.json in ${extensionPath}`);
+  }
+  if (typeof manifest !== 'object' || manifest === null) {
+    throw new Error('Cannot pack extension: manifest.json must contain a JSON object');
+  }
+  const record = manifest as Record<string, unknown>;
+  for (const field of ['manifest_version', 'name', 'version']) {
+    if (typeof record[field] !== 'string' || (record[field] as string).length === 0) {
+      throw new Error(`Cannot pack extension: manifest.json is missing required field "${field}"`);
+    }
+  }
+
+  const files: Record<string, [Uint8Array, { os: 3; attrs: number }]> = {};
+  const walk = async (dir: string): Promise<void> => {
+    const names = await readdir(dir);
+    names.sort();
+    for (const name of names) {
+      const full = join(dir, name);
+      const st = await stat(full);
+      if (st.isDirectory()) {
+        await walk(full);
+      } else {
+        const key = relative(resolvedPath, full).split(sep).join('/');
+        const data = await readFile(full);
+        files[key] = [data, { os: 3 as const, attrs: (st.mode & 0o777) << 16 }];
+      }
+    }
+  };
+  await walk(resolvedPath);
+
+  const zipData = zipSync(files, { level: 9, mtime: new Date() });
+  const finalOutputPath = resolve(outputPath);
+  await writeFile(finalOutputPath, zipData);
+  console.log(`\n📦  ${record['name']}@${record['version']}`);
+  console.log(`total files: ${Object.keys(files).length}`);
+  console.log(`package size: ${zipData.length}B`);
+  console.log(`\nOutput: ${finalOutputPath}`);
+}
 
 async function buildMcpServer() {
   // Explicitly create server to register tools
@@ -77,7 +133,6 @@ export const toolNames: Array<{ name: string; description: string }>= ${JSON.str
     await packExtension({
       extensionPath: stageDir,
       outputPath: './mcp-server.mcpb',
-      silent: false,
     });
 
     // Clean up staging directory

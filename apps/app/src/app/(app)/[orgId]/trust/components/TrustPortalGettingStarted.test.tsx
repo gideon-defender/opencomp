@@ -18,7 +18,7 @@ import { TrustPortalGettingStarted } from './TrustPortalGettingStarted';
 describe('TrustPortalGettingStarted', () => {
   it('renders the live shared portal URL', () => {
     render(<TrustPortalGettingStarted portalUrl="https://trust.gideondefender.com/org_123" />);
-    expect(screen.getByText(/trust.gideondefender.com\/org_123/)).toBeInTheDocument();
+    expect(screen.getByText(/trust\.gideondefender\.com\/org_123/)).toBeInTheDocument();
   });
 
   it('renders the getting-started heading', () => {

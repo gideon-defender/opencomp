@@ -11,8 +11,8 @@ import {
   AlertDialogTitle,
   Button,
 } from '@gideon-defender/ui';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -64,7 +64,9 @@ export function DeleteFrameworkDialog({
     >
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{t('editFramework.deleteConfirmTitle', { name: frameworkName })}</AlertDialogTitle>
+          <AlertDialogTitle>
+            {t('editFramework.deleteConfirmTitle', { name: frameworkName })}
+          </AlertDialogTitle>
           <AlertDialogDescription>
             {t('editFramework.deleteConfirmDescription')}
             {error && (
