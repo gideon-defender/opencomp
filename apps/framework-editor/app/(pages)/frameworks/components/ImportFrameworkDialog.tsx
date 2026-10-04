@@ -161,9 +161,7 @@ export function ImportFrameworkDialog({ isOpen, onOpenChange }: ImportFrameworkD
           >
             <FileUp className="text-muted-foreground h-8 w-8" />
             <p className="text-muted-foreground text-sm">
-              {preview
-                ? t('importFramework.chooseDifferent')
-                : t('importFramework.chooseFile')}
+              {preview ? t('importFramework.chooseDifferent') : t('importFramework.chooseFile')}
             </p>
             <input
               ref={fileInputRef}

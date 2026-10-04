@@ -211,9 +211,7 @@ describe('EmployeeBackgroundCheck — V1 two-paths', () => {
     await user.click(trigger);
     // The options render in a portal after the menu opens — wait for them
     // instead of querying synchronously, which flakes under full-suite load.
-    await user.click(
-      await screen.findByRole('option', { name: /Local law prohibits check/i }),
-    );
+    await user.click(await screen.findByRole('option', { name: /Local law prohibits check/i }));
 
     await user.click(screen.getByRole('button', { name: /Confirm exemption/i }));
 

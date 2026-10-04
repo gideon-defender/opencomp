@@ -9,6 +9,10 @@
     "noEmit": true,
     "skipLibCheck": true,
     "isolatedModules": true,
+    // wxt 0.21 enables noUncheckedIndexedAccess in its generated tsconfig.
+    // The codebase predates that default; keep prior behavior here and
+    // adopt the stricter flag in a separate pass if wanted.
+    "noUncheckedIndexedAccess": false,
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true
   }

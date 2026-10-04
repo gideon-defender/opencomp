@@ -11,8 +11,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@gideon-defender/ui/alert-dialog';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -52,7 +52,9 @@ export function DeleteFrameworkFamilyDialog({
     <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{t('familyDialog.deleteConfirmTitle', { name: familyName })}</AlertDialogTitle>
+          <AlertDialogTitle>
+            {t('familyDialog.deleteConfirmTitle', { name: familyName })}
+          </AlertDialogTitle>
           <AlertDialogDescription>
             {t('familyDialog.deleteConfirmDescription')}
           </AlertDialogDescription>

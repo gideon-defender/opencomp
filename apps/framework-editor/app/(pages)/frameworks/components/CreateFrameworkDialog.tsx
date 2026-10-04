@@ -87,8 +87,7 @@ export function CreateFrameworkDialog({
       onFrameworkCreated?.();
       router.refresh();
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : tToasts('frameworkCreateFailed');
+      const message = error instanceof Error ? error.message : tToasts('frameworkCreateFailed');
       toast.error(message);
     }
   }
@@ -130,9 +129,14 @@ export function CreateFrameworkDialog({
               name="description"
               render={({ field }) => (
                 <FormItem className="grid grid-cols-4 items-center gap-2">
-                  <FormLabel className="text-right">{t('createFramework.descriptionLabel')}</FormLabel>
+                  <FormLabel className="text-right">
+                    {t('createFramework.descriptionLabel')}
+                  </FormLabel>
                   <FormControl className="col-span-3">
-                    <Textarea placeholder={t('createFramework.descriptionPlaceholder')} {...field} />
+                    <Textarea
+                      placeholder={t('createFramework.descriptionPlaceholder')}
+                      {...field}
+                    />
                   </FormControl>
                   <div className="col-span-3 col-start-2">
                     <FormMessage />

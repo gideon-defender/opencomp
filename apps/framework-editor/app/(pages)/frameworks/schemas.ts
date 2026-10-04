@@ -35,9 +35,7 @@ export function createFrameworkFamilyBaseSchema(
   });
 }
 
-export function createRequirementBaseSchema(
-  messages: FrameworkSchemaMessages = fallbackMessages,
-) {
+export function createRequirementBaseSchema(messages: FrameworkSchemaMessages = fallbackMessages) {
   return z.object({
     name: z.string().min(1, { message: messages.requirementNameRequired }),
     description: z.string().optional(), // Assuming description can be optional

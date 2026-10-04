@@ -41,6 +41,14 @@ const googleSheetsScope = 'https://www.googleapis.com/auth/spreadsheets';
 export default defineConfig({
   srcDir: 'src',
   outDir: 'dist',
+  vite: () => ({
+    build: {
+      // esbuild marks destructuring unsupported on safari14 and its lowering
+      // is unimplemented, so any dependency using it (e.g. zod) hard-fails
+      // the build. Floor Safari at 14.1; we ship to the Chrome Web Store only.
+      target: ['chrome87', 'edge88', 'es2020', 'firefox78', 'safari14.1'],
+    },
+  }),
   dev: {
     server: {
       port: 3100,

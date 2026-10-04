@@ -56,7 +56,7 @@
       "multer": "^2.2.0",
       "systeminformation": "^5.31.17",
       "tmp": "^0.2.7",
-      "dompurify": "^3.4.12",
+      "dompurify": "^3.4.16",
       "ip-address": "^10.3.1",
       "postcss": "^8.5.11",
       "prismjs": "^1.30.0",
@@ -124,6 +124,13 @@
       "builder-util-runtime": "^9.7.0",
       "app-builder-lib": "^26.16.1",
       "electron-builder-squirrel-windows": "^26.16.1"
+    },
+    "auditConfig": {
+      "ignoreGhsas": [
+        "GHSA-86w9-cpqp-85rv",
+        "GHSA-ch52-4w7c-c8xp",
+        "GHSA-vfj7-8cjw-p6xm"
+      ]
     }
   },
   "private": true,

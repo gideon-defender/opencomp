@@ -1,6 +1,9 @@
 'use client';
 
-import { CloudShellSetup, getSetupScriptDisabledMessage } from '@/components/integrations/CloudShellSetup';
+import {
+  CloudShellSetup,
+  getSetupScriptDisabledMessage,
+} from '@/components/integrations/CloudShellSetup';
 import { CredentialInput } from '@/components/integrations/CredentialInput';
 import { buildAwsPhase2Credentials, useAwsTwoStepConnect } from '@/hooks/use-aws-two-step-connect';
 import type { IntegrationProvider } from '@/hooks/use-integration-platform';

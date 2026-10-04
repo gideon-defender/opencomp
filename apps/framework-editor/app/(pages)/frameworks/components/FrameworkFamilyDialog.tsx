@@ -81,7 +81,8 @@ export function FrameworkFamilyDialog({
 
   type FamilyFormValues = z.infer<typeof schema>;
 
-  const form = useForm<FamilyFormValues>({    resolver: zodResolver(schema),
+  const form = useForm<FamilyFormValues>({
+    resolver: zodResolver(schema),
     defaultValues: { name: '', description: '', status: 'hidden' },
     mode: 'onChange',
   });
