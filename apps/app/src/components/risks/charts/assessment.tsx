@@ -4,13 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@gideon-defender/ui/ca
 import { type ChartConfig, ChartContainer, ChartTooltip } from '@gideon-defender/ui/chart';
 import { Legend, Line, LineChart, XAxis, YAxis } from 'recharts';
 
-interface AssessmentChartProps {
-  data: Array<{
-    name: string;
-    value: number;
-  }>;
-}
-
 const riskData = [
   { month: 'Jan', inherentRisk: 15, residualRisk: 9 },
   { month: 'Feb', inherentRisk: 14, residualRisk: 8 },

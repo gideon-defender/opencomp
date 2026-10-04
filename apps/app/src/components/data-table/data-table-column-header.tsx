@@ -50,7 +50,7 @@ export function DataTableColumnHeader<TData, TValue>({
                 return <ChevronUp className="size-4" />;
               }
               return <ChevronsUpDown className="size-4" />;
-            } catch (e) {
+            } catch {
               // If there's an error with sorting state, show the default unsorted icon
               return <ChevronsUpDown className="size-4" />;
             }
@@ -64,7 +64,7 @@ export function DataTableColumnHeader<TData, TValue>({
               checked={(() => {
                 try {
                   return column.getIsSorted() === 'asc';
-                } catch (e) {
+                } catch {
                   return false;
                 }
               })()}
@@ -86,7 +86,7 @@ export function DataTableColumnHeader<TData, TValue>({
               checked={(() => {
                 try {
                   return column.getIsSorted() === 'desc';
-                } catch (e) {
+                } catch {
                   return false;
                 }
               })()}
@@ -125,7 +125,7 @@ export function DataTableColumnHeader<TData, TValue>({
                   );
                 }
                 return null;
-              } catch (e) {
+              } catch {
                 return null;
               }
             })()}

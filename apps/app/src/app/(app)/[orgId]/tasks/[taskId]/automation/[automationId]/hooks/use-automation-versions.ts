@@ -76,7 +76,7 @@ export function useAutomationVersions(
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(initialData.length === pageSize);
 
-  const { data, error, isLoading, mutate } = useSWR(
+  const { error, isLoading, mutate } = useSWR(
     [`automation-versions-${automationId}-${offset}`, orgId, taskId, automationId, offset],
     async () => {
       const url = `/v1/tasks/${taskId}/automations/${automationId}/versions?limit=${pageSize}&offset=${offset}`;

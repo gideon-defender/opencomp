@@ -28,7 +28,6 @@ export function PostPaymentOnboarding({
 }: PostPaymentOnboardingProps) {
   const {
     stepIndex,
-    steps,
     step,
     form,
     savedAnswers,
@@ -40,7 +39,6 @@ export function PostPaymentOnboarding({
     handleSkip,
     isLastStep,
     isSkippable,
-    currentStepNumber,
     totalSteps,
     completeNow,
   } = usePostPaymentOnboarding({
@@ -199,7 +197,7 @@ export function PostPaymentOnboarding({
                   ) : (
                     <FormField
                       name={step.key}
-                      render={({ field }) => (
+                      render={() => (
                         <FormItem>
                           <FormControl>
                             <OnboardingStepInput

@@ -47,7 +47,7 @@ export function WizardStepCertificate({ control, errors }: WizardStepCertificate
         <Controller
           control={control}
           name="certificateScopeSentence"
-          render={({ field: { ref: _ref, ...field } }) => (
+          render={({ field: { ...field } }) => (
             <Field>
               <Textarea
                 {...field}

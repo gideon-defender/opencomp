@@ -3,7 +3,6 @@
 import { authActionClient } from '@/actions/safe-action';
 import { env } from '@/env.mjs';
 import { db } from '@db/server';
-import { Vercel } from '@vercel/sdk';
 import { revalidatePath, revalidateTag } from 'next/cache';
 import * as dns from 'node:dns';
 import { z } from 'zod';
@@ -35,10 +34,6 @@ const checkDnsSchema = z.object({
       'Invalid domain format. Use format like sub.example.com',
     )
     .trim(),
-});
-
-const vercel = new Vercel({
-  bearerToken: env.VERCEL_ACCESS_TOKEN,
 });
 
 export const checkDnsRecordAction = authActionClient

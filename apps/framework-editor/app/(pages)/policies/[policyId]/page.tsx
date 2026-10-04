@@ -35,7 +35,6 @@ export default async function PolicyDetailPage({
       <PolicyDetailsClientPage policy={policy} />
       <PolicyEditorClient
         policyId={policy.id}
-        policyName={policy.name}
         initialContent={policy.content as JSONContent | JSONContent[] | null}
       />
     </PageLayout>

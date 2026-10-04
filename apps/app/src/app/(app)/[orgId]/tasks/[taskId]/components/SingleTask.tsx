@@ -84,7 +84,6 @@ export function SingleTask({
   initialMembers,
   initialAutomations,
   isWebAutomationsEnabled,
-  isPlatformAdmin,
   evidenceApprovalEnabled = false,
 }: SingleTaskProps) {
   const params = useParams();
@@ -252,7 +251,6 @@ export function SingleTask({
     }
   };
 
-  const isAuditor = activeMember?.role?.includes('auditor') ?? false;
   const isAdminOrOwner =
     activeMember?.role?.includes('admin') || activeMember?.role?.includes('owner') || false;
   const isInReview = task.status === 'in_review';

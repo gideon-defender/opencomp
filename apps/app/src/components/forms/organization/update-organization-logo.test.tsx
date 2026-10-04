@@ -31,7 +31,8 @@ vi.mock('sonner', () => ({
 
 // Mock next/image
 vi.mock('next/image', () => ({
-  default: ({ alt, fill, ...props }: { alt: string; src: string; fill?: boolean }) => (
+  default: ({ alt, ...props }: { alt: string; src: string; fill?: boolean }) => (
+    // eslint-disable-next-line @next/next/no-img-element -- test mock for next/image must render plain img
     <img alt={alt} {...props} />
   ),
 }));

@@ -5,7 +5,6 @@ import type { Role } from '@db';
 
 export const addEmployeeWithoutInvite = async ({
   email,
-  organizationId: _organizationId,
   roles,
 }: {
   email: string;

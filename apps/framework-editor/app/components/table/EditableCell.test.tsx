@@ -7,11 +7,7 @@ import { clearEditorSize, saveEditorSize } from './editor-size-storage';
 
 // The ui package ships untranspiled JSX in dist; stub the bits the cell uses.
 vi.mock('@gideon-defender/ui', () => ({
-  Button: ({
-    children,
-    variant: _v,
-    ...props
-  }: { variant?: string } & React.ComponentProps<'button'>) => (
+  Button: ({ children, ...props }: React.ComponentProps<'button'>) => (
     <button {...props}>{children}</button>
   ),
   Textarea: (props: React.ComponentProps<'textarea'>) => <textarea {...props} />,

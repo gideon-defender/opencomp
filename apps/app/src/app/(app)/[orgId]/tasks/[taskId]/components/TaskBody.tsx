@@ -18,11 +18,7 @@ import { toast } from 'sonner';
 
 interface TaskBodyProps {
   taskId: string;
-  title?: string;
   description?: string;
-  onTitleChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onDescriptionChange?: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  disabled?: boolean;
 }
 
 function formatUploadMonthYear(dateString: string): string {
@@ -31,14 +27,7 @@ function formatUploadMonthYear(dateString: string): string {
   return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 }
 
-export function TaskBody({
-  taskId,
-  title,
-  description,
-  onTitleChange,
-  onDescriptionChange,
-  disabled,
-}: TaskBodyProps) {
+export function TaskBody({ taskId, description }: TaskBodyProps) {
   const t = useTranslations('tasks');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);

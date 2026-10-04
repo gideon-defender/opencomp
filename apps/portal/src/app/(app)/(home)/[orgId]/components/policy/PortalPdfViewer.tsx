@@ -73,7 +73,7 @@ export function PortalPdfViewer({ policyId, s3Key, versionId }: PortalPdfViewerP
     return () => {
       cancelled = true;
     };
-  }, [s3Key, policyId, versionId]);
+  }, [s3Key, policyId, versionId, t]);
 
   if (isLoading) {
     return (

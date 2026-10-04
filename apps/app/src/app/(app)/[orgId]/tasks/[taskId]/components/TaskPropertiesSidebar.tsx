@@ -20,7 +20,6 @@ import {
 } from '@trycompai/design-system';
 import { format } from 'date-fns';
 import { Calendar } from 'lucide-react';
-import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { NotRelevantJustificationDialog } from '../../components/NotRelevantJustificationDialog';
 import { useTask } from '../hooks/use-task';
@@ -44,7 +43,6 @@ export function TaskPropertiesSidebar({
   evidenceApprovalEnabled = false,
   onRequestApproval,
 }: TaskPropertiesSidebarProps) {
-  const { orgId } = useParams<{ orgId: string }>();
   const { task, isLoading } = useTask();
   const { members } = useOrganizationMembers();
   const { hasPermission } = usePermissions();

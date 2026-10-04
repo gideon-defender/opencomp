@@ -18,6 +18,7 @@ import {
   TrashCan,
   User as UserIcon,
 } from '@trycompai/design-system/icons';
+import Image from 'next/image';
 import { createElement } from 'react';
 import { toast } from 'sonner';
 import {
@@ -179,11 +180,13 @@ export function TaskItemFocusSidebar({
                   disabled={readOnly}
                 >
                   {taskItem.assignee?.user?.image ? (
-                    <img
+                    <Image
                       src={taskItem.assignee.user.image}
                       alt={
                         taskItem.assignee.user.name || taskItem.assignee.user.email || 'Assignee'
                       }
+                      width={20}
+                      height={20}
                       className="h-5 w-5 rounded-full"
                     />
                   ) : (
@@ -212,9 +215,11 @@ export function TaskItemFocusSidebar({
                     >
                       <div className="flex items-center gap-2.5 w-full">
                         {member.user.image ? (
-                          <img
+                          <Image
                             src={member.user.image}
                             alt={member.user.name || member.user.email || 'User'}
+                            width={16}
+                            height={16}
                             className="h-4 w-4 rounded-full shrink-0"
                           />
                         ) : (
@@ -394,7 +399,7 @@ export function TaskItemFocusSidebar({
                     await onAssigneeChange(newAssigneeId);
                     toast.success('Assignee updated');
                     onStatusOrPriorityChange?.();
-                  } catch (error) {
+                  } catch {
                     toast.error('Failed to update assignee');
                   }
                 }}

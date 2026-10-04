@@ -3,12 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ControlRequirementSelect, type RequirementOption } from './ControlRequirementSelect';
 
 vi.mock('@gideon-defender/ui', () => ({
-  Button: ({
-    children,
-    variant: _v,
-    size: _s,
-    ...props
-  }: { variant?: string; size?: string } & React.ComponentProps<'button'>) => (
+  Button: ({ children, ...props }: React.ComponentProps<'button'>) => (
     <button {...props}>{children}</button>
   ),
   Input: (props: React.ComponentProps<'input'>) => <input {...props} />,

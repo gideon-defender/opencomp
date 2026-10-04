@@ -7,7 +7,6 @@ import type { CompanyDetails } from '@/app/(app)/setup/lib/types';
 import { trackEvent, trackOnboardingEvent } from '@/utils/tracking';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAction } from 'next-safe-action/hooks';
-import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -48,8 +47,6 @@ export function usePostPaymentOnboarding({
   initialData = {},
   userEmail,
 }: UsePostPaymentOnboardingProps) {
-  const router = useRouter();
-
   // Get filtered steps based on user
   const postPaymentSteps = useMemo(() => getPostPaymentSteps(userEmail), [userEmail]);
 

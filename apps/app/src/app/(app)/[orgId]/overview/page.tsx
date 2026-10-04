@@ -68,9 +68,11 @@ export default async function OverviewPage({ params }: { params: Promise<{ orgId
   // Fail closed: if we can't determine state, don't nudge.
   const isTrustConfigured = settingsRes.data?.isConfigured ?? true;
 
-  const frameworksWithControls = frameworksData.map(
-    ({ complianceScore: _score, ...fw }: FrameworkWithScore) => fw,
-  );
+  const frameworksWithControls = frameworksData.map((item: FrameworkWithScore) => {
+    const fw = { ...item };
+    delete (fw as { complianceScore?: unknown }).complianceScore;
+    return fw;
+  });
   const frameworksWithCompliance = frameworksData.map((fw: FrameworkWithScore) => ({
     frameworkInstance: { ...fw, complianceScore: undefined },
     complianceScore: fw.complianceScore ?? 0,

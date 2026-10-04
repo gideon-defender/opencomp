@@ -10,6 +10,7 @@ import {
 } from '@trycompai/design-system';
 import { Checkmark, DocumentAttachment, Search } from '@trycompai/design-system/icons';
 import { format } from 'date-fns';
+import Image from 'next/image';
 import { useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -209,11 +210,14 @@ function VendorMark({ name, logoUrl }: { name: string; logoUrl?: string | null }
 
   if (logoUrl && !imgError) {
     return (
-      <img
+      <Image
         src={logoUrl}
         alt={name}
+        width={22}
+        height={22}
         className="h-[22px] w-[22px] shrink-0 rounded-sm object-contain"
         onError={() => setImgError(true)}
+        unoptimized
       />
     );
   }

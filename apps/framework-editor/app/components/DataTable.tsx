@@ -48,6 +48,7 @@ export function DataTable<TData, TValue>({
   const [globalFilter, setGlobalFilter] = useState('');
   const [sorting, setSorting] = useState<SortingState>([]);
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack useReactTable returns unmemoizable functions; skip React Compiler memoization
   const table = useReactTable({
     data,
     columns,

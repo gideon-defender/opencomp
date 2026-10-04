@@ -42,17 +42,11 @@ vi.mock('@gideon-defender/ui/button', () => ({
   Button: ({
     children,
     onClick,
-    variant: _v,
-    size: _s,
-    asChild: _a,
     disabled,
     ...props
   }: {
     children: React.ReactNode;
     onClick?: () => void;
-    variant?: string;
-    size?: string;
-    asChild?: boolean;
     disabled?: boolean;
   }) => (
     <button onClick={onClick} disabled={disabled} {...props}>
@@ -103,8 +97,8 @@ vi.mock('@gideon-defender/ui/tabs', () => ({
 }));
 
 vi.mock('lucide-react', () => ({
-  Loader2: ({ className: _c }: { className?: string }) => <span data-testid="loader-icon" />,
-  Trash2: ({ className: _c }: { className?: string }) => <span data-testid="trash-icon" />,
+  Loader2: () => <span data-testid="loader-icon" />,
+  Trash2: () => <span data-testid="trash-icon" />,
 }));
 
 vi.mock('@trycompai/design-system', () => ({
@@ -112,25 +106,11 @@ vi.mock('@trycompai/design-system', () => ({
     children,
     onClick,
     disabled,
-    iconLeft,
-    iconRight,
-    loading,
-    variant,
-    size,
-    width,
-    asChild,
     ...props
   }: {
     children: React.ReactNode;
     onClick?: () => void;
     disabled?: boolean;
-    iconLeft?: React.ReactNode;
-    iconRight?: React.ReactNode;
-    loading?: boolean;
-    variant?: string;
-    size?: string;
-    width?: string;
-    asChild?: boolean;
   }) => (
     <button onClick={onClick} disabled={disabled} {...props}>
       {children}

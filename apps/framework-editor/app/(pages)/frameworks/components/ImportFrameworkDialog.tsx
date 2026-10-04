@@ -123,7 +123,7 @@ export function ImportFrameworkDialog({ isOpen, onOpenChange }: ImportFrameworkD
 
     setIsImporting(true);
     try {
-      const result = await apiClient('/framework/import', {
+      await apiClient('/framework/import', {
         method: 'POST',
         body: JSON.stringify(fileData),
       });

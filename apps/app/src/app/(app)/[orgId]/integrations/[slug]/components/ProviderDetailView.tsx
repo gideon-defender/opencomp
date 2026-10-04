@@ -319,7 +319,7 @@ export function ProviderDetailView({
             onConnected={() => {
               if (isCloudProvider) {
                 // Redirect to Cloud Tests after connecting a cloud provider
-                window.location.href = `/${orgId}/cloud-tests?provider=${provider.id}`;
+                router.push(`/${orgId}/cloud-tests?provider=${provider.id}`);
               }
             }}
             onOAuthConnect={handleConnect}

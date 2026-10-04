@@ -4,7 +4,8 @@ interface KnowledgeBaseHeaderProps {
   organizationId: string;
 }
 
-export function KnowledgeBaseHeader({ organizationId }: KnowledgeBaseHeaderProps) {
+export function KnowledgeBaseHeader(_props: KnowledgeBaseHeaderProps) {
+  void _props;
   return (
     <div className="mb-8 flex flex-col gap-2">
       <h1 className="text-xl lg:text-2xl font-semibold text-foreground">Knowledge Base</h1>

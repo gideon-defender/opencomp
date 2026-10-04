@@ -78,7 +78,6 @@ export const _upsertOrgFrameworkStructureCore = async ({
     taskTemplates,
     groupedRelations: groupedControlTemplateRelations,
     latestVersionByFrameworkId,
-    requirementToFrameworkId,
   } = sources;
 
   const controlTemplateIds = controlTemplates.map((c) => c.id);

@@ -104,7 +104,7 @@ describe('buildPositionMap', () => {
       const result = buildPositionMap(doc(p('Intro'), h(2, 'Section')));
 
       // Find which line maps to the heading position
-      for (const [lineNum, pos] of result.lineToPos) {
+      for (const [lineNum] of result.lineToPos) {
         const lines = result.markdown.split('\n');
         const lineContent = lines[lineNum - 1];
         // Every mapped line should be non-empty

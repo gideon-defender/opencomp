@@ -168,7 +168,6 @@ async function evidenceFormFetcher(
 export function CompanyFormPageClient({
   organizationId,
   formType,
-  isPlatformAdmin = false,
 }: {
   organizationId: string;
   formType: EvidenceFormType;
@@ -197,7 +196,6 @@ export function CompanyFormPageClient({
 
   const { data: activeMember } = useActiveMember();
   const memberRoles = activeMember?.role?.split(',').map((role: string) => role.trim()) || [];
-  const isAuditor = memberRoles.includes('auditor');
   const isAdminOrOwner = memberRoles.includes('admin') || memberRoles.includes('owner');
 
   const isMeeting = formType === 'meeting';
@@ -228,20 +226,17 @@ export function CompanyFormPageClient({
     [t],
   );
 
-  const { data: singleData, isLoading: singleLoading } = useSWR<EvidenceFormResponse>(
-    swrKey,
-    loadSubmissions,
-  );
+  const { data: singleData } = useSWR<EvidenceFormResponse>(swrKey, loadSubmissions);
 
-  const { data: meetingData0, isLoading: ml0 } = useSWR<EvidenceFormResponse>(
+  const { data: meetingData0 } = useSWR<EvidenceFormResponse>(
     meetingSwrKeys[0] ?? null,
     loadSubmissions,
   );
-  const { data: meetingData1, isLoading: ml1 } = useSWR<EvidenceFormResponse>(
+  const { data: meetingData1 } = useSWR<EvidenceFormResponse>(
     meetingSwrKeys[1] ?? null,
     loadSubmissions,
   );
-  const { data: meetingData2, isLoading: ml2 } = useSWR<EvidenceFormResponse>(
+  const { data: meetingData2 } = useSWR<EvidenceFormResponse>(
     meetingSwrKeys[2] ?? null,
     loadSubmissions,
   );
@@ -273,8 +268,6 @@ export function CompanyFormPageClient({
         }
       : undefined
     : singleData;
-
-  const isLoading = isMeeting ? ml0 || ml1 || ml2 : singleLoading;
 
   const handleExportCsv = async () => {
     if (!data || data.total === 0) {

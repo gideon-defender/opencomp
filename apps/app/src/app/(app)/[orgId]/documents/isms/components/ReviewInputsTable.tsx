@@ -146,7 +146,7 @@ function AddInputForm({
           <Controller
             control={control}
             name="inputRef"
-            render={({ field: { ref: _ref, ...field }, fieldState }) => (
+            render={({ field: { ...field }, fieldState }) => (
               <>
                 <Input
                   {...field}
@@ -163,16 +163,14 @@ function AddInputForm({
         <Controller
           control={control}
           name="whatItCovers"
-          render={({ field: { ref: _ref, ...field } }) => (
-            <Input {...field} aria-label="What it covers" />
-          )}
+          render={({ field: { ...field } }) => <Input {...field} aria-label="What it covers" />}
         />
       </IsmsFieldLabel>
       <IsmsFieldLabel label="Where to find it">
         <Controller
           control={control}
           name="whereToFind"
-          render={({ field: { ref: _ref, ...field } }) => (
+          render={({ field: { ...field } }) => (
             <Input
               {...field}
               aria-label="Where to find it"
@@ -185,7 +183,7 @@ function AddInputForm({
         <Controller
           control={control}
           name="discussionNotes"
-          render={({ field: { ref: _ref, ...field } }) => (
+          render={({ field: { ...field } }) => (
             <Textarea
               {...field}
               rows={2}

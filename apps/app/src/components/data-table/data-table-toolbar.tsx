@@ -27,8 +27,7 @@ export function DataTableToolbar<TData>({
   ...props
 }: DataTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0;
-  const [open, setOpen] = useQueryState(sheet ?? '');
-  const isOpen = Boolean(open);
+  const [, setOpen] = useQueryState(sheet ?? '');
 
   const columns = React.useMemo(
     () => table.getAllColumns().filter((column) => column.getCanFilter()),

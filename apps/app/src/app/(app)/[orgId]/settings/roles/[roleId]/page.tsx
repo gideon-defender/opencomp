@@ -43,7 +43,7 @@ export async function generateMetadata({
 }: {
   params: Promise<{ roleId: string; orgId: string }>;
 }): Promise<Metadata> {
-  const { roleId, orgId } = await params;
+  const { roleId } = await params;
 
   const res = await serverApi.get<CustomRole>(`/v1/roles/${roleId}`);
   const role = res.data;

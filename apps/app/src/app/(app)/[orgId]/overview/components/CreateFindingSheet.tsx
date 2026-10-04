@@ -186,19 +186,23 @@ export function CreateFindingSheet({
     }
   }, [orgFrameworkTypes, form]);
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- React Compiler intentional skip: RHF watch() cannot be memoized safely
   const targetKind = form.watch('targetKind');
   const selectedTemplateId = form.watch('templateId');
 
-  const targetOptions: { value: TargetKind; label: string }[] = [
-    { value: 'task', label: t('findings.targetKindTask') },
-    { value: 'policy', label: t('findings.targetKindPolicy') },
-    { value: 'vendor', label: t('findings.targetKindVendor') },
-    { value: 'risk', label: t('findings.targetKindRisk') },
-    { value: 'member', label: t('findings.targetKindMember') },
-    { value: 'device', label: t('findings.targetKindDevice') },
-    { value: 'evidenceFormType', label: t('findings.targetKindDocumentType') },
-    { value: 'area', label: t('findings.targetKindArea') },
-  ];
+  const targetOptions = useMemo<{ value: TargetKind; label: string }[]>(
+    () => [
+      { value: 'task', label: t('findings.targetKindTask') },
+      { value: 'policy', label: t('findings.targetKindPolicy') },
+      { value: 'vendor', label: t('findings.targetKindVendor') },
+      { value: 'risk', label: t('findings.targetKindRisk') },
+      { value: 'member', label: t('findings.targetKindMember') },
+      { value: 'device', label: t('findings.targetKindDevice') },
+      { value: 'evidenceFormType', label: t('findings.targetKindDocumentType') },
+      { value: 'area', label: t('findings.targetKindArea') },
+    ],
+    [t],
+  );
 
   const availableTargetOptions = useMemo(
     () =>

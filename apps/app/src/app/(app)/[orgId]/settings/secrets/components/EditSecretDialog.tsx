@@ -70,7 +70,6 @@ export function EditSecretDialog({ secret, open, onOpenChange }: EditSecretDialo
     control,
     register,
     reset,
-    setError,
     formState: { errors, isSubmitting },
   } = useForm<EditSecretFormValues>({
     resolver: zodResolver(editSecretSchema),

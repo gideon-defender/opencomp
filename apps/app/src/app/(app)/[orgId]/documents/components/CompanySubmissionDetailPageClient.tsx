@@ -104,7 +104,7 @@ export function CompanySubmissionDetailPageClient({
 
   const { data, isLoading, error, mutate } = useSWR<EvidenceSubmissionResponse>(
     swrKey,
-    async ([path, orgId]: readonly [string, string]) => {
+    async ([path]: readonly [string, string]) => {
       const response = await api.get<EvidenceSubmissionResponse>(path);
       if (response.error || !response.data) {
         throw new Error(response.error ?? 'Failed to load submission');

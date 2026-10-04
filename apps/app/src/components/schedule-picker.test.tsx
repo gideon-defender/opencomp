@@ -37,7 +37,13 @@ vi.mock('@gideon-defender/ui/select', () => ({
   SelectTrigger: ({ children }: { children: ReactNode }) => {
     const { disabled } = useMockSelect();
     return (
-      <button type="button" role="combobox" disabled={disabled}>
+      <button
+        type="button"
+        role="combobox"
+        aria-controls="mock-listbox"
+        aria-expanded={false}
+        disabled={disabled}
+      >
         {children}
       </button>
     );
@@ -52,7 +58,7 @@ vi.mock('@gideon-defender/ui/select', () => ({
   SelectItem: ({ value, children }: { value: string; children: ReactNode }) => {
     const { onValueChange } = useMockSelect();
     return (
-      <div role="option" onClick={() => onValueChange(value)}>
+      <div role="option" aria-selected={false} onClick={() => onValueChange(value)}>
         {children}
       </div>
     );

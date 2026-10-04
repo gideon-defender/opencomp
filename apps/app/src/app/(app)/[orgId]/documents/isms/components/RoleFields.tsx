@@ -24,7 +24,7 @@ export function RoleFields({ control, showName }: RoleFieldsProps) {
             <Controller
               control={control}
               name="name"
-              render={({ field: { ref: _ref, ...field }, fieldState }) => (
+              render={({ field: { ...field }, fieldState }) => (
                 <>
                   <Input {...field} placeholder="Role name" aria-label="Role name" />
                   <FieldError>{fieldState.error?.message}</FieldError>
@@ -39,7 +39,7 @@ export function RoleFields({ control, showName }: RoleFieldsProps) {
           <Controller
             control={control}
             name="description"
-            render={({ field: { ref: _ref, ...field } }) => (
+            render={({ field: { ...field } }) => (
               <Textarea {...field} rows={2} aria-label="Role description" />
             )}
           />
@@ -50,7 +50,7 @@ export function RoleFields({ control, showName }: RoleFieldsProps) {
           <Controller
             control={control}
             name="responsibilities"
-            render={({ field: { ref: _ref, ...field } }) => (
+            render={({ field: { ...field } }) => (
               <Textarea {...field} rows={3} aria-label="Role responsibilities" />
             )}
           />
@@ -61,7 +61,7 @@ export function RoleFields({ control, showName }: RoleFieldsProps) {
           <Controller
             control={control}
             name="authorities"
-            render={({ field: { ref: _ref, ...field } }) => (
+            render={({ field: { ...field } }) => (
               <Textarea {...field} rows={2} aria-label="Role authorities" />
             )}
           />
@@ -72,7 +72,7 @@ export function RoleFields({ control, showName }: RoleFieldsProps) {
           <Controller
             control={control}
             name="authorityGrantedBy"
-            render={({ field: { ref: _ref, ...field } }) => (
+            render={({ field: { ...field } }) => (
               <Input {...field} aria-label="Authority granted by" />
             )}
           />
@@ -83,7 +83,7 @@ export function RoleFields({ control, showName }: RoleFieldsProps) {
           <Controller
             control={control}
             name="requiredCompetence"
-            render={({ field: { ref: _ref, ...field } }) => (
+            render={({ field: { ...field } }) => (
               <Textarea {...field} rows={2} aria-label="Required competence" />
             )}
           />

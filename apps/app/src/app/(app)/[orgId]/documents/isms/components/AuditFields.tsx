@@ -86,7 +86,7 @@ export function AuditFields({ control, auditorOptions }: AuditFieldsProps) {
           <Controller
             control={control}
             name="scope"
-            render={({ field: { ref: _ref, ...field }, fieldState }) => (
+            render={({ field: { ...field }, fieldState }) => (
               <>
                 <Textarea {...field} rows={2} aria-label="Audit scope" />
                 <FieldError>{fieldState.error?.message}</FieldError>
@@ -100,7 +100,7 @@ export function AuditFields({ control, auditorOptions }: AuditFieldsProps) {
           <Controller
             control={control}
             name="criteria"
-            render={({ field: { ref: _ref, ...field }, fieldState }) => (
+            render={({ field: { ...field }, fieldState }) => (
               <>
                 <Textarea {...field} rows={2} aria-label="Audit criteria" />
                 <FieldError>{fieldState.error?.message}</FieldError>
@@ -147,7 +147,7 @@ export function AuditFields({ control, auditorOptions }: AuditFieldsProps) {
           <Controller
             control={control}
             name="plannedStartDate"
-            render={({ field: { ref: _ref, ...field } }) => (
+            render={({ field: { ...field } }) => (
               <Input {...field} type="date" aria-label="Planned start date" />
             )}
           />
@@ -157,7 +157,7 @@ export function AuditFields({ control, auditorOptions }: AuditFieldsProps) {
             <Controller
               control={control}
               name="plannedEndDate"
-              render={({ field: { ref: _ref, ...field }, fieldState }) => (
+              render={({ field: { ...field }, fieldState }) => (
                 <>
                   <Input {...field} type="date" aria-label="Planned end date" />
                   <FieldError>{fieldState.error?.message}</FieldError>
@@ -195,7 +195,7 @@ export function AuditFields({ control, auditorOptions }: AuditFieldsProps) {
         <Controller
           control={control}
           name="conclusionNotes"
-          render={({ field: { ref: _ref, ...field } }) => (
+          render={({ field: { ...field } }) => (
             <Textarea
               {...field}
               rows={2}

@@ -72,7 +72,7 @@ export function MetricFields({ control, memberOptions, showName }: MetricFieldsP
             <Controller
               control={control}
               name="name"
-              render={({ field: { ref: _ref, ...field }, fieldState }) => (
+              render={({ field: { ...field }, fieldState }) => (
                 <>
                   <Input {...field} aria-label="Metric name" />
                   <FieldError>{fieldState.error?.message}</FieldError>
@@ -86,7 +86,7 @@ export function MetricFields({ control, memberOptions, showName }: MetricFieldsP
         <Controller
           control={control}
           name="whatIsMeasured"
-          render={({ field: { ref: _ref, ...field } }) => (
+          render={({ field: { ...field } }) => (
             <Textarea {...field} rows={2} aria-label="What is measured" />
           )}
         />
@@ -95,7 +95,7 @@ export function MetricFields({ control, memberOptions, showName }: MetricFieldsP
         <Controller
           control={control}
           name="method"
-          render={({ field: { ref: _ref, ...field } }) => (
+          render={({ field: { ...field } }) => (
             <Textarea {...field} rows={2} aria-label="Method (how the value is derived)" />
           )}
         />
@@ -125,9 +125,7 @@ export function MetricFields({ control, memberOptions, showName }: MetricFieldsP
           <Controller
             control={control}
             name="target"
-            render={({ field: { ref: _ref, ...field } }) => (
-              <Input {...field} aria-label="Metric target" />
-            )}
+            render={({ field: { ...field } }) => <Input {...field} aria-label="Metric target" />}
           />
         </IsmsFieldLabel>
         <IsmsFieldLabel label="Who monitors">

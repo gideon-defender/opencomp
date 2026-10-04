@@ -72,14 +72,10 @@ vi.mock('@trycompai/design-system', () => ({
   Button: ({
     children,
     onClick,
-    variant: _v,
-    size: _s,
     ...props
   }: {
     children: React.ReactNode;
     onClick?: () => void;
-    variant?: string;
-    size?: string;
   }) => (
     <button onClick={onClick} {...props}>
       {children}

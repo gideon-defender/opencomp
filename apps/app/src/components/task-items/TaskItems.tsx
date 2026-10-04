@@ -1,6 +1,5 @@
 'use client';
 
-import { useAssignableMembers } from '@/hooks/use-organization-members';
 import { usePermissions } from '@/hooks/use-permissions';
 import {
   useTaskItems,
@@ -12,7 +11,6 @@ import {
   type TaskItemSortOrder,
   type TaskItemStatus,
 } from '@/hooks/use-task-items';
-import { filterMembersByOwnerOrAdmin } from '@/utils/filter-members-by-role';
 import {
   Button,
   DataTableFilters,
@@ -44,16 +42,14 @@ interface TaskItemsProps {
 export const TaskItems = ({
   entityId,
   entityType,
-  title = 'Tasks',
-  description,
   anchorId = 'task-items',
   onFocusModeChange,
 }: TaskItemsProps) => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(5);
-  const [sortBy, setSortBy] = useState<TaskItemSortBy>('createdAt');
-  const [sortOrder, setSortOrder] = useState<TaskItemSortOrder>('desc');
+  const [limit] = useState(5);
+  const [sortBy] = useState<TaskItemSortBy>('createdAt');
+  const [sortOrder] = useState<TaskItemSortOrder>('desc');
   const [filters, setFilters] = useState<TaskItemFilters>({});
   const [search, setSearch] = useState('');
   const router = useRouter();
@@ -76,19 +72,10 @@ export const TaskItems = ({
   const {
     data: taskItemsResponse,
     error: taskItemsError,
-    isLoading: taskItemsLoading,
     mutate: refreshTaskItems,
   } = useTaskItems(entityId, entityType, page, limit, sortBy, sortOrder, filters);
 
   const { mutate: refreshStats } = useTaskItemsStats(entityId, entityType);
-  const { members } = useAssignableMembers();
-
-  const assignableMembers = useMemo(() => {
-    if (!members || !Array.isArray(members)) return [];
-    const currentAssigneeId: string | null =
-      filters.assigneeId && filters.assigneeId !== '__unassigned__' ? filters.assigneeId : null;
-    return filterMembersByOwnerOrAdmin({ members, currentAssigneeId });
-  }, [members, filters.assigneeId]);
 
   const handleFilterChange = (
     filterType: 'status' | 'priority' | 'assigneeId',
@@ -134,7 +121,7 @@ export const TaskItems = ({
   }
 
   const displayResponse = taskItemsResponse || previousData;
-  const allTaskItems = displayResponse?.data?.data || [];
+  const allTaskItems = useMemo(() => displayResponse?.data?.data || [], [displayResponse]);
   const paginationMeta = displayResponse?.data?.meta;
   const isFocusMode = Boolean(selectedTaskItemId);
   const selectedTaskItem = allTaskItems.find((t) => t.id === selectedTaskItemId) || null;
@@ -186,7 +173,6 @@ export const TaskItems = ({
   }
 
   const isInitialLoad = !taskItemsResponse && !taskItemsError && allTaskItems.length === 0;
-  const pageCount = paginationMeta ? Math.max(1, paginationMeta.totalPages) : 1;
 
   return (
     <section id={anchorId} className="scroll-mt-24">

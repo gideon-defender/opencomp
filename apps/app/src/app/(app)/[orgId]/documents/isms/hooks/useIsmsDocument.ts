@@ -65,11 +65,7 @@ async function unwrap<T>(promise: Promise<{ data?: T; error?: string }>, fallbac
   return response.data;
 }
 
-export function useIsmsDocument({
-  documentId,
-  organizationId,
-  fallbackData,
-}: UseIsmsDocumentOptions) {
+export function useIsmsDocument({ documentId, fallbackData }: UseIsmsDocumentOptions) {
   const [isExporting, setIsExporting] = useState(false);
   const { data, error, isLoading, mutate } = useSWR<IsmsDocument | null>(
     buildKey(documentId),

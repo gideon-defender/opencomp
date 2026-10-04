@@ -24,7 +24,7 @@ export const createOrganization = authActionClientWithoutOrg
       channel: 'server',
     },
   })
-  .action(async ({ parsedInput, ctx }) => {
+  .action(async ({ parsedInput }) => {
     try {
       const session = await auth.api.getSession({
         headers: await headers(),
@@ -55,7 +55,6 @@ export const createOrganization = authActionClientWithoutOrg
         session.user.emailVerified === true;
 
       // Create a new organization directly in the database
-      const randomSuffix = Math.floor(100000 + Math.random() * 900000).toString();
 
       // Resolve framework IDs to display names (e.g. "SOC 2", "ISO 27001")
       const frameworks = await db.frameworkEditorFramework.findMany({

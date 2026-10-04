@@ -5,7 +5,7 @@ const swrMock = vi.fn();
 
 vi.mock('@/hooks/use-api', () => ({
   useApi: () => ({
-    useSWR: (_url: string) => swrMock(),
+    useSWR: () => swrMock(),
     post: vi.fn(),
   }),
 }));

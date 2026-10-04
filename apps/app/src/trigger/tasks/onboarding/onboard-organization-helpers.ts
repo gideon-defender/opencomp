@@ -651,7 +651,6 @@ export async function createVendorRiskComment(
   vendor: any,
   policies: PolicyContext[],
   organizationId: string,
-  authorId: string,
 ): Promise<void> {
   const grounding = await loadVendorGroundingContext(vendor.id, organizationId);
 
@@ -752,7 +751,7 @@ export async function createVendorsFromData(
   const existingVendorIds = new Set<string>();
 
   // Check for existing vendors and create new ones concurrently
-  const vendorPromises = vendorData.map(async (vendor, index) => {
+  const vendorPromises = vendorData.map(async (vendor) => {
     const existingVendor = await db.vendor.findMany({
       where: {
         organizationId,
@@ -1006,10 +1005,9 @@ export async function createVendorRiskComments(
   vendors: any[],
   policies: PolicyContext[],
   organizationId: string,
-  authorId: string,
 ): Promise<void> {
   for (const vendor of vendors) {
-    await createVendorRiskComment(vendor, policies, organizationId, authorId);
+    await createVendorRiskComment(vendor, policies, organizationId);
   }
 }
 
@@ -1025,7 +1023,6 @@ export async function createRiskMitigationComment(
   risk: Risk,
   policies: PolicyContext[],
   organizationId: string,
-  authorId: string,
 ): Promise<void> {
   const grounding = await loadRiskGroundingContext(risk.id, organizationId);
 
@@ -1094,10 +1091,9 @@ export async function createRiskMitigationComments(
   risks: Risk[],
   policies: PolicyContext[],
   organizationId: string,
-  authorId: string,
 ): Promise<void> {
   for (const risk of risks) {
-    await createRiskMitigationComment(risk, policies, organizationId, authorId);
+    await createRiskMitigationComment(risk, policies, organizationId);
   }
 }
 
@@ -1112,7 +1108,7 @@ export async function createRiskMitigation(
   const commentAuthor = await findCommentAuthor(organizationId);
 
   if (commentAuthor && risks.length > 0) {
-    await createRiskMitigationComments(risks, policies, organizationId, commentAuthor.id);
+    await createRiskMitigationComments(risks, policies, organizationId);
   }
 }
 
@@ -1358,7 +1354,7 @@ export async function createVendorRiskMitigation(
   const commentAuthor = await findCommentAuthor(organizationId);
 
   if (commentAuthor && vendors.length > 0) {
-    await createVendorRiskComments(vendors, policies, organizationId, commentAuthor.id);
+    await createVendorRiskComments(vendors, policies, organizationId);
   }
 }
 

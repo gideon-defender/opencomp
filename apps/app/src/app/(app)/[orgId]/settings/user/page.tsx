@@ -5,9 +5,7 @@ import { LoginEmailSettings } from './components/LoginEmailSettings';
 import { McpOrganizationSelector } from './components/McpOrganizationSelector';
 import type { McpOrganizationData } from './hooks/useMcpOrganization';
 
-export default async function UserSettings({ params }: { params: Promise<{ orgId: string }> }) {
-  const { orgId } = await params;
-
+export default async function UserSettings() {
   const [emailRes, mcpRes] = await Promise.all([
     serverApi.get<{
       email: string;

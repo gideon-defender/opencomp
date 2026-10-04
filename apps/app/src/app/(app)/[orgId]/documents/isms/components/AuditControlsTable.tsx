@@ -150,7 +150,7 @@ function AddControlForm({
           <Controller
             control={control}
             name="controlRef"
-            render={({ field: { ref: _ref, ...field }, fieldState }) => (
+            render={({ field: { ...field }, fieldState }) => (
               <>
                 <Input
                   {...field}
@@ -167,7 +167,7 @@ function AddControlForm({
         <Controller
           control={control}
           name="whatWasTested"
-          render={({ field: { ref: _ref, ...field } }) => (
+          render={({ field: { ...field } }) => (
             <Input {...field} aria-label={t('auditControls.form.whatWasTested')} />
           )}
         />
@@ -176,7 +176,7 @@ function AddControlForm({
         <Controller
           control={control}
           name="whereToFind"
-          render={({ field: { ref: _ref, ...field } }) => (
+          render={({ field: { ...field } }) => (
             <Input
               {...field}
               aria-label={t('auditControls.form.whereToFind')}
@@ -189,7 +189,7 @@ function AddControlForm({
         <Controller
           control={control}
           name="notes"
-          render={({ field: { ref: _ref, ...field } }) => (
+          render={({ field: { ...field } }) => (
             <Textarea
               {...field}
               rows={2}

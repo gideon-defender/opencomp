@@ -106,7 +106,7 @@ export function DepartmentChart({ data, showEmptyDepartments = true }: Departmen
         }
       >
         <div className="absolute inset-0 z-10 h-[calc(100%-var(--marginTop)-var(--marginBottom))] w-[calc(100%-var(--marginLeft)-var(--marginRight))] translate-x-[var(--marginLeft)] translate-y-[var(--marginTop)] overflow-visible">
-          {sortedData.map((d, index) => {
+          {sortedData.map((d) => {
             const barWidth = d.value === 0 ? 3 : xScale(d.value);
             const fixedBarHeightPercentage = (barHeight / chartHeight) * 100;
 

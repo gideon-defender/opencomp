@@ -23,7 +23,6 @@ export function LinkExistingControlSheet({
   frameworkInstanceId,
   requirementId,
   alreadyMappedControlIds,
-  isCustomRequirement: _isCustomRequirement,
 }: {
   frameworkInstanceId: string;
   requirementId: string;

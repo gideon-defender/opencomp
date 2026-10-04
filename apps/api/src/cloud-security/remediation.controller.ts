@@ -231,25 +231,37 @@ export class RemediationController {
 
       // Try to parse structured permission error
       try {
-        const parsed = JSON.parse(raw);
-        if (parsed.missingActions) {
-          throw new HttpException(
-            {
-              message: parsed.message,
-              missingActions: parsed.missingActions,
-              script: parsed.script,
-              // Forward the denylist fields when present — without them the
-              // client renders a one-click grant with no record that part of
-              // the requirement was refused for manual review.
-              ...(parsed.blockedPermissions && {
-                blockedPermissions: parsed.blockedPermissions,
-              }),
-              ...(parsed.blockedPermissionsMessage && {
-                blockedPermissionsMessage: parsed.blockedPermissionsMessage,
-              }),
-            },
-            HttpStatus.BAD_REQUEST,
+        const parsed: unknown = JSON.parse(raw);
+        if (
+          typeof parsed === 'object' &&
+          parsed !== null &&
+          'missingActions' in parsed
+        ) {
+          const record = parsed as Record<string, unknown>;
+          const toStringArray = (value: unknown): string[] | undefined =>
+            Array.isArray(value)
+              ? value.filter((item): item is string => typeof item === 'string')
+              : undefined;
+          const toOptionalString = (value: unknown): string | undefined =>
+            typeof value === 'string' ? value : undefined;
+          const body: Record<string, string | string[]> = {
+            message: toOptionalString(record.message) ?? raw,
+          };
+          const missingActions = toStringArray(record.missingActions);
+          if (missingActions) body.missingActions = missingActions;
+          const script = toOptionalString(record.script);
+          if (script) body.script = script;
+          // Forward the denylist fields when present — without them the
+          // client renders a one-click grant with no record that part of
+          // the requirement was refused for manual review.
+          const blockedPermissions = toStringArray(record.blockedPermissions);
+          if (blockedPermissions) body.blockedPermissions = blockedPermissions;
+          const blockedPermissionsMessage = toOptionalString(
+            record.blockedPermissionsMessage,
           );
+          if (blockedPermissionsMessage)
+            body.blockedPermissionsMessage = blockedPermissionsMessage;
+          throw new HttpException(body, HttpStatus.BAD_REQUEST);
         }
       } catch (parseErr) {
         if (parseErr instanceof HttpException) throw parseErr;

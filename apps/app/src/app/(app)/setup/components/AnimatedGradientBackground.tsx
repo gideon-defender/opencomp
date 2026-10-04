@@ -348,7 +348,6 @@ function AnimatedOrb({ scale = 1 }: AnimatedOrbProps) {
 
   // Handle scroll for rotation effect
   useEffect(() => {
-    let lastScrollY = window.scrollY;
     let scrollTimeout: NodeJS.Timeout;
 
     const handleScroll = (e: WheelEvent) => {

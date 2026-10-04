@@ -401,6 +401,7 @@ export function ControlsClientPage({
   // (the grid remounts on every tab switch, resetting this state).
   const [sorting, setSorting] = useState<SortingState>([{ id: 'name', desc: false }]);
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack useReactTable returns unmemoizable functions; skip React Compiler memoization
   const table = useReactTable({
     data,
     columns,

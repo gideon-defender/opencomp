@@ -142,7 +142,7 @@ export const completeOnboarding = authActionClientWithoutOrg
                   },
                 });
               }
-            } catch (error) {
+            } catch {
               // GlobalVendors is a nice-to-have - don't fail
             }
           }

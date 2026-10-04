@@ -108,7 +108,7 @@ export const getApexDomain = (url: string): string => {
   let domain: string;
   try {
     domain = new URL(url).hostname;
-  } catch (e) {
+  } catch {
     return '';
   }
   const parts = domain.split('.');

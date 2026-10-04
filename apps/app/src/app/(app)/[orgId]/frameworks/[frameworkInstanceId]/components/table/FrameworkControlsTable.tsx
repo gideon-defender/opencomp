@@ -19,6 +19,7 @@ export function FrameworkControlsTable({ data }: DataTableProps) {
   const t = useTranslations('frameworks');
   const columns = FrameworkControlsTableColumns();
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- React Compiler intentional skip: TanStack useReactTable() returns non-memoizable functions
   const table = useReactTable({
     data: data,
     columns,

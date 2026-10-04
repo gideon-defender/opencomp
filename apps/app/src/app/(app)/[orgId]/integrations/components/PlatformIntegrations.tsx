@@ -342,7 +342,7 @@ export function PlatformIntegrations({ className, taskTemplates }: PlatformInteg
     url.searchParams.delete('success');
     url.searchParams.delete('provider');
     window.history.replaceState({}, '', url.toString());
-  }, [searchParams, providers, loadingProviders, router, orgId]);
+  }, [searchParams, providers, loadingProviders, router, orgId, t]);
 
   // Surface + record OAuth failures that land back here. The backend redirects
   // with `?error=...&error_description=...`; previously that was shown to no one
@@ -374,7 +374,7 @@ export function PlatformIntegrations({ className, taskTemplates }: PlatformInteg
     url.searchParams.delete('error_description');
     url.searchParams.delete('provider');
     window.history.replaceState({}, '', url.toString());
-  }, [searchParams, orgId]);
+  }, [searchParams, orgId, t]);
 
   // Create a map from templateId to taskId for quick lookup
   const templateToTaskMap = useMemo(

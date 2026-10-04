@@ -19,10 +19,8 @@ interface PromptSecretProps {
 
 export const PromptSecret = memo(function PromptSecret({
   input,
-  output,
   state,
   errorText,
-  orgId,
   onSecretAdded,
 }: PromptSecretProps) {
   // Parse the input safely
@@ -39,7 +37,7 @@ export const PromptSecret = memo(function PromptSecret({
   // Use the secret name from AI or allow user to set one - initialize on mount only
   const [name, setName] = useState(() => secretData?.secretName || '');
   const [value, setValue] = useState('');
-  const [description, setDescription] = useState(() => secretData?.description || '');
+  const [description] = useState(() => secretData?.description || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   // If state is 'output-available', the secret was already added (historical message)
   const [isComplete, setIsComplete] = useState(state === 'output-available');

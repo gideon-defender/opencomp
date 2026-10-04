@@ -51,7 +51,6 @@ export function useQuestionnaireDetailHandlers({
   isAutoAnswerProcessStartedRef,
   setHasClickedAutoAnswer,
   setIsAutoAnswerProcessStarted,
-  setAnsweringQuestionIndex,
   setQuestionStatuses,
   setResults,
   editingAnswer,
@@ -181,6 +180,7 @@ export function useQuestionnaireDetailHandlers({
     setAnswerQueue,
     setQuestionStatuses,
     triggerSingleAnswer,
+    answerQueueRef,
   ]);
 
   const handleAnswerSingleQuestion = (index: number) => {

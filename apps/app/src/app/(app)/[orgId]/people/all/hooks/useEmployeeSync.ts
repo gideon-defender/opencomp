@@ -179,7 +179,7 @@ export const useEmployeeSync = ({
       }
 
       return null;
-    } catch (error) {
+    } catch {
       toast.error(`Failed to sync employees from ${providerName}`);
       return null;
     } finally {

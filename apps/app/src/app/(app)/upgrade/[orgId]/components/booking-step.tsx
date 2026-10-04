@@ -44,7 +44,7 @@ export function BookingStep({
       setTimeout(() => {
         setIsCopied(false);
       }, 3000);
-    } catch (error) {
+    } catch {
       toast.error('Failed to copy Org ID');
     }
   };

@@ -41,7 +41,7 @@ export function CommentForm({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showReminderDialog, setShowReminderDialog] = useState(false);
   const [filesToAdd, setFilesToAdd] = useState<File[]>([]);
-  const [isSelectingMention, setIsSelectingMention] = useState(false);
+  const [, setIsSelectingMention] = useState(false);
   const pathname = usePathname();
   const params = useParams();
   const orgIdFromParams =
@@ -101,7 +101,7 @@ export function CommentForm({
       setFilesToAdd(newFiles);
       setShowReminderDialog(true);
     },
-    [entityType, pathname],
+    [pathname],
   );
 
   const handleReminderConfirm = useCallback(() => {

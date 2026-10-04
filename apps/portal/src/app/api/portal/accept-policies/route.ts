@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
     await Promise.all(updatePromises);
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to accept policies' }, { status: 500 });
   }
 }

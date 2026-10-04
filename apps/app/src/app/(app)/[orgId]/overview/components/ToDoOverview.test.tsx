@@ -41,7 +41,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@gideon-defender/ui/button', () => ({
-  Button: ({ children, disabled, asChild, ...props }: any) => (
+  Button: ({ children, disabled, ...props }: any) => (
     <button disabled={disabled} {...props}>
       {children}
     </button>

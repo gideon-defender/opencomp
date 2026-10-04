@@ -5,7 +5,6 @@ import { Card } from '@gideon-defender/ui/card';
 import { Separator } from '@gideon-defender/ui/separator';
 import { formatDistanceToNow } from 'date-fns';
 import { Activity, CheckCircle2, Clock, XCircle, Zap } from 'lucide-react';
-import { useParams } from 'next/navigation';
 
 interface AutomationRun {
   taskTitle: string;
@@ -31,9 +30,6 @@ export function AutomationActivityFeed({
   healthyCount,
   errorCount,
 }: AutomationActivityFeedProps) {
-  const params = useParams();
-  const orgId = params.orgId as string;
-
   if (recentRuns.length === 0 && runningCount === 0) {
     return null;
   }

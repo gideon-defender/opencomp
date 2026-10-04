@@ -23,7 +23,7 @@ import { toast } from 'sonner';
 import type { z } from 'zod';
 
 export function UpdateTaskOverviewForm({ task }: { task: Task }) {
-  const [open, setOpen] = useQueryState('task-update-overview-sheet');
+  const [, setOpen] = useQueryState('task-update-overview-sheet');
   const { updateTask } = useTaskMutations();
   const [isSubmitting, setIsSubmitting] = useState(false);
 

@@ -9,8 +9,6 @@ import { useApiSWR, UseApiSWROptions } from './use-api-swr';
 export const DEFAULT_POLLING_INTERVAL = 5000;
 export const DEFAULT_LIST_INTERVAL = 30000;
 
-type Entity = { id: string };
-
 export type EntityHooksOptions<ListResponse> = UseApiSWROptions<ListResponse> & {
   initialData?: unknown;
 };
@@ -19,13 +17,7 @@ export type SingleEntityOptions<EntityResponse> = UseApiSWROptions<EntityRespons
   initialData?: EntityResponse;
 };
 
-type CreateEntityHooksConfig<
-  Entity extends { id: string },
-  ListResponse,
-  CreateData,
-  UpdateData,
-  EntityResponse = Entity,
-> = {
+type CreateEntityHooksConfig = {
   basePath: string;
   defaultListInterval?: number;
   defaultItemInterval?: number;
@@ -48,7 +40,7 @@ export function createEntityHooks<
   CreateData,
   UpdateData,
   EntityResponse extends Entity = Entity,
->(config: CreateEntityHooksConfig<Entity, ListResponse, CreateData, UpdateData, EntityResponse>) {
+>(config: CreateEntityHooksConfig) {
   const {
     basePath,
     defaultListInterval = DEFAULT_LIST_INTERVAL,

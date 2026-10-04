@@ -22,7 +22,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { useSWRConfig } from 'swr';
 
-export function RiskActions({ riskId, orgId }: { riskId: string; orgId: string }) {
+export function RiskActions({ riskId }: { riskId: string; orgId: string }) {
   const { hasPermission } = usePermissions();
   const { mutate: globalMutate } = useSWRConfig();
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);

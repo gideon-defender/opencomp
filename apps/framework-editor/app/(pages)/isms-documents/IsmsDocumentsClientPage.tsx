@@ -109,11 +109,18 @@ export function IsmsDocumentsClientPage({ templates, frameworkId }: IsmsDocument
         ),
       }),
     ],
-    [frameworkId],
+    [
+      frameworkId,
+      handleControlLinked,
+      handleControlUnlinked,
+      handleRequirementLinked,
+      handleRequirementUnlinked,
+    ],
   );
 
   const [sorting, setSorting] = useState<SortingState>([]);
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack useReactTable returns unmemoizable functions; skip React Compiler memoization
   const table = useReactTable({
     data,
     columns,

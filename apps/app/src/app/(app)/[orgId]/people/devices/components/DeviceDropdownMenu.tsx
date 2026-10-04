@@ -20,7 +20,7 @@ interface DeviceDropdownMenuProps {
   isCurrentUserOwner: boolean;
 }
 
-export const DeviceDropdownMenu = ({ host, isCurrentUserOwner }: DeviceDropdownMenuProps) => {
+export const DeviceDropdownMenu = ({ host }: DeviceDropdownMenuProps) => {
   const { hasPermission } = usePermissions();
   const [isRemoveDeviceAlertOpen, setIsRemoveDeviceAlertOpen] = useState(false);
   const [isRemovingDevice, setIsRemovingDevice] = useState(false);

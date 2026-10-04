@@ -124,7 +124,7 @@ export function useTaskItemAttachmentUpload({
         setIsUploading(false);
       }
     },
-    [orgId, entityId],
+    [orgId, entityId, entityType],
   );
 
   return {

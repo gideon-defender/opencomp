@@ -66,7 +66,6 @@ export default function PageWithBreadcrumb({
         <Breadcrumb>
           <BreadcrumbList>
             {visibleItems.map((item, index) => {
-              const isFirst = index === 0;
               const isLast = index === visibleItems.length - 1;
               const showEllipsis = shouldCollapse && index === 1;
 

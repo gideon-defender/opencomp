@@ -22,9 +22,6 @@ vi.mock('@gideon-defender/ui/button', () => ({
     children,
     onClick,
     disabled,
-    className: _c,
-    variant: _v,
-    size: _s,
     ...props
   }: {
     children: React.ReactNode;
@@ -95,14 +92,14 @@ vi.mock('./TaskBulkActions', () => ({
 }));
 
 vi.mock('lucide-react', () => ({
-  RefreshCw: ({ className: _c }: { className?: string }) => <span data-testid="refresh-icon" />,
-  Trash2: ({ className: _c }: { className?: string }) => <span data-testid="trash-icon" />,
-  User: ({ className: _c }: { className?: string }) => <span data-testid="user-icon" />,
+  RefreshCw: () => <span data-testid="refresh-icon" />,
+  Trash2: () => <span data-testid="trash-icon" />,
+  User: () => <span data-testid="user-icon" />,
 }));
 
 import { ModernSingleStatusTaskList } from './ModernSingleStatusTaskList';
 
-const MockIcon = ({ className: _c }: { className?: string }) => <span data-testid="status-icon" />;
+const MockIcon = () => <span data-testid="status-icon" />;
 
 const mockTasks = [
   {

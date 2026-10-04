@@ -175,7 +175,7 @@ export function useRevokeAccessGrant(orgId: string) {
   });
 }
 
-export function useResendAccessEmail(orgId: string) {
+export function useResendAccessEmail() {
   const api = useApi();
 
   return useMutation({
@@ -194,7 +194,7 @@ export function useResendAccessEmail(orgId: string) {
   });
 }
 
-export function useResendNda(orgId: string) {
+export function useResendNda() {
   const api = useApi();
 
   return useMutation({

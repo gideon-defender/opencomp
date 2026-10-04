@@ -68,7 +68,7 @@ const REMOVE_FILTER_SHORTCUTS = ['backspace', 'delete'];
 
 type DataTableTranslations = ReturnType<typeof useDataTableTranslations>;
 
-function useDataTableTranslations() {
+export function useDataTableTranslations() {
   return useTranslations('dataTable');
 }
 

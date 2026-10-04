@@ -64,7 +64,7 @@ export function LeadershipForm({ narrative, canEdit, onSave }: LeadershipFormPro
           <Controller
             control={control}
             name="statement"
-            render={({ field: { ref: _ref, ...field } }) => (
+            render={({ field: { ...field } }) => (
               <Textarea
                 {...field}
                 id="leadership-statement"

@@ -83,6 +83,7 @@ vi.mock('@/components/integrations/ManageIntegrationDialog', () => ({
 
 // Mock next/image
 vi.mock('next/image', () => ({
+  // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text -- test mock for next/image intentionally renders img passthrough
   default: (props: any) => <img {...props} />,
 }));
 

@@ -19,6 +19,18 @@ interface Props {
   onInfoProvided?: (info: Record<string, string>) => void;
 }
 
+interface ActivityOutput {
+  results?: unknown[];
+  summary?: string;
+}
+
+// The local tool stubs declare no output schema (the real tools run in the
+// enterprise API), so inferred output types are void/unknown. The API really
+// returns result/summary objects, so narrow at runtime before passing down.
+function asActivityOutput(value: unknown): ActivityOutput | undefined {
+  return typeof value === 'object' && value !== null ? (value as ActivityOutput) : undefined;
+}
+
 export const MessagePart = memo(function MessagePart({
   part,
   partIndex,
@@ -59,7 +71,7 @@ export const MessagePart = memo(function MessagePart({
         toolName={part.type === 'tool-exaSearch' ? 'exaSearch' : 'firecrawl'}
         input={part.input}
         state={part.state}
-        output={part.output}
+        output={asActivityOutput(part.output)}
         isAnimating={partIndex === 0}
       />
     );
@@ -68,7 +80,7 @@ export const MessagePart = memo(function MessagePart({
       <FileWritingActivity
         input={part.input}
         state={part.state}
-        output={part.output}
+        output={asActivityOutput(part.output)}
         isAnimating={partIndex === 0}
       />
     );

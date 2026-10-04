@@ -9,12 +9,7 @@ vi.mock('sonner', () => ({ toast: toastMock }));
 
 // The ui package ships untranspiled JSX in dist; the cell only needs Button.
 vi.mock('@gideon-defender/ui', () => ({
-  Button: ({
-    children,
-    variant: _variant,
-    size: _size,
-    ...props
-  }: { variant?: string; size?: string } & React.ComponentProps<'button'>) => (
+  Button: ({ children, ...props }: React.ComponentProps<'button'>) => (
     <button {...props}>{children}</button>
   ),
 }));

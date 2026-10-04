@@ -80,7 +80,10 @@ export function FrameworkDetailContent({
 
   const tasks = framework.tasks || [];
   const evidenceSubmissions = framework.evidenceSubmissions || [];
-  const requirementDefinitions = framework.requirementDefinitions || [];
+  const requirementDefinitions = useMemo(
+    () => framework.requirementDefinitions || [],
+    [framework.requirementDefinitions],
+  );
 
   const hasControlFamilies = useMemo(
     () =>

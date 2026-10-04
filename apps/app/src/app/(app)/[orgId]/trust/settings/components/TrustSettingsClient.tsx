@@ -90,7 +90,7 @@ export function TrustSettingsClient({
         }
       }
     },
-    [form, updateToggleSettings],
+    [form, updateToggleSettings, canUpdate],
   );
 
   const [contactEmailValue, setContactEmailValue] = useState(form.getValues('contactEmail') || '');

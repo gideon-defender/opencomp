@@ -183,7 +183,7 @@ export function AuditRoutePicker({
               <Controller
                 control={control}
                 name="auditFirmName"
-                render={({ field: { ref: _ref, ...field } }) => (
+                render={({ field: { ...field } }) => (
                   <Input
                     {...field}
                     disabled={!canEdit}
@@ -199,7 +199,7 @@ export function AuditRoutePicker({
               <Controller
                 control={control}
                 name="auditEvidenceRef"
-                render={({ field: { ref: _ref, ...field } }) => (
+                render={({ field: { ...field } }) => (
                   <Input
                     {...field}
                     disabled={!canEdit}
@@ -246,7 +246,7 @@ export function AuditRoutePicker({
               <Controller
                 control={control}
                 name="auditCourse"
-                render={({ field: { ref: _ref, ...field } }) => (
+                render={({ field: { ...field } }) => (
                   <Input
                     {...field}
                     disabled={!canEdit}
@@ -262,7 +262,7 @@ export function AuditRoutePicker({
               <Controller
                 control={control}
                 name="auditDueDate"
-                render={({ field: { ref: _ref, ...field } }) => (
+                render={({ field: { ...field } }) => (
                   <Input
                     {...field}
                     type="date"

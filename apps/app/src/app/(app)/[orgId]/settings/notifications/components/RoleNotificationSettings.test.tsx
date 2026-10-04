@@ -31,7 +31,7 @@ vi.mock('sonner', () => ({
 }));
 
 vi.mock('@trycompai/design-system', () => ({
-  Button: ({ children, disabled, onClick, loading, ...props }: any) => (
+  Button: ({ children, disabled, onClick, ...props }: any) => (
     <button disabled={disabled} onClick={onClick} {...props}>
       {children}
     </button>

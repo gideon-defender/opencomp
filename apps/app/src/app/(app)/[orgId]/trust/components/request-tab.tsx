@@ -15,7 +15,7 @@ import { RequestDataTable } from './request-data-table';
 
 export function RequestsTab({ orgId }: { orgId: string }) {
   const { data, isLoading } = useAccessRequests(orgId);
-  const { mutateAsync: resendNda } = useResendNda(orgId);
+  const { mutateAsync: resendNda } = useResendNda();
   const [approveId, setApproveId] = useState<string | null>(null);
   const [denyId, setDenyId] = useState<string | null>(null);
 

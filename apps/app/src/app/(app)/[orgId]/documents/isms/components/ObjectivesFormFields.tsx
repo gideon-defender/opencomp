@@ -44,7 +44,7 @@ export function ObjectivesFormFields({ control, ownerOptions }: ObjectivesFormFi
         <Controller
           control={control}
           name="objective"
-          render={({ field: { ref: _ref, ...field } }) => (
+          render={({ field: { ...field } }) => (
             <Textarea {...field} rows={2} placeholder="Objective" aria-label="New objective" />
           )}
         />
@@ -54,7 +54,7 @@ export function ObjectivesFormFields({ control, ownerOptions }: ObjectivesFormFi
           <Controller
             control={control}
             name="target"
-            render={({ field: { ref: _ref, ...field } }) => (
+            render={({ field: { ...field } }) => (
               <Input
                 {...field}
                 placeholder="Target (e.g. 99.9%)"
@@ -96,7 +96,7 @@ export function ObjectivesFormFields({ control, ownerOptions }: ObjectivesFormFi
           <Controller
             control={control}
             name="cadence"
-            render={({ field: { ref: _ref, ...field } }) => (
+            render={({ field: { ...field } }) => (
               <Input
                 {...field}
                 placeholder="Cadence (e.g. Quarterly)"
@@ -109,7 +109,7 @@ export function ObjectivesFormFields({ control, ownerOptions }: ObjectivesFormFi
           <Controller
             control={control}
             name="measurementMethod"
-            render={({ field: { ref: _ref, ...field } }) => (
+            render={({ field: { ...field } }) => (
               <Input
                 {...field}
                 placeholder="Measurement method"
@@ -123,7 +123,7 @@ export function ObjectivesFormFields({ control, ownerOptions }: ObjectivesFormFi
         <Controller
           control={control}
           name="plan"
-          render={({ field: { ref: _ref, ...field } }) => (
+          render={({ field: { ...field } }) => (
             <Textarea
               {...field}
               rows={2}

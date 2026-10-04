@@ -42,7 +42,7 @@ function formatAnswer(answer: string): string {
     try {
       const parsed = JSON.parse(answer);
       const entries = Object.entries(parsed)
-        .filter(([key, value]) => {
+        .filter(([, value]) => {
           if (typeof value === 'string') {
             return value.trim() !== '';
           }

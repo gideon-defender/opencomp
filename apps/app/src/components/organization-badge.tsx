@@ -1,6 +1,7 @@
 'use client';
 
 import { getInitials } from '@/lib/utils';
+import Image from 'next/image';
 import { useState } from 'react';
 
 interface OrganizationBadgeProps {
@@ -39,13 +40,13 @@ export function OrganizationBadge({
   const showLogo = Boolean(logoUrl) && !hasLogoError;
 
   const leading = showLogo ? (
-    <img
-      src={logoUrl}
+    <Image
+      src={logoUrl ?? ''}
       alt={`${organization.name} logo`}
       width={20}
       height={20}
       className="size-5 shrink-0 rounded-sm object-contain"
-      loading="lazy"
+      unoptimized
       onError={handleLogoError}
     />
   ) : (

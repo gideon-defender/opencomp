@@ -114,7 +114,7 @@ export function ReviewOutputsSection({ review, canEdit, onSave }: ReviewOutputsS
             <Controller
               control={control}
               name="decisionsText"
-              render={({ field: { ref: _ref, ...field } }) => (
+              render={({ field: { ...field } }) => (
                 <Textarea {...field} rows={3} aria-label="Decisions on continual improvement" />
               )}
             />
@@ -123,7 +123,7 @@ export function ReviewOutputsSection({ review, canEdit, onSave }: ReviewOutputsS
             <Controller
               control={control}
               name="changesText"
-              render={({ field: { ref: _ref, ...field } }) => (
+              render={({ field: { ...field } }) => (
                 <Textarea {...field} rows={3} aria-label="ISMS changes required" />
               )}
             />

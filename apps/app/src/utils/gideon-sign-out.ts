@@ -22,6 +22,9 @@ export async function signOutFromGideon(options: SignOutFromGideonOptions = {}):
     // Best-effort revocation: the session may already be gone (or the API
     // unreachable). Still navigate away — never strand the user.
   } finally {
+    // Hard nav is required here (see docstring): router.push would keep
+    // stale authenticated client state alive after sign-out.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- hard navigation required, see above
     window.location.href = redirectTo;
   }
 }

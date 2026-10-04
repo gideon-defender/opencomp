@@ -82,7 +82,7 @@ export async function GET(req: NextRequest) {
     const signedUrl = await getSignedUrl(s3, command, { expiresIn: 900 });
 
     return NextResponse.json({ success: true, url: signedUrl });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ success: false, error: 'Could not retrieve PDF.' }, { status: 500 });
   }
 }

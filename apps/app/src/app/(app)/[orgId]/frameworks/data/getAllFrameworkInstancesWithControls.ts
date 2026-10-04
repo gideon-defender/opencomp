@@ -51,7 +51,8 @@ export async function getAllFrameworkInstancesWithControls({
 
       for (const rm of fi.requirementsMapped) {
         if (rm.control) {
-          const { requirementsMapped: _, ...controlData } = rm.control;
+          const controlData = { ...rm.control };
+          delete (controlData as { requirementsMapped?: unknown }).requirementsMapped;
           if (!controlsMap.has(rm.control.id)) {
             controlsMap.set(rm.control.id, {
               ...controlData,
@@ -62,7 +63,8 @@ export async function getAllFrameworkInstancesWithControls({
         }
       }
 
-      const { requirementsMapped, ...restOfFi } = fi;
+      const restOfFi = { ...fi };
+      delete (restOfFi as { requirementsMapped?: unknown }).requirementsMapped;
 
       return {
         ...restOfFi,

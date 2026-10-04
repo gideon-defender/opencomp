@@ -122,7 +122,7 @@ export function ReviewInputRow({
             <Controller
               control={control}
               name="inputRef"
-              render={({ field: { ref: _ref, ...field }, fieldState }) => (
+              render={({ field: { ...field }, fieldState }) => (
                 <>
                   <Input {...field} aria-label="Input reference" />
                   <FieldError>{fieldState.error?.message}</FieldError>
@@ -135,7 +135,7 @@ export function ReviewInputRow({
           <Controller
             control={control}
             name="whatItCovers"
-            render={({ field: { ref: _ref, ...field } }) => (
+            render={({ field: { ...field } }) => (
               <Textarea {...field} rows={2} aria-label="What it covers" />
             )}
           />
@@ -144,7 +144,7 @@ export function ReviewInputRow({
           <Controller
             control={control}
             name="whereToFind"
-            render={({ field: { ref: _ref, ...field } }) => (
+            render={({ field: { ...field } }) => (
               <Textarea {...field} rows={2} aria-label="Where to find it" />
             )}
           />
@@ -153,7 +153,7 @@ export function ReviewInputRow({
           <Controller
             control={control}
             name="discussionNotes"
-            render={({ field: { ref: _ref, ...field } }) => (
+            render={({ field: { ...field } }) => (
               <Textarea {...field} rows={2} aria-label="Discussion notes" />
             )}
           />

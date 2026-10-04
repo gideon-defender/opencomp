@@ -20,7 +20,7 @@ export const LogoSpinner = ({
   ...props
 }: LogoSpinnerProps) => {
   const pathRef = useRef<SVGPathElement>(null);
-  const [pathLength, setPathLength] = useState(0);
+  const [, setPathLength] = useState(0);
 
   useEffect(() => {
     if (pathRef.current) {

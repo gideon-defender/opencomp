@@ -14,7 +14,6 @@ interface Props {
 }
 
 export function TestsSeverity({
-  totalTests,
   infoSeverityTests,
   lowSeverityTests,
   mediumSeverityTests,

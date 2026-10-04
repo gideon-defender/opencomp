@@ -113,7 +113,7 @@ export function InterestedPartiesRow({
                 <Controller
                   control={control}
                   name="name"
-                  render={({ field: { ref: _ref, ...field } }) => (
+                  render={({ field: { ...field } }) => (
                     <Input {...field} aria-label="Interested party name" />
                   )}
                 />
@@ -125,7 +125,7 @@ export function InterestedPartiesRow({
                 <Controller
                   control={control}
                   name="category"
-                  render={({ field: { ref: _ref, ...field } }) => (
+                  render={({ field: { ...field } }) => (
                     <Input {...field} aria-label="Interested party category" />
                   )}
                 />
@@ -138,7 +138,7 @@ export function InterestedPartiesRow({
               <Controller
                 control={control}
                 name="needsExpectations"
-                render={({ field: { ref: _ref, ...field } }) => (
+                render={({ field: { ...field } }) => (
                   <Textarea
                     {...field}
                     rows={3}

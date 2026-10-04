@@ -120,6 +120,7 @@ export function CreateRunPanel({
       additionalContext: '',
     },
   });
+  // eslint-disable-next-line react-hooks/incompatible-library -- react-hook-form watch returns a non-memoizable function
   const evidenceLevel = form.watch('evidenceLevel');
   const checks = form.watch('checks');
   const authorized = form.watch('authorized');

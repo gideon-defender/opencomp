@@ -115,7 +115,7 @@ export function FindingDetail({ orgId, issue, runId, targetUrl, onBack }: Findin
 
           <TabsContent value="validation">
             <div className="mt-4">
-              <ValidationSection issue={issue} t={t} />
+              <ValidationSection t={t} />
             </div>
           </TabsContent>
 
@@ -215,14 +215,8 @@ function CopyableBlock({
   );
 }
 
-function ValidationSection({
-  issue,
-  t,
-}: {
-  issue: PentestIssue;
-  t: ReturnType<typeof useTranslations<'security'>>;
-}) {
-  const steps = extractValidationSteps(issue);
+function ValidationSection({ t }: { t: ReturnType<typeof useTranslations<'security'>> }) {
+  const steps = extractValidationSteps();
   if (steps.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
@@ -249,7 +243,7 @@ function ValidationSection({
 
 // Validation-steps field isn't part of PentestIssue type (yet); parse if it
 // shows up on future payloads. For now returns empty.
-function extractValidationSteps(_issue: PentestIssue): string[] {
+function extractValidationSteps(): string[] {
   return [];
 }
 

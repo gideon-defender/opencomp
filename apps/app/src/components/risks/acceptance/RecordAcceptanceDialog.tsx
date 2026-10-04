@@ -79,6 +79,7 @@ export function RecordAcceptanceDialog({
     defaultValues: { acceptedById: validDefaultId, notes: '' },
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- watch() returns unstable fn, intentionally not memoized
   const acceptorId = watch('acceptedById');
   const acceptorName =
     acceptorOptions.find((option) => option.id === acceptorId)?.name ?? 'the selected member';
@@ -142,7 +143,7 @@ export function RecordAcceptanceDialog({
             <Controller
               control={control}
               name="notes"
-              render={({ field: { ref: _ref, ...field } }) => (
+              render={({ field: { ...field } }) => (
                 <Textarea
                   {...field}
                   id="acceptance-notes"

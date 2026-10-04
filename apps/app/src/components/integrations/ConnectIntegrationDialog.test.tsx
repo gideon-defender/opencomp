@@ -224,6 +224,7 @@ vi.mock('lucide-react', () => ({
 }));
 
 vi.mock('next/image', () => ({
+  // eslint-disable-next-line @next/next/no-img-element -- test mock for next/image must render plain img
   default: ({ alt }: { alt: string }) => <img alt={alt} />,
 }));
 

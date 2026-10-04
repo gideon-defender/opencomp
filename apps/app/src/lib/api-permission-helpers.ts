@@ -38,7 +38,7 @@ export function withApiPermission(
     ctx: { organizationId: string; userId: string; permissions: Record<string, string[]> },
   ) => Promise<Response>,
 ) {
-  return async (req: Request, routeContext?: unknown): Promise<Response> => {
+  return async (req: Request): Promise<Response> => {
     const result = await requireApiPermission(req, resource, action);
     if (result instanceof NextResponse) return result;
     return handler(req, result);

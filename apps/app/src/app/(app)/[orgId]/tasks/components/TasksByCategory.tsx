@@ -59,7 +59,7 @@ const statusPalette = {
   not_relevant: { indicator: 'bg-border', dot: 'bg-border', label: 'text-muted-foreground' },
 } as const;
 
-export function TasksByCategory({ tasks, members, statusFilter }: TasksByCategoryProps) {
+export function TasksByCategory({ tasks, members }: TasksByCategoryProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

@@ -24,7 +24,7 @@ import { Icons } from '@gideon-defender/ui/icons';
 import type { JSONContent } from '@tiptap/react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useSWRConfig } from 'swr';
 import { auditLogsKey } from '../hooks/useAuditLogs';
@@ -73,12 +73,14 @@ export function PolicyHeaderActions({
     enabled: !!runInfo?.runId && !!runInfo?.accessToken,
   });
 
-  const revalidateAll = () => {
-    if (!policy) return;
-    globalMutate(policyKey(policy.id, organizationId));
-    globalMutate(policyVersionsKey(policy.id, organizationId));
-    globalMutate(auditLogsKey('policy', policy.id));
-  };
+  const policyId = policy?.id;
+
+  const revalidateAll = useCallback(() => {
+    if (!policyId) return;
+    globalMutate(policyKey(policyId, organizationId));
+    globalMutate(policyVersionsKey(policyId, organizationId));
+    globalMutate(auditLogsKey('policy', policyId));
+  }, [policyId, organizationId, globalMutate]);
 
   // Handle run completion. Async IIFE with setState only after await (plus a
   // cancellation flag) so no setState runs synchronously in the effect body.
@@ -110,7 +112,7 @@ export function PolicyHeaderActions({
     return () => {
       cancelled = true;
     };
-  }, [run]);
+  }, [run, revalidateAll, t]);
 
   const handleRegenerate = async () => {
     if (!policy) return;

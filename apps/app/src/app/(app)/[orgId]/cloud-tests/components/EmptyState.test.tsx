@@ -45,21 +45,11 @@ vi.mock('@trycompai/design-system', () => ({
     children,
     onClick,
     disabled,
-    loading: _l,
-    width: _w,
-    size: _s,
-    variant: _v,
-    iconLeft: _i,
     ...props
   }: {
     children: React.ReactNode;
     onClick?: () => void;
     disabled?: boolean;
-    loading?: boolean;
-    width?: string;
-    size?: string;
-    variant?: string;
-    iconLeft?: React.ReactNode;
   }) => (
     <button onClick={onClick} disabled={disabled} {...props}>
       {children}
@@ -134,7 +124,7 @@ vi.mock('@gideon-defender/ui/multiple-selector', () => ({
 }));
 
 vi.mock('next/image', () => ({
-  default: ({ alt }: { alt: string }) => <img alt={alt} />,
+  default: ({ alt }: { alt: string }) => <span role="img" aria-label={alt} />,
 }));
 
 vi.mock('sonner', () => ({

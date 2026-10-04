@@ -278,11 +278,15 @@ export function BrowserAutomations({ taskId, isManualTask = false }: BrowserAuto
     if (context.status === 'has-context') fetchProfiles();
   }, [context.status, fetchProfiles]);
 
-  // Initialize
+  // Initialize — destructure the stable callbacks so the effect does not
+  // depend on the whole context/automations objects, which get fresh
+  // identities every render and would refire this fetch loop endlessly.
+  const { checkContextStatus } = context;
+  const { fetchAutomations: refetchAutomations } = automations;
   useEffect(() => {
-    context.checkContextStatus();
-    automations.fetchAutomations();
-  }, [context.checkContextStatus, automations.fetchAutomations]);
+    checkContextStatus();
+    refetchAutomations();
+  }, [checkContextStatus, refetchAutomations]);
 
   const composerConnection = useMemo(() => {
     if (!composer.open) return null;

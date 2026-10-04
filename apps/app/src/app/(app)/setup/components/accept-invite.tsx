@@ -7,6 +7,7 @@ import { Button } from '@gideon-defender/ui/button';
 import { Loader2 } from 'lucide-react';
 import { useAction } from 'next-safe-action/hooks';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
 export function AcceptInvite({
@@ -16,6 +17,7 @@ export function AcceptInvite({
   inviteCode: string;
   organizationName: string;
 }) {
+  const router = useRouter();
   const { execute, isPending } = useAction(completeInvitation, {
     onSuccess: async (result) => {
       if (result.data?.data?.organizationId) {
@@ -29,13 +31,13 @@ export function AcceptInvite({
           console.error('Failed to set active organization:', error);
           // Continue with redirect even if setActive fails
         }
-        // Use hard redirect to prevent React re-rendering the page
+        // Use router navigation to prevent React re-rendering the page
         // Server actions cause the parent Server Component to re-fetch data,
         // which would show "already accepted" before router.replace() executes
-        window.location.href = `/${orgId}`;
+        router.push(`/${orgId}`);
       } else {
         // Fallback to home if no organizationId
-        window.location.href = '/';
+        router.push('/');
       }
     },
     onError: (error) => {

@@ -93,23 +93,9 @@ export function AutomationsSection({ automations }: AutomationsSectionProps) {
 
   // Calculate summary stats
   const enabledCount = automations.filter((a) => a.isEnabled).length;
-  const healthyCount = automations.filter((a) => {
-    const run = a.runs?.[0];
-    return (
-      a.isEnabled &&
-      run &&
-      run.status === 'completed' &&
-      run.success &&
-      run.evaluationStatus !== 'fail'
-    );
-  }).length;
   const runningCount = automations.filter((a) => {
     const run = a.runs?.[0];
     return a.isEnabled && run && run.status === 'running';
-  }).length;
-  const errorCount = automations.filter((a) => {
-    const run = a.runs?.[0];
-    return a.isEnabled && run && (run.status === 'failed' || run.evaluationStatus === 'fail');
   }).length;
 
   return (

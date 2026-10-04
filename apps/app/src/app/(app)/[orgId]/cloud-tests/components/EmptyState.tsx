@@ -26,6 +26,7 @@ import {
 } from '@trycompai/design-system';
 import { ArrowLeft, CheckmarkFilled, Launch } from '@trycompai/design-system/icons';
 import { useTranslations } from 'next-intl';
+import Image from 'next/image';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -326,9 +327,11 @@ export function EmptyState({
                 <div
                   className={`bg-gradient-to-br ${provider.color} flex items-center justify-center rounded-xl p-2.5 shadow-sm`}
                 >
-                  <img
+                  <Image
                     src={provider.logoUrl}
                     alt={`${provider.shortName} logo`}
+                    width={32}
+                    height={32}
                     className="h-8 w-8 object-contain"
                   />
                 </div>
@@ -460,9 +463,11 @@ export function EmptyState({
                 <div
                   className={`bg-gradient-to-br ${cloudProvider.color} w-fit rounded-lg p-2.5 shadow-sm`}
                 >
-                  <img
+                  <Image
                     src={cloudProvider.logoUrl}
                     alt={`${cloudProvider.shortName} logo`}
+                    width={40}
+                    height={40}
                     className="h-10 w-10 object-contain"
                   />
                 </div>
@@ -498,9 +503,11 @@ export function EmptyState({
                   <div
                     className={`bg-gradient-to-br ${provider.color} flex items-center justify-center rounded-xl p-2.5 shadow-sm`}
                   >
-                    <img
+                    <Image
                       src={provider.logoUrl}
                       alt={`${provider.shortName} logo`}
+                      width={32}
+                      height={32}
                       className="h-8 w-8 object-contain"
                     />
                   </div>

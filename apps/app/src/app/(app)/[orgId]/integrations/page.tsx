@@ -11,13 +11,7 @@ interface TaskApiResponse {
   }>;
 }
 
-interface PageProps {
-  params: Promise<{ orgId: string }>;
-}
-
-export default async function IntegrationsPage({ params }: PageProps) {
-  const { orgId } = await params;
-
+export default async function IntegrationsPage() {
   // Fetch organization's tasks via API
   const tasksResult = await serverApi.get<TaskApiResponse>('/v1/tasks');
   const allTasks = tasksResult.data?.data ?? [];

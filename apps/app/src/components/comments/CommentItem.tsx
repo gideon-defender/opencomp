@@ -39,7 +39,6 @@ import {
   Pencil,
   Trash2,
 } from 'lucide-react';
-import type React from 'react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { formatRelativeTime } from '../../app/(app)/[orgId]/tasks/[taskId]/components/commentUtils';
@@ -57,33 +56,6 @@ function getGravatarUrl(email: string | null | undefined, size = 64): string {
   const emailHash = email.toLowerCase().trim();
   // For now, we'll use the email as a placeholder - ideally this should be MD5 hashed
   return `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(emailHash)}&size=${size}`;
-}
-
-// Helper function to render content with clickable links
-function renderContentWithLinks(text: string): React.ReactNode[] {
-  const regex =
-    /(https?:\/\/[^\s]+|www\.[^\s]+|(?<!@)(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:\/[^\s]*)?)/gi;
-  return text.split(regex).map((part, index) => {
-    if (
-      /^(https?:\/\/[^\s]+|www\.[^\s]+|(?<!@)(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:\/[^\s]*)?)$/i.test(
-        part,
-      )
-    ) {
-      const href = /^https?:\/\//i.test(part) ? part : `https://${part}`;
-      return (
-        <a
-          key={index}
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-primary underline"
-        >
-          {part}
-        </a>
-      );
-    }
-    return part;
-  });
 }
 
 interface CommentItemProps {

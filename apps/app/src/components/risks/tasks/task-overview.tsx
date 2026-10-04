@@ -10,7 +10,7 @@ import { PencilIcon, ShieldAlert } from 'lucide-react';
 import { useQueryState } from 'nuqs';
 
 export function TaskOverview({ task, users }: { task: Task; users: User[] }) {
-  const [open, setOpen] = useQueryState('task-overview-sheet');
+  const [, setOpen] = useQueryState('task-overview-sheet');
 
   return (
     <div className="space-y-4">

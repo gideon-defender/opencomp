@@ -1,6 +1,6 @@
 import type { Prisma } from '@db';
 
-const controlInclude = {
+export const controlInclude = {
   policies: {
     select: {
       status: true,

@@ -9,12 +9,7 @@ const { setTheme, useThemeMock } = vi.hoisted(() => ({
 
 vi.mock('next-themes', () => ({ useTheme: useThemeMock }));
 vi.mock('@gideon-defender/ui', () => ({
-  Button: ({
-    children,
-    variant: _v,
-    size: _s,
-    ...props
-  }: { variant?: string; size?: string } & React.ComponentProps<'button'>) => (
+  Button: ({ children, ...props }: React.ComponentProps<'button'>) => (
     <button {...props}>{children}</button>
   ),
 }));

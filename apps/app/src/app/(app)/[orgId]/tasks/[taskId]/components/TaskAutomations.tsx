@@ -10,7 +10,6 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import type React from 'react';
 import { toast } from 'sonner';
-import { useTaskAutomations } from '../hooks/use-task-automations';
 
 type AutomationWithLatestRun = EvidenceAutomation & {
   runs: EvidenceAutomationRun[];
@@ -24,7 +23,6 @@ interface TaskAutomationsProps {
 export const TaskAutomations = ({ automations, isManualTask = false }: TaskAutomationsProps) => {
   const { orgId, taskId } = useParams<{ orgId: string; taskId: string }>();
   const router = useRouter();
-  const { mutate: mutateAutomations } = useTaskAutomations();
 
   const handleCreateAutomation = () => {
     if (isManualTask) return;

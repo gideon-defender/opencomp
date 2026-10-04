@@ -11,7 +11,7 @@ interface TrustPortalQuestionnaireProps {
   orgId: string;
 }
 
-export function TrustPortalQuestionnaire({ initialEnabled, orgId }: TrustPortalQuestionnaireProps) {
+export function TrustPortalQuestionnaire({ initialEnabled }: TrustPortalQuestionnaireProps) {
   const { hasPermission } = usePermissions();
   const canUpdate = hasPermission('trust', 'update');
   const { updateSecurityQuestionnaireEnabled } = useTrustPortalSettings();

@@ -11,6 +11,8 @@ vi.mock('next/link', () => ({
   ),
 }));
 vi.mock('next/image', () => ({
+  // Mock renders a plain img intentionally to avoid next/image optimization in jsdom.
+  // eslint-disable-next-line @next/next/no-img-element
   default: (props: { src: string; alt: string }) => <img src={props.src} alt={props.alt} />,
 }));
 

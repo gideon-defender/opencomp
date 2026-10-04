@@ -46,7 +46,7 @@ export function AzureSetupGuide({
   isScanning,
 }: AzureSetupGuideProps) {
   const api = useApi();
-  const [isSettingUp, setIsSettingUp] = useState(false);
+  const [, setIsSettingUp] = useState(false);
   const [setupResult, setSetupResult] = useState<{
     steps: SetupStep[];
     subscriptionId?: string;

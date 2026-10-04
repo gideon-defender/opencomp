@@ -26,7 +26,7 @@ export function TaskFilterHeader() {
   });
 
   // State for the create task sheet
-  const [createTaskOpen, setCreateTaskOpen] = useQueryState('create-task');
+  const [, setCreateTaskOpen] = useQueryState('create-task');
 
   // Mapping of status IDs (and 'all') to their corresponding icons.
   const statusIcons: Record<StatusId | 'all', React.ElementType> = {

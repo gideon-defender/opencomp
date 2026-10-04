@@ -24,7 +24,6 @@ const reportIssuesEndpoint = (reportId: string): string =>
   `/v1/security-penetration-tests/${encodeURIComponent(reportId)}/issues`;
 const reportEventsEndpoint = (reportId: string): string =>
   `/v1/security-penetration-tests/${encodeURIComponent(reportId)}/events`;
-const inProgressStatus: readonly PentestReportStatus[] = ['provisioning', 'cloning', 'running'];
 const allStatuses: readonly PentestReportStatus[] = [
   'provisioning',
   'cloning',
@@ -273,13 +272,6 @@ export function usePenetrationTestEvents(
     events: data ?? [],
     isLoading: shouldFetch && data === undefined && !error,
   };
-}
-
-interface PentestCreditsStatus {
-  balance: number;
-  totalGranted: number;
-  totalConsumed: number;
-  lastGrantSource: string;
 }
 
 const creditsKey = (organizationId: string): ReportsSWRKey =>

@@ -17,7 +17,7 @@ interface Props {
   onSelect: (userId: string) => void;
 }
 
-export function SelectUser({ users, isLoading, selectedId, onSelect }: Props) {
+export function SelectUser({ users, isLoading }: Props) {
   if (isLoading) {
     return (
       <div className="flex h-full w-full items-center justify-center py-2">

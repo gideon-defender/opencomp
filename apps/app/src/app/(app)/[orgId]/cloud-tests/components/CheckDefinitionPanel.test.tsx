@@ -11,7 +11,7 @@ const mockUseSWR = vi.fn<() => SwrShape>();
 
 vi.mock('@/hooks/use-api', () => ({
   useApi: () => ({
-    useSWR: (_url: string) => mockUseSWR(),
+    useSWR: () => mockUseSWR(),
   }),
 }));
 

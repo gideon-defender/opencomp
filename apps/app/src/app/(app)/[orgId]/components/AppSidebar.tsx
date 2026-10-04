@@ -33,8 +33,6 @@ interface AppSidebarProps {
 export function AppSidebar({
   organization,
   isQuestionnaireEnabled,
-  hasAuditorRole,
-  isOnlyAuditor,
   permissions,
   canAccessAuditorView,
 }: AppSidebarProps) {

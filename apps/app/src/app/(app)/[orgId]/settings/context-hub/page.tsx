@@ -13,7 +13,7 @@ export default async function ContextHubSettings({
     perPage: string;
   }>;
 }) {
-  const { orgId } = await params;
+  await params;
   const { search, page, perPage } = await searchParams;
 
   const pageNum = Number(page) || 1;

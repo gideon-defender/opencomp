@@ -210,7 +210,6 @@ function VendorStatusCell({ vendor }: { vendor: VendorRow }) {
 
 export function VendorsTable({
   vendors: initialVendors,
-  assignees,
   onboardingRunId,
   orgId,
 }: VendorsTableProps) {
@@ -236,7 +235,7 @@ export function VendorsTable({
   const [perPage, setPerPage] = useState(25);
   const pageSizeOptions = [10, 25, 50, 100];
 
-  const { itemStatuses, progress, itemsInfo, isActive, isLoading } = useOnboardingStatus(
+  const { itemStatuses, progress, itemsInfo, isActive } = useOnboardingStatus(
     onboardingRunId,
     'vendors',
   );

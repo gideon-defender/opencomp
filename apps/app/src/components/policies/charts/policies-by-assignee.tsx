@@ -167,7 +167,7 @@ function RiskBarChart({ stat }: { stat: UserPolicyStats }) {
       }
     >
       <div className="absolute inset-0 h-[calc(100%-var(--marginTop)-var(--marginBottom))] w-[calc(100%-var(--marginLeft)-var(--marginRight))] translate-x-[var(--marginLeft)] translate-y-[var(--marginTop)] overflow-visible">
-        {data.map((d, index) => {
+        {data.map((d) => {
           const barWidth = (d.value / totalWidth) * 100;
           const xPosition = cumulativeWidth;
           cumulativeWidth += barWidth + gap;

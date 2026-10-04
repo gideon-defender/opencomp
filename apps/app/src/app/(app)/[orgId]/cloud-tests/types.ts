@@ -71,9 +71,3 @@ export interface Provider {
   supportsMultipleConnections?: boolean;
   latestRun?: ProviderLatestRun | null;
 }
-type FailedIntegration = {
-  id: string;
-  integrationId: string;
-  name: string;
-  error: string;
-};

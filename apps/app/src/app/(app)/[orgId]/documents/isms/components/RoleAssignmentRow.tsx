@@ -177,7 +177,7 @@ export function RoleAssignmentRow({
                 <Controller
                   control={control}
                   name="evidenceRetained"
-                  render={({ field: { ref: _ref, ...field } }) => (
+                  render={({ field: { ...field } }) => (
                     <Input
                       {...field}
                       placeholder="e.g. CV, certificate, training record"
@@ -193,7 +193,7 @@ export function RoleAssignmentRow({
               <Controller
                 control={control}
                 name="gap"
-                render={({ field: { ref: _ref, ...field } }) => (
+                render={({ field: { ...field } }) => (
                   <Textarea
                     {...field}
                     rows={2}
@@ -211,7 +211,7 @@ export function RoleAssignmentRow({
                   <Controller
                     control={control}
                     name="remediationAction"
-                    render={({ field: { ref: _ref, ...field } }) => (
+                    render={({ field: { ...field } }) => (
                       <Input
                         {...field}
                         placeholder="Planned action to close the gap"
@@ -226,7 +226,7 @@ export function RoleAssignmentRow({
                   <Controller
                     control={control}
                     name="remediationDueDate"
-                    render={({ field: { ref: _ref, ...field } }) => (
+                    render={({ field: { ...field } }) => (
                       <Input {...field} type="date" aria-label="Remediation due date" />
                     )}
                   />

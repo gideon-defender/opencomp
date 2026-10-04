@@ -292,10 +292,6 @@ export function BatchRemediationDialog({
     runStatus === 'CANCELED' ||
     runStatus === 'SYSTEM_FAILURE';
 
-  const isRunning =
-    Boolean(runId) &&
-    !runFinished &&
-    (!progress || progress.phase === 'running' || progress.phase === 'retrying');
   const isWaitingPerms = progress?.phase === 'waiting_for_permissions';
   const isScanning = progress?.phase === 'scanning';
   const isDone = progress?.phase === 'done' || progress?.phase === 'cancelled' || runFinished;

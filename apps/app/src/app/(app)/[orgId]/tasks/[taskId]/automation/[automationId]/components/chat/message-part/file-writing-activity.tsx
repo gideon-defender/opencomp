@@ -1,24 +1,19 @@
 'use client';
 
-import { CheckCircle2, FileText, Loader2, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface FileWritingActivityProps {
-  input: any;
+  input: unknown;
   state: string;
-  output?: any;
+  output?: {
+    summary?: string;
+  };
   isAnimating: boolean;
 }
 
-export function FileWritingActivity({
-  input,
-  state,
-  output,
-  isAnimating,
-}: FileWritingActivityProps) {
+export function FileWritingActivity({ state, output }: FileWritingActivityProps) {
   const isComplete = state === 'output-available';
   const isError = state === 'output-error';
-  const isLoading = state === 'input-streaming' || state === 'input-available';
   const [startTime] = useState(() => Date.now());
   const [duration, setDuration] = useState<number | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -33,13 +28,6 @@ export function FileWritingActivity({
     }
   }, [isComplete, isError, startTime, duration]);
 
-  const getIcon = () => {
-    if (isError) return <XCircle className="h-4 w-4 text-muted-foreground" />;
-    if (isComplete) return <CheckCircle2 className="h-4 w-4 text-muted-foreground" />;
-    if (isLoading) return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
-    return <FileText className="h-4 w-4 text-muted-foreground" />;
-  };
-
   const getTitle = () => {
     if (isError) {
       return duration ? `Failed to save after ${duration}s` : 'Failed to save automation';
@@ -49,17 +37,6 @@ export function FileWritingActivity({
       return `Saved in ${duration}s`;
     }
     return 'Creating automation...';
-  };
-
-  const getResultSummary = () => {
-    // Only show summary when complete and available
-    if (!isComplete || !output?.summary) return null;
-
-    return (
-      <div className="mt-2">
-        <p className="text-xs text-muted-foreground">{output.summary}</p>
-      </div>
-    );
   };
 
   return (

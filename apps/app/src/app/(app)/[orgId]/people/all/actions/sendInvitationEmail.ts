@@ -4,7 +4,6 @@ import { inviteSingleMemberViaApi } from '@/lib/people-api';
 
 export const sendInvitationEmailToExistingMember = async ({
   email,
-  organizationId: _organizationId,
   roles,
 }: {
   email: string;

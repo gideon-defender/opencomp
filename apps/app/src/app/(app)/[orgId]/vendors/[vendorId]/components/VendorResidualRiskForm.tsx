@@ -29,11 +29,6 @@ interface ResidualRiskFormProps {
   onSuccess?: () => void;
 }
 
-interface FormData {
-  probability: number;
-  impact: number;
-}
-
 function mapNumericToImpact(value: number): Impact {
   if (value <= 2) return Impact.insignificant;
   if (value <= 4) return Impact.minor;
@@ -57,7 +52,7 @@ export function VendorResidualRiskForm({
 }: ResidualRiskFormProps) {
   const { updateRisk } = useRiskMutations();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [_, setOpen] = useQueryState('residual-risk-sheet');
+  const [, setOpen] = useQueryState('residual-risk-sheet');
   const t = useTranslations('vendor');
   const tCommon = useTranslations('overview');
 

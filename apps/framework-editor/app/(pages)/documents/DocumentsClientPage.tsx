@@ -10,7 +10,7 @@ import {
   type SortingState,
 } from '@tanstack/react-table';
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { DOCUMENT_TYPE_OPTIONS } from '../controls/document-type-options';
 import { DocumentControlsCell } from './DocumentControlsCell';
 
@@ -54,21 +54,24 @@ export function DocumentsClientPage({ controls, frameworkId }: DocumentsClientPa
     });
   }, [controlsState]);
 
-  const handleControlLinked = (documentType: string, control: { id: string; name: string }) => {
-    setControlsState((prev) => {
-      const exists = prev.some((c) => c.id === control.id);
-      if (exists) {
-        return prev.map((c) =>
-          c.id === control.id
-            ? { ...c, documentTypes: [...(c.documentTypes as string[]), documentType] }
-            : c,
-        );
-      }
-      return [...prev, { id: control.id, name: control.name, documentTypes: [documentType] }];
-    });
-  };
+  const handleControlLinked = useCallback(
+    (documentType: string, control: { id: string; name: string }) => {
+      setControlsState((prev) => {
+        const exists = prev.some((c) => c.id === control.id);
+        if (exists) {
+          return prev.map((c) =>
+            c.id === control.id
+              ? { ...c, documentTypes: [...(c.documentTypes as string[]), documentType] }
+              : c,
+          );
+        }
+        return [...prev, { id: control.id, name: control.name, documentTypes: [documentType] }];
+      });
+    },
+    [],
+  );
 
-  const handleControlUnlinked = (documentType: string, controlId: string) => {
+  const handleControlUnlinked = useCallback((documentType: string, controlId: string) => {
     setControlsState((prev) =>
       prev.map((c) =>
         c.id === controlId
@@ -76,7 +79,7 @@ export function DocumentsClientPage({ controls, frameworkId }: DocumentsClientPa
           : c,
       ),
     );
-  };
+  }, []);
 
   const columns = useMemo(
     () => [
@@ -136,6 +139,7 @@ export function DocumentsClientPage({ controls, frameworkId }: DocumentsClientPa
 
   const [sorting, setSorting] = useState<SortingState>([]);
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack useReactTable returns unmemoizable functions; skip React Compiler memoization
   const table = useReactTable({
     data,
     columns,

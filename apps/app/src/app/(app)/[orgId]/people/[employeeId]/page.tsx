@@ -55,7 +55,7 @@ export default async function EmployeeDetailsPage({
     backgroundCheckRes,
     backgroundCheckBillingRes,
   ] = await Promise.all([
-    getPoliciesTasks(employeeId),
+    getPoliciesTasks(),
     getTrainingVideos(employeeId),
     getEmployee(employeeId),
     db.employeeTrainingVideoCompletion.findFirst({
@@ -141,7 +141,7 @@ const getEmployee = async (employeeId: string) => {
   return employee;
 };
 
-const getPoliciesTasks = async (employeeId: string) => {
+const getPoliciesTasks = async () => {
   const session = await auth.api.getSession({
     headers: await headers(),
   });

@@ -27,23 +27,6 @@ const CHART_COLORS = {
   remaining: 'var(--color-muted)',
 };
 
-// Custom tooltip component for the pie chart
-const StatusTooltip = ({ active, payload }: any) => {
-  const t = useTranslations('overview');
-  if (active && payload && payload.length) {
-    const data = payload[0].payload;
-    return (
-      <div className="bg-background rounded-sm border p-2 shadow-md">
-        <p className="text-xs font-medium">{data.name}</p>
-        <p className="text-xs">
-          {t('charts.count')}: <span className="font-medium">{data.value}</span>
-        </p>
-      </div>
-    );
-  }
-  return null;
-};
-
 export function PoliciesChart({ data }: PoliciesChartProps) {
   const t = useTranslations('overview');
   const chartData = React.useMemo(() => {

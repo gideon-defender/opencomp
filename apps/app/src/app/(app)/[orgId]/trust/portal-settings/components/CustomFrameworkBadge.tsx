@@ -1,6 +1,7 @@
 'use client';
 
 import { TrashCan, Upload } from '@trycompai/design-system/icons';
+import Image from 'next/image';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -83,9 +84,11 @@ export function CustomFrameworkBadge({
 
   const inner =
     badgeUrl && !imgErrored ? (
-      <img
+      <Image
         src={badgeUrl}
         alt={`${title} badge`}
+        width={64}
+        height={64}
         className="h-16 w-16 rounded-lg border bg-white object-contain p-1"
         onError={() => setImgErrored(true)}
       />

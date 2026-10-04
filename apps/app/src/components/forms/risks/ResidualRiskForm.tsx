@@ -52,7 +52,7 @@ export function ResidualRiskForm({
   const { updateRisk } = useRiskActions();
   const { mutate: globalMutate } = useSWRConfig();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [_, setOpen] = useQueryState('residual-risk-sheet');
+  const [, setOpen] = useQueryState('residual-risk-sheet');
 
   const form = useForm<z.infer<typeof updateResidualRiskEnumSchema>>({
     resolver: zodResolver(updateResidualRiskEnumSchema),

@@ -88,7 +88,7 @@ export function RiskMatrixChart({
       });
       setInitialLikelihood(activeLikelihood);
       setInitialImpact(activeImpact);
-    } catch (_e) {
+    } catch {
     } finally {
       setLoading(false);
     }

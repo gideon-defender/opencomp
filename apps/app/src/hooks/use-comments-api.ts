@@ -129,15 +129,10 @@ export function useCommentActions() {
   };
 }
 
-interface UseCommentWithAttachmentsOptions {
-  /** Organization ID - for consistency with other hooks */
-  organizationId?: string;
-}
-
 /**
  * Utility hook that combines file handling with comment creation
  */
-export function useCommentWithAttachments(_options: UseCommentWithAttachmentsOptions = {}) {
+export function useCommentWithAttachments() {
   // Note: useCommentActions uses useApi which gets orgId from URL params
   // The options.organizationId is accepted for API consistency but not currently used
   // since useApi already handles org context from URL
@@ -190,14 +185,14 @@ export function useCommentWithAttachments(_options: UseCommentWithAttachmentsOpt
 /**
  * Convenience hook for task comments
  */
-function useTaskComments(taskId: string | null, options: UseCommentsOptions = {}) {
+export function useTaskComments(taskId: string | null, options: UseCommentsOptions = {}) {
   return useComments(taskId, 'task', options);
 }
 
 /**
  * Convenience hook for policy comments
  */
-function usePolicyComments(policyId: string | null, options: UseCommentsOptions = {}) {
+export function usePolicyComments(policyId: string | null, options: UseCommentsOptions = {}) {
   return useComments(policyId, 'policy', options);
 }
 

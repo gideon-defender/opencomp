@@ -86,7 +86,6 @@ interface InviteMembersModalProps {
 export function InviteMembersModal({
   open,
   onOpenChange,
-  organizationId,
   allowedBuiltInRoles,
 }: InviteMembersModalProps) {
   const router = useRouter();
@@ -102,7 +101,7 @@ export function InviteMembersModal({
     }>(endpoint);
     return res.data?.customRoles ?? [];
   });
-  const customRoles = customRolesData ?? [];
+  const customRoles = useMemo(() => customRolesData ?? [], [customRolesData]);
 
   // Memoize so downstream useMemo deps stay referentially stable instead of
   // changing on every render.
@@ -538,50 +537,55 @@ export function InviteMembersModal({
                 <FormField
                   control={form.control}
                   name="csvFile"
-                  render={({ field: { onChange, value, ...fieldProps } }) => (
-                    <FormItem>
-                      <FormLabel>{'CSV File'}</FormLabel>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => document.getElementById('csvFileInput')?.click()}
+                  render={({ field: { onChange, value, ...fieldProps } }) => {
+                    // File inputs must stay uncontrolled: strip RHF's FileList
+                    // value instead of spreading it onto the input.
+                    void value;
+                    return (
+                      <FormItem>
+                        <FormLabel>{'CSV File'}</FormLabel>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => document.getElementById('csvFileInput')?.click()}
+                          >
+                            Choose File
+                          </Button>
+                          <span className="text-muted-foreground truncate text-sm">
+                            {csvFileName ?? t('invite.noFileChosen')}
+                          </span>
+                        </div>
+                        <FormControl className="relative">
+                          <Input
+                            id="csvFileInput"
+                            type="file"
+                            accept=".csv"
+                            {...fieldProps}
+                            onChange={(event) => {
+                              const fileList = event.target.files;
+                              onChange(fileList);
+                              setCsvFileName(fileList?.[0]?.name || null);
+                            }}
+                            className="sr-only"
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          {
+                            "Upload a CSV file with 'email' and 'role' columns. Use pipe (|) to separate multiple roles (e.g., employee|admin)."
+                          }
+                        </FormDescription>
+                        <a
+                          href={csvTemplateDataUri}
+                          download="comp_invite_template.csv"
+                          className="text-muted-foreground hover:text-foreground text-xs underline transition-colors"
                         >
-                          Choose File
-                        </Button>
-                        <span className="text-muted-foreground truncate text-sm">
-                          {csvFileName ?? t('invite.noFileChosen')}
-                        </span>
-                      </div>
-                      <FormControl className="relative">
-                        <Input
-                          id="csvFileInput"
-                          type="file"
-                          accept=".csv"
-                          {...fieldProps}
-                          onChange={(event) => {
-                            const fileList = event.target.files;
-                            onChange(fileList);
-                            setCsvFileName(fileList?.[0]?.name || null);
-                          }}
-                          className="sr-only"
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        {
-                          "Upload a CSV file with 'email' and 'role' columns. Use pipe (|) to separate multiple roles (e.g., employee|admin)."
-                        }
-                      </FormDescription>
-                      <a
-                        href={csvTemplateDataUri}
-                        download="comp_invite_template.csv"
-                        className="text-muted-foreground hover:text-foreground text-xs underline transition-colors"
-                      >
-                        {t('invite.downloadCSVTemplate')}
-                      </a>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                          {t('invite.downloadCSVTemplate')}
+                        </a>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
               </TabsContent>
             </Tabs>

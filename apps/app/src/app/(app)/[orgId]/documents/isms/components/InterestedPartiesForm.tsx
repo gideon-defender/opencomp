@@ -51,7 +51,7 @@ function InterestedPartiesFields({
           <Controller
             control={control}
             name="name"
-            render={({ field: { ref: _ref, ...field } }) => (
+            render={({ field: { ...field } }) => (
               <Input {...field} placeholder="Party name" aria-label="New interested party name" />
             )}
           />
@@ -61,7 +61,7 @@ function InterestedPartiesFields({
           <Controller
             control={control}
             name="category"
-            render={({ field: { ref: _ref, ...field } }) => (
+            render={({ field: { ...field } }) => (
               <Input
                 {...field}
                 placeholder="Category (e.g. Customer, Regulator)"
@@ -75,7 +75,7 @@ function InterestedPartiesFields({
           <Controller
             control={control}
             name="needsExpectations"
-            render={({ field: { ref: _ref, ...field } }) => (
+            render={({ field: { ...field } }) => (
               <Textarea
                 {...field}
                 rows={2}

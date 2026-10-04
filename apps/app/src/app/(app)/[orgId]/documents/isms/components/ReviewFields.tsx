@@ -92,7 +92,7 @@ export function ReviewFields({ control, chairOptions }: ReviewFieldsProps) {
           <Controller
             control={control}
             name="meetingDate"
-            render={({ field: { ref: _ref, ...field } }) => (
+            render={({ field: { ...field } }) => (
               <Input {...field} type="date" aria-label="Meeting date" />
             )}
           />
@@ -159,7 +159,7 @@ export function ReviewFields({ control, chairOptions }: ReviewFieldsProps) {
         <Controller
           control={control}
           name="conclusionNotes"
-          render={({ field: { ref: _ref, ...field } }) => (
+          render={({ field: { ...field } }) => (
             <Textarea
               {...field}
               rows={2}

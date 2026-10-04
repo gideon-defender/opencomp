@@ -19,7 +19,7 @@ export interface TasksPageGridData {
 
 export const simpleUUID = () => crypto.randomUUID();
 
-export const useTaskChangeTracking = (initialData: TasksPageGridData[], frameworkId?: string) => {
+export const useTaskChangeTracking = (initialData: TasksPageGridData[]) => {
   const [data, setData] = useState<TasksPageGridData[]>(() => initialData);
   const [prevData, setPrevData] = useState<TasksPageGridData[]>(() => initialData);
 
@@ -287,7 +287,7 @@ export const useTaskChangeTracking = (initialData: TasksPageGridData[], framewor
         description: `${results.successes.length} operation(s) completed`,
       });
     }
-  }, [data, createdIds, updatedIds, deletedIds, frameworkId]);
+  }, [data, createdIds, updatedIds, deletedIds]);
 
   const handleCancel = useCallback(() => {
     setData(prevData);

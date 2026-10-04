@@ -14,7 +14,7 @@ import { RevokeDialog } from './revoke-dialog';
 
 export function GrantsTab({ orgId }: { orgId: string }) {
   const { data, isLoading } = useAccessGrants(orgId);
-  const { mutateAsync: resendAccessEmail } = useResendAccessEmail(orgId);
+  const { mutateAsync: resendAccessEmail } = useResendAccessEmail();
   const [revokeId, setRevokeId] = useState<string | null>(null);
 
   const [search, setSearch] = useState('');

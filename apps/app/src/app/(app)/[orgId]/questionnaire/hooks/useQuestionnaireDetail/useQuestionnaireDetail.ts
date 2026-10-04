@@ -88,7 +88,7 @@ export function useQuestionnaireDetail({
         });
       });
     },
-    [state.setResults],
+    [state],
   );
 
   // Single answer hook

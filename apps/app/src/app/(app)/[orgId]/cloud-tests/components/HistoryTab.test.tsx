@@ -15,7 +15,7 @@ const hasPermissionMock = vi.fn().mockReturnValue(true);
 
 vi.mock('@/hooks/use-api', () => ({
   useApi: () => ({
-    useSWR: (_url: string) => swrMock(),
+    useSWR: () => swrMock(),
     delete: (url: string) => deleteMock(url),
   }),
 }));

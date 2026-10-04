@@ -34,9 +34,7 @@ export function ToDoOverview({
   remainingTasks,
   unpublishedPolicies,
   incompleteTasks,
-  policiesInReview,
   organizationId,
-  currentMember,
   onboardingTriggerJobId,
 }: {
   totalPolicies: number;
