@@ -123,7 +123,7 @@ class CreateConnectionDto {
 
   @ApiPropertyOptional({
     description:
-      "Provider-specific credential fields. Keys differ by provider — call get-provider-details for the exact shape. For AWS (Cloud Tests) the fields are: connectionName (display name), awsType ('aws-commercial' or 'aws-govcloud'), roleArn (auditor role), regions (string array), remediationRoleArn (legacy single remediation role) and/or remediationRoles (JSON string map of '<AssetClass>:<region>' to remediation role ARN, e.g. '{\"Storage:us-east-1\":\"arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1\"}'), and awsScanMode ('comp_scanners' or 'security_hub'). The externalId is always minted server-side (org_<orgId>_<uuid>) — any client-supplied value is ignored. Omit roleArn to create a pending connection: the response returns the minted externalId show-once for the CloudShell setup script, then PUT credentials with the Role ARN to validate and activate. Omit credentials for OAuth providers — use POST /v1/integrations/oauth/start instead.",
+      "Provider-specific credential fields. Keys differ by provider — call get-provider-details for the exact shape. For AWS (Cloud Tests) the fields are: connectionName (display name), awsType ('aws-commercial' or 'aws-govcloud'), roleArn (auditor role), regions (string array), remediationRoles (JSON string map of '<AssetClass>:<region>' to remediation role ARN, e.g. '{\"Storage:us-east-1\":\"arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1\"}' — one role per pair; the legacy single remediationRoleArn is rejected for new connections and only still read on existing ones), and awsScanMode ('comp_scanners' or 'security_hub'). The externalId is always minted server-side (org_<orgId>_<uuid>) — any client-supplied value is ignored. Omit roleArn to create a pending connection: the response returns the minted externalId show-once for the CloudShell setup script, then PUT credentials with the Role ARN to validate and activate. Omit credentials for OAuth providers — use POST /v1/integrations/oauth/start instead.",
     type: 'object',
     additionalProperties: true,
     example: {
@@ -131,7 +131,6 @@ class CreateConnectionDto {
       awsType: 'aws-commercial',
       roleArn: 'arn:aws:iam::123456789012:role/OpenComp-Auditor',
       regions: ['us-east-1', 'us-west-2'],
-      remediationRoleArn: 'arn:aws:iam::123456789012:role/OpenComp-Remediator',
       remediationRoles:
         '{"Storage:us-east-1":"arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1"}',
       awsScanMode: 'comp_scanners',
@@ -663,6 +662,23 @@ export class ConnectionsController {
     // vault must hold the trimmed value STS actually receives.
     if (providerSlug === 'aws' && effectiveCredentials)
       trimAwsCredentialStrings(effectiveCredentials);
+    // New AWS connections cannot use the legacy single remediation role.
+    // The monolith `OpenComp-Remediator` is deprecated in favor of one role
+    // per asset-class/region pair (`remediationRoles` map). Reject before any
+    // STS call or row creation so no legacy-shaped connection can be minted.
+    // Existing connections keep working: reads fall back to the stored ARN
+    // and credential updates still accept it (dual-read window).
+    if (
+      providerSlug === 'aws' &&
+      !!effectiveCredentials &&
+      typeof effectiveCredentials.remediationRoleArn === 'string' &&
+      effectiveCredentials.remediationRoleArn.trim().length > 0
+    ) {
+      throw new HttpException(
+        'remediationRoleArn is no longer accepted for new connections. Create one role per asset-class/region pair and send them as remediationRoles (a JSON string map of "<AssetClass>:<region>" to role ARN).',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
     const hasAwsRoleArn =
       providerSlug === 'aws' &&
       !!effectiveCredentials &&

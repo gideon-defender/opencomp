@@ -6823,7 +6823,7 @@ examples:
   ConnectionsController_createConnection_v1:
     speakeasy-default-connections-controller-create-connection-v1:
       requestBody:
-        application/json: {"providerSlug": "aws", "credentials": {"connectionName": "Production AWS", "awsType": "aws-commercial", "roleArn": "arn:aws:iam::123456789012:role/OpenComp-Auditor", "externalId": "org_abc123", "regions": ["us-east-1", "us-west-2"], "remediationRoleArn": "arn:aws:iam::123456789012:role/OpenComp-Remediator", "awsScanMode": "comp_scanners"}}
+        application/json: {"providerSlug": "aws", "credentials": {"connectionName": "Production AWS", "awsType": "aws-commercial", "roleArn": "arn:aws:iam::123456789012:role/OpenComp-Auditor", "regions": ["us-east-1", "us-west-2"], "remediationRoles": "{\"Storage:us-east-1\":\"arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1\"}", "awsScanMode": "comp_scanners"}}
   ConnectionsController_getConnection_v1:
     speakeasy-default-connections-controller-get-connection-v1:
       parameters:
