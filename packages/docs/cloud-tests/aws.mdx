@@ -91,12 +91,58 @@ Findings are mapped to the controls used by:
 - **No static credentials** — OpenComp never stores AWS access keys; short-lived credentials are issued by STS on each scan
 - **Revocable at any time** — deleting the IAM role in your account immediately cuts off access
 
+## Monitoring auto-remediation
+
+If you created any `OpenComp-Remediator-*` roles, watch them. OpenComp only assumes a remediation role when you explicitly trigger a fix, so every assume outside a fix you triggered is worth a look. Three signals matter:
+
+| Signal                                           | What it means                                                                                                     | Severity                                    |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `AssumeRole` on any `OpenComp-Remediator-*` role | A fix ran (or someone probed the trust policy — failed assumes fire too)                                          | Info — reconcile with fixes you triggered   |
+| `AccessDenied` from a remediator session         | A fix hit a deny — usually the region guardrail (`DenyOutsideRegion`) or a destructive-action block doing its job | Low — investigate if repeated or unexpected |
+| Any use of `OpenComp-Remediator-Security-Global` | The highest-blast-radius role (KMS, CloudTrail, Config, GuardDuty, WAF, Cognito, IAM password policy) was touched | High — every use needs a human review note  |
+
+Subscribe the security on-call email — not an individual inbox. Confirm the SNS subscription email before expecting alerts.
+
+<Steps>
+  <Step title="Create the alert topic and subscribe">
+    ```bash
+    TOPIC_ARN=$(aws sns create-topic --name OpenComp-Remediator-Alerts --query TopicArn --output text)
+    aws sns set-topic-attributes --topic-arn "$TOPIC_ARN" --attribute-name Policy --attribute-value '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"events.amazonaws.com"},"Action":"sns:Publish","Resource":"'$TOPIC_ARN'","Condition":{"ArnLike":{"aws:SourceArn":"arn:aws:events:*:*:rule/OpenComp-Remediator*"}}}]}'
+    aws sns subscribe --topic-arn "$TOPIC_ARN" --protocol email --notification-endpoint security@example.com
+    ```
+  </Step>
+  <Step title="Create one EventBridge rule per signal">
+    All three match `detail-type: AWS API Call via CloudTrail` (management events flow to the default bus automatically — no trail wiring needed):
+
+    - **OpenComp-RemediatorAssume**: `eventSource: sts.amazonaws.com`, `eventName: AssumeRole`, `requestParameters.roleArn` wildcard `arn:aws:iam::*:role/OpenComp-Remediator-*` (plus the bare legacy `OpenComp-Remediator` name)
+    - **OpenComp-RemediatorDenied**: `errorCode` in (`AccessDenied`, `AccessDeniedException`), `userIdentity.arn` wildcards `arn:aws:sts::*:assumed-role/OpenComp-Remediator/*` (legacy) and `arn:aws:sts::*:assumed-role/OpenComp-Remediator-*` (per-pair) (no `source` filter — denied calls arrive under the called service's source)
+    - **OpenComp-RemediatorSecurityGlobal**: `eventSource: sts.amazonaws.com`, `eventName: AssumeRole`, `requestParameters.roleArn` wildcard `arn:aws:iam::*:role/OpenComp-Remediator-Security-Global`
+
+    ```bash
+    aws events put-rule --name OpenComp-RemediatorAssume --event-pattern '{"source":["aws.sts"],"detail-type":["AWS API Call via CloudTrail"],"detail":{"eventSource":["sts.amazonaws.com"],"eventName":["AssumeRole"],"requestParameters":{"roleArn":[{"wildcard":"arn:aws:iam::*:role/OpenComp-Remediator"},{"wildcard":"arn:aws:iam::*:role/OpenComp-Remediator-*"}]}}}'
+    aws events put-targets --rule OpenComp-RemediatorAssume --targets 'Id="1",Arn="'"$TOPIC_ARN"'"'
+    ```
+
+    Repeat `put-rule` + `put-targets` for the other two rules with their patterns above. Support can provide the exact generated script for all three. GovCloud accounts: ask support for the GovCloud variant — the role ARNs use the `aws-us-gov` partition throughout.
+
+  </Step>
+  <Step title="Triage incoming alerts">
+    - **Assume alert**: match it to a fix you triggered in OpenComp (finding ID is the STS session name). No match → check for failed assumes (wrong-ExternalId probes) in CloudTrail and rotate nothing yet — probes against a correct trust policy fail closed.
+    - **Denied alert**: read `eventName` + `errorCode` in the email body. A `DenyOutsideRegion` hit means a fix tried to act outside its region — expected if you only created roles for some regions. Anything else → open the finding in OpenComp and confirm the action was fix-forward.
+    - **Security-Global alert**: confirm a human approved the action, then write the review note. If nobody did, treat it as an incident: the role is human-gated by policy.
+  </Step>
+</Steps>
+
+<Note>
+  For forensics, the same three signals exist as CloudTrail Lake queries (`remediator-assumes-7d`, `remediator-denied-7d`, `security-global-use-30d`) — replace `<EDS_ID>` with your event data store ID. The exact SQL lives with the detector source so the alerts and the queries cannot drift apart.
+</Note>
+
 ## Troubleshooting
 
 <Accordion title="Access denied during AssumeRole" icon="warning">
   The most common cause is an External ID mismatch. Confirm the value in your role's trust policy
-  matches the External ID shown in the connection settings. If they differ, re-run the
-  CloudShell script from the settings — the External ID cannot be typed or rotated by hand.
+  matches the External ID shown in the connection settings. If they differ, re-run the CloudShell
+  script from the settings — the External ID cannot be typed or rotated by hand.
 </Accordion>
 
 <Accordion title="Role ARN format error" icon="circle-exclamation">
@@ -111,8 +157,10 @@ Findings are mapped to the controls used by:
 </Accordion>
 
 <Accordion title="Auto-remediation isn't available" icon="wrench">
-  Auto-remediation requires per-pair `OpenComp-Remediator-{AssetClass}-{Region}` roles (or the legacy `OpenComp-Remediator` role as fallback). Run the CloudShell
-  script for the finding's asset class and region, then paste its Role ARN into the matching row of the **remediation roles table** in the connection settings.
+  Auto-remediation requires per-pair `OpenComp-Remediator-{AssetClass}-{Region}` roles (or the
+  legacy `OpenComp-Remediator` role as fallback). Run the CloudShell script for the finding's asset
+  class and region, then paste its Role ARN into the matching row of the **remediation roles table**
+  in the connection settings.
 </Accordion>
 
 ## Support

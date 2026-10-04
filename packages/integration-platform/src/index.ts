@@ -176,6 +176,27 @@ export {
 } from './manifests/aws/remediation-roles';
 export type { RemediationAssetClass } from './manifests/aws/remediation-roles';
 
+// Customer-side CloudTrail detection for the remediator roles (EventBridge
+// patterns, Lake queries, SNS wiring script) — consumed by support tooling
+// and the docs so the alerts and the queries cannot drift apart.
+export {
+  REMEDIATION_DETECTION_RULES,
+  REMEDIATION_DETECTION_SUBJECTS,
+  REMEDIATION_DETECTION_TOPIC_NAME,
+  REMEDIATION_LAKE_QUERIES,
+  buildDetectionPattern,
+  buildRemediationAssumePattern,
+  buildRemediationDeniedPattern,
+  buildSecurityGlobalAssumePattern,
+  getRemediationDetectionScript,
+} from './manifests/aws/remediation-detection';
+export type {
+  RemediationDetectionPatternOptions,
+  RemediationDetectionRule,
+  RemediationDetectionScriptOptions,
+  RemediationLakeQuery,
+} from './manifests/aws/remediation-detection';
+
 // Shared AWS STS AssumeRole retry (transient / IAM-eventual-consistency safe),
 // reused by the Cloud Tests scanner in apps/api.
 export { isRetryableAssumeError, retryAssume } from './manifests/aws/checks/assume-retry';
