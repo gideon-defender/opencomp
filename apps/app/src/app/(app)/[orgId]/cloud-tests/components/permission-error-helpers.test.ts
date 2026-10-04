@@ -103,6 +103,14 @@ describe('buildAwsFixScript', () => {
     expect(script).toContain('put-role-policy');
     expect(script).toMatch(/WARNING/i);
   });
+
+  it('scopes the grant to the routed pair role when known', () => {
+    const script = buildAwsFixScript(
+      ['s3:PutBucketEncryption'],
+      'OpenComp-Remediator-Storage-us-east-1',
+    );
+    expect(script).toContain('ROLE="OpenComp-Remediator-Storage-us-east-1"');
+  });
 });
 
 describe('provider detectors', () => {

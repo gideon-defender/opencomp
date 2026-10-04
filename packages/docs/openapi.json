@@ -28768,7 +28768,7 @@
           },
           "credentials": {
             "type": "object",
-            "description": "Provider-specific credential fields. Keys differ by provider — call get-provider-details for the exact shape. For AWS (Cloud Tests) the fields are: connectionName (display name), awsType ('aws-commercial' or 'aws-govcloud'), roleArn (auditor role), externalId (typically your org id), regions (string array), and optionally remediationRoleArn and awsScanMode ('comp_scanners' or 'security_hub'). Omit credentials for OAuth providers — use POST /v1/integrations/oauth/start instead.",
+            "description": "Provider-specific credential fields. Keys differ by provider — call get-provider-details for the exact shape. For AWS (Cloud Tests) the fields are: connectionName (display name), awsType ('aws-commercial' or 'aws-govcloud'), roleArn (auditor role), externalId (typically your org id), regions (string array), remediationRoleArn (legacy single remediation role) and/or remediationRoles (JSON string map of '<AssetClass>:<region>' to remediation role ARN, e.g. '{\"Storage:us-east-1\":\"arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1\"}'), and awsScanMode ('comp_scanners' or 'security_hub'). Omit credentials for OAuth providers — use POST /v1/integrations/oauth/start instead.",
             "additionalProperties": true,
             "example": {
               "connectionName": "Production AWS",
@@ -28780,6 +28780,7 @@
                 "us-west-2"
               ],
               "remediationRoleArn": "arn:aws:iam::123456789012:role/OpenComp-Remediator",
+              "remediationRoles": "{\"Storage:us-east-1\":\"arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1\"}",
               "awsScanMode": "comp_scanners"
             }
           }

@@ -7,6 +7,7 @@ import { GcpRemediationService } from './gcp-remediation.service';
 import { AzureRemediationService } from './azure-remediation.service';
 import { executePlanSteps } from './aws-command-executor';
 import { buildStaticPermissionScript } from './remediation-permission-script';
+import { resolveFindingRemediationRole } from './remediation-role-resolver';
 import { readRemediatorRolePermissions } from './remediation-role-reader';
 
 jest.mock('./remediation-role-reader', () => ({
@@ -366,6 +367,55 @@ describe('RemediationService.previewRemediation', () => {
     expect(mockDb.remediationAction.create).not.toHaveBeenCalled();
   });
 
+  it('throws from executeRemediation when no pair covers the finding (not guided-only)', async () => {
+    const assumeRemediationRole = jest.fn();
+    const service = makeService({
+      credentialVaultService: {
+        getDecryptedCredentials: jest.fn().mockResolvedValue({
+          regions: ['us-east-1'],
+          externalId: 'test-external-id',
+          // Map covers Data only — the S3 (Storage) finding resolves to nothing.
+          remediationRoles: JSON.stringify({
+            'Data:us-east-1':
+              'arn:aws:iam::123456789012:role/OpenComp-Remediator-Data-us-east-1',
+          }),
+        }),
+      },
+      awsSecurityService: { assumeRemediationRole },
+    });
+
+    mockDb.integrationConnection.findFirst.mockResolvedValue({
+      id: 'conn_123',
+      provider: { slug: 'aws' },
+    });
+    mockDb.integrationCheckResult.findFirst.mockResolvedValue({
+      id: 'chk_123',
+      title: 'S3 bucket is not encrypted',
+      description: 'Server-side encryption is not enabled.',
+      severity: 'high',
+      resourceId: 'test-bucket',
+      resourceType: 'AwsS3Bucket',
+      evidence: { findingKey: 's3-encryption-test' },
+      remediation: 'Enable default encryption on the bucket.',
+    });
+
+    // Execute cannot degrade to guided-only — it throws so nothing runs
+    // under the wrong pair or the auditor credentials.
+    await expect(
+      service.executeRemediation({
+        connectionId: 'conn_123',
+        organizationId: 'org_123',
+        checkResultId: 'chk_123',
+        remediationKey: 's3-encryption-test',
+        userId: 'user_123',
+      }),
+    ).rejects.toThrow(
+      /No remediation role configured for this finding's asset class and region/,
+    );
+    expect(assumeRemediationRole).not.toHaveBeenCalled();
+    expect(mockDb.remediationAction.create).not.toHaveBeenCalled();
+  });
+
   it('threads the finding ID into the remediation session name', async () => {
     const assumeRemediationRole = jest
       .fn()
@@ -432,7 +482,127 @@ describe('RemediationService.previewRemediation', () => {
       }),
       'us-east-1',
       { findingId: 'chk_123' },
+      // Dual-read routing: no pair map configured, so the legacy ARN is
+      // resolved and passed explicitly.
+      'arn:aws:iam::123456789012:role/OpenComp-Remediator',
     );
+  });
+
+  it('routes preview to the pair role when the map covers the finding', async () => {
+    const assumeRemediationRole = jest
+      .fn()
+      .mockResolvedValue({ accessKeyId: 'AKID', secretAccessKey: 'x' });
+    const generateFixPlan = jest.fn().mockResolvedValue({
+      canAutoFix: true,
+      risk: 'medium',
+      description: 'Enable bucket encryption.',
+      currentState: {},
+      proposedState: {},
+      requiredPermissions: ['s3:PutBucketEncryption'],
+      readSteps: [],
+      fixSteps: [
+        {
+          service: 's3',
+          command: 'PutBucketEncryptionCommand',
+          params: {},
+          purpose: 'Enable encryption',
+        },
+      ],
+      rollbackSteps: [],
+      rollbackSupported: false,
+    });
+    const service = makeService({
+      credentialVaultService: {
+        getDecryptedCredentials: jest.fn().mockResolvedValue({
+          regions: ['us-east-1'],
+          externalId: 'test-external-id',
+          remediationRoleArn:
+            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+          remediationRoles: JSON.stringify({
+            'Storage:us-east-1':
+              'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1',
+          }),
+        }),
+      },
+      awsSecurityService: { assumeRemediationRole },
+      aiRemediationService: { generateFixPlan },
+    });
+
+    mockDb.integrationConnection.findFirst.mockResolvedValue({
+      id: 'conn_123',
+      provider: { slug: 'aws' },
+    });
+    mockDb.integrationCheckResult.findFirst.mockResolvedValue({
+      id: 'chk_123',
+      title: 'S3 bucket is not encrypted',
+      description: 'Server-side encryption is not enabled.',
+      severity: 'high',
+      resourceId: 'test-bucket',
+      resourceType: 'AwsS3Bucket',
+      evidence: { findingKey: 's3-encryption-test' },
+      remediation: 'Enable default encryption on the bucket.',
+    });
+
+    await service.previewRemediation({
+      connectionId: 'conn_123',
+      organizationId: 'org_123',
+      checkResultId: 'chk_123',
+      remediationKey: 's3-encryption-test',
+      cachedPermissions: ['s3:PutBucketEncryption'],
+    });
+
+    // AwsS3Bucket → Storage, region us-east-1 → pair ARN wins over legacy.
+    expect(assumeRemediationRole).toHaveBeenCalledWith(
+      expect.anything(),
+      'us-east-1',
+      { findingId: 'chk_123' },
+      'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1',
+    );
+  });
+
+  it('returns guided-only (not a throw) when recheck misses the pair', async () => {
+    const assumeRemediationRole = jest.fn();
+    const service = makeService({
+      credentialVaultService: {
+        getDecryptedCredentials: jest.fn().mockResolvedValue({
+          regions: ['us-east-1'],
+          externalId: 'test-external-id',
+          // Map covers Data only — the Storage finding resolves to nothing.
+          remediationRoles: JSON.stringify({
+            'Data:us-east-1':
+              'arn:aws:iam::123456789012:role/OpenComp-Remediator-Data-us-east-1',
+          }),
+        }),
+      },
+      awsSecurityService: { assumeRemediationRole },
+      aiRemediationService: { generateFixPlan: jest.fn() },
+    });
+
+    mockDb.integrationConnection.findFirst.mockResolvedValue({
+      id: 'conn_123',
+      provider: { slug: 'aws' },
+    });
+    mockDb.integrationCheckResult.findFirst.mockResolvedValue({
+      id: 'chk_123',
+      title: 'S3 bucket is not encrypted',
+      description: 'Server-side encryption is not enabled.',
+      severity: 'high',
+      resourceId: 'test-bucket',
+      resourceType: 'AwsS3Bucket',
+      evidence: { findingKey: 's3-encryption-test' },
+      remediation: 'Enable default encryption on the bucket.',
+    });
+
+    const preview = await service.previewRemediation({
+      connectionId: 'conn_123',
+      organizationId: 'org_123',
+      checkResultId: 'chk_123',
+      remediationKey: 's3-encryption-test',
+      cachedPermissions: ['s3:PutBucketEncryption'],
+    });
+
+    expect(preview.guidedOnly).toBe(true);
+    expect(assumeRemediationRole).not.toHaveBeenCalled();
   });
 });
 
@@ -496,6 +666,15 @@ describe('buildStaticPermissionScript (denylist)', () => {
     const script = callBuild(['s3:PutBucketAcl', 'sts:AssumeRole']);
     expect(script).toContain('manual review');
     expect(script).not.toContain('--policy-document');
+  });
+
+  it('targets the routed pair role when a role name is passed', () => {
+    const script = buildStaticPermissionScript(
+      ['s3:PutBucketEncryption'],
+      'OpenComp-Remediator-Storage-us-east-1',
+    );
+    expect(script).toContain('ROLE="OpenComp-Remediator-Storage-us-east-1"');
+    expect(script).not.toContain('ROLE="OpenComp-Remediator" POLICY');
   });
 });
 
@@ -1472,6 +1651,138 @@ describe('RemediationService.rollbackRemediation (blocked split)', () => {
     expect(mockDb.remediationAction.updateMany).not.toHaveBeenCalled();
   });
 
+  it('assumes the finding\u2019s pair role on rollback, not the connection-default region', async () => {
+    const EU_PAIR_ARN =
+      'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-eu-west-1';
+    const assumeRemediationRole = jest
+      .fn()
+      .mockResolvedValue({ accessKeyId: 'a', secretAccessKey: 'b' });
+    const service = makeService({
+      credentialVaultService: {
+        getDecryptedCredentials: jest.fn().mockResolvedValue({
+          regions: ['us-east-1', 'eu-west-1'],
+          externalId: 'test-external-id',
+          remediationRoles: JSON.stringify({
+            'Storage:us-east-1':
+              'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1',
+            'Storage:eu-west-1': EU_PAIR_ARN,
+          }),
+        }),
+      },
+      awsSecurityService: { assumeRemediationRole },
+    });
+    mockDb.remediationAction.findFirst.mockResolvedValue({
+      id: 'act_123',
+      status: 'success',
+      connectionId: 'conn_123',
+      checkResultId: 'chk_123',
+      remediationKey: 's3-versioning',
+      resourceId: 'b',
+      resourceType: 'AwsS3Bucket',
+      appliedState: {
+        rollbackSteps: [
+          {
+            service: 's3',
+            command: 'DeleteBucketCommand',
+            params: { Bucket: 'b' },
+          },
+        ],
+      },
+      connection: { provider: { slug: 'aws' } },
+    });
+    // The finding lives in eu-west-1 while the connection default is us-east-1.
+    mockDb.integrationCheckResult.findFirst.mockResolvedValue({
+      id: 'chk_123',
+      resourceId: 'b',
+      resourceType: 'AwsS3Bucket',
+      evidence: { region: 'eu-west-1' },
+    });
+    mockDb.remediationAction.update.mockResolvedValue({});
+    mockDb.remediationAction.updateMany.mockResolvedValue({ count: 1 });
+    mockExecutePlanSteps.mockResolvedValueOnce({
+      results: [
+        {
+          step: {
+            service: 's3',
+            command: 'DeleteBucketCommand',
+            params: { Bucket: 'b' },
+          },
+          output: {},
+        },
+      ],
+    });
+
+    const result = await service.rollbackRemediation({
+      actionId: 'act_123',
+      organizationId: 'org_123',
+    });
+
+    expect(result.status).toBe('rolled_back');
+    expect(assumeRemediationRole).toHaveBeenCalledWith(
+      expect.anything(),
+      'eu-west-1',
+      { findingId: 'chk_123' },
+      EU_PAIR_ARN,
+    );
+    expect(mockExecutePlanSteps).toHaveBeenCalledWith(
+      expect.objectContaining({ region: 'eu-west-1', isRollback: true }),
+    );
+  });
+
+  it('throws from rollback when no pair covers the finding (not guided-only)', async () => {
+    const assumeRemediationRole = jest.fn();
+    const service = makeService({
+      credentialVaultService: {
+        getDecryptedCredentials: jest.fn().mockResolvedValue({
+          regions: ['us-east-1'],
+          externalId: 'test-external-id',
+          // Map covers Data only — the S3 (Storage) finding resolves to nothing.
+          remediationRoles: JSON.stringify({
+            'Data:us-east-1':
+              'arn:aws:iam::123456789012:role/OpenComp-Remediator-Data-us-east-1',
+          }),
+        }),
+      },
+      awsSecurityService: { assumeRemediationRole },
+    });
+    mockDb.remediationAction.findFirst.mockResolvedValue({
+      id: 'act_123',
+      status: 'success',
+      connectionId: 'conn_123',
+      checkResultId: 'chk_123',
+      remediationKey: 's3-versioning',
+      resourceId: 'b',
+      resourceType: 'AwsS3Bucket',
+      appliedState: {
+        rollbackSteps: [
+          {
+            service: 's3',
+            command: 'DeleteBucketCommand',
+            params: { Bucket: 'b' },
+          },
+        ],
+      },
+      connection: { provider: { slug: 'aws' } },
+    });
+    mockDb.integrationCheckResult.findFirst.mockResolvedValue({
+      id: 'chk_123',
+      resourceId: 'b',
+      resourceType: 'AwsS3Bucket',
+      evidence: {},
+    });
+
+    await expect(
+      service.rollbackRemediation({
+        actionId: 'act_123',
+        organizationId: 'org_123',
+      }),
+    ).rejects.toThrow(
+      /no remediation role configured for this finding's asset class and region/,
+    );
+    expect(assumeRemediationRole).not.toHaveBeenCalled();
+    expect(mockDb.remediationAction.updateMany).not.toHaveBeenCalled();
+  });
+
   it('splits denylisted actions out of the rollback permission error', async () => {
     mockDb.remediationAction.findFirst.mockResolvedValue({
       id: 'act_123',
@@ -1898,5 +2209,50 @@ describe('RemediationService.getCapabilities', () => {
         organizationId: 'org_123',
       }),
     ).resolves.toEqual({ enabled: false, aiPowered: true, remediations: [] });
+  });
+});
+
+describe('resolveFindingRemediationRole (unmintable-region fallback)', () => {
+  // The mint-throw fallback is unreachable defense through public callers
+  // (regions are charset-validated at save and sanitized at read), so these
+  // pin the extracted unit directly.
+  function resolveRole(args: {
+    credentials: Record<string, unknown>;
+    resourceType: string | null;
+    region: string;
+  }): {
+    roleArn: string | undefined;
+    roleName: string | undefined;
+    assetClass: string;
+    expectedRoleName: string;
+  } {
+    return resolveFindingRemediationRole(args);
+  }
+
+  it('names the pinned global role for a Security-Global finding with a hostile region', () => {
+    const resolved = resolveRole({
+      credentials: {},
+      resourceType: 'aws-account',
+      region: 'us-east-1"; evil #',
+    });
+    expect(resolved.roleArn).toBeUndefined();
+    expect(resolved.assetClass).toBe('Security-Global');
+    // Must never mint `OpenComp-Remediator-Security-Global-<garbage>` — no
+    // such role can validate, so the guidance would send users down a dead end.
+    expect(resolved.expectedRoleName).toBe(
+      'OpenComp-Remediator-Security-Global',
+    );
+  });
+
+  it('keeps the verbatim fallback for regional classes', () => {
+    const resolved = resolveRole({
+      credentials: {},
+      resourceType: 'AwsS3Bucket',
+      region: 'us-east-1"; evil #',
+    });
+    expect(resolved.roleArn).toBeUndefined();
+    expect(resolved.expectedRoleName).toBe(
+      'OpenComp-Remediator-Storage-us-east-1"; evil #',
+    );
   });
 });

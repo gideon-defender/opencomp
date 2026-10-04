@@ -41,6 +41,14 @@ describe('buildFindingPermissionsScript', () => {
     expect(isGuidanceOnlyScript(script)).toBe(true);
   });
 
+  it('renders the routed pair role in the header', () => {
+    const { script } = buildFindingPermissionsScript(
+      ['s3:PutBucketEncryption'],
+      'OpenComp-Remediator-Storage-us-east-1',
+    );
+    expect(script).toContain('ROLE="OpenComp-Remediator-Storage-us-east-1"');
+  });
+
   it('reads the full policy so Deny/Conditions survive (no [0] truncation)', () => {
     const { script } = buildFindingPermissionsScript(['s3:PutBucketEncryption']);
     // The full PolicyDocument feeds the merge — Deny statements, Conditions,
@@ -72,6 +80,26 @@ describe('buildMissingPermsMergeScript', () => {
     expect(script).toMatch(/manual review/i);
     expect(script).not.toContain('put-role-policy');
     expect(isGuidanceOnlyScript(script)).toBe(true);
+  });
+
+  it('renders the routed pair role in the header instead of the monolith default', () => {
+    const { script } = buildMissingPermsMergeScript(
+      ['s3:PutBucketEncryption'],
+      'OpenComp-Remediator-Storage-us-east-1',
+    );
+    expect(script).toContain('ROLE="OpenComp-Remediator-Storage-us-east-1"');
+    expect(script).not.toContain('ROLE="OpenComp-Remediator"');
+  });
+
+  it('keeps the monolith default when no role is routed', () => {
+    const { script } = buildMissingPermsMergeScript(['s3:PutBucketEncryption']);
+    expect(script).toContain('ROLE="OpenComp-Remediator"');
+  });
+
+  it('throws fail-closed on an unsafe routed role name', () => {
+    expect(() =>
+      buildMissingPermsMergeScript(['s3:PutBucketEncryption'], 'Storage"; evil #'),
+    ).toThrow(/malformed ROLE header|unsafe role name/);
   });
 });
 

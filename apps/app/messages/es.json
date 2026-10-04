@@ -1960,6 +1960,7 @@
       "regions": "Regiones",
       "regionsSaved": "Regiones guardadas",
       "remediationRoleArnEnvMismatch": "El ARN del rol de corrección debe coincidir con el entorno de AWS seleccionado",
+      "remediationRoleArnAccountMismatch": "El ARN del rol de corrección debe pertenecer a la cuenta de AWS conectada",
       "remediationRoleArnLabel": "ARN del rol de corrección",
       "remediationRoleSaved": "Rol de corrección guardado",
       "roleArnEnvMismatch": "El ARN del rol debe coincidir con el entorno de AWS seleccionado",
@@ -1973,7 +1974,15 @@
       "selectEnvironmentPlaceholder": "Selecciona el entorno de AWS",
       "setupScript": "Script de configuración",
       "setupScriptSubtitle": "Crea un rol con acceso de escritura para la corrección automática",
-      "status": "Estado"
+      "status": "Estado",
+      "remediationPairsDescription": "Un rol por clase de activo y región. Crea solo los pares donde quieras la corrección automática — los hallazgos se dirigen al rol correspondiente, con el rol heredado como alternativa.",
+      "legacyRemediationBanner": "Esta conexión aún usa el rol único de corrección heredado. Crea roles por par arriba — las nuevas correcciones los prefieren y el rol heredado queda como alternativa.",
+      "remediationPairsSaved": "Roles de corrección guardados",
+      "pairSetupScript": "Script de configuración del par",
+      "pairApprovalRequired": "Requiere aprobación",
+      "pairInvalidArn": "Formato de ARN inválido. Se esperaba un ARN de rol IAM de esta cuenta.",
+      "pairRoleMismatch": "El ARN debe hacer referencia al rol \"{roleName}\" de este par.",
+      "pairInvalidRegions": "Regiones guardadas inválidas ignoradas: {regions}. Corrija las regiones de la conexión para gestionar esos pares."
     }
   },
   "status": {

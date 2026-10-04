@@ -18,6 +18,24 @@ describe('buildRemediationGrantScript', () => {
     expect(script).not.toContain('WARNING');
   });
 
+  it('refuses shell-unsafe role names instead of rendering a poisoned header', () => {
+    for (const roleName of [
+      'OpenComp-Remediator"; evil #',
+      'OpenComp-Remediator-$(whoami)',
+      'OpenComp-Remediator-`id`',
+    ]) {
+      expect(() =>
+        buildRemediationGrantScript({ permissions: ['s3:ListBucket'], roleName }),
+      ).toThrow(/unsafe role name/);
+      expect(() =>
+        buildRemediationGrantScript({
+          permissions: ['s3:ListBucket'],
+          roleHeaderLines: [`ROLE="${roleName}"`, 'POLICY="P"'],
+        }),
+      ).toThrow(/unsafe role name|malformed ROLE header/);
+    }
+  });
+
   it('omits blocked actions and warns instead of denying', () => {
     const script = buildRemediationGrantScript({
       permissions: ['s3:ListBucket', 'iam:PassRole'],

@@ -1,5 +1,6 @@
 'use client';
 
+import { escapeDoubleQuotedShell } from '@gideon-defender/integration-platform';
 import { Check, Copy, ExternalLink } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
@@ -7,6 +8,8 @@ import { toast } from 'sonner';
 export function CloudShellSetup({
   script,
   externalId,
+  title,
+  subtitle,
   footnote,
   cloudShellUrl = 'https://console.aws.amazon.com/cloudshell',
   disabled = false,
@@ -24,7 +27,10 @@ export function CloudShellSetup({
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
-  const finalScript = script.replace(/YOUR_EXTERNAL_ID/g, externalId);
+  // The External ID is stored caller-controlled text interpolated into an
+  // `EXTERNAL_ID="..."` assignment — escape it so a value saved before
+  // server-side validation cannot break out and inject shell commands.
+  const finalScript = script.replace(/YOUR_EXTERNAL_ID/g, escapeDoubleQuotedShell(externalId));
 
   const handleCopy = useCallback(() => {
     if (disabled) {
@@ -47,6 +53,14 @@ export function CloudShellSetup({
 
   return (
     <div className="space-y-3">
+      {(title || subtitle) && (
+        <div>
+          {title && <p className="text-sm font-medium">{title}</p>}
+          {subtitle && (
+            <p className="font-mono text-xs text-muted-foreground break-all">{subtitle}</p>
+          )}
+        </div>
+      )}
       {/* Instructions */}
       <ol className="space-y-1.5 text-sm text-muted-foreground list-none">
         <li className="flex items-start gap-2.5">

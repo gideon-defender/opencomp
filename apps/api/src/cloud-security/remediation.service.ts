@@ -20,6 +20,7 @@ import {
   hasRemediationRole,
   normalizeAwsPartition,
 } from './aws-partition.utils';
+import { SAFE_AWS_REGION_PATTERN } from '@gideon-defender/integration-platform';
 import {
   buildManualRemediationPreview,
   isManualRemediation,
@@ -36,6 +37,7 @@ import {
 } from './remediation-permission-script';
 import { isPermissionCoveredBySet } from './remediation-permission-coverage';
 import { readRemediatorRolePermissions } from './remediation-role-reader';
+import { resolveFindingRemediationRole } from './remediation-role-resolver';
 
 /**
  * A `rollback_in_progress` claim older than this belonged to a process that
@@ -236,11 +238,31 @@ export class RemediationService {
           ...splitBlocked,
         ]),
       ];
+      const {
+        roleArn: pairRoleArn,
+        roleName: pairRoleName,
+        expectedRoleName: pairExpectedRoleName,
+      } = resolveFindingRemediationRole({
+        credentials,
+        resourceType: finding.resourceType,
+        region,
+      });
+      if (!pairRoleArn) {
+        // Same situation as the full-preview path below: no pair role for
+        // this finding means guided-only manual steps, not a 500. A fresh
+        // preview degrades gracefully, so recheck must too.
+        return buildManualRemediationPreview({
+          remediation: `[MANUAL] No remediation role is configured for this finding's asset class and region. Add the ${pairExpectedRoleName} role to the connection settings to enable one-click fixes. Until then, follow the AWS console steps for this finding manually.`,
+          description: finding.description,
+          severity: finding.severity,
+        });
+      }
       const remediationCreds =
         await this.awsSecurityService.assumeRemediationRole(
           credentials,
           region,
           { findingId: params.checkResultId },
+          pairRoleArn,
         );
       let missingPermissions: string[] | undefined;
       let permissionFixScript: string | undefined;
@@ -249,6 +271,7 @@ export class RemediationService {
           await readRemediatorRolePermissions({
             credentials: remediationCreds,
             region,
+            roleName: pairRoleName,
             onWarn: (message) => this.logger.warn(message),
             onInfo: (message) => this.logger.log(message),
           });
@@ -262,8 +285,10 @@ export class RemediationService {
           // This prevents overwrite issues with IAM eventual consistency.
           // No script without a fresh backend plan: the caller must run a
           // full preview first so the grant derives from server state.
+          // Target the routed pair role — the default would mint a grant
+          // for the monolith while execution assumes the pair role.
           permissionFixScript = scriptSource
-            ? buildStaticPermissionScript(scriptSource)
+            ? buildStaticPermissionScript(scriptSource, pairRoleName)
             : undefined;
         }
       } catch (err) {
@@ -272,7 +297,7 @@ export class RemediationService {
         );
         missingPermissions = checkablePermissions;
         permissionFixScript = scriptSource
-          ? buildStaticPermissionScript(scriptSource)
+          ? buildStaticPermissionScript(scriptSource, pairRoleName)
           : undefined;
       }
 
@@ -333,6 +358,26 @@ export class RemediationService {
       };
     }
 
+    // Resolve the per-pair role once — the read-step assume, the policy
+    // read, and any permission-fix script below must all target the same
+    // role the finding routes to (map first, legacy fallback).
+    const {
+      roleArn: pairRoleArn,
+      roleName: pairRoleName,
+      expectedRoleName: pairExpectedRoleName,
+    } = resolveFindingRemediationRole({
+      credentials,
+      resourceType: finding.resourceType,
+      region,
+    });
+    if (!pairRoleArn) {
+      return buildManualRemediationPreview({
+        remediation: `[MANUAL] No remediation role is configured for this finding's asset class and region. Add the ${pairExpectedRoleName} role to the connection settings to enable one-click fixes. Until then, follow the AWS console steps for this finding manually.`,
+        description: finding.description,
+        severity: finding.severity,
+      });
+    }
+
     // If plan has read steps, execute them now to get REAL state and refine the plan
     if (plan.readSteps.length > 0) {
       const readErrors = validatePlanSteps(plan.readSteps);
@@ -343,6 +388,7 @@ export class RemediationService {
               credentials,
               region,
               { findingId: params.checkResultId },
+              pairRoleArn,
             );
           const readResult = await executePlanSteps({
             steps: plan.readSteps,
@@ -448,7 +494,8 @@ export class RemediationService {
           const permissionsList = grantablePerms.filter(
             (p) => p !== 'sts:GetCallerIdentity' && p !== 'sts:AssumeRole',
           );
-          // Check permissions by reading the ACTUAL policies on OpenComp-Remediator
+          // Check permissions by reading the ACTUAL policies on the routed
+          // remediator role (per-pair name, legacy fallback)
           let missingPermissions: string[] | undefined;
           let permissionFixScript: string | undefined;
           try {
@@ -456,11 +503,12 @@ export class RemediationService {
               await readRemediatorRolePermissions({
                 credentials: remediationCreds,
                 region,
+                roleName: pairRoleName,
                 onWarn: (message) => this.logger.warn(message),
                 onInfo: (message) => this.logger.log(message),
               });
             this.logger.log(
-              `OpenComp-Remediator has ${existingActions.size} actions. Needed: ${permissionsList.length}`,
+              `${pairRoleName ?? 'Remediation role'} has ${existingActions.size} actions. Needed: ${permissionsList.length}`,
             );
             const missing = permissionsList.filter(
               (p) =>
@@ -471,15 +519,22 @@ export class RemediationService {
                 `Missing ${missing.length} permissions: ${missing.join(', ')}`,
               );
               missingPermissions = missing;
-              permissionFixScript =
-                buildStaticPermissionScript(permissionsList);
+              // Target the routed pair role (read above from pairRoleName),
+              // never the monolith default — execution assumes this role.
+              permissionFixScript = buildStaticPermissionScript(
+                permissionsList,
+                pairRoleName,
+              );
             }
           } catch (err) {
             this.logger.warn(
               `Cannot read role policies: ${err instanceof Error ? err.message : String(err)}`,
             );
             missingPermissions = permissionsList;
-            permissionFixScript = buildStaticPermissionScript(permissionsList);
+            permissionFixScript = buildStaticPermissionScript(
+              permissionsList,
+              pairRoleName,
+            );
           }
 
           // Cache the refined plan + permissions for execute and Recheck.
@@ -615,6 +670,23 @@ export class RemediationService {
       );
     }
 
+    // Route to the finding's pair role (map first, legacy fallback) — every
+    // assume and grant-script below targets this role, never the auditor.
+    const {
+      roleArn: pairRoleArn,
+      roleName: pairRoleName,
+      expectedRoleName: pairExpectedRoleName,
+    } = resolveFindingRemediationRole({
+      credentials,
+      resourceType: finding.resourceType,
+      region,
+    });
+    if (!pairRoleArn) {
+      throw new Error(
+        `No remediation role configured for this finding's asset class and region. Add the ${pairExpectedRoleName} role to the connection settings.`,
+      );
+    }
+
     // Get plan from cache or regenerate
     let plan: FixPlan;
     const cacheKey = `${params.connectionId}:${params.checkResultId}:${params.remediationKey}`;
@@ -734,6 +806,7 @@ export class RemediationService {
           credentials,
           region,
           { findingId: params.checkResultId },
+          pairRoleArn,
         );
 
       // Phase 1: Execute read steps to get REAL AWS state
@@ -1025,6 +1098,8 @@ export class RemediationService {
               ...(cached?.permissionsList ??
                 permissionPlan.requiredPermissions),
             ],
+            // Grant scripts target the routed pair role, not the monolith.
+            roleName: pairRoleName,
           });
         }
       }
@@ -1134,11 +1209,33 @@ export class RemediationService {
       );
     }
 
-    const region = this.getRegion(credentials);
+    // Route rollback to the SAME pair role the finding executed under:
+    // the region selects the role now, so the connection-default region
+    // would assume (or demand) the wrong pair on multi-region connections.
+    const region = await this.getRollbackRegion(action, credentials);
+    const {
+      roleArn: pairRoleArn,
+      roleName: pairRoleName,
+      expectedRoleName: pairExpectedRoleName,
+    } = resolveFindingRemediationRole({
+      credentials,
+      resourceType: action.resourceType,
+      region,
+    });
+    if (!pairRoleArn) {
+      throw new Error(
+        `Cannot rollback: no remediation role configured for this finding's asset class and region. Add the ${pairExpectedRoleName} role to the connection settings.`,
+      );
+    }
     const remediationCreds =
-      await this.awsSecurityService.assumeRemediationRole(credentials, region, {
-        findingId: action.checkResultId,
-      });
+      await this.awsSecurityService.assumeRemediationRole(
+        credentials,
+        region,
+        {
+          findingId: action.checkResultId,
+        },
+        pairRoleArn,
+      );
 
     // Claim the rollback atomically so two concurrent callers cannot both
     // execute non-idempotent rollback steps. Only one updateMany wins.
@@ -1230,7 +1327,9 @@ export class RemediationService {
         // a one-click grant for an action auto-fix must refuse.
         const { allowed: missingActions, blocked: blockedPermissions } =
           splitBlockedRemediationActions(rawMissing);
-        const script = buildStaticPermissionScript(rawMissing);
+        // Target the routed pair role — rollback assumes it above, so the
+        // grant must too instead of falling back to the monolith default.
+        const script = buildStaticPermissionScript(rawMissing, pairRoleName);
         throw new Error(
           JSON.stringify({
             message: `Rollback failed: missing permissions`,
@@ -1332,10 +1431,16 @@ export class RemediationService {
     finding: { resourceId: string | null; evidence: unknown },
     credentials: Record<string, unknown>,
   ): string {
-    // 1. Check evidence for explicit region
+    // 1. Check evidence for explicit region. Evidence comes from scan
+    // output, so sanitize: an unexpected value (uppercase, whitespace,
+    // shell metacharacters) must not reach role-name minting and throw a
+    // 500 — fall through to the ARN and configured-region fallbacks.
     const evidence = (finding.evidence ?? {}) as Record<string, unknown>;
     if (typeof evidence.region === 'string' && evidence.region) {
-      return evidence.region;
+      const candidate = evidence.region.trim();
+      if (candidate && SAFE_AWS_REGION_PATTERN.test(candidate)) {
+        return candidate;
+      }
     }
 
     // 2. Extract region from ARN (arn:aws:service:REGION:account:resource)
@@ -1347,6 +1452,38 @@ export class RemediationService {
 
     // 3. Fall back to first configured region
     return this.getRegion(credentials);
+  }
+
+  /**
+   * Rollback region: same derivation execute used, so rollback assumes the
+   * pair role the finding ran under. When the finding row is gone (cleanup),
+   * evidence is unavailable — reuse the ARN-region step from the action's
+   * own resourceId before falling back to the connection default.
+   */
+  private async getRollbackRegion(
+    action: { connectionId: string; checkResultId: string; resourceId: string },
+    credentials: Record<string, unknown>,
+  ): Promise<string> {
+    try {
+      const finding = await this.getFinding({
+        connectionId: action.connectionId,
+        checkResultId: action.checkResultId,
+      });
+      return this.getRegionForFinding(finding, credentials);
+    } catch (error) {
+      // A missing finding (post-cleanup) is the expected case for this
+      // fallback — but a transient lookup failure lands here too and would
+      // silently route rollback to a different pair role. Log it so the
+      // two cases stay distinguishable in production logs.
+      this.logger.warn(
+        `Rollback region fallback for checkResult ${action.checkResultId}: finding lookup failed (${error instanceof Error ? error.message : String(error)}). Deriving region from resourceId/connection default.`,
+      );
+      const arnMatch = (action.resourceId ?? '').match(
+        /^arn:aws[^:]*:[^:]+:([a-z0-9-]+):/,
+      );
+      if (arnMatch?.[1] && arnMatch[1] !== '*') return arnMatch[1];
+      return this.getRegion(credentials);
+    }
   }
 
   /**
@@ -1373,18 +1510,24 @@ export class RemediationService {
     errorMessage: string;
     failedStep: AwsCommandStep;
     fallbackPermissions: string[];
+    /** Routed pair role name for grant scripts (legacy default when absent). */
+    roleName?: string;
   }): Promise<ExecutePermissionError> {
     try {
       const suggestion = await this.aiRemediationService.suggestPermissionFix({
         errorMessage: args.errorMessage,
         failedStep: args.failedStep,
+        roleName: args.roleName,
       });
       // Merge: cached permissions from preview + newly discovered missing ones
       const allPerms = new Set([
         ...args.fallbackPermissions,
         ...suggestion.missingActions,
       ]);
-      const mergedScript = buildStaticPermissionScript([...allPerms]);
+      const mergedScript = buildStaticPermissionScript(
+        [...allPerms],
+        args.roleName,
+      );
       // The suggestion strips blocked actions from `missingActions`, so
       // re-surface them here — otherwise the very permission that caused
       // the failure (e.g. iam:PassRole) vanishes without explanation.
@@ -1422,7 +1565,7 @@ export class RemediationService {
         splitBlockedRemediationActions(fallbackActions);
       return {
         missingActions: allowed,
-        fixScript: buildStaticPermissionScript(fallbackActions),
+        fixScript: buildStaticPermissionScript(fallbackActions, args.roleName),
         ...(blocked.length > 0 && {
           blockedPermissions: blocked,
           blockedPermissionsMessage: BLOCKED_PERMISSIONS_MESSAGE,

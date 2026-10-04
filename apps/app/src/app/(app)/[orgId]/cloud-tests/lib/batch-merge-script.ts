@@ -38,13 +38,21 @@ function batchWarningLine({ count, display }: { count: number; display: string }
  * survive (a bare replace would wipe an admin manual Deny). A stray Deny is
  * never merged back as granted permissions. Shared merge shape via the
  * helper — same as the per-banner script below and the backend scripts.
+ *
+ * Pass the finding's routed pair role name (`OpenComp-Remediator-…`) when
+ * known so the grant lands on the role the server reads; legacy monolith
+ * default preserves old behavior when routing is unknown.
  */
-export function buildFindingPermissionsScript(permissions: readonly string[]): BatchMergeScript {
+export function buildFindingPermissionsScript(
+  permissions: readonly string[],
+  roleName?: string,
+): BatchMergeScript {
   const { allowed: grantable, blocked } = splitBlockedRemediationActions(permissions);
   return {
     script: buildRemediationGrantScript({
       permissions,
       policyName: 'OpenComp-BatchPermissions',
+      ...(roleName ? { roleName } : {}),
       warningLine: batchWarningLine,
     }),
     grantable,
@@ -57,7 +65,10 @@ export function buildFindingPermissionsScript(permissions: readonly string[]): B
  * all-statements Allow merge as the per-finding script, with friendlier
  * inline comments for the multi-line CloudShell paste.
  */
-export function buildMissingPermsMergeScript(permissions: readonly string[]): BatchMergeScript {
+export function buildMissingPermsMergeScript(
+  permissions: readonly string[],
+  roleName = 'OpenComp-Remediator',
+): BatchMergeScript {
   const { allowed: grantable, blocked } = splitBlockedRemediationActions(permissions);
   return {
     script: buildRemediationGrantScript({
@@ -65,7 +76,7 @@ export function buildMissingPermsMergeScript(permissions: readonly string[]): Ba
       variableName: 'NEW_PERMS',
       warningLine: batchWarningLine,
       extraHeaderLines: ["# Merge new permissions with existing (won't overwrite Deny rules)"],
-      roleHeaderLines: ['ROLE="OpenComp-Remediator"', 'POLICY="OpenComp-BatchPermissions"'],
+      roleHeaderLines: [`ROLE="${roleName}"`, 'POLICY="OpenComp-BatchPermissions"'],
       preMergeLines: [
         '',
         '# Read the full policy so Deny statements, Conditions, and scoped',

@@ -529,15 +529,28 @@ export class AWSSecurityService {
    * Fails closed: rejects auditor-role reuse, cross-account ARNs, and
    * non-remediator role names before any STS call (see
    * validateAwsPartitionConfig). Never falls back to auditor credentials.
+   *
+   * Pass `remediationRoleArn` to assume a per-pair role resolved via
+   * `resolveRemediationRoleArn` — otherwise the legacy single ARN from
+   * credentials is used (dual-read window).
    */
   async assumeRemediationRole(
     credentials: Record<string, unknown>,
     region: string,
     sessionContext?: RemediationSessionContext,
+    remediationRoleArn?: string,
   ): Promise<AwsCredentials> {
-    const remediationRoleArn = credentials.remediationRoleArn as
-      string | undefined;
-    if (!remediationRoleArn || !remediationRoleArn.trim()) {
+    // An explicitly passed blank override is a caller bug, not "absent" —
+    // falling back to the legacy ARN would silently assume the wrong role.
+    if (remediationRoleArn !== undefined && !remediationRoleArn.trim()) {
+      throw new Error(
+        'Invalid per-pair remediation role override: expected a role ARN, got blank.',
+      );
+    }
+    const effectiveArn =
+      (remediationRoleArn?.trim() ? remediationRoleArn.trim() : undefined) ??
+      (credentials.remediationRoleArn as string | undefined);
+    if (!effectiveArn || !effectiveArn.trim()) {
       throw new Error(
         'Remediation role ARN not configured. Add a Remediation Role ARN to your AWS connection.',
       );
@@ -558,21 +571,22 @@ export class AWSSecurityService {
       credentials.awsType ?? getAwsPartitionForRegion(region),
     );
 
-    // Fail closed on role confusion before touching STS.
+    // Fail closed on role confusion before touching STS. Validates the
+    // effective ARN — the per-pair override or the legacy single ARN.
     const auditorRoleArn =
       typeof credentials.roleArn === 'string' ? credentials.roleArn : undefined;
     const configErrors = validateAwsPartitionConfig({
       partition,
       roleArn: auditorRoleArn,
       regions: [region],
-      remediationRoleArn,
+      remediationRoleArn: effectiveArn,
     });
     if (configErrors.length > 0) {
       throw new Error(configErrors.join(' '));
     }
 
     return this.assumeRole({
-      roleArn: remediationRoleArn.trim(),
+      roleArn: effectiveArn.trim(),
       externalId: externalId.trim(),
       region,
       sessionName: sanitizeStsSessionName(

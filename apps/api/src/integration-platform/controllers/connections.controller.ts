@@ -48,6 +48,8 @@ import {
   getManifest,
   getAllManifests,
   getActiveManifests,
+  getRemediationRolesParseError,
+  parseRemediationRolesMap,
   TASK_TEMPLATE_INFO,
   type TaskTemplateId,
 } from '@gideon-defender/integration-platform';
@@ -60,6 +62,7 @@ import {
   validateAwsPartitionConfig,
 } from '../../cloud-security/aws-partition.utils';
 import { getProviderSummary } from '../utils/provider-summary';
+import { validateRemediationRoleTrust } from './remediation-trust.validator';
 
 /**
  * AWS credential fields that must never carry leading/trailing whitespace
@@ -69,6 +72,7 @@ const AWS_TRIMMED_CREDENTIAL_KEYS = [
   'roleArn',
   'externalId',
   'remediationRoleArn',
+  'remediationRoles',
 ] as const;
 
 /**
@@ -118,7 +122,7 @@ class CreateConnectionDto {
 
   @ApiPropertyOptional({
     description:
-      "Provider-specific credential fields. Keys differ by provider — call get-provider-details for the exact shape. For AWS (Cloud Tests) the fields are: connectionName (display name), awsType ('aws-commercial' or 'aws-govcloud'), roleArn (auditor role), externalId (typically your org id), regions (string array), and optionally remediationRoleArn and awsScanMode ('comp_scanners' or 'security_hub'). Omit credentials for OAuth providers — use POST /v1/integrations/oauth/start instead.",
+      "Provider-specific credential fields. Keys differ by provider — call get-provider-details for the exact shape. For AWS (Cloud Tests) the fields are: connectionName (display name), awsType ('aws-commercial' or 'aws-govcloud'), roleArn (auditor role), externalId (typically your org id), regions (string array), remediationRoleArn (legacy single remediation role) and/or remediationRoles (JSON string map of '<AssetClass>:<region>' to remediation role ARN, e.g. '{\"Storage:us-east-1\":\"arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1\"}'), and awsScanMode ('comp_scanners' or 'security_hub'). Omit credentials for OAuth providers — use POST /v1/integrations/oauth/start instead.",
     type: 'object',
     additionalProperties: true,
     example: {
@@ -128,6 +132,8 @@ class CreateConnectionDto {
       externalId: 'org_abc123',
       regions: ['us-east-1', 'us-west-2'],
       remediationRoleArn: 'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+      remediationRoles:
+        '{"Storage:us-east-1":"arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1"}',
       awsScanMode: 'comp_scanners',
     },
   })
@@ -558,6 +564,13 @@ export class ConnectionsController {
           if (typeof creds.remediationRoleArn === 'string') {
             updates.remediationRoleArn = creds.remediationRoleArn;
           }
+          // Sync the parsed pair map (not the raw JSON) so settings UI can
+          // render per-pair status without vault access. ARNs are not
+          // secrets — the legacy ARN already syncs the same way.
+          if (typeof creds.remediationRoles === 'string') {
+            const pairs = parseRemediationRolesMap(creds.remediationRoles);
+            if (Object.keys(pairs).length > 0) updates.remediationRoles = pairs;
+          }
           if (typeof creds.awsType === 'string') {
             updates.awsType = creds.awsType;
           }
@@ -696,6 +709,13 @@ export class ConnectionsController {
       ) {
         metadata.remediationRoleArn = credentials.remediationRoleArn;
       }
+      if (
+        typeof credentials.remediationRoles === 'string' &&
+        credentials.remediationRoles.trim()
+      ) {
+        const pairs = parseRemediationRolesMap(credentials.remediationRoles);
+        if (Object.keys(pairs).length > 0) metadata.remediationRoles = pairs;
+      }
       // Store Azure tenant/subscription IDs in metadata for display and pre-filling
       if (typeof credentials.tenantId === 'string') {
         metadata.tenantId = credentials.tenantId;
@@ -778,6 +798,17 @@ export class ConnectionsController {
     if (typeof externalIdValue !== 'string' || !externalIdValue.trim()) {
       return { success: false, message: 'Missing or invalid External ID' };
     }
+    // Fail closed on control characters: the External ID is interpolated
+    // into generated CloudShell setup scripts (`EXTERNAL_ID="..."`), where
+    // a newline breaks out of the assignment and injects shell commands run
+    // by a later admin. Reject before anything persists it.
+    if (/[\r\n]/.test(externalIdValue)) {
+      return {
+        success: false,
+        message:
+          'External ID must not contain line breaks. Use your organization ID or another single-line secret value.',
+      };
+    }
     if (!Array.isArray(regionsValue) || regionsValue.length === 0) {
       return { success: false, message: 'No AWS regions selected' };
     }
@@ -792,6 +823,41 @@ export class ConnectionsController {
       typeof credentials.remediationRoleArn === 'string' &&
       credentials.remediationRoleArn.trim()
         ? credentials.remediationRoleArn.trim()
+        : undefined;
+    // Per-pair map, stored as a JSON string (`{"Class:region": "arn:..."}`).
+    // Parsed here so every entry gets the same fail-closed validation as
+    // the legacy single ARN below. Malformed JSON is rejected outright:
+    // the lenient parser yields `{}` for garbage, which would otherwise
+    // loop over zero entries and pass validation with no errors.
+    // Object-form values are rejected: storage and validation both expect
+    // the JSON-string shape, so an object would skip every pair check
+    // below yet still persist.
+    if (
+      credentials.remediationRoles !== undefined &&
+      credentials.remediationRoles !== null &&
+      typeof credentials.remediationRoles !== 'string'
+    ) {
+      return {
+        success: false,
+        message:
+          'remediationRoles: must be a JSON object mapping "<AssetClass>:<region>" to role ARN.',
+      };
+    }
+    if (
+      typeof credentials.remediationRoles === 'string' &&
+      credentials.remediationRoles.trim()
+    ) {
+      const rawRolesError = getRemediationRolesParseError(
+        credentials.remediationRoles,
+      );
+      if (rawRolesError) {
+        return { success: false, message: rawRolesError };
+      }
+    }
+    const remediationRoles =
+      typeof credentials.remediationRoles === 'string' &&
+      credentials.remediationRoles.trim()
+        ? parseRemediationRolesMap(credentials.remediationRoles)
         : undefined;
 
     if (regions.length === 0) {
@@ -814,6 +880,7 @@ export class ConnectionsController {
       roleArn,
       regions,
       remediationRoleArn,
+      remediationRoles,
     });
     if (partitionErrors.length > 0) {
       return { success: false, message: partitionErrors.join(' ') };
@@ -908,73 +975,34 @@ export class ConnectionsController {
         `Validated AWS identity: ${identity.Arn} (Account: ${identity.Account})`,
       );
 
-      // Step 4 (remediation only): assume the remediation role with a short
-      // session, then prove the trust policy actually requires the External
-      // ID — an assume that succeeds WITHOUT it means the trust policy is
-      // too open and the ARN must not be stored.
-      if (remediationRoleArn) {
-        this.logger.log(
-          `Validating AWS: Assuming remediation role ${remediationRoleArn}...`,
-        );
-        const remediationResp = await roleAssumerSts.send(
-          new AssumeRoleCommand({
-            RoleArn: remediationRoleArn,
-            ExternalId: externalId,
-            RoleSessionName: 'CompValidation',
-            DurationSeconds: 900,
-          }),
-        );
-        if (
-          !remediationResp.Credentials?.AccessKeyId ||
-          !remediationResp.Credentials.SecretAccessKey
-        ) {
-          throw new Error(
-            'Failed to assume remediation role - no credentials returned',
-          );
-        }
-
-        let externalIdEnforced = false;
-        try {
-          await roleAssumerSts.send(
-            new AssumeRoleCommand({
-              RoleArn: remediationRoleArn,
-              RoleSessionName: 'CompValidation-NoExtId',
-              DurationSeconds: 900,
-            }),
-          );
-        } catch (err) {
-          // Only an auth rejection proves the trust policy requires the
-          // External ID. Anything else (network, throttling) is
-          // inconclusive — rethrow so validation fails visibly instead of
-          // wrongly certifying an open trust policy.
-          const msg = err instanceof Error ? err.message : String(err);
-          if (
-            /AccessDenied|Unauthorized|InvalidClientTokenId|SignatureDoesNotMatch|not authorized/i.test(
-              msg,
-            )
-          ) {
-            externalIdEnforced = true;
-          } else {
-            throw err;
-          }
-        }
-        if (!externalIdEnforced) {
-          return {
-            success: false,
-            message:
-              'Remediation role trust policy does not require the External ID (assume succeeded without it). Add a StringEquals sts:ExternalId condition to the role trust policy and try again.',
-          };
-        }
-        this.logger.log(
-          'Validating AWS: Remediation role assumption + ExternalId enforcement successful',
-        );
+      // Step 4 (remediation only): assume each remediation role with a
+      // short session, then prove the trust policy actually requires the
+      // External ID — an assume that succeeds WITHOUT it means the trust
+      // policy is too open and the ARN must not be stored. The legacy
+      // single ARN and every per-pair map entry get the identical proof.
+      const remediationTrustError = await validateRemediationRoleTrust({
+        roleAssumerSts,
+        roleArns: [
+          ...(remediationRoleArn ? [remediationRoleArn] : []),
+          ...Object.values(remediationRoles ?? {}),
+        ],
+        externalId,
+        logger: this.logger,
+      });
+      if (remediationTrustError) {
+        return { success: false, message: remediationTrustError };
       }
 
       // All validations passed!
+      const remediationConfigured =
+        remediationRoleArn || Object.keys(remediationRoles ?? {}).length > 0;
+      const remediationNote = remediationConfigured
+        ? ' Remediation roles validated.'
+        : '';
       const message =
         regions.length === 1
-          ? `Validated! Connected to AWS account ${identity.Account} in ${regions[0]}.${remediationRoleArn ? ' Remediation role validated.' : ''}`
-          : `Validated! Connected to AWS account ${identity.Account} in ${regions.length} regions.${remediationRoleArn ? ' Remediation role validated.' : ''}`;
+          ? `Validated! Connected to AWS account ${identity.Account} in ${regions[0]}.${remediationNote}`
+          : `Validated! Connected to AWS account ${identity.Account} in ${regions.length} regions.${remediationNote}`;
 
       return {
         success: true,
@@ -1527,6 +1555,23 @@ export class ConnectionsController {
     if (typeof mergedCredentials.remediationRoleArn === 'string') {
       metaUpdates.remediationRoleArn = mergedCredentials.remediationRoleArn;
     }
+    if (
+      typeof mergedCredentials.remediationRoles === 'string' &&
+      mergedCredentials.remediationRoles.trim()
+    ) {
+      const pairs = parseRemediationRolesMap(
+        mergedCredentials.remediationRoles,
+      );
+      if (Object.keys(pairs).length > 0) metaUpdates.remediationRoles = pairs;
+    }
+    // Explicitly cleared pair map ("" / "{}"): drop the synced copy so the
+    // settings UI stops showing removed pairs. Validation above already
+    // rejected malformed JSON, so zero parsed pairs here means "no pairs",
+    // never "invalid input".
+    const clearRemediationRoles =
+      typeof body.credentials?.remediationRoles === 'string' &&
+      Object.keys(parseRemediationRolesMap(body.credentials.remediationRoles))
+        .length === 0;
     if (typeof mergedCredentials.awsType === 'string') {
       metaUpdates.awsType = mergedCredentials.awsType;
     }
@@ -1537,11 +1582,13 @@ export class ConnectionsController {
     if (manifest.category === 'Cloud') {
       metaUpdates.reconnectedAt = new Date().toISOString();
     }
-    if (Object.keys(metaUpdates).length > 0) {
+    if (Object.keys(metaUpdates).length > 0 || clearRemediationRoles) {
       const existingMeta =
         (connection.metadata as Record<string, unknown>) ?? {};
+      const nextMetadata = { ...existingMeta, ...metaUpdates };
+      if (clearRemediationRoles) delete nextMetadata.remediationRoles;
       await this.connectionRepository.update(id, {
-        metadata: { ...existingMeta, ...metaUpdates },
+        metadata: nextMetadata,
       });
     }
 

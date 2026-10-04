@@ -1,4 +1,37 @@
 import type { AwsCredentialIdentity } from '@aws-sdk/types';
+import {
+  AWS_LEGACY_REMEDIATION_ROLE_NAME,
+  AWS_REMEDIATION_ROLE_NAME_PREFIX,
+  getRemediationRolesParseError,
+  isRemediationRoleKey,
+  parseRemediationRolesMap,
+  REMEDIATION_ASSET_CLASSES,
+  SAFE_AWS_REGION_PATTERN,
+} from '@gideon-defender/integration-platform';
+
+// Single source of truth for the role-name constants lives in
+// `@gideon-defender/integration-platform` (shared with the frontend
+// setup UI). Re-exported here so existing API imports keep working.
+export { AWS_LEGACY_REMEDIATION_ROLE_NAME, AWS_REMEDIATION_ROLE_NAME_PREFIX };
+
+// Remediation gate/resolve/validate helpers live in
+// `./aws-remediation-roles.utils` — re-exported here so existing API
+// imports keep working.
+import {
+  expectedRemediationRoleNameForKey,
+  hasRemediationRole,
+  remediationRoleNameFromArn,
+  resolveRemediationRoleArn,
+  validateOneRemediationArn,
+} from './aws-remediation-roles.utils';
+
+export {
+  expectedRemediationRoleNameForKey,
+  hasRemediationRole,
+  remediationRoleNameFromArn,
+  resolveRemediationRoleArn,
+  validateOneRemediationArn,
+};
 
 export type AwsPartition = 'aws' | 'aws-us-gov';
 
@@ -51,9 +84,13 @@ export function parseAwsRoleArn(
   // Trim here (not just at call sites): the vault stores raw credential
   // strings, so a pasted ARN with a trailing space must parse the same way
   // everywhere — validation, metadata backfill, and the STS assume path.
+  // The role token is restricted to IAM's own charset (word chars plus
+  // `+=,.@-` and `/` for paths): every shell metacharacter (`"`, `$`,
+  // backtick, `;`, …) is rejected, so a validated ARN cannot break out of
+  // the double-quoted `ROLE="..."` header in generated grant scripts.
   const match = roleArn
     .trim()
-    .match(/^arn:(aws|aws-us-gov):iam::(\d{12}):role\/(.+)$/);
+    .match(/^arn:(aws|aws-us-gov):iam::(\d{12}):role\/([A-Za-z0-9_+=,.@/-]+)$/);
   if (!match) return null;
 
   return {
@@ -62,18 +99,6 @@ export function parseAwsRoleArn(
     roleName: match[3],
   };
 }
-
-/**
- * Legacy monolith remediator role name (Phase 4 deprecates it in favor of
- * per-asset-class/region roles, but existing customers still have it).
- */
-export const AWS_LEGACY_REMEDIATION_ROLE_NAME = 'OpenComp-Remediator';
-
-/**
- * Prefix for per-asset-class x region remediator roles, e.g.
- * `OpenComp-Remediator-Storage-us-east-1`.
- */
-export const AWS_REMEDIATION_ROLE_NAME_PREFIX = 'OpenComp-Remediator-';
 
 export function isValidRemediationRoleName(roleName: string): boolean {
   // ARN captures can include an IAM path (e.g. `team/OpenComp-Remediator`).
@@ -85,30 +110,17 @@ export function isValidRemediationRoleName(roleName: string): boolean {
   );
 }
 
-/**
- * Fail-closed gate for auto-remediation: the write path needs both a
- * configured remediation role ARN and an External ID
- * (`assumeRemediationRole` throws when either is blank). Callers must
- * return guided-only manual steps (preview) or throw (execute/rollback)
- * when this is false — never fall back to the read-only auditor
- * credentials for writes.
- */
-export function hasRemediationRole(
-  credentials: Record<string, unknown>,
-): boolean {
-  return (
-    typeof credentials.remediationRoleArn === 'string' &&
-    credentials.remediationRoleArn.trim().length > 0 &&
-    typeof credentials.externalId === 'string' &&
-    credentials.externalId.trim().length > 0
-  );
-}
-
 export function validateAwsPartitionConfig(params: {
   partition: AwsPartition;
   roleArn?: string;
   regions: string[];
   remediationRoleArn?: string;
+  /**
+   * Per-pair map (`Class:region` → ARN), stored as a JSON string in
+   * credentials. Validated entry-by-entry with the same fail-closed rules
+   * as the legacy single ARN. Accepts the raw credential value.
+   */
+  remediationRoles?: Record<string, string> | string;
 }): string[] {
   const errors: string[] = [];
   const parsedRoleArn = params.roleArn
@@ -128,45 +140,42 @@ export function validateAwsPartitionConfig(params: {
   }
 
   if (params.remediationRoleArn) {
-    const remediationRoleArn = params.remediationRoleArn.trim();
-    const parsedRemediationArn = parseAwsRoleArn(remediationRoleArn);
-    if (!parsedRemediationArn) {
-      errors.push('Invalid Remediation Role ARN format.');
+    validateOneRemediationArn({
+      remediationRoleArn: params.remediationRoleArn.trim(),
+      partition: params.partition,
+      roleArn: params.roleArn,
+      parsedRoleArn,
+      label: '',
+      errors,
+    });
+  }
+
+  if (params.remediationRoles !== undefined) {
+    // The lenient parser yields `{}` for garbage so read paths fail
+    // closed — validation must reject that garbage instead of looping
+    // over zero entries and passing with no errors.
+    const rawError = getRemediationRolesParseError(params.remediationRoles);
+    if (rawError) {
+      errors.push(rawError);
     } else {
-      if (parsedRemediationArn.partition !== params.partition) {
-        errors.push(
-          `Remediation Role ARN partition (${parsedRemediationArn.partition}) must match selected AWS environment (${params.partition}).`,
-        );
-      }
-      // Fail closed on role confusion: the remediation role must never be
-      // the auditor role itself (read-only detection creds must never be
-      // used for writes).
-      if (params.roleArn && remediationRoleArn === params.roleArn.trim()) {
-        errors.push(
-          'Remediation Role ARN must differ from the auditor Role ARN. Reusing the read-only auditor role for remediation is not allowed.',
-        );
-      }
-      // The same-account and distinctness checks below need a parsed
-      // auditor ARN. Without one they would silently skip — so a missing
-      // or unparseable auditor ARN is itself a fail-closed error, never
-      // a pass with fewer checks.
-      if (!parsedRoleArn) {
-        errors.push(
-          'Auditor Role ARN is required when a Remediation Role ARN is configured. Reconnect your AWS account.',
-        );
-      } else {
-        if (parsedRemediationArn.accountId !== parsedRoleArn.accountId) {
+      const map = parseRemediationRolesMap(params.remediationRoles);
+      for (const [key, arn] of Object.entries(map)) {
+        const label = `remediationRoles["${key}"]`;
+        if (!isRemediationRoleKey(key)) {
           errors.push(
-            `Remediation Role ARN account (${parsedRemediationArn.accountId}) must match the auditor Role ARN account (${parsedRoleArn.accountId}).`,
+            `${label}: invalid key. Expected "<AssetClass>:<region>" with AssetClass in ${REMEDIATION_ASSET_CLASSES.join(', ')} (Security-Global is pinned to us-east-1).`,
           );
+          continue;
         }
-      }
-      // Only OpenComp remediator roles are assumable for writes. Anything
-      // else (auditor role, admin role, service role) is role confusion.
-      if (!isValidRemediationRoleName(parsedRemediationArn.roleName)) {
-        errors.push(
-          `Remediation Role ARN must reference ${AWS_LEGACY_REMEDIATION_ROLE_NAME} (legacy) or ${AWS_REMEDIATION_ROLE_NAME_PREFIX}<AssetClass>-<region> (e.g. OpenComp-Remediator-Storage-us-east-1). Got role name "${parsedRemediationArn.roleName}".`,
-        );
+        validateOneRemediationArn({
+          remediationRoleArn: arn,
+          partition: params.partition,
+          roleArn: params.roleArn,
+          parsedRoleArn,
+          label,
+          errors,
+          expectedRoleName: expectedRemediationRoleNameForKey(key),
+        });
       }
     }
   }
@@ -178,6 +187,15 @@ export function validateAwsPartitionConfig(params: {
     errors.push(
       `Selected regions do not match ${params.partition}: ${mismatchedRegions.join(', ')}.`,
     );
+  }
+  // Regions flow into generated shell scripts via role names — reject
+  // anything outside the AWS region charset instead of minting poisoned
+  // scripts or throwing later at assume time.
+  const malformedRegions = params.regions.filter(
+    (region) => !SAFE_AWS_REGION_PATTERN.test(region.trim()),
+  );
+  if (malformedRegions.length > 0) {
+    errors.push(`Invalid AWS region names: ${malformedRegions.join(', ')}.`);
   }
 
   return errors;

@@ -139,11 +139,37 @@ export const awsCredentialSchema = z.object({
   connectionName: z.string().min(1, 'Connection name is required'),
   roleArn: z
     .string()
-    .regex(/^arn:(aws|aws-us-gov):iam::\d{12}:role\/.+$/, 'Must be a valid IAM Role ARN'),
+    .regex(
+      /^arn:(aws|aws-us-gov):iam::\d{12}:role\/[A-Za-z0-9_+=,.@/-]+$/,
+      'Must be a valid IAM Role ARN',
+    ),
   externalId: z.string().min(1),
   remediationRoleArn: z
     .string()
-    .regex(/^arn:(aws|aws-us-gov):iam::\d{12}:role\/.+$/, 'Must be a valid IAM Role ARN')
+    .regex(
+      /^arn:(aws|aws-us-gov):iam::\d{12}:role\/[A-Za-z0-9_+=,.@/-]+$/,
+      'Must be a valid IAM Role ARN',
+    )
+    .optional()
+    .or(z.literal('')),
+  // Per-pair map, stored as a JSON string: { "Class:region": "arn:..." }.
+  // Preferred over the legacy single ARN (dual-read window keeps both).
+  // Shape-checked server-side in validateAwsPartitionConfig; the schema
+  // only asserts "looks like a JSON object" so malformed input fails here.
+  remediationRoles: z
+    .string()
+    .refine(
+      (value) => {
+        if (!value.trim()) return true;
+        try {
+          const parsed: unknown = JSON.parse(value);
+          return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed);
+        } catch {
+          return false;
+        }
+      },
+      { message: 'Must be a JSON object mapping "<AssetClass>:<region>" to role ARN' },
+    )
     .optional()
     .or(z.literal('')),
   regions: z.array(z.string()).min(1, 'Select at least one region'),

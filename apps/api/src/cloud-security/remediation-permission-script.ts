@@ -13,9 +13,13 @@ export const BLOCKED_PERMISSIONS_MESSAGE =
  * would replace the whole policy and wipe them). Same merge shape as the
  * frontend batch scripts, via the shared helper.
  */
-export function buildStaticPermissionScript(permissions: string[]): string {
+export function buildStaticPermissionScript(
+  permissions: string[],
+  roleName?: string,
+): string {
   return buildRemediationGrantScript({
     permissions,
     policyName: 'OpenComp-AutoFix',
+    ...(roleName ? { roleName } : {}),
   });
 }

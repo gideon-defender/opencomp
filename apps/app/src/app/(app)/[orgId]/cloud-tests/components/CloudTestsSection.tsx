@@ -2,33 +2,17 @@
 
 import { useApi } from '@/hooks/use-api';
 import { usePermissions } from '@/hooks/use-permissions';
-import {
-  getAwsCloudShellUrl,
-  getAwsRemediationScript,
-  normalizeAwsEnvironment,
-} from '@gideon-defender/integration-platform';
 import { Badge } from '@gideon-defender/ui/badge';
 import { Button } from '@gideon-defender/ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@gideon-defender/ui/dialog';
-import {
-  Check,
   ChevronDown,
   ChevronRight,
-  Copy,
-  ExternalLink,
   Loader2,
   RefreshCw,
   Search,
   ShieldAlert,
   ShieldCheck,
   ShieldX,
-  Terminal,
   Wrench,
   X,
   Zap,
@@ -42,6 +26,7 @@ import { AzureSetupGuide } from './AzureSetupGuide';
 import { BatchRemediationDialog } from './BatchRemediationDialog';
 import { GcpSetupGuide } from './GcpSetupGuide';
 import { RemediationDialog } from './RemediationDialog';
+import { RemediationSetupDialog } from './RemediationSetupDialog';
 import { ScheduledScanPopover } from './ScheduledScanPopover';
 
 import { MarkExceptionModal } from '@/components/integrations/MarkExceptionModal';
@@ -204,6 +189,8 @@ export function CloudTestsSection({
     checkResultId: string;
     remediationKey: string;
     findingTitle: string;
+    resourceType?: string | null;
+    region?: string | null;
     guidedOnly?: boolean;
     guidedSteps?: string[];
     risk?: string;
@@ -476,6 +463,11 @@ export function CloudTestsSection({
         title: f.title,
         key: f.findingKey!,
         severity: f.severity ?? 'medium',
+        resourceType: f.resourceType,
+        region:
+          typeof (f.evidence as { region?: unknown } | null)?.region === 'string'
+            ? ((f.evidence as { region?: string }).region ?? null)
+            : null,
       })),
     };
   }, [batchServiceId, serviceGroups, canFixFinding]);
@@ -815,6 +807,12 @@ export function CloudTestsSection({
                                   checkResultId: finding.id,
                                   remediationKey: key,
                                   findingTitle: finding.title ?? 'Finding',
+                                  resourceType: finding.resourceType,
+                                  region:
+                                    typeof (finding.evidence as { region?: unknown } | null)
+                                      ?.region === 'string'
+                                      ? (finding.evidence as { region?: string }).region
+                                      : null,
                                   fromSecurityHub: finding.serviceId === 'security-hub',
                                 })
                               }
@@ -921,6 +919,12 @@ export function CloudTestsSection({
                                   checkResultId: finding.id,
                                   remediationKey: key,
                                   findingTitle: finding.title ?? 'Finding',
+                                  resourceType: finding.resourceType,
+                                  region:
+                                    typeof (finding.evidence as { region?: unknown } | null)
+                                      ?.region === 'string'
+                                      ? (finding.evidence as { region?: string }).region
+                                      : null,
                                   fromSecurityHub: finding.serviceId === 'security-hub',
                                 })
                               }
@@ -1065,6 +1069,8 @@ export function CloudTestsSection({
           checkResultId={remediationTarget.checkResultId}
           remediationKey={remediationTarget.remediationKey}
           findingTitle={remediationTarget.findingTitle}
+          resourceType={remediationTarget.resourceType}
+          region={remediationTarget.region}
           providerSlug={providerSlug}
           guidedOnly={remediationTarget.guidedOnly}
           guidedSteps={remediationTarget.guidedSteps}
@@ -1173,173 +1179,6 @@ function StatCard({
         <p className="text-muted-foreground text-xs">{label}</p>
       </div>
     </div>
-  );
-}
-
-function RemediationSetupDialog({
-  open,
-  onOpenChange,
-  orgId,
-  connectionId,
-  awsType,
-  onSaved,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  orgId: string;
-  connectionId: string;
-  awsType?: string;
-  onSaved?: () => void;
-}) {
-  const api = useApi();
-  const [copied, setCopied] = useState(false);
-  const [roleArn, setRoleArn] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const awsEnvironment = normalizeAwsEnvironment(awsType);
-
-  const finalScript = getAwsRemediationScript(awsEnvironment).replace(/YOUR_EXTERNAL_ID/g, orgId);
-  const cloudShellUrl = getAwsCloudShellUrl(awsEnvironment);
-
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(finalScript);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }, [finalScript]);
-
-  const handleSaveRoleArn = useCallback(async () => {
-    if (!roleArn.trim() || !connectionId) return;
-
-    const arnPattern = /^arn:(aws|aws-us-gov):iam::\d{12}:role\/.+$/;
-    if (!arnPattern.test(roleArn.trim())) {
-      setSaveError('Invalid ARN format. Expected an AWS IAM role ARN.');
-      return;
-    }
-
-    setSaving(true);
-    setSaveError(null);
-    try {
-      const resp = await api.put(`/v1/connections/${connectionId}/credentials`, {
-        credentials: { remediationRoleArn: roleArn.trim() },
-      });
-      if (resp.error) {
-        setSaveError(typeof resp.error === 'string' ? resp.error : 'Failed to save Role ARN');
-        return;
-      }
-      toast.success('Remediation Role ARN saved');
-      setRoleArn('');
-      onSaved?.();
-    } catch {
-      setSaveError('Failed to save Role ARN');
-    } finally {
-      setSaving(false);
-    }
-  }, [api, connectionId, roleArn, onSaved]);
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Enable Auto-Remediation</DialogTitle>
-          <DialogDescription>
-            Set up a remediation IAM role to enable auto-fix capabilities for your AWS security
-            findings.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4 pt-2">
-          <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
-                <Terminal className="h-4 w-4 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm font-medium">Remediation Role Setup</p>
-                <p className="text-xs text-muted-foreground">
-                  Create a write-access IAM role for auto-fix
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-2.5">
-              <div className="flex items-start gap-2.5">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">
-                  1
-                </span>
-                <p className="text-xs text-muted-foreground pt-0.5">
-                  Copy the setup script and run it in AWS CloudShell
-                </p>
-              </div>
-              <div className="flex items-start gap-2.5">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">
-                  2
-                </span>
-                <p className="text-xs text-muted-foreground pt-0.5">
-                  Paste the <span className="font-medium text-foreground">Role ARN</span> from the
-                  output below
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={handleCopy}
-                className="flex flex-1 select-none items-center justify-center gap-2 rounded-md bg-primary px-3 py-2.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-              >
-                {copied ? (
-                  <>
-                    <Check className="h-3.5 w-3.5" /> Copied!
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-3.5 w-3.5" /> Copy Script
-                  </>
-                )}
-              </button>
-              <a
-                href={cloudShellUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex flex-1 select-none items-center justify-center gap-2 rounded-md border px-3 py-2.5 text-xs font-medium transition-colors hover:bg-muted"
-              >
-                <ExternalLink className="h-3.5 w-3.5" />
-                Open CloudShell
-              </a>
-            </div>
-          </div>
-
-          {/* Role ARN input */}
-          <div className="space-y-2">
-            <label htmlFor="remediation-role-arn" className="text-xs font-medium">
-              Remediation Role ARN
-            </label>
-            <div className="flex gap-2">
-              <input
-                id="remediation-role-arn"
-                type="text"
-                placeholder="arn:aws:iam::123456789012:role/OpenComp-Remediator"
-                value={roleArn}
-                onChange={(e) => {
-                  setRoleArn(e.target.value);
-                  setSaveError(null);
-                }}
-                className="flex-1 rounded-md border bg-background px-3 py-2 text-xs placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-              <Button size="sm" onClick={handleSaveRoleArn} disabled={!roleArn.trim() || saving}>
-                {saving ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : null}
-                Save
-              </Button>
-            </div>
-            {saveError && <p className="text-[11px] text-red-600">{saveError}</p>}
-          </div>
-
-          <p className="text-[10px] text-muted-foreground/70 text-center">
-            The remediation role is separate from your audit role — your audit role stays read-only.
-          </p>
-        </div>
-      </DialogContent>
-    </Dialog>
   );
 }
 

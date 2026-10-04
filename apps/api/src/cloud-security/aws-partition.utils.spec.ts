@@ -5,6 +5,8 @@ import {
   hasRemediationRole,
   isValidRemediationRoleName,
   parseAwsRoleArn,
+  remediationRoleNameFromArn,
+  resolveRemediationRoleArn,
   validateAwsPartitionConfig,
 } from './aws-partition.utils';
 
@@ -45,6 +47,28 @@ describe('aws partition utils', () => {
     });
     expect(parseAwsRoleArn('not-an-arn')).toBeNull();
     expect(parseAwsRoleArn('')).toBeNull();
+  });
+
+  it('rejects shell metacharacters in the role token', () => {
+    // A validated ARN is interpolated into generated grant scripts inside
+    // double quotes — `"`, `$`, backticks, and `;` must never parse.
+    for (const roleName of [
+      'OpenComp-Remediator-Storage-us-east-1"; evil #',
+      'OpenComp-Remediator-$(whoami)',
+      'OpenComp-Remediator-`id`',
+      "OpenComp-Remediator-'; evil",
+      'OpenComp-Remediator-$HOME',
+    ]) {
+      expect(
+        parseAwsRoleArn(`arn:aws:iam::123456789012:role/${roleName}`),
+      ).toBeNull();
+    }
+    // IAM paths and the documented charset still parse.
+    expect(
+      parseAwsRoleArn(
+        'arn:aws:iam::123456789012:role/team/OpenComp-Remediator',
+      ),
+    ).not.toBeNull();
   });
 
   it('accepts whitespace-padded ARNs at the validation layer', () => {
@@ -105,6 +129,8 @@ describe('aws partition utils', () => {
       }),
     ).toEqual([]);
 
+    // IAM paths address a different role object than the bare name, so a
+    // pathed ARN must fail closed instead of validating clean.
     expect(
       validateAwsPartitionConfig({
         partition: 'aws',
@@ -113,7 +139,7 @@ describe('aws partition utils', () => {
         remediationRoleArn:
           'arn:aws:iam::123456789012:role/team/OpenComp-Remediator-Storage-us-east-1',
       }),
-    ).toEqual([]);
+    ).toEqual([expect.stringContaining('must not include an IAM path')]);
   });
 
   it('rejects remediation role confusion: auditor reuse, cross-account, wrong name', () => {
@@ -255,5 +281,350 @@ describe('aws partition utils', () => {
     delete process.env.SECURITY_HUB_GOVCLOUD_ACCESS_KEY_ID;
     delete process.env.SECURITY_HUB_GOVCLOUD_SECRET_ACCESS_KEY;
     delete process.env.SECURITY_HUB_GOVCLOUD_SESSION_TOKEN;
+  });
+
+  describe('remediationRoles pair map', () => {
+    const AUDITOR = 'arn:aws:iam::123456789012:role/OpenComp-Auditor';
+    const PAIR_ARN =
+      'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1';
+
+    it('accepts a valid pair map alongside the legacy ARN', () => {
+      expect(
+        validateAwsPartitionConfig({
+          partition: 'aws',
+          roleArn: AUDITOR,
+          regions: ['us-east-1'],
+          remediationRoles: { 'Storage:us-east-1': PAIR_ARN },
+        }),
+      ).toEqual([]);
+    });
+
+    it('rejects malformed map keys fail-closed', () => {
+      expect(
+        validateAwsPartitionConfig({
+          partition: 'aws',
+          roleArn: AUDITOR,
+          regions: ['us-east-1'],
+          remediationRoles: { 'Bogus:us-east-1': PAIR_ARN },
+        }),
+      ).toEqual([expect.stringContaining('invalid key')]);
+      expect(
+        validateAwsPartitionConfig({
+          partition: 'aws',
+          roleArn: AUDITOR,
+          regions: ['us-east-1'],
+          remediationRoles: { 'Security-Global:eu-west-1': PAIR_ARN },
+        }),
+      ).toEqual([expect.stringContaining('invalid key')]);
+    });
+
+    it('applies the same fail-closed ARN rules to every entry', () => {
+      const base = {
+        partition: 'aws' as const,
+        roleArn: AUDITOR,
+        regions: ['us-east-1'],
+      };
+      // Cross-account entry.
+      expect(
+        validateAwsPartitionConfig({
+          ...base,
+          remediationRoles: {
+            'Storage:us-east-1':
+              'arn:aws:iam::999999999999:role/OpenComp-Remediator-Storage-us-east-1',
+          },
+        }),
+      ).toEqual([
+        expect.stringContaining('must match the auditor Role ARN account'),
+      ]);
+      // Auditor-reuse entry.
+      expect(
+        validateAwsPartitionConfig({
+          ...base,
+          remediationRoles: { 'Storage:us-east-1': AUDITOR },
+        }),
+      ).toEqual([
+        expect.stringContaining('must differ from the auditor Role ARN'),
+        expect.stringContaining('must reference OpenComp-Remediator'),
+        // Binding fires too: the auditor ARN names no pair role.
+        expect.stringContaining(
+          'must reference the "OpenComp-Remediator-Storage-us-east-1" role',
+        ),
+      ]);
+      // Non-remediator name entry.
+      expect(
+        validateAwsPartitionConfig({
+          ...base,
+          remediationRoles: {
+            'Storage:us-east-1': 'arn:aws:iam::123456789012:role/Admin',
+          },
+        }),
+      ).toEqual([
+        expect.stringContaining('must reference OpenComp-Remediator'),
+        expect.stringContaining(
+          'must reference the "OpenComp-Remediator-Storage-us-east-1" role',
+        ),
+      ]);
+    });
+
+    it('treats the map as a JSON credential string too', () => {
+      expect(
+        validateAwsPartitionConfig({
+          partition: 'aws',
+          roleArn: AUDITOR,
+          regions: ['us-east-1'],
+          remediationRoles: JSON.stringify({ 'Storage:us-east-1': PAIR_ARN }),
+        }),
+      ).toEqual([]);
+    });
+
+    it('rejects malformed raw map input instead of passing with zero entries', () => {
+      for (const remediationRoles of ['not-json', '[1,2]', '123', '"str"']) {
+        expect(
+          validateAwsPartitionConfig({
+            partition: 'aws',
+            roleArn: AUDITOR,
+            regions: ['us-east-1'],
+            remediationRoles,
+          }),
+        ).toEqual([expect.stringContaining('must be a JSON object')]);
+      }
+    });
+
+    it('binds each entry to its pair role instead of any remediator name', () => {
+      const base = {
+        partition: 'aws' as const,
+        roleArn: AUDITOR,
+        regions: ['us-east-1'],
+      };
+      // Storage key pointing at the global role: valid name, wrong pair.
+      expect(
+        validateAwsPartitionConfig({
+          ...base,
+          remediationRoles: {
+            'Storage:us-east-1':
+              'arn:aws:iam::123456789012:role/OpenComp-Remediator-Security-Global',
+          },
+        }),
+      ).toEqual([
+        expect.stringContaining(
+          'must reference the "OpenComp-Remediator-Storage-us-east-1" role',
+        ),
+      ]);
+      // Suffix-sharing IAM path is a different role object, not an identity.
+      expect(
+        validateAwsPartitionConfig({
+          ...base,
+          remediationRoles: {
+            'Storage:us-east-1':
+              'arn:aws:iam::123456789012:role/extra-path/OpenComp-Remediator-Storage-us-east-1',
+          },
+        }),
+      ).toEqual([
+        expect.stringContaining('must reference the "OpenComp-Remediator'),
+      ]);
+    });
+
+    it('rejects shell-unsafe and malformed region names', () => {
+      expect(
+        validateAwsPartitionConfig({
+          partition: 'aws',
+          roleArn: AUDITOR,
+          regions: ['us-east-1"; evil #'],
+          remediationRoles: { 'Storage:us-east-1': PAIR_ARN },
+        }),
+      ).toEqual([expect.stringContaining('Invalid AWS region names')]);
+    });
+  });
+
+  describe('hasRemediationRole with pair map', () => {
+    const PAIR_ARN =
+      'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1';
+
+    it('is true with a non-empty map plus External ID', () => {
+      expect(
+        hasRemediationRole({
+          externalId: 'ext-1',
+          remediationRoles: JSON.stringify({
+            'Storage:us-east-1':
+              'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1',
+          }),
+        }),
+      ).toBe(true);
+    });
+
+    it('is false with an empty or garbage map and no legacy ARN', () => {
+      expect(
+        hasRemediationRole({ externalId: 'ext-1', remediationRoles: '{}' }),
+      ).toBe(false);
+      expect(
+        hasRemediationRole({ externalId: 'ext-1', remediationRoles: 'nope' }),
+      ).toBe(false);
+      expect(hasRemediationRole({ externalId: 'ext-1' })).toBe(false);
+    });
+
+    it('ignores entries that can never satisfy resolution', () => {
+      // Invalid keys and malformed ARNs match no finding — the gate must
+      // stay closed so setup fails visibly instead of at assume time.
+      expect(
+        hasRemediationRole({
+          externalId: 'ext-1',
+          remediationRoles: JSON.stringify({
+            'Bogus:us-east-1': 'arn:aws:iam::1:role/A',
+          }),
+        }),
+      ).toBe(false);
+      expect(
+        hasRemediationRole({
+          externalId: 'ext-1',
+          remediationRoles: JSON.stringify({
+            'Storage:us-east-1': 'not-an-arn',
+          }),
+        }),
+      ).toBe(false);
+    });
+
+    it('still requires the External ID with a map present', () => {
+      const map = JSON.stringify({ 'Storage:us-east-1': PAIR_ARN });
+      // A valid pair entry alone must not flip the gate — the External ID
+      // check must hold independently of the map.
+      expect(hasRemediationRole({ remediationRoles: map })).toBe(false);
+      expect(
+        hasRemediationRole({ externalId: '   ', remediationRoles: map }),
+      ).toBe(false);
+      expect(
+        hasRemediationRole({ externalId: 'ext-1', remediationRoles: map }),
+      ).toBe(true);
+    });
+
+    it('keeps the legacy ARN leg of the gate fail-closed', () => {
+      // Invalid legacy ARN alone stays closed (falls through to an empty map).
+      expect(
+        hasRemediationRole({
+          externalId: 'ext-1',
+          remediationRoleArn: 'not-an-arn',
+        }),
+      ).toBe(false);
+      // Invalid legacy plus a valid pair entry still counts as configured.
+      expect(
+        hasRemediationRole({
+          externalId: 'ext-1',
+          remediationRoleArn: 'not-an-arn',
+          remediationRoles: JSON.stringify({ 'Storage:us-east-1': PAIR_ARN }),
+        }),
+      ).toBe(true);
+      // Valid legacy ARN alone still counts (dual-read window).
+      expect(
+        hasRemediationRole({
+          externalId: 'ext-1',
+          remediationRoleArn:
+            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+        }),
+      ).toBe(true);
+    });
+  });
+
+  describe('resolveRemediationRoleArn', () => {
+    const MAP = JSON.stringify({
+      'Storage:us-east-1':
+        'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1',
+      'Security-Global:us-east-1':
+        'arn:aws:iam::123456789012:role/OpenComp-Remediator-Security-Global',
+    });
+    const LEGACY = 'arn:aws:iam::123456789012:role/OpenComp-Remediator';
+
+    it('prefers the pair map over the legacy ARN', () => {
+      expect(
+        resolveRemediationRoleArn({
+          credentials: { remediationRoles: MAP, remediationRoleArn: LEGACY },
+          resourceType: 'aws-s3-bucket',
+          region: 'us-east-1',
+        }),
+      ).toBe(
+        'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1',
+      );
+    });
+
+    it('pins Security-Global findings to the global role regardless of region', () => {
+      expect(
+        resolveRemediationRoleArn({
+          credentials: { remediationRoles: MAP },
+          resourceType: 'aws-cloudtrail',
+          region: 'eu-west-1',
+        }),
+      ).toBe(
+        'arn:aws:iam::123456789012:role/OpenComp-Remediator-Security-Global',
+      );
+    });
+
+    it('falls back to the legacy ARN when the pair key is absent', () => {
+      expect(
+        resolveRemediationRoleArn({
+          credentials: { remediationRoles: MAP, remediationRoleArn: LEGACY },
+          resourceType: 'aws-rds-instance',
+          region: 'us-east-1',
+        }),
+      ).toBe(LEGACY);
+    });
+
+    it('returns undefined when neither map nor legacy covers the pair', () => {
+      expect(
+        resolveRemediationRoleArn({
+          credentials: { remediationRoles: MAP },
+          resourceType: 'aws-rds-instance',
+          region: 'us-east-1',
+        }),
+      ).toBeUndefined();
+    });
+
+    it('refuses to route a key to another pair\u2019s role (exact-pair binding)', () => {
+      // Storage key pointing at the Security-Global role must not resolve —
+      // assuming it would promote the finding to the widest-blast-radius role.
+      expect(
+        resolveRemediationRoleArn({
+          credentials: {
+            remediationRoles: JSON.stringify({
+              'Storage:us-east-1':
+                'arn:aws:iam::123456789012:role/OpenComp-Remediator-Security-Global',
+            }),
+          },
+          resourceType: 'aws-s3-bucket',
+          region: 'us-east-1',
+        }),
+      ).toBeUndefined();
+    });
+
+    it('refuses to route a suffix-sharing IAM path (different role object)', () => {
+      expect(
+        resolveRemediationRoleArn({
+          credentials: {
+            remediationRoles: JSON.stringify({
+              'Storage:us-east-1':
+                'arn:aws:iam::123456789012:role/team/OpenComp-Remediator-Storage-us-east-1',
+            }),
+          },
+          resourceType: 'aws-s3-bucket',
+          region: 'us-east-1',
+        }),
+      ).toBeUndefined();
+    });
+  });
+
+  describe('remediationRoleNameFromArn', () => {
+    it('returns the bare role name without the IAM path', () => {
+      expect(
+        remediationRoleNameFromArn(
+          'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1',
+        ),
+      ).toBe('OpenComp-Remediator-Storage-us-east-1');
+      expect(
+        remediationRoleNameFromArn(
+          'arn:aws:iam::123456789012:role/team/OpenComp-Remediator',
+        ),
+      ).toBe('OpenComp-Remediator');
+    });
+
+    it('returns undefined for unparseable ARNs', () => {
+      expect(remediationRoleNameFromArn('not-an-arn')).toBeUndefined();
+    });
   });
 });

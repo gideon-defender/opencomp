@@ -146,7 +146,35 @@ export type { AwsEnvironment } from './manifests/aws/credentials';
 
 // AWS remediation role script (split from credentials to respect the
 // 300-line file limit) — same public import path as before.
-export { awsRemediationScript, getAwsRemediationScript } from './manifests/aws/remediation-script';
+export {
+  awsRemediationScript,
+  getAwsRemediationScript,
+  getAwsRemediationScriptForPair,
+} from './manifests/aws/remediation-script';
+export type { RemediationScriptPair } from './manifests/aws/remediation-script';
+
+// Asset-class x region remediator roles (Phase 2): shared by the API
+// (assume routing, validation) and the frontend (per-pair setup UI).
+export {
+  AWS_LEGACY_REMEDIATION_ROLE_NAME,
+  AWS_REMEDIATION_ROLE_NAME_PREFIX,
+  FIX_FORWARD_ALLOWLIST,
+  NEVER_ALLOW_REMEDIATION_ACTIONS,
+  REMEDIATION_ASSET_CLASSES,
+  SAFE_AWS_REGION_PATTERN,
+  SAFE_IAM_ROLE_TOKEN_PATTERN,
+  SECURITY_GLOBAL_PINNED_REGION,
+  buildRemediationPolicyDocument,
+  escapeDoubleQuotedShell,
+  findingToAssetClass,
+  getRemediationRolesParseError,
+  isRemediationRoleKey,
+  parseRemediationRolesMap,
+  remediationRoleKey,
+  remediationRoleName,
+  serializeRemediationRolesMap,
+} from './manifests/aws/remediation-roles';
+export type { RemediationAssetClass } from './manifests/aws/remediation-roles';
 
 // Shared AWS STS AssumeRole retry (transient / IAM-eventual-consistency safe),
 // reused by the Cloud Tests scanner in apps/api.

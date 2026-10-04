@@ -1960,6 +1960,7 @@
       "regions": "Regions",
       "regionsSaved": "Regions saved",
       "remediationRoleArnEnvMismatch": "Remediation Role ARN must match the selected AWS environment",
+      "remediationRoleArnAccountMismatch": "Remediation Role ARN must belong to the connected AWS account",
       "remediationRoleArnLabel": "Remediation Role ARN",
       "remediationRoleSaved": "Remediation role saved",
       "roleArnEnvMismatch": "Role ARN must match the selected AWS environment",
@@ -1973,7 +1974,15 @@
       "selectEnvironmentPlaceholder": "Select AWS environment",
       "setupScript": "Setup Script",
       "setupScriptSubtitle": "Create a write-access role for auto-fix",
-      "status": "Status"
+      "status": "Status",
+      "remediationPairsDescription": "One role per asset class and region. Create only the pairs you want auto-fix in — findings route to the matching role, with the legacy role below as fallback.",
+      "legacyRemediationBanner": "This connection still uses the legacy single remediation role. Create per-pair roles above — new fixes prefer them and the legacy role stays as fallback.",
+      "remediationPairsSaved": "Remediation roles saved",
+      "pairSetupScript": "Pair setup script",
+      "pairApprovalRequired": "Approval required",
+      "pairInvalidArn": "Invalid ARN format. Expected an AWS IAM role ARN in this account.",
+      "pairRoleMismatch": "ARN must reference the \"{roleName}\" role for this pair.",
+      "pairInvalidRegions": "Ignored invalid saved regions: {regions}. Correct the connection regions to manage those pairs."
     }
   },
   "status": {
