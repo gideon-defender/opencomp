@@ -1,3 +1,4 @@
+import { ApiErrorResponseDto } from '../../../openapi/common-responses';
 export const CREATE_AUTOMATION_RESPONSES = {
   201: {
     status: 201,
@@ -26,46 +27,16 @@ export const CREATE_AUTOMATION_RESPONSES = {
   400: {
     status: 400,
     description: 'Bad request - Invalid task ID or organization ID',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example: 'Invalid task ID or organization ID',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
   401: {
     status: 401,
     description: 'Unauthorized - Invalid authentication',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: { type: 'string', example: 'Unauthorized' },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
   404: {
     status: 404,
     description: 'Task not found',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: { type: 'string', example: 'Task not found' },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
 };

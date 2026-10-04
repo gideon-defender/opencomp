@@ -1,46 +1,22 @@
 import type { ApiResponseOptions } from '@nestjs/swagger';
+import { ApiErrorResponseDto } from '../../openapi/common-responses';
 
 const UNAUTHORIZED_RESPONSE: ApiResponseOptions = {
   status: 401,
   description: 'Unauthorized',
-  content: {
-    'application/json': {
-      schema: {
-        type: 'object',
-        properties: { message: { type: 'string', example: 'Unauthorized' } },
-      },
-    },
-  },
+  type: ApiErrorResponseDto,
 };
 
 const NOT_FOUND_RESPONSE: ApiResponseOptions = {
   status: 404,
   description: 'Resource not found',
-  content: {
-    'application/json': {
-      schema: {
-        type: 'object',
-        properties: {
-          message: { type: 'string', example: 'Resource not found' },
-        },
-      },
-    },
-  },
+  type: ApiErrorResponseDto,
 };
 
 const BAD_REQUEST_RESPONSE: ApiResponseOptions = {
   status: 400,
   description: 'Invalid request',
-  content: {
-    'application/json': {
-      schema: {
-        type: 'object',
-        properties: {
-          message: { type: 'string', example: 'Invalid request' },
-        },
-      },
-    },
-  },
+  type: ApiErrorResponseDto,
 };
 
 export const GET_POLICY_VERSION_BY_ID_RESPONSES: Record<

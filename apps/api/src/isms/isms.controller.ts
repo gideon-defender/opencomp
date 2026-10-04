@@ -38,6 +38,7 @@ import { EnsureIsmsSetupDto } from './dto/ensure-isms-setup.dto';
 import { SubmitIsmsForApprovalDto } from './dto/submit-isms-for-approval.dto';
 import { ExportIsmsDocumentDto } from './dto/export-isms-document.dto';
 import { LinkIsmsControlsDto } from './dto/link-isms-controls.dto';
+import { ApiAuthErrors } from '../openapi/common-responses';
 
 @ApiTags('ISMS')
 @Controller({ path: 'isms', version: '1' })
@@ -61,6 +62,7 @@ export class IsmsController {
   @ApiOperation({ summary: 'Ensure ISMS foundational documents exist' })
   @ApiConsumes('application/json')
   @ApiOkResponse({ description: 'Setup ensured' })
+  @ApiAuthErrors()
   async ensureSetup(
     @Body() dto: EnsureIsmsSetupDto,
     @OrganizationId() organizationId: string,
@@ -108,6 +110,7 @@ export class IsmsController {
   @RequirePermission('evidence', 'read')
   @ApiOperation({ summary: 'Get an ISMS document with its latest version' })
   @ApiOkResponse({ description: 'ISMS document' })
+  @ApiAuthErrors()
   async getDocument(
     @Param('id') id: string,
     @OrganizationId() organizationId: string,
@@ -121,6 +124,7 @@ export class IsmsController {
   @ApiOperation({ summary: 'Map organization controls to an ISMS document' })
   @ApiConsumes('application/json')
   @ApiOkResponse({ description: 'Controls linked' })
+  @ApiAuthErrors()
   async addControls(
     @Param('id') id: string,
     @Body() dto: LinkIsmsControlsDto,
@@ -138,6 +142,7 @@ export class IsmsController {
   @RequirePermission('evidence', 'update')
   @ApiOperation({ summary: 'Remove a control mapping from an ISMS document' })
   @ApiOkResponse({ description: 'Control unlinked' })
+  @ApiAuthErrors()
   async removeControl(
     @Param('id') id: string,
     @Param('controlId') controlId: string,
@@ -156,6 +161,7 @@ export class IsmsController {
   @ApiOperation({ summary: 'Derive Context-of-the-Organization issues' })
   @ApiConsumes('application/json')
   @ApiOkResponse({ description: 'Document with derived issues' })
+  @ApiAuthErrors()
   async generate(
     @Param('id') id: string,
     @OrganizationId() organizationId: string,
@@ -169,6 +175,7 @@ export class IsmsController {
   @ApiOperation({ summary: 'Submit an ISMS document for approval' })
   @ApiConsumes('application/json')
   @ApiOkResponse({ description: 'Document submitted for approval' })
+  @ApiAuthErrors()
   async submitForApproval(
     @Param('id') id: string,
     @Body() dto: SubmitIsmsForApprovalDto,
@@ -187,6 +194,7 @@ export class IsmsController {
   @ApiOperation({ summary: 'Approve an ISMS document' })
   @ApiConsumes('application/json')
   @ApiOkResponse({ description: 'Document approved' })
+  @ApiAuthErrors()
   async approve(
     @Param('id') id: string,
     @OrganizationId() organizationId: string,
@@ -205,6 +213,7 @@ export class IsmsController {
   @ApiOperation({ summary: 'Decline an ISMS document' })
   @ApiConsumes('application/json')
   @ApiOkResponse({ description: 'Document declined' })
+  @ApiAuthErrors()
   async decline(
     @Param('id') id: string,
     @OrganizationId() organizationId: string,
@@ -217,6 +226,7 @@ export class IsmsController {
   @RequirePermission('evidence', 'read')
   @ApiOperation({ summary: 'Detect drift against the approved snapshot' })
   @ApiOkResponse({ description: 'Drift status' })
+  @ApiAuthErrors()
   async drift(
     @Param('id') id: string,
     @OrganizationId() organizationId: string,
@@ -234,6 +244,7 @@ export class IsmsController {
   @ApiOkResponse({
     description: 'Risk + vendor treatment rows and readiness messages',
   })
+  @ApiAuthErrors()
   async riskTreatment(
     @Param('id') id: string,
     @OrganizationId() organizationId: string,
@@ -250,6 +261,7 @@ export class IsmsController {
     summary: "List an ISMS document's published version history",
   })
   @ApiOkResponse({ description: 'Published versions, newest first' })
+  @ApiAuthErrors()
   async getVersions(
     @Param('id') id: string,
     @OrganizationId() organizationId: string,
@@ -263,6 +275,7 @@ export class IsmsController {
   @ApiConsumes('application/json')
   @ApiProduces('application/pdf')
   @ApiOkResponse({ description: 'Rendered document' })
+  @ApiAuthErrors()
   async exportDocument(
     @Param('id') id: string,
     @Body() dto: ExportIsmsDocumentDto,

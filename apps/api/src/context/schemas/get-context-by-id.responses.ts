@@ -1,4 +1,5 @@
 import type { ApiResponseOptions } from '@nestjs/swagger';
+import { ApiErrorResponseDto } from '../../openapi/common-responses';
 
 export const GET_CONTEXT_BY_ID_RESPONSES: Record<number, ApiResponseOptions> = {
   200: {
@@ -40,59 +41,16 @@ export const GET_CONTEXT_BY_ID_RESPONSES: Record<number, ApiResponseOptions> = {
   401: {
     status: 401,
     description: 'Unauthorized - Invalid or missing authentication',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: { type: 'string', example: 'Unauthorized' },
-            statusCode: { type: 'number', example: 401 },
-          },
-        },
-        example: {
-          message: 'Unauthorized',
-          statusCode: 401,
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
   404: {
     status: 404,
     description: 'Context entry not found',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: { type: 'string' },
-            statusCode: { type: 'number', example: 404 },
-          },
-        },
-        example: {
-          message:
-            'Context entry with ID ctx_abc123def456 not found in organization org_xyz789uvw012',
-          statusCode: 404,
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
   500: {
     status: 500,
     description: 'Internal server error',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: { type: 'string' },
-            statusCode: { type: 'number', example: 500 },
-          },
-        },
-        example: {
-          message: 'Internal server error',
-          statusCode: 500,
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
 };

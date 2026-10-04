@@ -1,4 +1,5 @@
 import type { ApiResponseOptions } from '@nestjs/swagger';
+import { ApiErrorResponseDto } from '../../openapi/common-responses';
 
 // Shared shape of one acceptance event, reused by the vendor acceptance
 // responses (apps/api/src/vendors/schemas/vendor-acceptances.responses.ts).
@@ -66,19 +67,7 @@ const RISK_ACCEPTANCE_SCHEMA = {
 const NOT_FOUND = (entity: string): ApiResponseOptions => ({
   status: 404,
   description: `${entity} not found`,
-  content: {
-    'application/json': {
-      schema: {
-        type: 'object',
-        properties: {
-          message: {
-            type: 'string',
-            example: `${entity} with ID abc123 not found in organization org_abc123def456`,
-          },
-        },
-      },
-    },
-  },
+  type: ApiErrorResponseDto,
 });
 
 // Auth fields the controllers spread into every response (sibling pattern:
@@ -102,49 +91,19 @@ const AUTH_RESPONSE_PROPERTIES = {
 const INTERNAL_ERROR: ApiResponseOptions = {
   status: 500,
   description: 'Internal server error',
-  content: {
-    'application/json': {
-      schema: {
-        type: 'object',
-        properties: {
-          message: { type: 'string', example: 'Internal server error' },
-        },
-      },
-    },
-  },
+  type: ApiErrorResponseDto,
 };
 
 const UNAUTHORIZED: ApiResponseOptions = {
   status: 401,
   description: 'Unauthorized - Invalid authentication',
-  content: {
-    'application/json': {
-      schema: {
-        type: 'object',
-        properties: {
-          message: { type: 'string', example: 'Invalid or expired API key' },
-        },
-      },
-    },
-  },
+  type: ApiErrorResponseDto,
 };
 
 const FORBIDDEN: ApiResponseOptions = {
   status: 403,
   description: 'Forbidden - User does not have permission to access this risk',
-  content: {
-    'application/json': {
-      schema: {
-        type: 'object',
-        properties: {
-          message: {
-            type: 'string',
-            example: 'You do not have access to this risk',
-          },
-        },
-      },
-    },
-  },
+  type: ApiErrorResponseDto,
 };
 
 export const LIST_RISK_ACCEPTANCES_RESPONSES: Record<
@@ -194,20 +153,7 @@ export const RECORD_RISK_ACCEPTANCE_RESPONSES: Record<
   400: {
     status: 400,
     description: 'No owner assigned, or the acceptor is not a valid member',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example:
-                'No owner is assigned. Assign an owner or choose an acceptor.',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
   401: UNAUTHORIZED,
   403: FORBIDDEN,

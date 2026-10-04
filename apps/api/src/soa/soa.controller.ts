@@ -10,11 +10,12 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 import {
-  ApiTags,
-  ApiOperation,
   ApiConsumes,
-  ApiProduces,
+  ApiCreatedResponse,
   ApiOkResponse,
+  ApiOperation,
+  ApiProduces,
+  ApiTags,
 } from '@nestjs/swagger';
 import { SOAService } from './soa.service';
 import { SaveSOAAnswerDto } from './dto/save-soa-answer.dto';
@@ -39,6 +40,7 @@ import {
   setupSSEHeaders,
   sanitizeErrorMessage,
 } from '../utils/sse-utils';
+import { ApiAuthErrors } from '../openapi/common-responses';
 
 @ApiTags('SOA')
 @Controller({
@@ -66,6 +68,7 @@ export class SOAController {
       },
     },
   })
+  @ApiAuthErrors()
   async saveAnswer(
     @Body() dto: SaveSOAAnswerDto,
     @OrganizationId() organizationId: string,
@@ -87,6 +90,10 @@ export class SOAController {
     summary: 'Auto-fill SOA document',
     description: 'Streams SOA answers via Server-Sent Events (SSE)',
   })
+  @ApiCreatedResponse({
+    description: 'Auto-fill ISO 27001 SOA completed successfully',
+  })
+  @ApiAuthErrors()
   async autoFill(
     @Body() dto: AutoFillSOADto,
     @OrganizationId() organizationId: string,
@@ -316,6 +323,7 @@ export class SOAController {
   @ApiOkResponse({
     description: 'Document created successfully',
   })
+  @ApiAuthErrors()
   async createDocument(
     @Body() dto: CreateSOADocumentDto,
     @OrganizationId() organizationId: string,
@@ -332,6 +340,7 @@ export class SOAController {
   @ApiOkResponse({
     description: 'Setup ensured',
   })
+  @ApiAuthErrors()
   async ensureSetup(
     @Body() dto: EnsureSOASetupDto,
     @OrganizationId() organizationId: string,
@@ -350,6 +359,7 @@ export class SOAController {
   @ApiOkResponse({
     description: 'Setup returned (configuration/document may be null)',
   })
+  @ApiAuthErrors()
   async getSetup(
     @Body() dto: EnsureSOASetupDto,
     @OrganizationId() organizationId: string,
@@ -366,6 +376,7 @@ export class SOAController {
   @ApiOkResponse({
     description: 'Document approved successfully',
   })
+  @ApiAuthErrors()
   async approveDocument(
     @Body() dto: ApproveSOADocumentDto,
     @OrganizationId() organizationId: string,
@@ -387,6 +398,7 @@ export class SOAController {
   @ApiOkResponse({
     description: 'Document declined successfully',
   })
+  @ApiAuthErrors()
   async declineDocument(
     @Body() dto: DeclineSOADocumentDto,
     @OrganizationId() organizationId: string,
@@ -408,6 +420,7 @@ export class SOAController {
   @ApiOkResponse({
     description: 'Document submitted for approval successfully',
   })
+  @ApiAuthErrors()
   async submitForApproval(
     @Body() dto: SubmitSOAForApprovalDto,
     @OrganizationId() organizationId: string,
@@ -424,6 +437,7 @@ export class SOAController {
   @ApiOkResponse({
     description: 'Export SOA document to PDF',
   })
+  @ApiAuthErrors()
   async exportDocument(
     @Body() dto: ExportSOADocumentDto,
     @Res({ passthrough: true }) res: Response,

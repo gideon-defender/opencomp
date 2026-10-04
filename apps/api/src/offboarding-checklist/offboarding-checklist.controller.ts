@@ -10,7 +10,14 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiSecurity, ApiTags } from '@nestjs/swagger';
+import {
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiSecurity,
+  ApiTags,
+} from '@nestjs/swagger';
 import { db } from '@db';
 import type { Response } from 'express';
 import { AuthContext, OrganizationId } from '../auth/auth-context.decorator';
@@ -24,6 +31,7 @@ import { OffboardingExportService } from './offboarding-export.service';
 import { CreateTemplateItemDto } from './dto/create-template-item.dto';
 import { UpdateTemplateItemDto } from './dto/update-template-item.dto';
 import { CompleteChecklistItemDto } from './dto/complete-checklist-item.dto';
+import { ApiAuthErrors } from '../openapi/common-responses';
 
 @ApiTags('Offboarding Checklist')
 @Controller({ path: 'offboarding-checklist', version: '1' })
@@ -49,6 +57,11 @@ export class OffboardingChecklistController {
     description:
       'Lists members whose offboarding checklist is still incomplete, with their outstanding items, so you can track and finish departing-employee offboarding.',
   })
+  @ApiOkResponse({
+    description:
+      'Members with pending offboarding checklists retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getPendingOffboardings(@OrganizationId() organizationId: string) {
     return this.offboardingChecklistService.getPendingOffboardings(
       organizationId,
@@ -62,6 +75,10 @@ export class OffboardingChecklistController {
     description:
       "Returns the organization's offboarding checklist template: the ordered set of items every departing member must complete during their offboarding.",
   })
+  @ApiOkResponse({
+    description: 'The offboarding checklist template retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getTemplate(@OrganizationId() organizationId: string) {
     return this.offboardingChecklistService.getTemplate(organizationId);
   }
@@ -73,6 +90,10 @@ export class OffboardingChecklistController {
     description:
       "Creates a new item in the organization's offboarding checklist template so it appears on every member's offboarding checklist from now on.",
   })
+  @ApiCreatedResponse({
+    description: 'An offboarding checklist template item created successfully',
+  })
+  @ApiAuthErrors()
   async createTemplateItem(
     @OrganizationId() organizationId: string,
     @Body() dto: CreateTemplateItemDto,
@@ -90,6 +111,10 @@ export class OffboardingChecklistController {
     description:
       "Updates an existing offboarding checklist template item by id, changing its label, description, or settings on the organization's offboarding template.",
   })
+  @ApiOkResponse({
+    description: 'An offboarding checklist template item updated successfully',
+  })
+  @ApiAuthErrors()
   async updateTemplateItem(
     @OrganizationId() organizationId: string,
     @Param('id') id: string,
@@ -109,6 +134,10 @@ export class OffboardingChecklistController {
     description:
       "Removes an item from the organization's offboarding checklist template by id so it no longer appears on members' offboarding checklists.",
   })
+  @ApiOkResponse({
+    description: 'An offboarding checklist template item deleted successfully',
+  })
+  @ApiAuthErrors()
   async deleteTemplateItem(
     @OrganizationId() organizationId: string,
     @Param('id') id: string,
@@ -126,6 +155,10 @@ export class OffboardingChecklistController {
     description:
       "Returns the offboarding checklist for a specific member, including each item and whether it has been completed, to track that person's offboarding progress.",
   })
+  @ApiOkResponse({
+    description: "A member's offboarding checklist retrieved successfully",
+  })
+  @ApiAuthErrors()
   async getMemberChecklist(
     @OrganizationId() organizationId: string,
     @Param('memberId') memberId: string,
@@ -143,6 +176,10 @@ export class OffboardingChecklistController {
     description:
       'Exports a zip archive containing the offboarding checklist evidence for every member in the organization, for audits, handovers, or record-keeping.',
   })
+  @ApiOkResponse({
+    description: 'All offboarding evidence as a zip file exported successfully',
+  })
+  @ApiAuthErrors()
   async exportAllEvidence(
     @OrganizationId() organizationId: string,
     @Res() res: Response,
@@ -173,6 +210,10 @@ export class OffboardingChecklistController {
       'Exports a zip archive of the offboarding checklist evidence collected for a single member, for audit, handover, or record-keeping purposes.',
   })
   @ApiParam({ name: 'memberId', description: 'Member ID' })
+  @ApiOkResponse({
+    description: 'Offboarding evidence as a zip file exported successfully',
+  })
+  @ApiAuthErrors()
   async exportEvidence(
     @Param('memberId') memberId: string,
     @OrganizationId() organizationId: string,
@@ -208,6 +249,11 @@ export class OffboardingChecklistController {
     description:
       "Marks a specific offboarding checklist item complete for a member, recording who completed it and when, as part of finishing that member's offboarding.",
   })
+  @ApiCreatedResponse({
+    description:
+      'Complete an offboarding checklist item completed successfully',
+  })
+  @ApiAuthErrors()
   async completeItem(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -231,6 +277,10 @@ export class OffboardingChecklistController {
     description:
       'Reverts a previously completed offboarding checklist item back to incomplete for a member, in case the step was marked done by mistake.',
   })
+  @ApiOkResponse({
+    description: 'Reopen an offboarding checklist item completed successfully',
+  })
+  @ApiAuthErrors()
   async uncompleteItem(
     @OrganizationId() organizationId: string,
     @Param('memberId') memberId: string,
@@ -250,6 +300,11 @@ export class OffboardingChecklistController {
     description:
       "Attaches a supporting evidence file to a member's completed offboarding checklist item, documenting that the offboarding step was actually carried out.",
   })
+  @ApiCreatedResponse({
+    description:
+      'Evidence for an offboarding checklist item uploaded successfully',
+  })
+  @ApiAuthErrors()
   async uploadEvidence(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -274,6 +329,11 @@ export class OffboardingChecklistController {
       'Lists the vendors a departing member had access to and whether each has been revoked, so you can confirm all vendor access is removed during offboarding.',
   })
   @ApiParam({ name: 'memberId', description: 'Member ID' })
+  @ApiOkResponse({
+    description:
+      'Vendor access revocation status for a member retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getAccessRevocations(
     @OrganizationId() organizationId: string,
     @Param('memberId') memberId: string,
@@ -292,6 +352,10 @@ export class OffboardingChecklistController {
       'Marks every vendor access record for a departing member as revoked in one step, recording who confirmed it, to complete access removal during offboarding.',
   })
   @ApiParam({ name: 'memberId', description: 'Member ID' })
+  @ApiCreatedResponse({
+    description: 'Confirm all vendor access as revoked completed successfully',
+  })
+  @ApiAuthErrors()
   async revokeAllVendorAccess(
     @OrganizationId() organizationId: string,
     @Param('memberId') memberId: string,
@@ -313,6 +377,10 @@ export class OffboardingChecklistController {
   })
   @ApiParam({ name: 'memberId', description: 'Member ID' })
   @ApiParam({ name: 'vendorId', description: 'Vendor ID' })
+  @ApiCreatedResponse({
+    description: 'Mark vendor access as revoked completed successfully',
+  })
+  @ApiAuthErrors()
   async revokeVendorAccess(
     @OrganizationId() organizationId: string,
     @Param('memberId') memberId: string,
@@ -360,6 +428,10 @@ export class OffboardingChecklistController {
   })
   @ApiParam({ name: 'memberId', description: 'Member ID' })
   @ApiParam({ name: 'vendorId', description: 'Vendor ID' })
+  @ApiOkResponse({
+    description: 'Undo vendor access revocation completed successfully',
+  })
+  @ApiAuthErrors()
   async undoVendorRevocation(
     @OrganizationId() organizationId: string,
     @Param('memberId') memberId: string,

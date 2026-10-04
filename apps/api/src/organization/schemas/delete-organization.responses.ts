@@ -1,4 +1,5 @@
 import { ApiResponseOptions } from '@nestjs/swagger';
+import { ApiErrorResponseDto } from '../../openapi/common-responses';
 
 export const DELETE_ORGANIZATION_RESPONSES: Record<string, ApiResponseOptions> =
   {
@@ -44,35 +45,11 @@ export const DELETE_ORGANIZATION_RESPONSES: Record<string, ApiResponseOptions> =
       status: 401,
       description:
         'Unauthorized - Invalid authentication or insufficient permissions',
-      content: {
-        'application/json': {
-          schema: {
-            type: 'object',
-            properties: {
-              message: {
-                type: 'string',
-                example: 'Invalid or expired API key',
-              },
-            },
-          },
-        },
-      },
+      type: ApiErrorResponseDto,
     },
     404: {
       status: 404,
       description: 'Organization not found',
-      content: {
-        'application/json': {
-          schema: {
-            type: 'object',
-            properties: {
-              message: {
-                type: 'string',
-                example: 'Organization with ID org_abc123def456 not found',
-              },
-            },
-          },
-        },
-      },
+      type: ApiErrorResponseDto,
     },
   };

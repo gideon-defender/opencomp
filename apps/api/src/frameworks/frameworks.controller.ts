@@ -11,11 +11,13 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
-  ApiTags,
-  ApiBearerAuth,
   ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiQuery,
+  ApiSecurity,
+  ApiTags,
 } from '@nestjs/swagger';
 import { HybridAuthGuard } from '../auth/hybrid-auth.guard';
 import { PermissionGuard } from '../auth/permission.guard';
@@ -38,9 +40,10 @@ import { SyncFrameworkDto } from './dto/sync-framework.dto';
 import { RollbackFrameworkDto } from './dto/rollback-framework.dto';
 import { FrameworkSyncService } from './framework-versioning/framework-sync.service';
 import { FrameworkRollbackService } from './framework-versioning/framework-rollback.service';
+import { ApiAuthErrors } from '../openapi/common-responses';
 
 @ApiTags('Frameworks')
-@ApiBearerAuth()
+@ApiSecurity('apikey')
 @UseGuards(HybridAuthGuard, PermissionGuard)
 @Controller({ path: 'frameworks', version: '1' })
 export class FrameworksController {
@@ -55,6 +58,10 @@ export class FrameworksController {
   @ApiOperation({ summary: 'List framework instances for the organization' })
   @ApiQuery({ name: 'includeControls', required: false, type: Boolean })
   @ApiQuery({ name: 'includeScores', required: false, type: Boolean })
+  @ApiOkResponse({
+    description: 'Compliance frameworks retrieved successfully',
+  })
+  @ApiAuthErrors()
   async findAll(
     @OrganizationId() organizationId: string,
     @Query('includeControls') includeControls?: string,
@@ -73,6 +80,8 @@ export class FrameworksController {
     summary:
       'List available frameworks (requires session, no active org needed — used during onboarding)',
   })
+  @ApiOkResponse({ description: 'Available frameworks retrieved successfully' })
+  @ApiAuthErrors()
   async findAvailable(@OrganizationIdOptional() organizationId?: string) {
     const data = await this.frameworksService.findAvailable(organizationId);
     return { data, count: data.length };
@@ -81,6 +90,10 @@ export class FrameworksController {
   @Get('scores')
   @RequirePermission('framework', 'read')
   @ApiOperation({ summary: 'Get overview compliance scores' })
+  @ApiOkResponse({
+    description: 'Framework readiness scores retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getScores(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -91,6 +104,11 @@ export class FrameworksController {
   @Get('update-statuses')
   @RequirePermission('framework', 'read')
   @ApiOperation({ summary: 'Get update statuses for all framework instances' })
+  @ApiOkResponse({
+    description:
+      'Update statuses for all framework instances retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getAllUpdateStatuses(@OrganizationId() organizationId: string) {
     const data =
       await this.frameworksService.getAllUpdateStatuses(organizationId);
@@ -100,6 +118,11 @@ export class FrameworksController {
   @Get(':id')
   @RequirePermission('framework', 'read')
   @ApiOperation({ summary: 'Get a single framework instance with full detail' })
+  @ApiOkResponse({
+    description:
+      'A single framework instance with full detail retrieved successfully',
+  })
+  @ApiAuthErrors()
   async findOne(
     @OrganizationId() organizationId: string,
     @Param('id') id: string,
@@ -110,6 +133,11 @@ export class FrameworksController {
   @Get(':id/requirements/:requirementKey')
   @RequirePermission('framework', 'read')
   @ApiOperation({ summary: 'Get a specific requirement with related controls' })
+  @ApiOkResponse({
+    description:
+      'A specific requirement with related controls retrieved successfully',
+  })
+  @ApiAuthErrors()
   async findRequirement(
     @OrganizationId() organizationId: string,
     @Param('id') id: string,
@@ -125,6 +153,10 @@ export class FrameworksController {
   @Post()
   @RequirePermission('framework', 'create')
   @ApiOperation({ summary: 'Add frameworks to the organization' })
+  @ApiCreatedResponse({
+    description: 'Compliance frameworks created successfully',
+  })
+  @ApiAuthErrors()
   async addFrameworks(
     @OrganizationId() organizationId: string,
     @Body() dto: AddFrameworksDto,
@@ -140,6 +172,11 @@ export class FrameworksController {
   @Post('custom')
   @RequirePermission('framework', 'create')
   @ApiOperation({ summary: 'Create a custom framework for this organization' })
+  @ApiCreatedResponse({
+    description:
+      'A custom framework for this organization created successfully',
+  })
+  @ApiAuthErrors()
   async createCustom(
     @OrganizationId() organizationId: string,
     @Body() dto: CreateCustomFrameworkDto,
@@ -155,6 +192,8 @@ export class FrameworksController {
       "Update the name and/or description of an organization's custom framework. Only custom frameworks are editable; platform frameworks return 400.",
   })
   @ApiBody({ type: UpdateCustomFrameworkDto })
+  @ApiOkResponse({ description: 'A custom framework updated successfully' })
+  @ApiAuthErrors()
   async updateCustom(
     @OrganizationId() organizationId: string,
     @Param('id') id: string,
@@ -166,6 +205,11 @@ export class FrameworksController {
   @Post(':id/requirements')
   @RequirePermission('framework', 'update')
   @ApiOperation({ summary: 'Add a custom requirement to a framework instance' })
+  @ApiCreatedResponse({
+    description:
+      'A custom requirement to a framework instance created successfully',
+  })
+  @ApiAuthErrors()
   async createRequirement(
     @OrganizationId() organizationId: string,
     @Param('id') id: string,
@@ -180,6 +224,11 @@ export class FrameworksController {
     summary:
       'Link (clone) existing requirements from another framework into this one',
   })
+  @ApiCreatedResponse({
+    description:
+      '(clone) existing requirements from another framework into this one linked successfully',
+  })
+  @ApiAuthErrors()
   async linkRequirements(
     @OrganizationId() organizationId: string,
     @Param('id') id: string,
@@ -197,6 +246,10 @@ export class FrameworksController {
   @ApiOperation({
     summary: 'Link existing org controls to a requirement',
   })
+  @ApiCreatedResponse({
+    description: 'Existing org controls to a requirement linked successfully',
+  })
+  @ApiAuthErrors()
   async linkControls(
     @OrganizationId() organizationId: string,
     @Param('id') id: string,
@@ -214,6 +267,11 @@ export class FrameworksController {
   @Get(':id/update-status')
   @RequirePermission('framework', 'read')
   @ApiOperation({ summary: 'Get the update status for a framework instance' })
+  @ApiOkResponse({
+    description:
+      'The update status for a framework instance retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getUpdateStatus(
     @OrganizationId() organizationId: string,
     @Param('id') id: string,
@@ -230,6 +288,11 @@ export class FrameworksController {
   @ApiOperation({
     summary: 'Preview changes from updating a framework instance',
   })
+  @ApiOkResponse({
+    description:
+      'Preview changes from updating a framework instance completed successfully',
+  })
+  @ApiAuthErrors()
   async getUpdatePreview(
     @OrganizationId() organizationId: string,
     @Param('id') id: string,
@@ -244,6 +307,10 @@ export class FrameworksController {
   @Post(':id/sync')
   @RequirePermission('framework', 'update')
   @ApiOperation({ summary: 'Sync a framework instance to a target version' })
+  @ApiCreatedResponse({
+    description: 'Framework requirements synced successfully',
+  })
+  @ApiAuthErrors()
   async syncFramework(
     @OrganizationId() organizationId: string,
     @Param('id') id: string,
@@ -264,6 +331,10 @@ export class FrameworksController {
   @Post(':id/rollback')
   @RequirePermission('framework', 'update')
   @ApiOperation({ summary: 'Roll back a framework sync operation' })
+  @ApiCreatedResponse({
+    description: 'Roll back a framework sync operation completed successfully',
+  })
+  @ApiAuthErrors()
   async rollbackFramework(
     @OrganizationId() organizationId: string,
     @Param('id') id: string,
@@ -284,6 +355,10 @@ export class FrameworksController {
   @Get(':id/sync-history')
   @RequirePermission('framework', 'read')
   @ApiOperation({ summary: 'Get sync history for a framework instance' })
+  @ApiOkResponse({
+    description: 'Sync history for a framework instance retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getSyncHistory(
     @OrganizationId() organizationId: string,
     @Param('id') id: string,
@@ -298,6 +373,8 @@ export class FrameworksController {
   @Delete(':id')
   @RequirePermission('framework', 'delete')
   @ApiOperation({ summary: 'Delete a framework instance' })
+  @ApiOkResponse({ description: 'A framework instance deleted successfully' })
+  @ApiAuthErrors()
   async delete(
     @OrganizationId() organizationId: string,
     @Param('id') id: string,

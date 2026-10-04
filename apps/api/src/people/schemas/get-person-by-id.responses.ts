@@ -1,4 +1,5 @@
 import { ApiResponseOptions } from '@nestjs/swagger';
+import { ApiErrorResponseDto } from '../../openapi/common-responses';
 
 export const GET_PERSON_BY_ID_RESPONSES: Record<string, ApiResponseOptions> = {
   200: {
@@ -34,47 +35,16 @@ export const GET_PERSON_BY_ID_RESPONSES: Record<string, ApiResponseOptions> = {
     status: 401,
     description:
       'Unauthorized - Invalid authentication or insufficient permissions',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: { type: 'string', example: 'Unauthorized' },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
   404: {
     status: 404,
     description: 'Organization or member not found',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example:
-                'Member with ID mem_abc123def456 not found in organization org_abc123def456',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
   500: {
     status: 500,
     description: 'Internal server error',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: { type: 'string', example: 'Internal server error' },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
 };

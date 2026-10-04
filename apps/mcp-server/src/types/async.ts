@@ -4,17 +4,17 @@
 
 export type APICall =
   | {
-      status: 'complete';
+      status: "complete";
       request: Request;
       response: Response;
     }
   | {
-      status: 'request-error';
+      status: "request-error";
       request: Request;
       response?: undefined;
     }
   | {
-      status: 'invalid';
+      status: "invalid";
       request?: undefined;
       response?: undefined;
     };
@@ -23,7 +23,7 @@ export class APIPromise<T> implements Promise<T> {
   readonly #promise: Promise<[T, APICall]>;
   #unwrapped: Promise<T> | null;
 
-  readonly [Symbol.toStringTag] = 'APIPromise';
+  readonly [Symbol.toStringTag] = "APIPromise";
 
   constructor(p: [T, APICall] | Promise<[T, APICall]>) {
     this.#promise = p instanceof Promise ? p : Promise.resolve(p);
@@ -35,14 +35,26 @@ export class APIPromise<T> implements Promise<T> {
   }
 
   then<TResult1 = T, TResult2 = never>(
-    onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | null | undefined,
-    onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null | undefined,
+    onfulfilled?:
+      | ((value: T) => TResult1 | PromiseLike<TResult1>)
+      | null
+      | undefined,
+    onrejected?:
+      | ((reason: any) => TResult2 | PromiseLike<TResult2>)
+      | null
+      | undefined,
   ): Promise<TResult1 | TResult2> {
-    return this.#promise.then(onfulfilled ? ([value]) => onfulfilled(value) : void 0, onrejected);
+    return this.#promise.then(
+      onfulfilled ? ([value]) => onfulfilled(value) : void 0,
+      onrejected,
+    );
   }
 
   catch<TResult = never>(
-    onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | null | undefined,
+    onrejected?:
+      | ((reason: any) => TResult | PromiseLike<TResult>)
+      | null
+      | undefined,
   ): Promise<T | TResult> {
     return this.#getUnwrapped().catch(onrejected);
   }

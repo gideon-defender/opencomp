@@ -11,6 +11,8 @@ import {
 } from '@nestjs/common';
 import {
   ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiProperty,
   ApiPropertyOptional,
@@ -31,6 +33,7 @@ import { ConnectionService } from '../services/connection.service';
 import { ProviderRepository } from '../repositories/provider.repository';
 import { CredentialVaultService } from '../services/credential-vault.service';
 import { AutoCheckRunnerService } from '../services/auto-check-runner.service';
+import { ApiAuthErrors } from '../../openapi/common-responses';
 
 // Class (not interface) so @nestjs/swagger emits a body schema, with a
 // class-validator decorator so the ValidationPipe whitelist accepts `variables`.
@@ -97,6 +100,10 @@ export class VariablesController {
   @Get('providers/:providerSlug')
   @ApiOperation({ summary: 'List variable definitions for a provider' })
   @RequirePermission('integration', 'read')
+  @ApiOkResponse({
+    description: 'Variable definitions for a provider retrieved successfully',
+  })
+  @ApiAuthErrors()
   getProviderVariables(
     @Param('providerSlug') providerSlug: string,
   ): Promise<{ variables: VariableDefinition[] }> {
@@ -148,6 +155,8 @@ export class VariablesController {
   @Get('connections/:connectionId')
   @ApiOperation({ summary: 'List connection variables' })
   @RequirePermission('integration', 'read')
+  @ApiOkResponse({ description: 'Connection variables retrieved successfully' })
+  @ApiAuthErrors()
   async getConnectionVariables(
     @Param('connectionId') connectionId: string,
     @OrganizationId() organizationId: string,
@@ -224,6 +233,10 @@ export class VariablesController {
   @Get('connections/:connectionId/options/:variableId')
   @ApiOperation({ summary: 'Get options for a connection variable' })
   @RequirePermission('integration', 'read')
+  @ApiOkResponse({
+    description: 'Options for a connection variable retrieved successfully',
+  })
+  @ApiAuthErrors()
   async fetchVariableOptions(
     @Param('connectionId') connectionId: string,
     @Param('variableId') variableId: string,
@@ -439,6 +452,10 @@ export class VariablesController {
   @ApiOperation({ summary: 'Update connection variables' })
   @ApiBody({ type: SaveVariablesDto })
   @RequirePermission('integration', 'update')
+  @ApiCreatedResponse({
+    description: 'Connection variables updated successfully',
+  })
+  @ApiAuthErrors()
   async saveConnectionVariables(
     @Param('connectionId') connectionId: string,
     @Body() body: SaveVariablesDto,

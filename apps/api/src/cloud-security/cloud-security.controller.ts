@@ -13,7 +13,11 @@ import {
   UseGuards,
   Req,
 } from '@nestjs/common';
-import { ApiOperation } from '@nestjs/swagger';
+import {
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+} from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 import { HybridAuthGuard } from '../auth/hybrid-auth.guard';
 import { PermissionGuard } from '../auth/permission.guard';
@@ -43,6 +47,7 @@ import {
   type GcpSetupStepId,
 } from './providers/gcp-security.service';
 import { AzureSecurityService } from './providers/azure-security.service';
+import { ApiAuthErrors } from '../openapi/common-responses';
 
 @Controller({ path: 'cloud-security', version: '1' })
 export class CloudSecurityController {
@@ -67,6 +72,10 @@ export class CloudSecurityController {
   @UseGuards(HybridAuthGuard, PermissionGuard)
   @RequirePermission('integration', 'read')
   @ApiOperation({ summary: 'List recent cloud security activity' })
+  @ApiOkResponse({
+    description: 'Recent cloud security activity retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getActivity(
     @Query('connectionId') connectionId: string,
     @Query('take') take: string | undefined,
@@ -97,6 +106,10 @@ export class CloudSecurityController {
   @UseGuards(HybridAuthGuard, PermissionGuard)
   @RequirePermission('integration', 'read')
   @ApiOperation({ summary: 'List supported cloud providers' })
+  @ApiOkResponse({
+    description: 'Supported cloud providers retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getProviders(@OrganizationId() organizationId: string) {
     const providers = await this.queryService.getProviders(organizationId);
     return { data: providers, count: providers.length };
@@ -107,6 +120,10 @@ export class CloudSecurityController {
   @UseGuards(HybridAuthGuard, PermissionGuard)
   @RequirePermission('integration', 'read')
   @ApiOperation({ summary: 'List cloud security findings' })
+  @ApiOkResponse({
+    description: 'Cloud security findings retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getFindings(@OrganizationId() organizationId: string) {
     const findings = await this.queryService.getFindings(organizationId);
     return { data: findings, count: findings.length };
@@ -123,6 +140,11 @@ export class CloudSecurityController {
       "without an explicit user attribution, the action is attributed to the org's owner and " +
       'the audit log description records the calling key/service name.',
   })
+  @ApiCreatedResponse({
+    description:
+      'Mark a finding as an exception so it no longer appears in the active Scan Results list completed successfully',
+  })
+  @ApiAuthErrors()
   async markFindingAsException(
     @Param('findingId') findingId: string,
     @Body() body: MarkExceptionDto,
@@ -158,6 +180,11 @@ export class CloudSecurityController {
       'Accepts session, API key, or service token auth. For API key / service token callers ' +
       "without an explicit user attribution, the action is attributed to the org's owner.",
   })
+  @ApiOkResponse({
+    description:
+      'Switch the AWS scan engine for a connection (OpenComp scanners ↔ Security Hub) completed successfully',
+  })
+  @ApiAuthErrors()
   async updateAwsScanMode(
     @Param('connectionId') connectionId: string,
     @Body() body: UpdateAwsScanModeDto,
@@ -190,6 +217,10 @@ export class CloudSecurityController {
       'Accepts session, API key, or service token auth. For API key / service token callers ' +
       "without an explicit user attribution, the action is attributed to the org's owner.",
   })
+  @ApiOkResponse({
+    description: 'An exception, reopening the finding revoked successfully',
+  })
+  @ApiAuthErrors()
   async revokeException(
     @Param('exceptionId') exceptionId: string,
     @OrganizationId() organizationId: string,
@@ -219,6 +250,11 @@ export class CloudSecurityController {
     summary:
       'List resolution, exception, and regression history for a connection',
   })
+  @ApiOkResponse({
+    description:
+      'Resolution, exception, and regression history for a connection retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getHistory(
     @Query('connectionId') connectionId: string,
     @OrganizationId() organizationId: string,
@@ -244,6 +280,11 @@ export class CloudSecurityController {
     summary:
       'Resolve the "About this check" description for a finding (AI-cached for AWS; provider-derived for GCP/Azure)',
   })
+  @ApiOkResponse({
+    description:
+      'Resolve the "About this check" description for a finding (AI-cached for AWS; provider-derived for GCP/Azure) completed successfully',
+  })
+  @ApiAuthErrors()
   async getCheckDefinition(
     @Param('findingId') findingId: string,
     @OrganizationId() organizationId: string,
@@ -263,6 +304,11 @@ export class CloudSecurityController {
     summary:
       'Resolve short-lived AWS credentials for a connection (internal only)',
   })
+  @ApiCreatedResponse({
+    description:
+      'Resolve short-lived AWS credentials for a connection (internal only) completed successfully',
+  })
+  @ApiAuthErrors()
   async resolveSession(
     @Param('connectionId') connectionId: string,
     @OrganizationId() organizationId: string,
@@ -284,6 +330,10 @@ export class CloudSecurityController {
   @UseGuards(HybridAuthGuard, PermissionGuard)
   @RequirePermission('integration', 'update')
   @ApiOperation({ summary: 'Trigger a security scan for a connection' })
+  @ApiCreatedResponse({
+    description: 'Run cloud security scan completed successfully',
+  })
+  @ApiAuthErrors()
   async scan(
     @Param('connectionId') connectionId: string,
     @OrganizationId() organizationId: string,
@@ -368,6 +418,11 @@ export class CloudSecurityController {
   @UseGuards(HybridAuthGuard, PermissionGuard)
   @RequirePermission('integration', 'read')
   @ApiOperation({ summary: 'Detect available cloud services for a connection' })
+  @ApiCreatedResponse({
+    description:
+      'Detect available cloud services for a connection completed successfully',
+  })
+  @ApiAuthErrors()
   async detectServices(
     @Param('connectionId') connectionId: string,
     @OrganizationId() organizationId: string,
@@ -392,6 +447,11 @@ export class CloudSecurityController {
   @UseGuards(HybridAuthGuard, PermissionGuard)
   @RequirePermission('integration', 'read')
   @ApiOperation({ summary: 'Detect the GCP organization for a connection' })
+  @ApiCreatedResponse({
+    description:
+      'Detect the GCP organization for a connection completed successfully',
+  })
+  @ApiAuthErrors()
   async detectGcpOrg(
     @Param('connectionId') connectionId: string,
     @OrganizationId() organizationId: string,
@@ -463,6 +523,10 @@ export class CloudSecurityController {
   @UseGuards(HybridAuthGuard, PermissionGuard)
   @RequirePermission('integration', 'update')
   @ApiOperation({ summary: 'Select GCP projects for a connection' })
+  @ApiCreatedResponse({
+    description: 'Select GCP projects for a connection completed successfully',
+  })
+  @ApiAuthErrors()
   async selectGcpProjects(
     @Param('connectionId') connectionId: string,
     @Body()
@@ -505,6 +569,10 @@ export class CloudSecurityController {
   @UseGuards(HybridAuthGuard, PermissionGuard)
   @RequirePermission('integration', 'update')
   @ApiOperation({ summary: 'Set up GCP for a connection' })
+  @ApiCreatedResponse({
+    description: 'Up GCP for a connection updated successfully',
+  })
+  @ApiAuthErrors()
   async setupGcp(
     @Param('connectionId') connectionId: string,
     @Body() body: { projectId?: string },
@@ -541,6 +609,10 @@ export class CloudSecurityController {
   @UseGuards(HybridAuthGuard, PermissionGuard)
   @RequirePermission('integration', 'update')
   @ApiOperation({ summary: 'Resolve a GCP setup step' })
+  @ApiCreatedResponse({
+    description: 'Resolve a GCP setup step completed successfully',
+  })
+  @ApiAuthErrors()
   async resolveGcpSetupStep(
     @Param('connectionId') connectionId: string,
     @Body() body: { stepId: GcpSetupStepId },
@@ -673,6 +745,10 @@ export class CloudSecurityController {
   @UseGuards(HybridAuthGuard, PermissionGuard)
   @RequirePermission('integration', 'update')
   @ApiOperation({ summary: 'Set up Azure for a connection' })
+  @ApiCreatedResponse({
+    description: 'Up Azure for a connection updated successfully',
+  })
+  @ApiAuthErrors()
   async setupAzure(
     @Param('connectionId') connectionId: string,
     @OrganizationId() organizationId: string,
@@ -837,6 +913,11 @@ export class CloudSecurityController {
   @UseGuards(HybridAuthGuard, PermissionGuard)
   @RequirePermission('integration', 'read')
   @ApiOperation({ summary: 'Validate Azure credentials for a connection' })
+  @ApiCreatedResponse({
+    description:
+      'Validate Azure credentials for a connection completed successfully',
+  })
+  @ApiAuthErrors()
   async validateAzure(
     @Param('connectionId') connectionId: string,
     @OrganizationId() organizationId: string,
@@ -949,6 +1030,11 @@ export class CloudSecurityController {
   @UseGuards(HybridAuthGuard, PermissionGuard)
   @RequirePermission('integration', 'update')
   @ApiOperation({ summary: 'Trigger a cloud security run for a connection' })
+  @ApiCreatedResponse({
+    description:
+      'Trigger a cloud security run for a connection completed successfully',
+  })
+  @ApiAuthErrors()
   async triggerScan(
     @Param('connectionId') connectionId: string,
     @OrganizationId() organizationId: string,
@@ -974,6 +1060,10 @@ export class CloudSecurityController {
   @UseGuards(HybridAuthGuard, PermissionGuard)
   @RequirePermission('integration', 'read')
   @ApiOperation({ summary: 'Get a cloud security scan run by ID' })
+  @ApiOkResponse({
+    description: 'A cloud security scan run by ID retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getRunStatus(
     @Param('runId') runId: string,
     @Query('connectionId') connectionId: string,

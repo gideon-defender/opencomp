@@ -14,11 +14,13 @@ import {
 } from '@nestjs/common';
 import {
   ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiQuery,
-  ApiTags,
   ApiSecurity,
+  ApiTags,
 } from '@nestjs/swagger';
 import {
   db,
@@ -39,6 +41,7 @@ import { UpdateFindingDto } from './dto/update-finding.dto';
 import { ValidateFindingIdPipe } from './pipes/validate-finding-id.pipe';
 import { toDbEvidenceFormType } from '@gideon-defender/company';
 import { evidenceFormTypeSchema } from '@/evidence-forms/evidence-forms.definitions';
+import { ApiAuthErrors } from '../openapi/common-responses';
 
 @ApiTags('Findings')
 @Controller({ path: 'findings', version: '1' })
@@ -75,6 +78,8 @@ export class FindingsController {
   @ApiQuery({ name: 'riskId', required: false })
   @ApiQuery({ name: 'memberId', required: false })
   @ApiQuery({ name: 'deviceId', required: false })
+  @ApiOkResponse({ description: 'Audit findings retrieved successfully' })
+  @ApiAuthErrors()
   async listFindings(
     @AuthContext() authContext: AuthContextType,
     @Query('status') status?: string,
@@ -156,6 +161,10 @@ export class FindingsController {
   @RequirePermission('finding', 'read')
   @ApiOperation({ summary: 'List all findings for the organization' })
   @ApiQuery({ name: 'status', required: false, enum: FindingStatus })
+  @ApiOkResponse({
+    description: 'All findings for the organization retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getOrganizationFindings(
     @Query('status') status: string | undefined,
     @AuthContext() authContext: AuthContextType,
@@ -180,6 +189,8 @@ export class FindingsController {
   @RequirePermission('finding', 'read')
   @ApiOperation({ summary: 'Get finding by ID' })
   @ApiParam({ name: 'id', description: 'Finding ID' })
+  @ApiOkResponse({ description: 'Finding by ID retrieved successfully' })
+  @ApiAuthErrors()
   async getFindingById(
     @Param('id', ValidateFindingIdPipe) id: string,
     @AuthContext() authContext: AuthContextType,
@@ -201,6 +212,8 @@ export class FindingsController {
       transform: true,
     }),
   )
+  @ApiCreatedResponse({ description: 'Audit finding created successfully' })
+  @ApiAuthErrors()
   async createFinding(
     @Body() createDto: CreateFindingDto,
     @AuthContext() authContext: AuthContextType,
@@ -246,6 +259,11 @@ export class FindingsController {
       transform: true,
     }),
   )
+  @ApiOkResponse({
+    description:
+      'A finding (status transition rules apply) updated successfully',
+  })
+  @ApiAuthErrors()
   async updateFinding(
     @Param('id', ValidateFindingIdPipe) id: string,
     @Body() updateDto: UpdateFindingDto,
@@ -296,6 +314,11 @@ export class FindingsController {
     summary: 'Delete a finding (auditor or platform admin only)',
   })
   @ApiParam({ name: 'id', description: 'Finding ID' })
+  @ApiOkResponse({
+    description:
+      'A finding (auditor or platform admin only) deleted successfully',
+  })
+  @ApiAuthErrors()
   async deleteFinding(
     @Param('id', ValidateFindingIdPipe) id: string,
     @AuthContext() authContext: AuthContextType,
@@ -331,6 +354,10 @@ export class FindingsController {
   @RequirePermission('finding', 'read')
   @ApiOperation({ summary: 'Get activity history for a finding' })
   @ApiParam({ name: 'id', description: 'Finding ID' })
+  @ApiOkResponse({
+    description: 'Activity history for a finding retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getFindingHistory(
     @Param('id', ValidateFindingIdPipe) id: string,
     @AuthContext() authContext: AuthContextType,

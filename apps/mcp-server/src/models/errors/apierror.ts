@@ -13,9 +13,9 @@ export class APIError extends Error {
   ) {
     super(
       `${message}: Status ${httpMeta.response.status} Content-Type ${
-        httpMeta.response.headers.get('content-type') || ''
+        httpMeta.response.headers.get("content-type") || ""
       } Body: ${httpMeta.body}`,
     );
-    this.name = 'APIError';
+    this.name = "APIError";
   }
 }

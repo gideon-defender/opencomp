@@ -1,4 +1,5 @@
 import { ApiResponseOptions } from '@nestjs/swagger';
+import { ApiErrorResponseDto } from '../../openapi/common-responses';
 
 export const CREATE_MEMBER_RESPONSES: Record<string, ApiResponseOptions> = {
   201: {
@@ -33,68 +34,22 @@ export const CREATE_MEMBER_RESPONSES: Record<string, ApiResponseOptions> = {
   400: {
     status: 400,
     description: 'Bad Request - Invalid member data or user already exists',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example:
-                'User user@example.com is already a member of this organization',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
   401: {
     status: 401,
     description:
       'Unauthorized - Invalid authentication or insufficient permissions',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: { type: 'string', example: 'Unauthorized' },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
   404: {
     status: 404,
     description: 'Organization or user not found',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example: 'User with ID usr_abc123def456 not found',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
   500: {
     status: 500,
     description: 'Internal server error',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example: 'Failed to create member',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
 };

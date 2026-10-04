@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBody,
+  ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiResponse,
@@ -41,6 +42,7 @@ import { UPDATE_RISK_RESPONSES } from './schemas/update-risk.responses';
 import { DELETE_RISK_RESPONSES } from './schemas/delete-risk.responses';
 
 import { authEnvelope } from '@/utils/auth-response';
+import { ApiAuthErrors, ApiForbiddenError } from '../openapi/common-responses';
 @ApiTags('Risks')
 @Controller({ path: 'risks', version: '1' })
 @UseGuards(HybridAuthGuard)
@@ -56,6 +58,7 @@ export class RisksController {
   @ApiResponse(GET_ALL_RISKS_RESPONSES[401])
   @ApiResponse(GET_ALL_RISKS_RESPONSES[404])
   @ApiResponse(GET_ALL_RISKS_RESPONSES[500])
+  @ApiForbiddenError()
   async getAllRisks(
     @Query() query: GetRisksQueryDto,
     @OrganizationId() organizationId: string,
@@ -87,6 +90,10 @@ export class RisksController {
   @UseGuards(PermissionGuard)
   @RequirePermission('risk', 'read')
   @ApiOperation({ summary: 'Get risk statistics grouped by assignee' })
+  @ApiOkResponse({
+    description: 'Risk statistics grouped by assignee retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getStatsByAssignee(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -103,6 +110,10 @@ export class RisksController {
   @UseGuards(PermissionGuard)
   @RequirePermission('risk', 'read')
   @ApiOperation({ summary: 'Get risk counts grouped by department' })
+  @ApiOkResponse({
+    description: 'Risk counts grouped by department retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getStatsByDepartment(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -157,6 +168,7 @@ export class RisksController {
   @ApiResponse(CREATE_RISK_RESPONSES[401])
   @ApiResponse(CREATE_RISK_RESPONSES[404])
   @ApiResponse(CREATE_RISK_RESPONSES[500])
+  @ApiForbiddenError()
   async createRisk(
     @Body() createRiskDto: CreateRiskDto,
     @OrganizationId() organizationId: string,
@@ -181,6 +193,7 @@ export class RisksController {
   @ApiResponse(UPDATE_RISK_RESPONSES[401])
   @ApiResponse(UPDATE_RISK_RESPONSES[404])
   @ApiResponse(UPDATE_RISK_RESPONSES[500])
+  @ApiForbiddenError()
   async updateRisk(
     @Param('id') riskId: string,
     @Body() updateRiskDto: UpdateRiskDto,
@@ -208,6 +221,7 @@ export class RisksController {
   @ApiResponse(DELETE_RISK_RESPONSES[401])
   @ApiResponse(DELETE_RISK_RESPONSES[404])
   @ApiResponse(DELETE_RISK_RESPONSES[500])
+  @ApiForbiddenError()
   async deleteRisk(
     @Param('id') riskId: string,
     @OrganizationId() organizationId: string,

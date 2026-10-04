@@ -11,6 +11,8 @@ import {
 } from '@nestjs/common';
 import {
   ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiPropertyOptional,
   ApiSecurity,
@@ -34,6 +36,7 @@ import { OAuthCredentialsService } from '../services/oauth-credentials.service';
 import { ProviderRepository } from '../repositories/provider.repository';
 import { CheckRunRepository } from '../repositories/check-run.repository';
 import { getStringValue } from '../utils/credential-utils';
+import { ApiAuthErrors } from '../../openapi/common-responses';
 
 // Class (not interface) so @nestjs/swagger emits a body schema, plus a
 // class-validator decorator so the ValidationPipe whitelist accepts the field.
@@ -79,6 +82,10 @@ export class ChecksController {
   @Get('providers/:providerSlug')
   @ApiOperation({ summary: 'List check definitions for a provider' })
   @RequirePermission('integration', 'read')
+  @ApiOkResponse({
+    description: 'Check definitions for a provider retrieved successfully',
+  })
+  @ApiAuthErrors()
   listProviderChecks(@Param('providerSlug') providerSlug: string) {
     const manifest = getManifest(providerSlug);
     if (!manifest) {
@@ -101,6 +108,10 @@ export class ChecksController {
   @Get('connections/:connectionId')
   @ApiOperation({ summary: 'List checks for a connection' })
   @RequirePermission('integration', 'read')
+  @ApiOkResponse({
+    description: 'Checks for a connection retrieved successfully',
+  })
+  @ApiAuthErrors()
   async listConnectionChecks(
     @Param('connectionId') connectionId: string,
     @OrganizationId() organizationId: string,
@@ -145,6 +156,10 @@ export class ChecksController {
   @ApiOperation({ summary: 'Run all checks for a connection' })
   @ApiBody({ type: RunChecksDto })
   @RequirePermission('integration', 'update')
+  @ApiCreatedResponse({
+    description: 'Run integration checks completed successfully',
+  })
+  @ApiAuthErrors()
   async runConnectionChecks(
     @Param('connectionId') connectionId: string,
     @Body() body: RunChecksDto,
@@ -422,6 +437,10 @@ export class ChecksController {
   @Post('connections/:connectionId/run/:checkId')
   @ApiOperation({ summary: 'Run a single check on a connection' })
   @RequirePermission('integration', 'update')
+  @ApiCreatedResponse({
+    description: 'Run a single check on a connection completed successfully',
+  })
+  @ApiAuthErrors()
   async runSingleCheck(
     @Param('connectionId') connectionId: string,
     @Param('checkId') checkId: string,

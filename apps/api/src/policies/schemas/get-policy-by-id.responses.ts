@@ -1,4 +1,5 @@
 import { ApiResponseOptions } from '@nestjs/swagger';
+import { ApiErrorResponseDto } from '../../openapi/common-responses';
 
 export const GET_POLICY_BY_ID_RESPONSES: Record<string, ApiResponseOptions> = {
   200: {
@@ -27,50 +28,17 @@ export const GET_POLICY_BY_ID_RESPONSES: Record<string, ApiResponseOptions> = {
     status: 401,
     description:
       'Unauthorized - Invalid authentication or insufficient permissions',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: { type: 'string', example: 'Unauthorized' },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
   403: {
     status: 403,
     description:
       'Forbidden - User does not have permission to access this policy',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example: 'You do not have access to view this policy',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
   404: {
     status: 404,
     description: 'Policy not found',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example: 'Policy with ID pol_abc123def456 not found',
-            },
-          },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
 };

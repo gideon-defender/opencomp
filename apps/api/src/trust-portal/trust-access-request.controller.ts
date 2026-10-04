@@ -33,6 +33,7 @@ import {
 } from './dto/trust-access.dto';
 import { TrustAccessService } from './trust-access.service';
 import { getRequestIp, getRequestUserId } from './trust-access-request.utils';
+import { ApiAuthErrors, ApiNotFoundError } from '../openapi/common-responses';
 @ApiTags('Trust Access')
 // Public portal routes send emails and mint tokens: hold them below the
 // global limit so one client cannot spam org inboxes or enumerate grants.
@@ -59,6 +60,7 @@ export class TrustAccessRequestController {
     status: HttpStatus.CREATED,
     description: 'Access request created and sent for review',
   })
+  @ApiNotFoundError('Trust portal not found')
   async createAccessRequest(
     // Note: friendlyUrl can be either the custom friendly URL or the organization ID
     @Param('friendlyUrl') friendlyUrl: string,
@@ -93,6 +95,7 @@ export class TrustAccessRequestController {
     status: HttpStatus.OK,
     description: 'Access requests retrieved',
   })
+  @ApiAuthErrors()
   async listAccessRequests(
     @OrganizationId() organizationId: string,
     @Query() dto: ListAccessRequestsDto,
@@ -114,6 +117,7 @@ export class TrustAccessRequestController {
     status: HttpStatus.OK,
     description: 'Request details returned',
   })
+  @ApiAuthErrors()
   async getAccessRequest(
     @OrganizationId() organizationId: string,
     @Param('id') requestId: string,
@@ -136,6 +140,7 @@ export class TrustAccessRequestController {
     status: HttpStatus.OK,
     description: 'Request approved successfully',
   })
+  @ApiAuthErrors()
   async approveRequest(
     @OrganizationId() organizationId: string,
     @Param('id') requestId: string,
@@ -170,6 +175,7 @@ export class TrustAccessRequestController {
   })
   @ApiBody({ type: DenyAccessRequestDto })
   @ApiResponse({ status: HttpStatus.OK, description: 'Request denied' })
+  @ApiAuthErrors()
   async denyRequest(
     @OrganizationId() organizationId: string,
     @Param('id') requestId: string,
@@ -203,6 +209,7 @@ export class TrustAccessRequestController {
     description: 'Get all active and expired grants',
   })
   @ApiResponse({ status: HttpStatus.OK, description: 'Grants retrieved' })
+  @ApiAuthErrors()
   async listGrants(@OrganizationId() organizationId: string) {
     return this.trustAccessService.listGrants(organizationId);
   }
@@ -219,6 +226,7 @@ export class TrustAccessRequestController {
   })
   @ApiBody({ type: RevokeGrantDto })
   @ApiResponse({ status: HttpStatus.OK, description: 'Grant revoked' })
+  @ApiAuthErrors()
   async revokeGrant(
     @OrganizationId() organizationId: string,
     @Param('id') grantId: string,
@@ -255,6 +263,7 @@ export class TrustAccessRequestController {
     status: HttpStatus.OK,
     description: 'NDA email resent',
   })
+  @ApiAuthErrors()
   async resendNda(
     @OrganizationId() organizationId: string,
     @Param('id') requestId: string,

@@ -1,4 +1,5 @@
 import { ApiResponseOptions } from '@nestjs/swagger';
+import { ApiErrorResponseDto } from '../../openapi/common-responses';
 
 export const GET_ALL_POLICIES_RESPONSES: Record<string, ApiResponseOptions> = {
   200: {
@@ -89,13 +90,6 @@ export const GET_ALL_POLICIES_RESPONSES: Record<string, ApiResponseOptions> = {
     status: 401,
     description:
       'Unauthorized - Invalid authentication or insufficient permissions',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'object',
-          properties: { message: { type: 'string', example: 'Unauthorized' } },
-        },
-      },
-    },
+    type: ApiErrorResponseDto,
   },
 };

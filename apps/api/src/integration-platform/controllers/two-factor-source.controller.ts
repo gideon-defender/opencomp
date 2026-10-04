@@ -10,6 +10,8 @@ import {
 } from '@nestjs/common';
 import {
   ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiPropertyOptional,
   ApiSecurity,
@@ -26,6 +28,7 @@ import { PermissionGuard } from '../../auth/permission.guard';
 import { RequirePermission } from '../../auth/require-permission.decorator';
 import { OrganizationId } from '../../auth/auth-context.decorator';
 import { CheckResultsService } from '../services/check-results.service';
+import { ApiAuthErrors } from '../../openapi/common-responses';
 
 /**
  * Only identity-provider integrations are meaningful per-employee 2FA sources:
@@ -85,6 +88,10 @@ export class TwoFactorSourceController {
   @Get('two-factor-source')
   @ApiOperation({ summary: 'Get the configured 2FA source provider' })
   @RequirePermission('integration', 'read')
+  @ApiOkResponse({
+    description: 'The configured 2FA source provider retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getTwoFactorSource(@OrganizationId() organizationId: string) {
     const org = await db.organization.findUnique({
       where: { id: organizationId },
@@ -103,6 +110,10 @@ export class TwoFactorSourceController {
   @ApiOperation({ summary: 'Set the 2FA source provider' })
   @ApiBody({ type: SetTwoFactorSourceDto })
   @RequirePermission('integration', 'update')
+  @ApiCreatedResponse({
+    description: 'The 2FA source provider updated successfully',
+  })
+  @ApiAuthErrors()
   async setTwoFactorSource(
     @OrganizationId() organizationId: string,
     @Body() body: SetTwoFactorSourceDto,
@@ -189,6 +200,11 @@ export class TwoFactorSourceController {
     summary: 'List integrations that can supply per-user 2FA status',
   })
   @RequirePermission('integration', 'read')
+  @ApiOkResponse({
+    description:
+      'Integrations that can supply per-user 2FA status retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getAvailableTwoFactorSources(@OrganizationId() organizationId: string) {
     const sources = await this.checkResults.listSourcesBoundToTask(
       organizationId,
@@ -221,6 +237,11 @@ export class TwoFactorSourceController {
   @Get('two-factor-statuses')
   @ApiOperation({ summary: 'Per-user 2FA status from the configured source' })
   @RequirePermission('integration', 'read')
+  @ApiOkResponse({
+    description:
+      'Per-user 2FA status from the configured source completed successfully',
+  })
+  @ApiAuthErrors()
   async getTwoFactorStatuses(@OrganizationId() organizationId: string) {
     const org = await db.organization.findUnique({
       where: { id: organizationId },

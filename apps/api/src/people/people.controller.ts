@@ -16,8 +16,10 @@ import {
 } from '@nestjs/common';
 import {
   ApiBody,
+  ApiCreatedResponse,
   ApiExtension,
   ApiExtraModels,
+  ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiResponse,
@@ -55,6 +57,7 @@ import { PEOPLE_PARAMS } from './schemas/people-params';
 import { PEOPLE_BODIES } from './schemas/people-bodies';
 
 import { authEnvelope } from '@/utils/auth-response';
+import { ApiAuthErrors, ApiForbiddenError } from '../openapi/common-responses';
 @ApiTags('People')
 @ApiExtraModels(PeopleResponseDto, UserResponseDto)
 @Controller({ path: 'people', version: '1' })
@@ -85,6 +88,8 @@ export class PeopleController {
       'Invite one or more people to the organization by email and assign them roles (e.g. admin, employee). Use this to add a teammate or send someone an invitation. Each invite takes an email and an array of role names.',
   })
   @ApiExtension('x-speakeasy-mcp', { name: 'invite-members' })
+  @ApiCreatedResponse({ description: 'Workforce members invited successfully' })
+  @ApiAuthErrors()
   async inviteMembers(
     @Body() inviteData: InvitePeopleDto,
     @OrganizationId() organizationId: string,
@@ -113,6 +118,7 @@ export class PeopleController {
   @ApiResponse(GET_ALL_PEOPLE_RESPONSES[401])
   @ApiResponse(GET_ALL_PEOPLE_RESPONSES[404])
   @ApiResponse(GET_ALL_PEOPLE_RESPONSES[500])
+  @ApiForbiddenError()
   async getAllPeople(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -171,6 +177,11 @@ export class PeopleController {
   @ApiOperation({
     summary: 'Get all employee devices with fleet compliance data',
   })
+  @ApiOkResponse({
+    description:
+      'All employee devices with fleet compliance data retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getDevices(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -188,6 +199,11 @@ export class PeopleController {
   @ApiOperation({
     summary: 'Get integration test statistics grouped by assignee',
   })
+  @ApiOkResponse({
+    description:
+      'Integration test statistics grouped by assignee retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getTestStatsByAssignee(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -211,6 +227,7 @@ export class PeopleController {
   @ApiResponse(CREATE_MEMBER_RESPONSES[401])
   @ApiResponse(CREATE_MEMBER_RESPONSES[404])
   @ApiResponse(CREATE_MEMBER_RESPONSES[500])
+  @ApiForbiddenError()
   async createMember(
     @Body() createData: CreatePeopleDto,
     @OrganizationId() organizationId: string,
@@ -233,6 +250,7 @@ export class PeopleController {
   @ApiResponse(BULK_CREATE_MEMBERS_RESPONSES[401])
   @ApiResponse(BULK_CREATE_MEMBERS_RESPONSES[404])
   @ApiResponse(BULK_CREATE_MEMBERS_RESPONSES[500])
+  @ApiForbiddenError()
   async bulkCreateMembers(
     @Body() bulkCreateData: BulkCreatePeopleDto,
     @OrganizationId() organizationId: string,
@@ -254,6 +272,11 @@ export class PeopleController {
   @ApiOperation({
     summary: 'Get members who can read a specific resource type',
   })
+  @ApiOkResponse({
+    description:
+      'Members who can read a specific resource type retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getMentionableMembers(
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
@@ -287,6 +310,10 @@ export class PeopleController {
   @ApiOperation({ summary: 'Reactivate a deactivated member' })
   @ApiParam(PEOPLE_PARAMS.memberId)
   @ApiExtension('x-speakeasy-mcp', { name: 'reactivate-member' })
+  @ApiOkResponse({
+    description: 'Reactivate a deactivated member completed successfully',
+  })
+  @ApiAuthErrors()
   async reactivateMember(
     @Param('id') memberId: string,
     @OrganizationId() organizationId: string,
@@ -313,6 +340,7 @@ export class PeopleController {
   @ApiResponse(GET_PERSON_BY_ID_RESPONSES[401])
   @ApiResponse(GET_PERSON_BY_ID_RESPONSES[404])
   @ApiResponse(GET_PERSON_BY_ID_RESPONSES[500])
+  @ApiForbiddenError()
   async getPersonById(
     @Param('id') memberId: string,
     @OrganizationId() organizationId: string,
@@ -334,6 +362,11 @@ export class PeopleController {
       'Aggregates the latest Employee Access check results from every connected integration bound to the Employee Access task, matched to the member by email.',
   })
   @ApiParam(PEOPLE_PARAMS.memberId)
+  @ApiOkResponse({
+    description:
+      "Member's access across connected integrations completed successfully",
+  })
+  @ApiAuthErrors()
   async getMemberAccess(
     @Param('id') memberId: string,
     @OrganizationId() organizationId: string,
@@ -354,6 +387,11 @@ export class PeopleController {
   @RequirePermission('member', 'read')
   @ApiOperation({ summary: 'Get training video completions for a member' })
   @ApiParam(PEOPLE_PARAMS.memberId)
+  @ApiOkResponse({
+    description:
+      'Training video completions for a member retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getTrainingVideos(
     @Param('id') memberId: string,
     @OrganizationId() organizationId: string,
@@ -374,6 +412,8 @@ export class PeopleController {
   @RequirePermission('member', 'read')
   @ApiOperation({ summary: 'Get fleet/device compliance for a member' })
   @ApiParam(PEOPLE_PARAMS.memberId)
+  @ApiOkResponse({ description: 'Fleet compliance retrieved successfully' })
+  @ApiAuthErrors()
   async getFleetCompliance(
     @Param('id') memberId: string,
     @OrganizationId() organizationId: string,
@@ -402,6 +442,7 @@ export class PeopleController {
   @ApiResponse(UPDATE_MEMBER_RESPONSES[404])
   @ApiResponse(UPDATE_MEMBER_RESPONSES[409])
   @ApiResponse(UPDATE_MEMBER_RESPONSES[500])
+  @ApiForbiddenError()
   async updateMember(
     @Param('id') memberId: string,
     @Body() updateData: UpdatePeopleDto,
@@ -431,6 +472,7 @@ export class PeopleController {
   @ApiResponse(REMOVE_HOST_RESPONSES[401])
   @ApiResponse(REMOVE_HOST_RESPONSES[404])
   @ApiResponse(REMOVE_HOST_RESPONSES[500])
+  @ApiForbiddenError()
   async removeHost(
     @Param('id') memberId: string,
     @Param('hostId', ParseIntPipe) hostId: number,
@@ -453,6 +495,11 @@ export class PeopleController {
   @RequirePermission('member', 'update')
   @ApiOperation({ summary: 'Resend portal invite email to a member' })
   @ApiParam(PEOPLE_PARAMS.memberId)
+  @ApiCreatedResponse({
+    description:
+      'Resend portal invite email to a member completed successfully',
+  })
+  @ApiAuthErrors()
   async resendPortalInvite(
     @Param('id') memberId: string,
     @OrganizationId() organizationId: string,
@@ -472,6 +519,7 @@ export class PeopleController {
   @ApiResponse(DELETE_MEMBER_RESPONSES[401])
   @ApiResponse(DELETE_MEMBER_RESPONSES[404])
   @ApiResponse(DELETE_MEMBER_RESPONSES[500])
+  @ApiForbiddenError()
   async deleteMember(
     @Param('id') memberId: string,
     @OrganizationId() organizationId: string,
@@ -501,6 +549,7 @@ export class PeopleController {
   @ApiResponse(UPDATE_MEMBER_RESPONSES[401])
   @ApiResponse(UPDATE_MEMBER_RESPONSES[404])
   @ApiResponse(UPDATE_MEMBER_RESPONSES[500])
+  @ApiForbiddenError()
   async unlinkDevice(
     @Param('id') memberId: string,
     @OrganizationId() organizationId: string,
@@ -522,6 +571,10 @@ export class PeopleController {
   @ApiOperation({ summary: 'Get employment evidence attachments' })
   @ApiParam(PEOPLE_PARAMS.memberId)
   @ApiParam({ name: 'eventType', enum: ['onboard', 'offboard'] })
+  @ApiOkResponse({
+    description: 'Employment evidence attachments retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getEmploymentEvidence(
     @Param('id') memberId: string,
     @Param('eventType') eventType: string,
@@ -541,6 +594,10 @@ export class PeopleController {
   @ApiOperation({ summary: 'Upload employment evidence' })
   @ApiParam(PEOPLE_PARAMS.memberId)
   @ApiParam({ name: 'eventType', enum: ['onboard', 'offboard'] })
+  @ApiCreatedResponse({
+    description: 'Employment evidence uploaded successfully',
+  })
+  @ApiAuthErrors()
   async uploadEmploymentEvidence(
     @Param('id') memberId: string,
     @Param('eventType') eventType: string,
@@ -568,6 +625,8 @@ export class PeopleController {
   @ApiParam(PEOPLE_PARAMS.memberId)
   @ApiParam({ name: 'eventType', enum: ['onboard', 'offboard'] })
   @ApiParam({ name: 'attachmentId', description: 'Attachment ID' })
+  @ApiOkResponse({ description: 'Employment evidence deleted successfully' })
+  @ApiAuthErrors()
   async deleteEmploymentEvidence(
     @Param('id') memberId: string,
     @Param('eventType') eventType: string,
@@ -595,6 +654,11 @@ export class PeopleController {
 
   @Get('me/email-preferences')
   @ApiOperation({ summary: 'Get current user email notification preferences' })
+  @ApiOkResponse({
+    description:
+      'Current user email notification preferences retrieved successfully',
+  })
+  @ApiAuthErrors()
   async getEmailPreferences(
     @AuthContext() authContext: AuthContextType,
     @OrganizationId() organizationId: string,
@@ -616,6 +680,11 @@ export class PeopleController {
   @ApiOperation({
     summary: 'Update current user email notification preferences',
   })
+  @ApiOkResponse({
+    description:
+      'Current user email notification preferences updated successfully',
+  })
+  @ApiAuthErrors()
   async updateEmailPreferences(
     @AuthContext() authContext: AuthContextType,
     @Body() body: UpdateEmailPreferencesDto,
