@@ -87,15 +87,18 @@ export function detectServiceLinkedRole(error: string): ServiceLinkedRoleMatch |
   return null;
 }
 
-export function buildAwsFixScript(actions: string[]): string | null {
+export function buildAwsFixScript(actions: string[], roleName?: string): string | null {
   if (actions.length === 0) return null;
   // Single shared builder (same merge shape as the batch scripts and
   // backend scripts). Blocked actions are omitted — never Allow, never
   // Deny (a Deny would override a later manual Allow in the console).
   // When nothing is grantable the builder returns manual-review guidance
   // (not null) so the caller still shows help instead of hiding the block.
+  // Scope to the finding's pair role when known; legacy monolith default
+  // otherwise (same fallback the server applies).
   return buildRemediationGrantScript({
     permissions: actions,
+    ...(roleName ? { roleName } : {}),
     warningLine: ({ display }) =>
       `# WARNING: ${display} require(s) manual review and were NOT granted.`,
   });

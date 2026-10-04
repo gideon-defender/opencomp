@@ -211,7 +211,10 @@ NEVER list iam: writes, sts:AssumeRole, resource-policy actions, or *Acl writes.
   async suggestPermissionFix(params: {
     errorMessage: string;
     failedStep: AwsCommandStep;
+    /** Routed pair role name for prompts and grant scripts (legacy default). */
+    roleName?: string;
   }): Promise<PermissionFix & { fixScript: string; blockedActions: string[] }> {
+    const roleName = params.roleName ?? REMEDIATION_ROLE_NAME;
     try {
       const { object } = await generateObject({
         model: MODEL,
@@ -221,7 +224,7 @@ NEVER list iam: writes, sts:AssumeRole, resource-policy actions, or *Acl writes.
         prompt: buildPermissionFixPrompt({
           errorMessage: params.errorMessage,
           failedStep: params.failedStep,
-          roleName: REMEDIATION_ROLE_NAME,
+          roleName,
         }),
       });
 
@@ -287,7 +290,7 @@ NEVER list iam: writes, sts:AssumeRole, resource-policy actions, or *Acl writes.
             ...object.policyStatement.Action,
           ],
           policyName: 'OpenComp-AutoFix',
-          roleName: REMEDIATION_ROLE_NAME,
+          roleName,
           warningLine: ({ count, display }) =>
             `# WARNING: ${count} suggested permission(s) require manual review and were NOT granted: ${display}`,
         }),
@@ -310,7 +313,7 @@ NEVER list iam: writes, sts:AssumeRole, resource-policy actions, or *Acl writes.
             Action: [],
             Resource: '*',
           },
-          fixScript: `# Could not determine the missing IAM action from the error. Check the error message and add the required permission manually to the ${REMEDIATION_ROLE_NAME} role.`,
+          fixScript: `# Could not determine the missing IAM action from the error. Check the error message and add the required permission manually to the ${roleName} role.`,
         };
       }
       // The error-derived action can itself be denylisted
@@ -342,7 +345,7 @@ NEVER list iam: writes, sts:AssumeRole, resource-policy actions, or *Acl writes.
         fixScript: buildRemediationGrantScript({
           permissions: actions,
           policyName: 'OpenComp-AutoFix',
-          roleName: REMEDIATION_ROLE_NAME,
+          roleName,
           warningLine: ({ display }) =>
             `# WARNING: ${display} require(s) manual review and were NOT granted.`,
         }),

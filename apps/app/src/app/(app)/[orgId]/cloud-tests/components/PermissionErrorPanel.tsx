@@ -1,8 +1,9 @@
 'use client';
 
+import { findingToAssetClass, remediationRoleName } from '@gideon-defender/integration-platform';
 import { Button } from '@gideon-defender/ui/button';
 import { Check, Copy, ExternalLink, RefreshCw, ShieldAlert } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { isGuidanceOnlyScript } from '../lib/batch-merge-script';
 import {
@@ -32,6 +33,9 @@ interface PermissionErrorPanelProps {
   blockedPermissionsMessage?: string;
   /** Cloud provider — affects script format and links. */
   provider?: 'aws' | 'gcp' | 'azure';
+  /** Finding routing for pair-scoped client fallback scripts. */
+  resourceType?: string | null;
+  region?: string | null;
   /** Retry the remediation after the user fixes permissions. */
   onRetry?: () => void;
   isRetrying?: boolean;
@@ -46,11 +50,28 @@ export function PermissionErrorPanel({
   blockedPermissions: backendBlockedPermissions,
   blockedPermissionsMessage: backendBlockedMessage,
   provider,
+  resourceType,
+  region,
   onRetry,
   isRetrying,
   isWaiting,
 }: PermissionErrorPanelProps) {
   const [copied, setCopied] = useState(false);
+
+  // Scope the client fallback script to the finding's routed pair role
+  // when both inputs are known; legacy monolith default otherwise (same
+  // fallback the server and the batch dialog apply).
+  const pairRoleName = useMemo(() => {
+    if (!resourceType || !region?.trim()) return undefined;
+    try {
+      return remediationRoleName({
+        assetClass: findingToAssetClass(resourceType),
+        region: region.trim(),
+      });
+    } catch {
+      return undefined;
+    }
+  }, [resourceType, region]);
 
   // Auto-detect provider if not specified
   const detectedProvider =
@@ -114,7 +135,7 @@ export function PermissionErrorPanel({
 
   const script = serviceLinkedRole
     ? serviceLinkedRole.command
-    : (backendScript ?? (isGcp || isAzure ? null : buildAwsFixScript(actions)));
+    : (backendScript ?? (isGcp || isAzure ? null : buildAwsFixScript(actions, pairRoleName)));
 
   // A guidance-only script names manual-review actions but runs nothing —
   // label it as guidance so nobody pastes it expecting a grant.

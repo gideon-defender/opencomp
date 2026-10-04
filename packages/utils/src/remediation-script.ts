@@ -38,6 +38,25 @@ const DEFAULT_POLICY_NAME = 'OpenComp-AutoFix';
 const DEFAULT_ROLE_NAME = 'OpenComp-Remediator';
 const DEFAULT_VARIABLE_NAME = 'NEW';
 
+/**
+ * Role-name characters safe inside the double-quoted `ROLE="..."` header.
+ * Mirrors IAM's own charset (word chars plus `+=,.@-`, `/` for paths):
+ * every shell metacharacter is rejected, so a validated name cannot break
+ * out of the quotes. Throws fail-closed — a grant script for an unknown
+ * role must never render with a poisoned header.
+ *
+ * Keep in sync with `SAFE_IAM_ROLE_TOKEN_PATTERN` in
+ * `@gideon-defender/integration-platform` (same IAM charset; separate copy
+ * because neither package depends on the other).
+ */
+const SAFE_ROLE_NAME_PATTERN = /^[A-Za-z0-9_+=,.@/-]+$/;
+
+function assertSafeRoleName(roleName: string): void {
+  if (!SAFE_ROLE_NAME_PATTERN.test(roleName)) {
+    throw new Error(`Refusing to build grant script for unsafe role name: "${roleName}"`);
+  }
+}
+
 function defaultWarningLine({ count, display }: { count: number; display: string }): string {
   return `# WARNING: ${count} requested permission(s) require manual review and were NOT granted: ${display}`;
 }
@@ -71,6 +90,20 @@ export function buildRemediationGrantScript(options: RemediationGrantScriptOptio
   const display = formatBlockedActionsForDisplay(blocked);
   if (allowed.length === 0) {
     return emptyLine({ count: blocked.length, display });
+  }
+  assertSafeRoleName(roleName);
+  for (const header of roleHeaderLines ?? []) {
+    // Custom headers (e.g. the batch `ROLE="..."` line) carry the role
+    // name in the same double-quoted position — enforce the same charset.
+    // The whole line must be exactly `ROLE="<name>"`: anything outside
+    // the quotes (or an embedded quote) means the value already broke
+    // out, so reject the line instead of trying to parse it.
+    if (!header.startsWith('ROLE="')) continue;
+    const roleMatch = header.match(/^ROLE="([^"]*)"$/);
+    if (!roleMatch || roleMatch[1] === undefined) {
+      throw new Error(`Refusing to build grant script for malformed ROLE header: "${header}"`);
+    }
+    assertSafeRoleName(roleMatch[1]);
   }
   return [
     ...(blocked.length > 0 ? [warningLine({ count: blocked.length, display })] : []),

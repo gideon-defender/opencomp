@@ -11,6 +11,7 @@ import {
   getAwsCloudShellUrl,
   getAwsRemediationScript,
   normalizeAwsEnvironment,
+  parseRemediationRolesMap,
 } from '@gideon-defender/integration-platform';
 import { Badge } from '@gideon-defender/ui/badge';
 import { Button } from '@trycompai/design-system';
@@ -23,6 +24,7 @@ import {
   AccountSettingsInfoRow,
   AccountSettingsSection,
 } from './account-settings-shared-ui';
+import { RemediationRolesTable } from './remediation-roles-table';
 
 export function AwsAccountSettingsBody({
   open,
@@ -47,6 +49,7 @@ export function AwsAccountSettingsBody({
   const [regions, setRegions] = useState<string[]>([]);
   const [savingCredentials, setSavingCredentials] = useState(false);
   const [savingRemediation, setSavingRemediation] = useState(false);
+  const [savingRemediationRoles, setSavingRemediationRoles] = useState(false);
   const [savingRegions, setSavingRegions] = useState(false);
   const [savingAwsType, setSavingAwsType] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
@@ -57,7 +60,13 @@ export function AwsAccountSettingsBody({
     (metadata.connectionName as string) ?? (metadata.accountId as string) ?? connectionId;
   const accountId = metadata.accountId as string | undefined;
   const externalId = (metadata.externalId as string) ?? orgId;
-  const hasRemediation = Boolean(metadata.remediationRoleArn);
+  // Pair map syncs from the server as a parsed record (see the credentials
+  // update endpoint); the legacy single ARN stays as dual-read fallback.
+  const remediationRolesMap = parseRemediationRolesMap(metadata.remediationRoles);
+  const hasRemediation =
+    Boolean(metadata.remediationRoleArn) || Object.keys(remediationRolesMap).length > 0;
+  const showLegacyBanner =
+    Boolean(metadata.remediationRoleArn) && Object.keys(remediationRolesMap).length === 0;
   const regionsField = provider.credentialFields?.find((f) => f.id === 'regions');
   const awsEnvironment = normalizeAwsEnvironment(awsType);
   const remediationScript = getAwsRemediationScript(awsEnvironment);
@@ -164,6 +173,20 @@ export function AwsAccountSettingsBody({
       t('awsSettings.remediationRoleSaved'),
     );
   }, [awsEnvironment, remediationRoleArn, saveField, t]);
+
+  const handleSaveRemediationRoles = useCallback(
+    async (serializedMap: string) => {
+      // Server validates every entry fail-closed and syncs the parsed map
+      // to metadata, so no metadata update is needed here — refetch on save.
+      await saveField(
+        { remediationRoles: serializedMap },
+        {},
+        setSavingRemediationRoles,
+        t('awsSettings.remediationPairsSaved'),
+      );
+    },
+    [saveField, t],
+  );
 
   const handleSaveRegions = useCallback(async () => {
     if (regions.length === 0) {
@@ -330,6 +353,20 @@ export function AwsAccountSettingsBody({
             </Badge>
           )}
         </div>
+        <RemediationRolesTable
+          regions={regions}
+          initialMap={remediationRolesMap}
+          externalId={externalId}
+          awsEnvironment={awsEnvironment}
+          accountId={accountId}
+          saving={savingRemediationRoles}
+          onSave={handleSaveRemediationRoles}
+        />
+        {showLegacyBanner && (
+          <p className="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[11px] text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300">
+            {t('awsSettings.legacyRemediationBanner')}
+          </p>
+        )}
         <CloudShellSetup
           script={remediationScript}
           externalId={orgId}

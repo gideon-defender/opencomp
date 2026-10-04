@@ -46,6 +46,9 @@ interface RemediationDialogProps {
   remediationKey: string;
   findingTitle: string;
   providerSlug?: string;
+  /** Finding routing for pair-scoped fallback scripts in the error panel. */
+  resourceType?: string | null;
+  region?: string | null;
   guidedOnly?: boolean;
   guidedSteps?: string[];
   risk?: string;
@@ -372,6 +375,8 @@ export function RemediationDialog({
   remediationKey,
   findingTitle,
   providerSlug,
+  resourceType,
+  region,
   guidedOnly,
   guidedSteps,
   risk,
@@ -742,6 +747,8 @@ export function RemediationDialog({
                 blockedPermissions={permissionError?.blockedPermissions}
                 blockedPermissionsMessage={permissionError?.blockedPermissionsMessage}
                 apiCalls={preview?.apiCalls}
+                resourceType={resourceType}
+                region={region}
                 onRetry={handleRetry}
                 isRetrying={isExecuting}
                 isWaiting={isWaitingPropagation}

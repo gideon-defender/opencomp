@@ -1,5 +1,6 @@
 'use client';
 
+import { findingToAssetClass, remediationRoleName } from '@gideon-defender/integration-platform';
 import { useRealtimeRun } from '@gideon-defender/trigger-react';
 import { Badge } from '@gideon-defender/ui/badge';
 import { Button } from '@gideon-defender/ui/button';
@@ -40,6 +41,8 @@ interface Finding {
   title: string | null;
   key: string;
   severity: string;
+  resourceType?: string | null;
+  region?: string | null;
 }
 
 interface BatchRemediationDialogProps {
@@ -106,20 +109,39 @@ const SEVERITY_DOT: Record<string, string> = {
 /** Per-finding inline permissions with copy/cloudshell/retry. */
 function FindingPermissions({
   permissions,
+  resourceType,
+  region,
   onRetry,
 }: {
   permissions: string[];
+  resourceType?: string | null;
+  region?: string | null;
   onRetry: () => void;
 }) {
   const t = useTranslations('integrations.list');
   const [copied, setCopied] = useState(false);
   const [retrying, setRetrying] = useState(false);
 
+  // Scope the grant script to the finding's routed pair role when both
+  // inputs are known; legacy monolith default otherwise (same fallback
+  // the server applies when no pair map covers the finding).
+  const roleName = useMemo(() => {
+    if (!resourceType || !region?.trim()) return undefined;
+    try {
+      return remediationRoleName({
+        assetClass: findingToAssetClass(resourceType),
+        region: region.trim(),
+      });
+    } catch {
+      return undefined;
+    }
+  }, [resourceType, region]);
+
   const {
     script,
     blocked: blockedPermissions,
     grantable,
-  } = useMemo(() => buildFindingPermissionsScript(permissions), [permissions]);
+  } = useMemo(() => buildFindingPermissionsScript(permissions, roleName), [permissions, roleName]);
 
   // Group grantable actions only — blocked actions surface in the manual
   // review warning below, never as required chips (same as PermissionErrorPanel).
@@ -646,6 +668,8 @@ export function BatchRemediationDialog({
                     {isMissingPerms && (
                       <FindingPermissions
                         permissions={f.missingPermissions!}
+                        resourceType={findings.find((o) => o.id === f.id)?.resourceType}
+                        region={findings.find((o) => o.id === f.id)?.region}
                         onRetry={async () => {
                           // Find the original finding data for key
                           const orig = findings.find((o) => o.id === f.id);

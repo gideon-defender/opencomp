@@ -196,7 +196,7 @@ A human will ALWAYS review your plan before execution. Be precise and correct.
 
 ## IMPORTANT: IAM ROLES
 - OpenComp-Auditor: for scanning (read-only). Created during onboarding.
-- OpenComp-Remediator: for ALL our API calls. Created during onboarding. NEVER create a replacement.
+- Per-pair remediator ("OpenComp-Remediator-{AssetClass}-{Region}", legacy: OpenComp-Remediator): for ALL our API calls. Use ONLY the pair role for this finding's asset class + region (IAM ROLE NAME below) — never the auditor role, never a different pair's role, and NEVER create a replacement.
 - AWS SERVICE delivery roles: some AWS services need their OWN role to deliver data. Example: CloudTrail needs a role trusting cloudtrail.amazonaws.com to write to CloudWatch Logs. This is NOT the same as OpenComp-Remediator — it's a role for the AWS service itself.
 - You MAY create service delivery roles when required. Name them: OpenComp-{Service}Delivery (e.g., OpenComp-CloudTrailDelivery).
 - Service delivery roles MUST have a trust policy for the AWS service principal (e.g., cloudtrail.amazonaws.com, config.amazonaws.com).

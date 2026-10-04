@@ -120,6 +120,30 @@ describe('AWSSecurityService session durations', () => {
     expect(assumeRole).not.toHaveBeenCalled();
   });
 
+  it('rejects an explicitly blank pair-role override instead of falling back', async () => {
+    const service = new AWSSecurityService();
+    const assumeRole = jest
+      .spyOn(service, 'assumeRole')
+      .mockResolvedValue({ accessKeyId: 'AK', secretAccessKey: 'SK' });
+
+    // A blank override is a caller bug — falling back to the legacy ARN
+    // would silently assume the wrong role.
+    await expect(
+      service.assumeRemediationRole(
+        {
+          roleArn: 'arn:aws:iam::123456789012:role/OpenComp-Auditor',
+          remediationRoleArn:
+            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+          externalId: 'ext-1',
+        },
+        'us-east-1',
+        { findingId: 'chk_1' },
+        '   ',
+      ),
+    ).rejects.toThrow(/got blank/);
+    expect(assumeRole).not.toHaveBeenCalled();
+  });
+
   it('rejects remediation when the auditor ARN is missing without calling STS', async () => {
     const service = new AWSSecurityService();
     const assumeRole = jest
@@ -298,5 +322,55 @@ describe('AWSSecurityService session durations', () => {
       'arn:aws:iam::123456789012:role/OpenComp-Auditor',
     );
     expect(hop2?.ExternalId).toBe('ext-1');
+  });
+
+  it('assumes the per-pair override ARN instead of the legacy single ARN', async () => {
+    const service = new AWSSecurityService();
+    const assumeRole = jest
+      .spyOn(service, 'assumeRole')
+      .mockResolvedValue({ accessKeyId: 'AK', secretAccessKey: 'SK' });
+
+    await service.assumeRemediationRole(
+      {
+        roleArn: 'arn:aws:iam::123456789012:role/OpenComp-Auditor',
+        remediationRoleArn:
+          'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+        externalId: 'ext-1',
+      },
+      'us-east-1',
+      { findingId: 'chk_abc123' },
+      'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1',
+    );
+
+    expect(assumeRole).toHaveBeenCalledWith(
+      expect.objectContaining({
+        roleArn:
+          'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1',
+        sessionName: 'chk_abc123',
+      }),
+    );
+  });
+
+  it('validates the per-pair override with the same fail-closed rules', async () => {
+    const service = new AWSSecurityService();
+    const assumeRole = jest
+      .spyOn(service, 'assumeRole')
+      .mockResolvedValue({ accessKeyId: 'AK', secretAccessKey: 'SK' });
+
+    // Cross-account override must not reach STS.
+    await expect(
+      service.assumeRemediationRole(
+        {
+          roleArn: 'arn:aws:iam::123456789012:role/OpenComp-Auditor',
+          remediationRoleArn:
+            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+          externalId: 'ext-1',
+        },
+        'us-east-1',
+        undefined,
+        'arn:aws:iam::999999999999:role/OpenComp-Remediator-Storage-us-east-1',
+      ),
+    ).rejects.toThrow(/must match the auditor/);
+    expect(assumeRole).not.toHaveBeenCalled();
   });
 });

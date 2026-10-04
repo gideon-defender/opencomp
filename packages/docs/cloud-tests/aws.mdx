@@ -19,7 +19,7 @@ Once connected, OpenComp scans the regions you select and produces findings mapp
 - **Auth model**: AWS STS `AssumeRole` from a OpenComp–managed principal into a role in your account
 - **External ID**: Required in the trust policy so only a specific OpenComp organization can assume the role
 - **Permissions**: `SecurityAudit` + `ViewOnlyAccess` managed policies, plus two small inline policies for Cost Explorer reads and SSM document metadata
-- **Optional auto-remediation**: A separate role (`OpenComp-Remediator`) can be created to enable auto-fix actions — this role is **only used when you explicitly trigger a fix**. The audit role stays read-only.
+- **Optional auto-remediation**: Separate per asset-class x region roles (`OpenComp-Remediator-{AssetClass}-{Region}`, e.g. `OpenComp-Remediator-Storage-us-east-1`) can be created to enable auto-fix actions — each role is **only used when you explicitly trigger a fix** for a matching finding. The audit role stays read-only. Connections created earlier may still use the legacy single `OpenComp-Remediator` role as a fallback.
 
 ## Prerequisites
 
@@ -51,7 +51,7 @@ The OpenComp UI walks you through the full flow and displays the exact CloudShel
     Copy the Role ARN from the script output and paste it into the OpenComp connection form. Choose the regions you want scanned. The External ID is already filled in.
   </Step>
   <Step title="(Optional) Enable auto-remediation">
-    If you want OpenComp to be able to apply fixes, run the second CloudShell script shown in the UI. It creates a separate `OpenComp-Remediator` role with narrower write permissions for the specific services that support auto-fix.
+    If you want OpenComp to be able to apply fixes, run one CloudShell script per asset-class x region pair shown in the UI (start with the classes and regions you want auto-fix in). Each script creates a separate `OpenComp-Remediator-{AssetClass}-{Region}` role with narrow fix-forward write permissions for that class. Paste each Role ARN into the matching row of the remediation roles table.
   </Step>
   <Step title="Save and run your first scan">
     Click **Save and Connect**. OpenComp validates the role, then queues an initial scan across all selected regions.
@@ -112,8 +112,8 @@ Findings are mapped to the controls used by:
 </Accordion>
 
 <Accordion title="Auto-remediation isn't available" icon="wrench">
-  Auto-remediation requires the separate `OpenComp-Remediator` role. Run the second CloudShell
-  script shown in the UI, then paste its Role ARN into the **Remediation Role ARN** field.
+  Auto-remediation requires per-pair `OpenComp-Remediator-{AssetClass}-{Region}` roles (or the legacy `OpenComp-Remediator` role as fallback). Run the CloudShell
+  script for the finding's asset class and region, then paste its Role ARN into the matching row of the **remediation roles table** in the connection settings.
 </Accordion>
 
 ## Support
