@@ -31,6 +31,23 @@ export type RemediationAssetClass = (typeof REMEDIATION_ASSET_CLASSES)[number];
 /** `Security-Global` covers global services — assumed in us-east-1 only. */
 export const SECURITY_GLOBAL_PINNED_REGION = 'us-east-1';
 
+/**
+ * Asset classes that never auto-execute. Findings routing here return
+ * guided-only manual steps from preview, and execute/rollback refuse even
+ * when the pair role is configured — a human applies these writes.
+ * `Security-Global` holds the highest-blast-radius writes (KMS, CloudTrail,
+ * Config, IAM-password-policy); `Network` controls traffic paths (ELB,
+ * API-GW, firewalls) where a wrong apply cuts connectivity.
+ */
+export const APPROVAL_GATED_ASSET_CLASSES: readonly RemediationAssetClass[] = [
+  'Network',
+  'Security-Global',
+];
+
+export function isApprovalGatedAssetClass(assetClass: RemediationAssetClass): boolean {
+  return (APPROVAL_GATED_ASSET_CLASSES as readonly string[]).includes(assetClass);
+}
+
 /** AWS region names are lowercase alphanumerics plus hyphens only. */
 export const SAFE_AWS_REGION_PATTERN = /^[a-z0-9-]+$/;
 

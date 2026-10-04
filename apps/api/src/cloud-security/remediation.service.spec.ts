@@ -1790,6 +1790,7 @@ describe('RemediationService.rollbackRemediation (blocked split)', () => {
       connectionId: 'conn_123',
       remediationKey: 's3-versioning',
       resourceId: 'b',
+      resourceType: 'AwsS3Bucket',
       appliedState: {
         rollbackSteps: [
           {
@@ -1856,6 +1857,7 @@ describe('RemediationService.rollbackRemediation (blocked split)', () => {
       connectionId: 'conn_123',
       remediationKey: 's3-versioning',
       resourceId: 'b',
+      resourceType: 'AwsS3Bucket',
       appliedState: {
         rollbackSteps: [
           {
@@ -1915,6 +1917,7 @@ describe('RemediationService.rollbackRemediation (blocked split)', () => {
       id: 'act_123',
       status: 'success',
       connectionId: 'conn_123',
+      resourceType: 'AwsS3Bucket',
       appliedState: {
         // Valid steps so the test reaches the claim race (not re-validation).
         rollbackSteps: [
@@ -2006,6 +2009,7 @@ describe('RemediationService.rollbackRemediation (blocked split)', () => {
       connectionId: 'conn_123',
       remediationKey: 's3-versioning',
       resourceId: 'b',
+      resourceType: 'AwsS3Bucket',
       appliedState: {
         rollbackSteps: [
           {
@@ -2061,6 +2065,7 @@ describe('RemediationService.rollbackRemediation (blocked split)', () => {
       connectionId: 'conn_123',
       remediationKey: 's3-versioning',
       resourceId: 'b',
+      resourceType: 'AwsS3Bucket',
       appliedState: {
         rollbackSteps: [
           {
@@ -2209,6 +2214,290 @@ describe('RemediationService.getCapabilities', () => {
         organizationId: 'org_123',
       }),
     ).resolves.toEqual({ enabled: false, aiPowered: true, remediations: [] });
+  });
+});
+
+describe('RemediationService approval gate (Network / Security-Global)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  const SECURITY_GLOBAL_MAP = JSON.stringify({
+    'Security-Global:us-east-1':
+      'arn:aws:iam::123456789012:role/OpenComp-Remediator-Security-Global',
+  });
+  const NETWORK_MAP = JSON.stringify({
+    'Network:us-east-1':
+      'arn:aws:iam::123456789012:role/OpenComp-Remediator-Network-us-east-1',
+  });
+  const STORAGE_MAP = JSON.stringify({
+    'Storage:us-east-1':
+      'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1',
+  });
+
+  function mockAwsFinding(resourceType: string) {
+    mockDb.integrationConnection.findFirst.mockResolvedValue({
+      id: 'conn_123',
+      provider: { slug: 'aws' },
+    });
+    mockDb.integrationCheckResult.findFirst.mockResolvedValue({
+      id: 'chk_123',
+      title: 'Finding title',
+      description: 'Finding description.',
+      severity: 'high',
+      resourceId: 'some-resource',
+      resourceType,
+      evidence: { findingKey: 'gate-test' },
+      remediation: 'Fix it.',
+    });
+  }
+
+  function mockAwsCredentials(remediationRoles: string) {
+    return {
+      getDecryptedCredentials: jest.fn().mockResolvedValue({
+        regions: ['us-east-1'],
+        externalId: 'test-external-id',
+        remediationRoles,
+      }),
+    };
+  }
+
+  it('returns guided-only manual preview for Security-Global with the pair role configured', async () => {
+    const assumeRemediationRole = jest.fn();
+    const service = makeService({
+      credentialVaultService: mockAwsCredentials(SECURITY_GLOBAL_MAP),
+      awsSecurityService: { assumeRemediationRole },
+      aiRemediationService: {
+        generateFixPlan: jest.fn().mockResolvedValue({ canAutoFix: true }),
+      },
+    });
+    mockAwsFinding('aws-account');
+
+    const preview = await service.previewRemediation({
+      connectionId: 'conn_123',
+      organizationId: 'org_123',
+      checkResultId: 'chk_123',
+      remediationKey: 'gate-test',
+    });
+
+    expect(preview.guidedOnly).toBe(true);
+    expect(preview.description).toMatch(/require human approval/);
+    expect(preview.description).toContain(
+      'OpenComp-Remediator-Security-Global',
+    );
+    // The pair role exists for reads, but preview must not assume it — a
+    // Security-Global assume pages the human on call.
+    expect(assumeRemediationRole).not.toHaveBeenCalled();
+  });
+
+  it('returns guided-only manual preview for Network with the pair role configured', async () => {
+    const assumeRemediationRole = jest.fn();
+    const service = makeService({
+      credentialVaultService: mockAwsCredentials(NETWORK_MAP),
+      awsSecurityService: { assumeRemediationRole },
+      aiRemediationService: {
+        generateFixPlan: jest.fn().mockResolvedValue({ canAutoFix: true }),
+      },
+    });
+    mockAwsFinding('AwsElbLoadBalancer');
+
+    const preview = await service.previewRemediation({
+      connectionId: 'conn_123',
+      organizationId: 'org_123',
+      checkResultId: 'chk_123',
+      remediationKey: 'gate-test',
+    });
+
+    expect(preview.guidedOnly).toBe(true);
+    expect(preview.description).toMatch(/require human approval/);
+    expect(preview.description).toContain(
+      'OpenComp-Remediator-Network-us-east-1',
+    );
+    expect(assumeRemediationRole).not.toHaveBeenCalled();
+  });
+
+  it('returns guided-only manual preview for Network in recheck mode with the pair role configured', async () => {
+    const assumeRemediationRole = jest.fn();
+    const service = makeService({
+      credentialVaultService: mockAwsCredentials(NETWORK_MAP),
+      awsSecurityService: { assumeRemediationRole },
+      aiRemediationService: {
+        generateFixPlan: jest.fn(),
+      },
+    });
+    mockAwsFinding('AwsElbLoadBalancer');
+
+    const preview = await service.previewRemediation({
+      connectionId: 'conn_123',
+      organizationId: 'org_123',
+      checkResultId: 'chk_123',
+      remediationKey: 'gate-test',
+      cachedPermissions: ['elasticloadbalancing:DescribeLoadBalancers'],
+    });
+
+    expect(preview.guidedOnly).toBe(true);
+    expect(preview.description).toMatch(/require human approval/);
+    expect(preview.description).toContain(
+      'OpenComp-Remediator-Network-us-east-1',
+    );
+    // The recheck gate fires before the read-step assume, just like the
+    // full-preview gate — cached permissions never bypass it.
+    expect(assumeRemediationRole).not.toHaveBeenCalled();
+  });
+
+  it('does not gate Storage findings with the pair role configured', async () => {
+    const assumeRemediationRole = jest
+      .fn()
+      .mockResolvedValue({ accessKeyId: 'AKID', secretAccessKey: 'x' });
+    const service = makeService({
+      credentialVaultService: mockAwsCredentials(STORAGE_MAP),
+      awsSecurityService: { assumeRemediationRole },
+      aiRemediationService: {
+        generateFixPlan: jest.fn().mockResolvedValue({
+          canAutoFix: true,
+          risk: 'medium',
+          description: 'Enable bucket encryption.',
+          currentState: {},
+          proposedState: {},
+          requiredPermissions: ['s3:PutBucketEncryption'],
+          readSteps: [],
+          fixSteps: [],
+          rollbackSteps: [],
+          rollbackSupported: false,
+        }),
+      },
+    });
+    mockAwsFinding('AwsS3Bucket');
+
+    const preview = await service.previewRemediation({
+      connectionId: 'conn_123',
+      organizationId: 'org_123',
+      checkResultId: 'chk_123',
+      remediationKey: 'gate-test',
+    });
+
+    expect(preview.guidedOnly).toBe(false);
+  });
+
+  it('throws from executeRemediation for Security-Global with the pair role configured', async () => {
+    const assumeRemediationRole = jest.fn();
+    const service = makeService({
+      credentialVaultService: mockAwsCredentials(SECURITY_GLOBAL_MAP),
+      awsSecurityService: { assumeRemediationRole },
+    });
+    mockAwsFinding('aws-account');
+
+    // Execute cannot degrade to guided-only — it throws so a cached or
+    // regenerated plan never runs under the global role.
+    await expect(
+      service.executeRemediation({
+        connectionId: 'conn_123',
+        organizationId: 'org_123',
+        checkResultId: 'chk_123',
+        remediationKey: 'gate-test',
+        userId: 'user_123',
+      }),
+    ).rejects.toThrow(/require human approval/);
+    expect(assumeRemediationRole).not.toHaveBeenCalled();
+    expect(mockDb.remediationAction.create).not.toHaveBeenCalled();
+  });
+
+  it('throws from executeRemediation for Network with the pair role configured', async () => {
+    const assumeRemediationRole = jest.fn();
+    const service = makeService({
+      credentialVaultService: mockAwsCredentials(NETWORK_MAP),
+      awsSecurityService: { assumeRemediationRole },
+    });
+    mockAwsFinding('AwsElbLoadBalancer');
+
+    await expect(
+      service.executeRemediation({
+        connectionId: 'conn_123',
+        organizationId: 'org_123',
+        checkResultId: 'chk_123',
+        remediationKey: 'gate-test',
+        userId: 'user_123',
+      }),
+    ).rejects.toThrow(/require human approval/);
+    expect(assumeRemediationRole).not.toHaveBeenCalled();
+    expect(mockDb.remediationAction.create).not.toHaveBeenCalled();
+  });
+
+  it('throws from rollbackRemediation for Network with the pair role configured', async () => {
+    const assumeRemediationRole = jest.fn();
+    const service = makeService({
+      credentialVaultService: mockAwsCredentials(NETWORK_MAP),
+      awsSecurityService: { assumeRemediationRole },
+    });
+    mockDb.remediationAction.findFirst.mockResolvedValue({
+      id: 'act_123',
+      status: 'success',
+      connectionId: 'conn_123',
+      checkResultId: 'chk_123',
+      remediationKey: 'elb-test',
+      resourceType: 'AwsElbLoadBalancer',
+      resourceId: 'my-elb',
+      appliedState: {
+        rollbackSteps: [
+          {
+            service: 'elb',
+            command: 'DescribeLoadBalancersCommand',
+            params: {},
+          },
+        ],
+      },
+      connection: { provider: { slug: 'aws' } },
+    });
+
+    // Undoing a Network write is itself a traffic-path write — refuse
+    // before claiming so no concurrent caller can run it either.
+    await expect(
+      service.rollbackRemediation({
+        actionId: 'act_123',
+        organizationId: 'org_123',
+      }),
+    ).rejects.toThrow(/require human approval/);
+    expect(assumeRemediationRole).not.toHaveBeenCalled();
+    expect(mockDb.remediationAction.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('throws from rollbackRemediation for Security-Global with the pair role configured', async () => {
+    const assumeRemediationRole = jest.fn();
+    const service = makeService({
+      credentialVaultService: mockAwsCredentials(SECURITY_GLOBAL_MAP),
+      awsSecurityService: { assumeRemediationRole },
+    });
+    mockDb.remediationAction.findFirst.mockResolvedValue({
+      id: 'act_123',
+      status: 'success',
+      connectionId: 'conn_123',
+      checkResultId: 'chk_123',
+      remediationKey: 'account-test',
+      resourceType: 'aws-account',
+      resourceId: 'my-account',
+      appliedState: {
+        rollbackSteps: [
+          {
+            service: 'elb',
+            command: 'DescribeLoadBalancersCommand',
+            params: {},
+          },
+        ],
+      },
+      connection: { provider: { slug: 'aws' } },
+    });
+
+    // Undoing a Security-Global write is itself a highest-blast-radius
+    // write — refuse before claiming so no concurrent caller can run it
+    // either.
+    await expect(
+      service.rollbackRemediation({
+        actionId: 'act_123',
+        organizationId: 'org_123',
+      }),
+    ).rejects.toThrow(/require human approval/);
+    expect(assumeRemediationRole).not.toHaveBeenCalled();
+    expect(mockDb.remediationAction.updateMany).not.toHaveBeenCalled();
   });
 });
 

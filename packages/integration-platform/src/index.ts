@@ -156,6 +156,7 @@ export type { RemediationScriptPair } from './manifests/aws/remediation-script';
 // Asset-class x region remediator roles (Phase 2): shared by the API
 // (assume routing, validation) and the frontend (per-pair setup UI).
 export {
+  APPROVAL_GATED_ASSET_CLASSES,
   AWS_LEGACY_REMEDIATION_ROLE_NAME,
   AWS_REMEDIATION_ROLE_NAME_PREFIX,
   FIX_FORWARD_ALLOWLIST,
@@ -168,6 +169,7 @@ export {
   escapeDoubleQuotedShell,
   findingToAssetClass,
   getRemediationRolesParseError,
+  isApprovalGatedAssetClass,
   isRemediationRoleKey,
   parseRemediationRolesMap,
   remediationRoleKey,

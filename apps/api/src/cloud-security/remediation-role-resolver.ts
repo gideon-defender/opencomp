@@ -15,6 +15,11 @@ import {
  * `roleName` is the bare IAM name for `iam:*` API reads; both are
  * `undefined` when the connection has no role for this pair — callers
  * fail closed (guided-only preview / throw) instead of assuming.
+ *
+ * Routing is not authorization: callers must additionally refuse
+ * auto-execute for `isApprovalGatedAssetClass(assetClass)` (Network,
+ * Security-Global) — a configured pair role there enables reads, never
+ * writes.
  */
 export function resolveFindingRemediationRole(args: {
   credentials: Record<string, unknown>;

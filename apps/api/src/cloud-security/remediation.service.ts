@@ -20,7 +20,10 @@ import {
   hasRemediationRole,
   normalizeAwsPartition,
 } from './aws-partition.utils';
-import { SAFE_AWS_REGION_PATTERN } from '@gideon-defender/integration-platform';
+import {
+  isApprovalGatedAssetClass,
+  SAFE_AWS_REGION_PATTERN,
+} from '@gideon-defender/integration-platform';
 import {
   buildManualRemediationPreview,
   isManualRemediation,
@@ -239,6 +242,7 @@ export class RemediationService {
         ]),
       ];
       const {
+        assetClass: recheckAssetClass,
         roleArn: pairRoleArn,
         roleName: pairRoleName,
         expectedRoleName: pairExpectedRoleName,
@@ -247,6 +251,16 @@ export class RemediationService {
         resourceType: finding.resourceType,
         region,
       });
+      if (isApprovalGatedAssetClass(recheckAssetClass)) {
+        // Network / Security-Global never auto-fix: adding the pair role
+        // would not enable one-click fixes, so the missing-role guidance
+        // below would send users down a dead end. Gate first.
+        return buildManualRemediationPreview({
+          remediation: `[MANUAL] Findings in the ${recheckAssetClass} asset class require human approval and cannot be auto-fixed, even with the ${pairExpectedRoleName} role configured. Follow the AWS console steps for this finding manually.`,
+          description: finding.description,
+          severity: finding.severity,
+        });
+      }
       if (!pairRoleArn) {
         // Same situation as the full-preview path below: no pair role for
         // this finding means guided-only manual steps, not a 500. A fresh
@@ -362,6 +376,7 @@ export class RemediationService {
     // read, and any permission-fix script below must all target the same
     // role the finding routes to (map first, legacy fallback).
     const {
+      assetClass: previewAssetClass,
       roleArn: pairRoleArn,
       roleName: pairRoleName,
       expectedRoleName: pairExpectedRoleName,
@@ -370,6 +385,18 @@ export class RemediationService {
       resourceType: finding.resourceType,
       region,
     });
+    if (isApprovalGatedAssetClass(previewAssetClass)) {
+      // Gate before the missing-role check for the same reason as recheck:
+      // the pair role must exist for reads, but its presence never enables
+      // auto-fix for these classes. Returning here also skips the read-step
+      // assume below, so previewing a Security-Global finding does not page
+      // the human on call.
+      return buildManualRemediationPreview({
+        remediation: `[MANUAL] Findings in the ${previewAssetClass} asset class require human approval and cannot be auto-fixed, even with the ${pairExpectedRoleName} role configured. Follow the AWS console steps for this finding manually.`,
+        description: finding.description,
+        severity: finding.severity,
+      });
+    }
     if (!pairRoleArn) {
       return buildManualRemediationPreview({
         remediation: `[MANUAL] No remediation role is configured for this finding's asset class and region. Add the ${pairExpectedRoleName} role to the connection settings to enable one-click fixes. Until then, follow the AWS console steps for this finding manually.`,
@@ -673,6 +700,7 @@ export class RemediationService {
     // Route to the finding's pair role (map first, legacy fallback) — every
     // assume and grant-script below targets this role, never the auditor.
     const {
+      assetClass: executeAssetClass,
       roleArn: pairRoleArn,
       roleName: pairRoleName,
       expectedRoleName: pairExpectedRoleName,
@@ -681,6 +709,15 @@ export class RemediationService {
       resourceType: finding.resourceType,
       region,
     });
+    if (isApprovalGatedAssetClass(executeAssetClass)) {
+      // Execute cannot degrade to guided-only — it throws so a cached or
+      // regenerated plan for these classes never runs. Checked before the
+      // missing-role throw: the role may well be configured, and it still
+      // must not execute.
+      throw new Error(
+        `Cannot auto-execute: findings in the ${executeAssetClass} asset class require human approval. Apply the fix manually in the AWS console.`,
+      );
+    }
     if (!pairRoleArn) {
       throw new Error(
         `No remediation role configured for this finding's asset class and region. Add the ${pairExpectedRoleName} role to the connection settings.`,
@@ -1214,6 +1251,7 @@ export class RemediationService {
     // would assume (or demand) the wrong pair on multi-region connections.
     const region = await this.getRollbackRegion(action, credentials);
     const {
+      assetClass: rollbackAssetClass,
       roleArn: pairRoleArn,
       roleName: pairRoleName,
       expectedRoleName: pairExpectedRoleName,
@@ -1222,6 +1260,13 @@ export class RemediationService {
       resourceType: action.resourceType,
       region,
     });
+    if (isApprovalGatedAssetClass(rollbackAssetClass)) {
+      // Undoing one of these writes is itself a high-blast-radius write —
+      // refuse even when the pair role is configured.
+      throw new Error(
+        `Cannot rollback: findings in the ${rollbackAssetClass} asset class require human approval. Undo the change manually in the AWS console.`,
+      );
+    }
     if (!pairRoleArn) {
       throw new Error(
         `Cannot rollback: no remediation role configured for this finding's asset class and region. Add the ${pairExpectedRoleName} role to the connection settings.`,
