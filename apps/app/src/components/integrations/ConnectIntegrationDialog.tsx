@@ -15,7 +15,6 @@ import { usePermissions } from '@/hooks/use-permissions';
 import {
   getAwsCloudShellScript,
   getAwsCloudShellUrl,
-  getAwsRemediationScript,
   normalizeAwsEnvironment,
 } from '@gideon-defender/integration-platform';
 import {
@@ -34,6 +33,7 @@ import { toast } from 'sonner';
 
 import { CloudShellSetup, SectionDivider, getSetupScriptDisabledMessage } from './CloudShellSetup';
 import { CredentialInput } from './CredentialInput';
+import { RemediationPairSetup } from '@/components/remediation/RemediationPairSetup';
 
 interface ConnectIntegrationDialogProps {
   open: boolean;
@@ -138,7 +138,6 @@ export function ConnectIntegrationDialog({
       : regionOptions;
   const setupScript =
     integrationId === 'aws' ? getAwsCloudShellScript(awsEnvironment) : provider?.setupScript;
-  const remediationScript = getAwsRemediationScript(awsEnvironment);
   const cloudShellUrl = getAwsCloudShellUrl(awsEnvironment);
 
   // Track if data is still loading - use isLoading flags instead of checking for undefined
@@ -765,28 +764,15 @@ export function ConnectIntegrationDialog({
                 if (!provider?.setupScript) return true;
                 if (field.id === 'externalId') return false;
                 if (field.id === 'connectionName') return false;
+                // New AWS connections cannot use the deprecated single
+                // remediation role (the server rejects it with 400) — the
+                // per-pair setup below collects the `remediationRoles` map
+                // instead, so never render the legacy ARN input.
+                if (isAwsForm && field.id === 'remediationRoleArn') return false;
                 return true;
               })
               .map((field) => (
                 <div key={field.id}>
-                  {/* Section divider + quick setup before remediationRoleArn */}
-                  {field.id === 'remediationRoleArn' && integrationId === 'aws' && (
-                    <>
-                      <SectionDivider label="Auto-Remediation (Optional)" />
-                      <div className="mb-4 mt-4">
-                        <CloudShellSetup
-                          script={remediationScript}
-                          externalId={integrationId === 'aws' ? setupExternalId : orgId}
-                          cloudShellUrl={cloudShellUrl}
-                          disabled={!hasSelectedAwsEnvironment || (isAwsForm && !pendingConnection)}
-                          disabledMessage={setupScriptDisabledMessage}
-                          title="Remediation Role Setup"
-                          subtitle="Create a write-access role for auto-fix"
-                          footnote="The remediation role is separate from your audit role — your audit role stays read-only."
-                        />
-                      </div>
-                    </>
-                  )}
                   {/* Section divider before regions */}
                   {field.id === 'regions' && integrationId === 'aws' && (
                     <SectionDivider label="Scan Configuration" />
@@ -812,6 +798,36 @@ export function ConnectIntegrationDialog({
                   </div>
                 </div>
               ))}
+            {isAwsForm && (
+              <>
+                <SectionDivider label="Auto-Remediation (Optional)" />
+                <div className="mb-4 mt-4">
+                  <p className="text-sm font-medium">Remediation Role Setup</p>
+                  <p className="font-mono text-xs text-muted-foreground break-all">
+                    Create a write-access role for auto-fix — one per asset class and region
+                  </p>
+                  <div className="mt-3">
+                    <RemediationPairSetup
+                      awsEnvironment={awsEnvironment}
+                      externalId={setupExternalId}
+                      regions={Array.isArray(credentials.regions) ? credentials.regions : []}
+                      value={
+                        typeof credentials.remediationRoles === 'string'
+                          ? credentials.remediationRoles
+                          : ''
+                      }
+                      onChange={(next) => updateCredential('remediationRoles', next)}
+                      scriptEnabled={hasSelectedAwsEnvironment && !!pendingConnection}
+                      disabledMessage={setupScriptDisabledMessage}
+                    />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground/60 mt-2">
+                    The remediation role is separate from your audit role — your audit role stays
+                    read-only.
+                  </p>
+                </div>
+              </>
+            )}
             {!(isAwsForm && !pendingConnection) && (
               <Button
                 onClick={handleCredentialConnect}
