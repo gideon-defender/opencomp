@@ -7,6 +7,7 @@ import { PermissionGuard } from '../../auth/permission.guard';
 import { ConnectionService } from '../services/connection.service';
 import { CredentialVaultService } from '../services/credential-vault.service';
 import { OAuthCredentialsService } from '../services/oauth-credentials.service';
+import { GcpImpersonationService } from '../../cloud-security/gcp-impersonation.service';
 import { AutoCheckRunnerService } from '../services/auto-check-runner.service';
 import { ProviderRepository } from '../repositories/provider.repository';
 import { ConnectionRepository } from '../repositories/connection.repository';
@@ -92,6 +93,12 @@ describe('ConnectionsController', () => {
     getCredentials: jest.fn(),
   };
 
+  const mockGcpImpersonationService = {
+    mintRemediatorToken: jest.fn(),
+    resolveCallerToken: jest.fn(),
+    getImpersonatorEmail: jest.fn(),
+  };
+
   const mockAutoCheckRunnerService = {
     tryAutoRunChecks: jest.fn().mockResolvedValue(false),
   };
@@ -118,6 +125,10 @@ describe('ConnectionsController', () => {
         {
           provide: OAuthCredentialsService,
           useValue: mockOAuthCredentialsService,
+        },
+        {
+          provide: GcpImpersonationService,
+          useValue: mockGcpImpersonationService,
         },
         {
           provide: AutoCheckRunnerService,
@@ -167,27 +178,96 @@ describe('ConnectionsController', () => {
       ];
       mockedGetAllManifests.mockReturnValue(manifests as never);
       mockOAuthCredentialsService.checkAvailability.mockResolvedValue({
+        available: true,
+        hasOrgCredentials: false,
         hasPlatformCredentials: true,
       });
 
-      const result = await controller.listProviders();
+      const result = await controller.listProviders('org_1');
 
       expect(mockedGetAllManifests).toHaveBeenCalled();
+      expect(
+        mockOAuthCredentialsService.checkAvailability,
+      ).toHaveBeenCalledWith('github', 'org_1');
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe('github');
+      expect(result[0].oauthConfigured).toBe(true);
+    });
+
+    it('should mark oauthConfigured when only org credentials exist', async () => {
+      const manifests = [
+        {
+          id: 'gcp',
+          name: 'GCP',
+          description: 'GCP integration',
+          category: 'Cloud',
+          logoUrl: '/gcp.svg',
+          auth: { type: 'oauth2' },
+          capabilities: ['checks'],
+          isActive: true,
+          docsUrl: 'https://docs.example.com',
+          credentialFields: [],
+          checks: [],
+          variables: [],
+        },
+      ];
+      mockedGetAllManifests.mockReturnValue(manifests as never);
+      mockOAuthCredentialsService.checkAvailability.mockResolvedValue({
+        available: true,
+        hasOrgCredentials: true,
+        hasPlatformCredentials: false,
+      });
+
+      const result = await controller.listProviders('org_1');
+
+      expect(
+        mockOAuthCredentialsService.checkAvailability,
+      ).toHaveBeenCalledWith('gcp', 'org_1');
+      expect(result).toHaveLength(1);
+      expect(result[0].oauthConfigured).toBe(true);
+    });
+
+    it('should mark oauthConfigured false when no credentials exist', async () => {
+      const manifests = [
+        {
+          id: 'gcp',
+          name: 'GCP',
+          description: 'GCP integration',
+          category: 'Cloud',
+          logoUrl: '/gcp.svg',
+          auth: { type: 'oauth2' },
+          capabilities: ['checks'],
+          isActive: true,
+          docsUrl: 'https://docs.example.com',
+          credentialFields: [],
+          checks: [],
+          variables: [],
+        },
+      ];
+      mockedGetAllManifests.mockReturnValue(manifests as never);
+      mockOAuthCredentialsService.checkAvailability.mockResolvedValue({
+        available: false,
+        hasOrgCredentials: false,
+        hasPlatformCredentials: false,
+      });
+
+      const result = await controller.listProviders('org_1');
+
+      expect(result).toHaveLength(1);
+      expect(result[0].oauthConfigured).toBe(false);
     });
 
     it('should return active manifests when activeOnly is true', async () => {
       mockedGetActiveManifests.mockReturnValue([]);
 
-      await controller.listProviders('true');
+      await controller.listProviders('org_1', 'true');
 
       expect(mockedGetActiveManifests).toHaveBeenCalled();
     });
   });
 
   describe('getProvider', () => {
-    it('should return provider details', () => {
+    it('should return provider details', async () => {
       const manifest = {
         id: 'github',
         name: 'GitHub',
@@ -203,19 +283,25 @@ describe('ConnectionsController', () => {
         variables: [],
       };
       mockedGetManifest.mockReturnValue(manifest as never);
+      mockOAuthCredentialsService.checkAvailability.mockResolvedValue({
+        available: true,
+        hasOrgCredentials: true,
+        hasPlatformCredentials: false,
+      });
 
-      const result = controller.getProvider('github');
+      const result = await controller.getProvider('github', 'org_1');
 
       expect(result.id).toBe('github');
       expect(result.name).toBe('GitHub');
+      expect(result.oauthConfigured).toBe(true);
     });
 
-    it('should throw NOT_FOUND when provider does not exist', () => {
+    it('should throw NOT_FOUND when provider does not exist', async () => {
       mockedGetManifest.mockReturnValue(undefined);
 
-      expect(() => controller.getProvider('nonexistent')).toThrow(
-        HttpException,
-      );
+      await expect(
+        controller.getProvider('nonexistent', 'org_1'),
+      ).rejects.toThrow(HttpException);
     });
   });
 
@@ -677,6 +763,202 @@ describe('ConnectionsController', () => {
       expect(mockConnectionService.activateConnection).toHaveBeenCalledWith(
         'conn_1',
       );
+    });
+  });
+
+  describe('GCP remediator-SA bindings', () => {
+    const SA = 'opencomp-remediator@my-proj-123.iam.gserviceaccount.com';
+    const MAP = JSON.stringify({ 'Storage:my-proj-123': SA });
+
+    function gcpConnection() {
+      mockConnectionService.getConnectionForOrg.mockResolvedValue({
+        id: 'conn_gcp',
+        organizationId: 'org_1',
+        status: 'active',
+        metadata: {},
+        provider: { slug: 'gcp' },
+      });
+      mockedGetManifest.mockReturnValue({
+        id: 'gcp',
+        auth: { type: 'oauth2', config: {} },
+      } as never);
+    }
+
+    function trustProbesPass() {
+      mockGcpImpersonationService.resolveCallerToken.mockReturnValue(
+        'backend-token',
+      );
+      mockGcpImpersonationService.mintRemediatorToken.mockImplementation(
+        async ({ callerToken }: { callerToken: string }) => {
+          if (callerToken === 'backend-token') {
+            return { accessToken: 'fix-token', expiresInSeconds: 600 };
+          }
+          throw new Error('403 PERMISSION_DENIED');
+        },
+      );
+    }
+
+    it('stores a valid pair map and mirrors it to metadata', async () => {
+      gcpConnection();
+      trustProbesPass();
+      mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue({
+        access_token: 'auditor-token',
+      });
+
+      const result = await controller.updateCredentials('conn_gcp', 'org_1', {
+        credentials: { gcpRemediation: MAP },
+      });
+
+      expect(result).toEqual({ success: true });
+      expect(
+        mockCredentialVaultService.storeApiKeyCredentials,
+      ).toHaveBeenCalledWith(
+        'conn_gcp',
+        expect.objectContaining({ gcpRemediation: MAP }),
+      );
+      expect(mockConnectionRepository.update).toHaveBeenCalledWith(
+        'conn_gcp',
+        expect.objectContaining({
+          metadata: expect.objectContaining({
+            gcpRemediation: { 'Storage:my-proj-123': SA },
+          }),
+        }),
+      );
+    });
+
+    it('refuses a binding when the auditor token is missing (unprovable trust)', async () => {
+      gcpConnection();
+      trustProbesPass();
+      mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue({});
+
+      await expect(
+        controller.updateCredentials('conn_gcp', 'org_1', {
+          credentials: { gcpRemediation: MAP },
+        }),
+      ).rejects.toThrow(HttpException);
+      expect(
+        mockCredentialVaultService.storeApiKeyCredentials,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('rejects a malformed pair map before any vault write', async () => {
+      gcpConnection();
+      mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue({
+        access_token: 'auditor-token',
+      });
+
+      await expect(
+        controller.updateCredentials('conn_gcp', 'org_1', {
+          credentials: { gcpRemediation: 'not-json' },
+        }),
+      ).rejects.toThrow(HttpException);
+      expect(
+        mockCredentialVaultService.storeApiKeyCredentials,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('blocks binding when the auditor token can impersonate (open trust)', async () => {
+      gcpConnection();
+      mockGcpImpersonationService.resolveCallerToken.mockReturnValue(
+        'backend-token',
+      );
+      mockGcpImpersonationService.mintRemediatorToken.mockResolvedValue({
+        accessToken: 'fix-token',
+        expiresInSeconds: 600,
+      });
+      mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue({
+        access_token: 'auditor-token',
+      });
+
+      await expect(
+        controller.updateCredentials('conn_gcp', 'org_1', {
+          credentials: { gcpRemediation: MAP },
+        }),
+      ).rejects.toThrow(HttpException);
+      expect(
+        mockCredentialVaultService.storeApiKeyCredentials,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('clears the binding when an empty map is sent', async () => {
+      gcpConnection();
+      mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue({
+        access_token: 'auditor-token',
+        gcpRemediation: MAP,
+      });
+
+      const result = await controller.updateCredentials('conn_gcp', 'org_1', {
+        credentials: { gcpRemediation: '{}' },
+      });
+
+      expect(result).toEqual({ success: true });
+      const stored =
+        mockCredentialVaultService.storeApiKeyCredentials.mock.calls[0][1];
+      expect(stored.gcpRemediation).toBeUndefined();
+      expect(mockConnectionRepository.update).toHaveBeenCalledWith(
+        'conn_gcp',
+        expect.objectContaining({
+          metadata: expect.not.objectContaining({
+            gcpRemediation: expect.anything(),
+          }),
+        }),
+      );
+    });
+
+    it('still rejects other credential keys on OAuth connections', async () => {
+      gcpConnection();
+
+      await expect(
+        controller.updateCredentials('conn_gcp', 'org_1', {
+          credentials: { token: 'new' },
+        }),
+      ).rejects.toThrow(HttpException);
+      expect(
+        mockCredentialVaultService.storeApiKeyCredentials,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('rejects a binding smuggled with extra keys without a vault write', async () => {
+      // The single-key carve-out exists so token material cannot ride along
+      // with the pair map — a two-key body must hit the OAuth blanket reject.
+      gcpConnection();
+      mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue({
+        access_token: 'auditor-token',
+      });
+
+      await expect(
+        controller.updateCredentials('conn_gcp', 'org_1', {
+          credentials: { gcpRemediation: MAP, token: 'new' },
+        }),
+      ).rejects.toThrow(HttpException);
+      expect(
+        mockCredentialVaultService.storeApiKeyCredentials,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('restores the vault version when the metadata update fails', async () => {
+      gcpConnection();
+      trustProbesPass();
+      const previous = { access_token: 'auditor-token' };
+      mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue(
+        previous,
+      );
+      mockConnectionRepository.update.mockRejectedValueOnce(
+        new Error('db down'),
+      );
+
+      await expect(
+        controller.updateCredentials('conn_gcp', 'org_1', {
+          credentials: { gcpRemediation: MAP },
+        }),
+      ).rejects.toThrow('db down');
+      // Forward flip, then compensation flip back to the snapshot.
+      expect(
+        mockCredentialVaultService.storeApiKeyCredentials,
+      ).toHaveBeenCalledTimes(2);
+      expect(
+        mockCredentialVaultService.storeApiKeyCredentials,
+      ).toHaveBeenLastCalledWith('conn_gcp', previous);
     });
   });
 

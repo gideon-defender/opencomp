@@ -197,6 +197,37 @@ export type {
   RemediationLakeQuery,
 } from './manifests/aws/remediation-detection';
 
+// GCP remediator roles + allowlist + setup script (Phase 1): shared by the
+// API (identity routing, validation) and the frontend (per-pair setup UI).
+export {
+  gcpRollbackDeletePrefixAllowed,
+  isGcpAllowlistedFixStep,
+} from './manifests/gcp/remediation-allowlist';
+export type { GcpAllowlistedCall } from './manifests/gcp/remediation-allowlist';
+export {
+  APPROVAL_GATED_GCP_ASSET_CLASSES,
+  GCP_FIX_FORWARD_ALLOWLIST,
+  GCP_NEVER_ALLOW_PERMISSIONS,
+  GCP_REMEDIATION_ASSET_CLASSES,
+  GCP_REMEDIATOR_SA_EMAIL_PATTERN,
+  GCP_REMEDIATOR_SA_NAME,
+  MAX_GCP_REMEDIATION_PAIRS,
+  SAFE_GCP_PROJECT_PATTERN,
+  gcpFindingToAssetClass,
+  gcpRemediationKey,
+  gcpRemediationRoleId,
+  gcpRemediationSaEmail,
+  getGcpRemediationMapParseError,
+  isApprovalGatedGcpAssetClass,
+  isGcpRemediationKey,
+  normalizeGcpRemediationKey,
+  parseGcpRemediationMap,
+  serializeGcpRemediationMap,
+} from './manifests/gcp/remediation-roles';
+export type { GcpRemediationAssetClass } from './manifests/gcp/remediation-roles';
+export { getGcpRemediationScriptForPair } from './manifests/gcp/remediation-script';
+export type { GcpRemediationScriptPair } from './manifests/gcp/remediation-script';
+
 // Shared AWS STS AssumeRole retry (transient / IAM-eventual-consistency safe),
 // reused by the Cloud Tests scanner in apps/api.
 export { isRetryableAssumeError, retryAssume } from './manifests/aws/checks/assume-retry';

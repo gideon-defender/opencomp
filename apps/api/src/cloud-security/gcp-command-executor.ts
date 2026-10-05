@@ -1,4 +1,11 @@
 import { Logger } from '@nestjs/common';
+import {
+  GCP_NEVER_ALLOW_PERMISSIONS,
+  SAFE_GCP_PROJECT_PATTERN,
+  gcpRollbackDeletePrefixAllowed,
+  isGcpAllowlistedFixStep,
+  type GcpRemediationAssetClass,
+} from '@gideon-defender/integration-platform';
 
 const logger = new Logger('GcpCommandExecutor');
 
@@ -43,17 +50,60 @@ export async function executeGcpPlanSteps(params: {
   accessToken: string;
   autoRollbackSteps?: GcpApiStep[];
   isRollback?: boolean;
+  /**
+   * When provided with `enforceAllowlist`, fix/rollback steps are also
+   * checked against the asset-class allowlist — not just the URL shape.
+   * Callers executing writes must pass the finding's asset class so
+   * AI-generated rollback steps cannot bypass the allowlist on the
+   * auto-rollback path.
+   */
+  assetClass?: GcpRemediationAssetClass;
+  enforceAllowlist?: boolean;
 }): Promise<GcpExecutionResult> {
-  // Validate ALL step URLs before executing any — prevents SSRF on read/fix/rollback steps
-  const allSteps = [...params.steps, ...(params.autoRollbackSteps ?? [])];
-  const validationErrors = validateGcpPlanSteps(allSteps);
+  // Validate ALL step URLs before executing any — prevents SSRF on read/fix/rollback steps.
+  // Fix steps and rollback steps validate under different flags: rollback
+  // steps allow DELETE (prefix-scoped), fix steps never do.
+  const baseOpts = {
+    ...(params.assetClass ? { assetClass: params.assetClass } : {}),
+    ...(params.enforceAllowlist ? { enforceAllowlist: true } : {}),
+  };
+  const validationErrors = [
+    ...validateGcpPlanSteps(params.steps, {
+      ...baseOpts,
+      ...(params.isRollback ? { isRollback: true } : {}),
+    }),
+    ...validateGcpPlanSteps(params.autoRollbackSteps ?? [], {
+      ...baseOpts,
+      isRollback: true,
+    }),
+  ];
   if (validationErrors.length > 0) {
     return {
       results: [],
       error: {
         stepIndex: 0,
-        step: params.steps[0] ?? allSteps[0],
+        step: params.steps[0] ?? params.autoRollbackSteps?.[0],
         message: `URL validation failed: ${validationErrors.join('; ')}`,
+      },
+    };
+  }
+
+  // The auto-rollback loop below compensates by position
+  // (rollback[j] undoes fix step j), so the two arrays must line up 1:1.
+  // Anything else would roll back the wrong subset — refuse instead of
+  // executing a plan whose compensation does not match its writes.
+  if (
+    params.autoRollbackSteps &&
+    params.autoRollbackSteps.length !== params.steps.length
+  ) {
+    return {
+      results: [],
+      error: {
+        stepIndex: 0,
+        step: params.steps[0] ?? params.autoRollbackSteps?.[0],
+        message:
+          `Rollback mismatch: ${params.autoRollbackSteps.length} rollback steps ` +
+          `for ${params.steps.length} fix steps. Refusing to execute without 1:1 compensation.`,
       },
     };
   }
@@ -307,16 +357,23 @@ async function enableGcpApi(
   apiName: string,
 ): Promise<void> {
   // Extract project ID from the step URL
-  const projectMatch = stepUrl.match(/\/projects\/([^/]+)/);
+  const projectMatch = stepUrl.match(/\/projects\/([^/?#]+)/);
   if (!projectMatch) {
     logger.warn(`Cannot extract project ID from URL to enable API: ${apiName}`);
     return;
   }
+  const projectId = projectMatch[1];
+  if (!SAFE_GCP_PROJECT_PATTERN.test(projectId)) {
+    logger.warn(
+      `Refusing to auto-enable API for unexpected project segment: ${apiName}`,
+    );
+    return;
+  }
 
-  logger.log(`Auto-enabling GCP API: ${apiName} in project ${projectMatch[1]}`);
+  logger.log(`Auto-enabling GCP API: ${apiName} in project ${projectId}`);
   try {
     const resp = await fetch(
-      `https://serviceusage.googleapis.com/v1/projects/${projectMatch[1]}/services/${apiName}:enable`,
+      `https://serviceusage.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/services/${apiName}:enable`,
       {
         method: 'POST',
         headers: {
@@ -406,7 +463,14 @@ async function waitForOperation(
 
 // ─── Validation ────────────────────────────────────────────────────────────
 
-export function validateGcpPlanSteps(steps: GcpApiStep[]): string[] {
+export function validateGcpPlanSteps(
+  steps: GcpApiStep[],
+  opts?: {
+    assetClass?: GcpRemediationAssetClass;
+    enforceAllowlist?: boolean;
+    isRollback?: boolean;
+  },
+): string[] {
   const errors: string[] = [];
   for (let i = 0; i < steps.length; i++) {
     const step = steps[i];
@@ -440,6 +504,42 @@ export function validateGcpPlanSteps(steps: GcpApiStep[]): string[] {
       }
     } catch {
       errors.push(`Step ${i + 1}: URL must be a valid absolute URL`);
+    }
+    // Fix-forward allowlist: write steps must be covered by the finding's
+    // asset-class list. Reads (GET) and unscoped calls skip this — pass
+    // enforceAllowlist only for fix/rollback validation.
+    if (opts?.enforceAllowlist && opts.assetClass && step.method !== 'GET') {
+      // Rollback DELETEs stay prefix-scoped: the method exemption below only
+      // applies to URLs under the class's own API prefixes, so an
+      // AI-generated rollback cannot DELETE an arbitrary Google API.
+      const allowlisted =
+        opts.isRollback && step.method === 'DELETE'
+          ? gcpRollbackDeletePrefixAllowed({
+              assetClass: opts.assetClass,
+              url: step.url,
+            })
+          : isGcpAllowlistedFixStep({
+              assetClass: opts.assetClass,
+              method: step.method,
+              url: step.url,
+            });
+      if (!allowlisted) {
+        errors.push(
+          `Step ${i + 1}: ${step.method} ${step.url} is not allowlisted for ${opts.assetClass} fixes`,
+        );
+      }
+    }
+    // Never-allow permissions must not appear in any step body.
+    if (step.body) {
+      const bodyText = JSON.stringify(step.body);
+      for (const denied of GCP_NEVER_ALLOW_PERMISSIONS) {
+        if (bodyText.includes(denied)) {
+          errors.push(
+            `Step ${i + 1}: permission ${denied} is never allowed in fixes`,
+          );
+          break;
+        }
+      }
     }
   }
   return errors;
