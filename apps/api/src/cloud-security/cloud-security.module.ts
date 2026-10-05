@@ -11,6 +11,7 @@ import { RemediationBatchController } from './remediation-batch.controller';
 import { RemediationBatchService } from './remediation-batch.service';
 import { RemediationService } from './remediation.service';
 import { GcpRemediationService } from './gcp-remediation.service';
+import { GcpImpersonationService } from './gcp-impersonation.service';
 import { AzureRemediationService } from './azure-remediation.service';
 import { AiRemediationService } from './ai-remediation.service';
 import { AiDescriptionService } from './ai-description.service';
@@ -41,6 +42,7 @@ import { AuthModule } from '../auth/auth.module';
     RemediationService,
     RemediationBatchService,
     GcpRemediationService,
+    GcpImpersonationService,
     AzureRemediationService,
     AiRemediationService,
     AiDescriptionService,
@@ -50,6 +52,6 @@ import { AuthModule } from '../auth/auth.module';
     CloudHistoryService,
     CloudAwsScanModeService,
   ],
-  exports: [CloudSecurityService],
+  exports: [CloudSecurityService, GcpImpersonationService],
 })
 export class CloudSecurityModule {}

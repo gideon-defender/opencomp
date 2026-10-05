@@ -12,6 +12,8 @@ import {
   HttpStatus,
   Logger,
   UseGuards,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import {
   ApiBody,
@@ -50,7 +52,9 @@ import {
   getManifest,
   getAllManifests,
   getActiveManifests,
+  getGcpRemediationMapParseError,
   getRemediationRolesParseError,
+  parseGcpRemediationMap,
   parseRemediationRolesMap,
   TASK_TEMPLATE_INFO,
   type TaskTemplateId,
@@ -65,6 +69,8 @@ import {
 } from '../../cloud-security/aws-partition.utils';
 import { getProviderSummary } from '../utils/provider-summary';
 import { validateRemediationRoleTrust } from './remediation-trust.validator';
+import { validateGcpRemediationTrust } from '../../cloud-security/gcp-remediation-trust.validator';
+import { GcpImpersonationService } from '../../cloud-security/gcp-impersonation.service';
 import { generateAwsExternalId } from './external-id.utils';
 import { ApiAuthErrors } from '../../openapi/common-responses';
 
@@ -251,6 +257,8 @@ export class ConnectionsController {
     private readonly autoCheckRunnerService: AutoCheckRunnerService,
     private readonly providerRepository: ProviderRepository,
     private readonly connectionRepository: ConnectionRepository,
+    @Inject(forwardRef(() => GcpImpersonationService))
+    private readonly gcpImpersonationService: GcpImpersonationService,
   ) {}
 
   /**
@@ -263,22 +271,26 @@ export class ConnectionsController {
     description: 'Integration providers retrieved successfully',
   })
   @ApiAuthErrors()
-  async listProviders(@Query('activeOnly') activeOnly?: string) {
+  async listProviders(
+    @OrganizationId() organizationId: string,
+    @Query('activeOnly') activeOnly?: string,
+  ) {
     const manifests =
       activeOnly === 'true' ? getActiveManifests() : getAllManifests();
 
-    // Check platform credentials for OAuth providers
+    // OAuth availability is org OR platform (matches checkAvailability):
+    // an org with its own custom app must not see "Coming soon".
     const oauthProviderSlugs = manifests
       .filter((m) => m.auth.type === 'oauth2')
       .map((m) => m.id);
 
-    const platformCredentialsMap = new Map<string, boolean>();
+    const availabilityMap = new Map<string, boolean>();
     for (const slug of oauthProviderSlugs) {
       const availability = await this.oauthCredentialsService.checkAvailability(
         slug,
-        '', // Empty org ID to just check platform credentials
+        organizationId,
       );
-      platformCredentialsMap.set(slug, availability.hasPlatformCredentials);
+      availabilityMap.set(slug, availability.available);
     }
 
     return manifests.map((m) => {
@@ -299,10 +311,10 @@ export class ConnectionsController {
       const setupScript =
         m.auth.type === 'custom' ? m.auth.config.setupScript : undefined;
 
-      // For OAuth providers, check if platform credentials are configured
+      // For OAuth providers, available when org OR platform creds exist
       const oauthConfigured =
         m.auth.type === 'oauth2'
-          ? (platformCredentialsMap.get(m.id) ?? false)
+          ? (availabilityMap.get(m.id) ?? false)
           : undefined;
 
       // Get mapped tasks from checks and collect required variables
@@ -397,7 +409,10 @@ export class ConnectionsController {
     description: 'An integration provider by slug retrieved successfully',
   })
   @ApiAuthErrors()
-  getProvider(@Param('slug') slug: string) {
+  async getProvider(
+    @Param('slug') slug: string,
+    @OrganizationId() organizationId: string,
+  ) {
     const manifest = getManifest(slug);
     if (!manifest) {
       throw new HttpException(
@@ -405,6 +420,9 @@ export class ConnectionsController {
         HttpStatus.NOT_FOUND,
       );
     }
+
+    // OAuth availability is org OR platform (same as list-providers) so the
+    // detail-page onboarding gate matches the list gate.
 
     // Get credential fields - from custom auth config or from manifest
     const credentialFields =
@@ -471,6 +489,15 @@ export class ConnectionsController {
       credentialFields,
       setupInstructions,
       setupScript,
+      oauthConfigured:
+        manifest.auth.type === 'oauth2'
+          ? (
+              await this.oauthCredentialsService.checkAvailability(
+                manifest.id,
+                organizationId,
+              )
+            ).available
+          : undefined,
       mappedTasks,
       requiredVariables: Array.from(requiredVariables),
       supportsMultipleConnections:
@@ -1620,6 +1647,122 @@ export class ConnectionsController {
   }
 
   /**
+   * Bind (or clear) remediator-SA pairs on a GCP OAuth connection.
+   * Stores only SA emails — no token material. A non-empty binding is
+   * stored only after the impersonation trust probe passes. When the
+   * backend impersonator is unconfigured the binding is still stored but
+   * execute-time minting fails closed (fail visibly, never certify).
+   * When the auditor token is missing the trust cannot be proven closed,
+   * so the binding is refused instead of stored unverified.
+   */
+  private async updateGcpRemediationBinding(args: {
+    id: string;
+    organizationId: string;
+    connection: { metadata?: unknown };
+    gcpRemediation: string;
+  }) {
+    const parseError = getGcpRemediationMapParseError(args.gcpRemediation);
+    if (parseError) {
+      throw new HttpException(parseError, HttpStatus.BAD_REQUEST);
+    }
+    const pairs = parseGcpRemediationMap(args.gcpRemediation);
+
+    const existingCredentials =
+      await this.credentialVaultService.getDecryptedCredentials(args.id);
+    if (Object.keys(pairs).length > 0) {
+      const auditorToken =
+        typeof existingCredentials?.access_token === 'string'
+          ? existingCredentials.access_token
+          : undefined;
+      if (!auditorToken) {
+        throw new HttpException(
+          'Cannot verify the remediator trust without the auditor token. Reconnect the GCP integration, then set the binding again.',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      let backendCallerToken: string | undefined;
+      try {
+        backendCallerToken = this.gcpImpersonationService.resolveCallerToken();
+      } catch {
+        this.logger.warn(
+          `GCP impersonation unconfigured — storing binding on ${args.id} without trust probe; execute-time minting will fail closed.`,
+        );
+      }
+      if (backendCallerToken) {
+        const trustError = await validateGcpRemediationTrust({
+          saEmails: [...Object.values(pairs)],
+          auditorToken,
+          impersonationService: this.gcpImpersonationService,
+          backendCallerToken,
+          logger: this.logger,
+        });
+        if (trustError) {
+          throw new HttpException(trustError, HttpStatus.BAD_REQUEST);
+        }
+      }
+    }
+
+    const mergedCredentials = {
+      ...(existingCredentials ?? {}),
+      gcpRemediation: args.gcpRemediation,
+    } as Record<string, string | string[]>;
+    if (Object.keys(pairs).length === 0) {
+      delete mergedCredentials.gcpRemediation;
+    }
+    await this.credentialVaultService.storeApiKeyCredentials(
+      args.id,
+      mergedCredentials,
+    );
+
+    const existingMeta = (args.connection.metadata ?? {}) as Record<
+      string,
+      unknown
+    >;
+    const nextMetadata = { ...existingMeta };
+    if (Object.keys(pairs).length > 0) {
+      nextMetadata.gcpRemediation = pairs;
+    } else {
+      delete nextMetadata.gcpRemediation;
+    }
+    try {
+      await this.connectionRepository.update(args.id, {
+        metadata: nextMetadata,
+      });
+    } catch (metadataError) {
+      // The vault write above already flipped the active credential version
+      // while metadata still shows the old binding. Flip the vault back to
+      // the snapshot so display state (metadata) and effective state (vault)
+      // cannot disagree, then surface the original failure.
+      this.logger.error(
+        `GCP binding metadata update failed on ${args.id} — restoring previous vault version`,
+        metadataError instanceof Error
+          ? metadataError.stack
+          : String(metadataError),
+      );
+      if (existingCredentials) {
+        try {
+          await this.credentialVaultService.storeApiKeyCredentials(
+            args.id,
+            existingCredentials,
+          );
+        } catch (restoreError) {
+          this.logger.error(
+            `Failed to restore vault version on ${args.id} after metadata failure — vault and metadata disagree, retry the binding update`,
+            restoreError instanceof Error
+              ? restoreError.stack
+              : String(restoreError),
+          );
+        }
+      }
+      throw metadataError;
+    }
+    this.logger.log(
+      `Updated GCP remediator binding on connection ${args.id} (${Object.keys(pairs).length} pairs)`,
+    );
+    return { success: true };
+  }
+
+  /**
    * Update credentials for a custom auth connection
    */
   @Put(':id/credentials')
@@ -1650,6 +1793,23 @@ export class ConnectionsController {
         `Manifest not found for ${providerSlug}`,
         HttpStatus.NOT_FOUND,
       );
+    }
+
+    // OAuth connections cannot rotate tokens via this endpoint — except
+    // GCP remediator-SA bindings, which carry only the `gcpRemediation`
+    // pair map (no token material) and are validated + trust-probed below.
+    const isGcpRemediationBindingUpdate =
+      providerSlug === 'gcp' &&
+      body.credentials != null &&
+      Object.keys(body.credentials).length === 1 &&
+      typeof body.credentials.gcpRemediation === 'string';
+    if (isGcpRemediationBindingUpdate) {
+      return this.updateGcpRemediationBinding({
+        id,
+        organizationId,
+        connection,
+        gcpRemediation: body.credentials.gcpRemediation as string,
+      });
     }
 
     // Only allow updating credentials for non-OAuth integrations

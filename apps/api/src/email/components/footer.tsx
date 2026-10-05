@@ -25,7 +25,7 @@ export function Footer({ locale = 'en' }: FooterProps) {
       </Text>
 
       <Text className="text-xs text-[#B8B8B8]">
-        OpenComp | 2261 Market Street, San Francisco, CA 94114
+        OpenComp | 2621 NE 212th Terrace Unit 209, Miami, FL 33180
       </Text>
     </Section>
   );

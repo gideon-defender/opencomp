@@ -1,15 +1,62 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { db, Prisma } from '@db';
-import { getManifest } from '@gideon-defender/integration-platform';
+import {
+  GCP_REMEDIATION_ASSET_CLASSES,
+  getManifest,
+  isApprovalGatedGcpAssetClass,
+  parseGcpRemediationMap,
+  type GcpRemediationAssetClass,
+} from '@gideon-defender/integration-platform';
 import { CredentialVaultService } from '../integration-platform/services/credential-vault.service';
 import { OAuthCredentialsService } from '../integration-platform/services/oauth-credentials.service';
 import { AiRemediationService } from './ai-remediation.service';
+import { GcpImpersonationService } from './gcp-impersonation.service';
+import { resolveGcpRemediationIdentity } from './gcp-remediation-role-resolver';
 import { parseGcpPermissionError } from './remediation-error.utils';
 import {
   executeGcpPlanSteps,
   validateGcpPlanSteps,
 } from './gcp-command-executor';
 import type { GcpFixPlan, GcpApiStep } from './gcp-ai-remediation.prompt';
+
+/**
+ * Extract the GCP project id for a finding: evidence `projectId` first,
+ * then `projects/<id>` in the resource id, then display name as fallback.
+ */
+export function extractGcpFindingProjectId(args: {
+  evidence: Record<string, unknown>;
+  resourceId: string | null;
+}): string {
+  const fromEvidence =
+    typeof args.evidence.projectId === 'string'
+      ? args.evidence.projectId.trim()
+      : '';
+  if (fromEvidence) return fromEvidence;
+  const match =
+    typeof args.resourceId === 'string'
+      ? args.resourceId.match(/projects\/([^/]+)/)
+      : null;
+  if (match?.[1]) return match[1];
+  const display =
+    typeof args.evidence.projectDisplayName === 'string'
+      ? args.evidence.projectDisplayName.trim()
+      : '';
+  return display;
+}
+
+/** Short stable hash of plan steps for the audit trail. */
+export function hashGcpPlanSteps(
+  steps: Array<{ method: string; url: string; body?: unknown }>,
+): string {
+  const input = JSON.stringify(
+    steps.map((s) => ({ method: s.method, url: s.url, body: s.body ?? null })),
+  );
+  let hash = 5381;
+  for (let i = 0; i < input.length; i++) {
+    hash = ((hash << 5) + hash + input.charCodeAt(i)) | 0;
+  }
+  return `gcp-${(hash >>> 0).toString(16)}`;
+}
 
 @Injectable()
 export class GcpRemediationService {
@@ -51,6 +98,7 @@ export class GcpRemediationService {
     private readonly credentialVaultService: CredentialVaultService,
     private readonly oauthCredentialsService: OAuthCredentialsService,
     private readonly aiRemediationService: AiRemediationService,
+    private readonly impersonationService: GcpImpersonationService,
   ) {}
 
   async getCapabilities(params: {
@@ -62,10 +110,16 @@ export class GcpRemediationService {
         params.connectionId,
       );
 
+    const bindings = parseGcpRemediationMap(
+      typeof credentials?.gcpRemediation === 'string'
+        ? credentials.gcpRemediation
+        : undefined,
+    );
     return {
       enabled: Boolean(credentials?.access_token),
       aiPowered: true,
       remediations: [],
+      remediationConfigured: Object.keys(bindings).length > 0,
     };
   }
 
@@ -78,6 +132,26 @@ export class GcpRemediationService {
     const { finding, accessToken } = await this.resolveContext(params);
     const evidence = (finding.evidence ?? {}) as Record<string, unknown>;
     const findingKey = evidence.findingKey as string;
+
+    // Approval-gated classes never auto-execute: skip the AI plan and
+    // return guided-only so the UI never offers one-click fix.
+    const gate = await this.resolveGate(params, finding);
+    if (gate.approvalGated) {
+      return {
+        currentState: {},
+        proposedState: {},
+        description: finding.description,
+        risk: finding.severity,
+        apiCalls: [],
+        guidedOnly: true,
+        guidedSteps: [
+          finding.remediation ??
+            `This ${gate.assetClass} finding requires human approval — apply the fix manually in the GCP console.`,
+        ],
+        rollbackSupported: false,
+        requiresAcknowledgment: undefined,
+      };
+    }
 
     const plan = await this.aiRemediationService.generateGcpFixPlan({
       title: finding.title ?? 'Unknown',
@@ -235,6 +309,22 @@ export class GcpRemediationService {
       );
     }
 
+    // Write identity: impersonated remediator token only. Refuses when no
+    // SA is bound or the class is approval-gated. The auditor token below
+    // is used for reads/verification only — never for writes.
+    const execution = await this.resolveExecutionIdentity({
+      connectionId: params.connectionId,
+      organizationId: params.organizationId,
+      finding,
+    });
+    const fixIdentity = {
+      saEmail: execution.saEmail,
+      assetClass: execution.assetClass,
+      projectId: execution.projectId,
+      tokenTtlSeconds: execution.tokenTtlSeconds,
+      planHash: hashGcpPlanSteps(plan.fixSteps),
+    };
+
     const action = await db.remediationAction.create({
       data: {
         checkResultId: params.checkResultId,
@@ -317,7 +407,10 @@ export class GcpRemediationService {
       if (!refinedPlan.fixSteps || refinedPlan.fixSteps.length === 0) {
         throw new Error('AI refined plan has no fix steps. Cannot proceed.');
       }
-      let fixErrors = validateGcpPlanSteps(refinedPlan.fixSteps);
+      let fixErrors = validateGcpPlanSteps(refinedPlan.fixSteps, {
+        assetClass: execution.assetClass,
+        enforceAllowlist: true,
+      });
       if (fixErrors.length > 0) {
         this.logger.warn(
           `Fix plan validation failed: ${fixErrors.join('; ')} — retrying with error context`,
@@ -340,7 +433,10 @@ export class GcpRemediationService {
           },
         });
         refinedPlan = retryPlan;
-        fixErrors = validateGcpPlanSteps(refinedPlan.fixSteps);
+        fixErrors = validateGcpPlanSteps(refinedPlan.fixSteps, {
+          assetClass: execution.assetClass,
+          enforceAllowlist: true,
+        });
         if (fixErrors.length > 0) {
           throw new Error(
             `Invalid fix steps after retry: ${fixErrors.join('; ')}`,
@@ -359,8 +455,10 @@ export class GcpRemediationService {
       let currentPlan = refinedPlan;
       fixResult = await executeGcpPlanSteps({
         steps: currentPlan.fixSteps,
-        accessToken,
+        accessToken: execution.fixToken,
         autoRollbackSteps: currentPlan.rollbackSteps,
+        assetClass: execution.assetClass,
+        enforceAllowlist: true,
       });
 
       // Self-healing: if non-permission error, regenerate plan with error context and retry
@@ -399,8 +497,10 @@ export class GcpRemediationService {
             currentPlan = retryPlan;
             fixResult = await executeGcpPlanSteps({
               steps: currentPlan.fixSteps,
-              accessToken,
+              accessToken: execution.fixToken,
               autoRollbackSteps: currentPlan.rollbackSteps,
+              assetClass: execution.assetClass,
+              enforceAllowlist: true,
             });
           }
         }
@@ -419,7 +519,12 @@ export class GcpRemediationService {
       let verified = false;
 
       // Primary verification: check if the API response from the fix step
-      // contains the expected changes (e.g., setIamPolicy returns the updated policy)
+      // contains the expected changes (e.g., setIamPolicy returns the updated policy).
+      // Only concrete success indicators count — a generic non-empty body
+      // proves nothing, since idempotent no-ops (409 already-exists, 204,
+      // empty-JSON fallbacks) all return non-empty objects. Anything without
+      // a concrete indicator falls through to the re-read comparison below,
+      // which reports 'unverified' instead of a false 'success'.
       for (const r of fixResult.results) {
         const output = r.output as Record<string, unknown> | undefined;
         if (!output) continue;
@@ -429,10 +534,6 @@ export class GcpRemediationService {
           Array.isArray(output.auditConfigs) &&
           (output.auditConfigs as unknown[]).length > 0
         ) {
-          verified = true;
-        }
-        // Generic: if the API returned a non-empty response, the call succeeded
-        if (Object.keys(output).length > 0 && !verified) {
           verified = true;
         }
       }
@@ -477,6 +578,12 @@ export class GcpRemediationService {
         })),
         rollbackSteps: currentPlan.rollbackSteps,
         verified,
+        // The audit hash must describe the steps that actually ran
+        // (post-refinement), not the cached plan they were refined from.
+        fixIdentity: {
+          ...fixIdentity,
+          planHash: hashGcpPlanSteps(currentPlan.fixSteps),
+        },
       };
 
       const status = verified ? 'success' : 'unverified';
@@ -510,7 +617,11 @@ export class GcpRemediationService {
 
       // Parse GCP permission errors and provide actionable fix
       const evidence = (finding.evidence ?? {}) as Record<string, unknown>;
-      const projectId = (evidence.projectDisplayName as string) ?? undefined;
+      const projectId =
+        extractGcpFindingProjectId({
+          evidence,
+          resourceId: finding.resourceId,
+        }) || undefined;
       const permInfo = parseGcpPermissionError(errorMessage, projectId);
 
       let permissionError:
@@ -536,6 +647,7 @@ export class GcpRemediationService {
             autoRollbackAttempted: hasAutoRollback,
             failedAtStep: fixResult?.error?.stepIndex,
             completedSteps: fixResult?.results.length ?? 0,
+            fixIdentity,
             ...(permissionError && {
               missingPermissions: permissionError.missingActions,
               suggestedFix: permissionError.fixScript,
@@ -578,10 +690,74 @@ export class GcpRemediationService {
       throw new Error('No rollback steps available for this action');
     }
 
-    const accessToken = await this.getValidGcpToken(
-      action.connectionId,
-      action.organizationId,
-    );
+    // Rollback writes use the remediator identity too — the auditor token
+    // must never execute writes, including rollbacks. Prefer the identity
+    // recorded at execute time: re-resolving from the finding can lose the
+    // SA when the project id came only from finding evidence (rollback
+    // synthesizes no evidence), which would make a successful action
+    // un-rollbackable. Actions recorded before the identity was persisted
+    // fall back to re-resolution.
+    const storedIdentity = appliedState.fixIdentity as {
+      saEmail?: unknown;
+      assetClass?: unknown;
+    };
+    const storedAssetClass =
+      typeof storedIdentity?.assetClass === 'string' &&
+      (GCP_REMEDIATION_ASSET_CLASSES as readonly string[]).includes(
+        storedIdentity.assetClass,
+      )
+        ? (storedIdentity.assetClass as GcpRemediationAssetClass)
+        : undefined;
+    let execution: {
+      fixToken: string;
+      saEmail: string;
+      assetClass: GcpRemediationAssetClass;
+      tokenTtlSeconds: number;
+    };
+    if (
+      typeof storedIdentity?.saEmail === 'string' &&
+      storedIdentity.saEmail &&
+      storedAssetClass
+    ) {
+      if (isApprovalGatedGcpAssetClass(storedAssetClass)) {
+        throw new Error(
+          `Class ${storedAssetClass} requires human approval — apply this fix manually in the GCP console.`,
+        );
+      }
+      const callerToken = this.impersonationService.resolveCallerToken();
+      const minted = await this.impersonationService.mintRemediatorToken({
+        saEmail: storedIdentity.saEmail,
+        callerToken,
+      });
+      execution = {
+        fixToken: minted.accessToken,
+        saEmail: storedIdentity.saEmail,
+        assetClass: storedAssetClass,
+        tokenTtlSeconds: minted.expiresInSeconds,
+      };
+    } else {
+      const resolved = await this.resolveExecutionIdentity({
+        connectionId: action.connectionId,
+        organizationId: action.organizationId,
+        finding: {
+          resourceType: action.resourceType,
+          resourceId: action.resourceId,
+          evidence: {},
+        },
+      });
+      execution = {
+        fixToken: resolved.fixToken,
+        saEmail: resolved.saEmail,
+        assetClass: resolved.assetClass,
+        tokenTtlSeconds: resolved.tokenTtlSeconds,
+      };
+    }
+    const fixIdentity = {
+      saEmail: execution.saEmail,
+      assetClass: execution.assetClass,
+      tokenTtlSeconds: execution.tokenTtlSeconds,
+      planHash: hashGcpPlanSteps(rollbackSteps),
+    };
 
     try {
       this.logger.log(
@@ -593,10 +769,21 @@ export class GcpRemediationService {
         );
       }
 
+      const rollbackErrors = validateGcpPlanSteps(rollbackSteps, {
+        assetClass: execution.assetClass,
+        enforceAllowlist: true,
+        isRollback: true,
+      });
+      if (rollbackErrors.length > 0) {
+        throw new Error(`Invalid rollback steps: ${rollbackErrors.join('; ')}`);
+      }
+
       const result = await executeGcpPlanSteps({
         steps: rollbackSteps,
-        accessToken,
+        accessToken: execution.fixToken,
         isRollback: true,
+        assetClass: execution.assetClass,
+        enforceAllowlist: true,
       });
 
       // Log each rollback step result
@@ -608,7 +795,14 @@ export class GcpRemediationService {
 
       await db.remediationAction.update({
         where: { id: action.id },
-        data: { status: 'rolled_back', rolledBackAt: new Date() },
+        data: {
+          status: 'rolled_back',
+          rolledBackAt: new Date(),
+          appliedState: {
+            ...((action.appliedState ?? {}) as Record<string, unknown>),
+            fixIdentity,
+          },
+        },
       });
 
       this.logger.log(
@@ -729,6 +923,89 @@ export class GcpRemediationService {
       );
     }
     return token;
+  }
+
+  /**
+   * Resolve the SoD gate for a finding without minting any token:
+   * which asset class it routes to, whether a remediator SA is bound,
+   * and whether the class is approval-gated. Never throws for bad
+   * input — unresolvable findings degrade to guided-only downstream.
+   */
+  private async resolveGate(
+    params: { connectionId: string; organizationId: string },
+    finding: {
+      resourceType: string | null;
+      resourceId: string | null;
+      evidence: unknown;
+    },
+  ) {
+    const credentials =
+      await this.credentialVaultService.getDecryptedCredentials(
+        params.connectionId,
+      );
+    const evidence = (finding.evidence ?? {}) as Record<string, unknown>;
+    const projectId = extractGcpFindingProjectId({
+      evidence,
+      resourceId: finding.resourceId,
+    });
+    const identity = resolveGcpRemediationIdentity({
+      credentials: credentials ?? {},
+      resourceType: finding.resourceType,
+      projectId,
+    });
+    return { ...identity, projectId };
+  }
+
+  /**
+   * Resolve the write identity for execute/rollback: requires a bound
+   * remediator SA and a non-gated class, then mints a short-lived
+   * impersonated token. The auditor token is never returned here, so
+   * callers cannot accidentally write with the scan identity.
+   */
+  private async resolveExecutionIdentity(params: {
+    connectionId: string;
+    organizationId: string;
+    finding: {
+      resourceType: string | null;
+      resourceId: string | null;
+      evidence: unknown;
+    };
+  }): Promise<{
+    fixToken: string;
+    saEmail: string;
+    assetClass: GcpRemediationAssetClass;
+    projectId: string;
+    tokenTtlSeconds: number;
+  }> {
+    const gate = await this.resolveGate(
+      {
+        connectionId: params.connectionId,
+        organizationId: params.organizationId,
+      },
+      params.finding,
+    );
+    if (!gate.saEmail) {
+      throw new Error(
+        `No remediator SA bound for ${gate.expectedKey} — configure one in integration settings, then retry. This finding is guided-only until then.`,
+      );
+    }
+    if (gate.approvalGated) {
+      throw new Error(
+        `Class ${gate.assetClass} requires human approval — apply this fix manually in the GCP console.`,
+      );
+    }
+    const callerToken = this.impersonationService.resolveCallerToken();
+    const minted = await this.impersonationService.mintRemediatorToken({
+      saEmail: gate.saEmail,
+      callerToken,
+    });
+    return {
+      fixToken: minted.accessToken,
+      saEmail: gate.saEmail,
+      assetClass: gate.assetClass,
+      projectId: gate.projectId,
+      tokenTtlSeconds: minted.expiresInSeconds,
+    };
   }
 
   private buildPreviewResponse(plan: GcpFixPlan) {

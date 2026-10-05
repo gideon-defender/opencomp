@@ -9,6 +9,7 @@ import { ProviderRepository } from '../repositories/provider.repository';
 import { ConnectionRepository } from '../repositories/connection.repository';
 import { HybridAuthGuard } from '../../auth/hybrid-auth.guard';
 import { PermissionGuard } from '../../auth/permission.guard';
+import { GcpImpersonationService } from '../../cloud-security/gcp-impersonation.service';
 import { getManifest } from '@gideon-defender/integration-platform';
 
 jest.mock('../../auth/auth.server', () => ({
@@ -98,6 +99,12 @@ async function createController() {
   const connectionRepository = {
     update: jest.fn(),
   };
+  // The controller takes GcpImpersonationService for the GCP binding path;
+  // these tests never touch it, so a stub suffices.
+  const gcpImpersonationService = {
+    resolveCallerToken: jest.fn(),
+    mintRemediatorToken: jest.fn(),
+  };
   const mockGuard = { canActivate: jest.fn().mockReturnValue(true) };
 
   const module: TestingModule = await Test.createTestingModule({
@@ -109,6 +116,10 @@ async function createController() {
       { provide: AutoCheckRunnerService, useValue: autoCheckRunnerService },
       { provide: ProviderRepository, useValue: providerRepository },
       { provide: ConnectionRepository, useValue: connectionRepository },
+      {
+        provide: GcpImpersonationService,
+        useValue: gcpImpersonationService,
+      },
     ],
   })
     .overrideGuard(HybridAuthGuard)
