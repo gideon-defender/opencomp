@@ -34,17 +34,14 @@ export function defaultAwsConnectionName(roleArn: unknown): string {
 /**
  * Shape phase-2 credentials: the server owns the External ID (mints on
  * create, pins on update), so a lingering client value must never be sent.
- * The deprecated single remediation role is rejected for new connections
- * (400 on create), so it must never travel either — pairs go in the
- * `remediationRoles` map, which passes through untouched.
- * Defaults the connection name from the Role ARN when absent.
+ * Defaults the connection name from the Role ARN when absent. Pair roles
+ * travel in the `remediationRoles` map, which passes through untouched.
  */
 export function buildAwsPhase2Credentials(
   credentials: Record<string, string | string[]>,
 ): Record<string, string | string[]> {
   const finalCredentials = { ...credentials };
   delete finalCredentials.externalId;
-  delete finalCredentials.remediationRoleArn;
   if (!finalCredentials.connectionName) {
     finalCredentials.connectionName = defaultAwsConnectionName(finalCredentials.roleArn);
   }

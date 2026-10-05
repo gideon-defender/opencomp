@@ -72,13 +72,6 @@ const mockProviders = [
         placeholder: 'arn:...',
       },
       {
-        id: 'remediationRoleArn',
-        label: 'Remediation Role ARN',
-        type: 'text',
-        required: false,
-        placeholder: 'arn:...',
-      },
-      {
         id: 'externalId',
         label: 'External ID',
         type: 'text',

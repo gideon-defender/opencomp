@@ -6,9 +6,7 @@
 function requiredApiBase(value: string | undefined, name: string): string {
   if (value) return value;
   if (process.env.NODE_ENV === 'production') {
-    throw new Error(
-      `${name} is not set — trust-center links would point at localhost`,
-    );
+    throw new Error(`${name} is not set — trust-center links would point at localhost`);
   }
   return 'http://localhost:3333';
 }
@@ -171,9 +169,7 @@ export const trustApi = {
   vendors: (id: string) =>
     get<PortalVendor[]>(`${encodeURIComponent(id)}/vendors`).then((r) => r ?? []),
   faqs: (id: string) =>
-    get<{ faqs: PortalFaq[] | null }>(`${encodeURIComponent(id)}/faqs`).then(
-      (r) => r?.faqs ?? [],
-    ),
+    get<{ faqs: PortalFaq[] | null }>(`${encodeURIComponent(id)}/faqs`).then((r) => r?.faqs ?? []),
   overview: (id: string) => get<PortalOverview>(`${encodeURIComponent(id)}/overview`),
   customLinks: (id: string) =>
     get<PortalCustomLink[]>(`${encodeURIComponent(id)}/custom-links`).then((r) => r ?? []),

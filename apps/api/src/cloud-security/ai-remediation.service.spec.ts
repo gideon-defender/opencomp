@@ -890,6 +890,7 @@ describe('AiRemediationService.suggestPermissionFix denylist', () => {
     const result = await service.suggestPermissionFix({
       errorMessage: 'not authorized to perform: s3:PutBucketEncryption',
       failedStep,
+      roleName: 'OpenComp-Remediator-Storage-us-east-1',
     });
 
     expect(result.missingActions).toEqual(['s3:PutBucketEncryption']);
@@ -930,6 +931,7 @@ describe('AiRemediationService.suggestPermissionFix denylist', () => {
     const result = await service.suggestPermissionFix({
       errorMessage: 'not authorized to perform: iam:PassRole',
       failedStep,
+      roleName: 'OpenComp-Remediator-Storage-us-east-1',
     });
 
     expect(result.missingActions).toEqual([]);
@@ -946,6 +948,7 @@ describe('AiRemediationService.suggestPermissionFix denylist', () => {
     const result = await service.suggestPermissionFix({
       errorMessage: 'not authorized to perform: iam:PassRole',
       failedStep,
+      roleName: 'OpenComp-Remediator-Storage-us-east-1',
     });
 
     expect(result.missingActions).toEqual([]);
@@ -972,6 +975,7 @@ describe('AiRemediationService.suggestPermissionFix denylist', () => {
     const result = await service.suggestPermissionFix({
       errorMessage: 'not authorized to perform: s3:PutBucketEncryption',
       failedStep,
+      roleName: 'OpenComp-Remediator-Storage-us-east-1',
     });
 
     expect(result.missingActions).toEqual(['s3:PutBucketEncryption']);
@@ -1000,6 +1004,7 @@ describe('AiRemediationService.suggestPermissionFix denylist', () => {
     const result = await service.suggestPermissionFix({
       errorMessage: 'not authorized',
       failedStep,
+      roleName: 'OpenComp-Remediator-Storage-us-east-1',
     });
 
     // Both grantable actions survive — missingActions, the policy, and the
@@ -1031,6 +1036,7 @@ describe('AiRemediationService.suggestPermissionFix denylist', () => {
     const result = await service.suggestPermissionFix({
       errorMessage: 'not authorized',
       failedStep,
+      roleName: 'OpenComp-Remediator-Storage-us-east-1',
     });
 
     expect(result.missingActions).toEqual(['s3:PutBucketEncryption']);
@@ -1047,6 +1053,7 @@ describe('AiRemediationService.suggestPermissionFix denylist', () => {
       errorMessage:
         'not authorized to perform: cognito-idp:DescribeUserPool with an explicit deny',
       failedStep,
+      roleName: 'OpenComp-Remediator-Storage-us-east-1',
     });
 
     expect(result.missingActions).toEqual(['cognito-idp:DescribeUserPool']);
@@ -1071,6 +1078,7 @@ describe('AiRemediationService.suggestPermissionFix denylist', () => {
     const result = await service.suggestPermissionFix({
       errorMessage: 'not authorized to perform: s3:PutBucketEncryption',
       failedStep,
+      roleName: 'OpenComp-Remediator-Storage-us-east-1',
     });
 
     // Model-supplied Resource is untrusted free text — the merge always
@@ -1098,6 +1106,7 @@ describe('AiRemediationService.suggestPermissionFix denylist', () => {
     const result = await service.suggestPermissionFix({
       errorMessage: 'not authorized to perform: s3:PutBucketEncryption',
       failedStep,
+      roleName: 'OpenComp-Remediator-Storage-us-east-1',
     });
 
     // Hostile Resource text reaches neither the grant list nor the script —

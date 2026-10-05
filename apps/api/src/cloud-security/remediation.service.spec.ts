@@ -280,7 +280,7 @@ describe('RemediationService.previewRemediation', () => {
         remediationKey: 's3-encryption-test',
         userId: 'user_123',
       }),
-    ).rejects.toThrow(/Remediation role ARN not configured/);
+    ).rejects.toThrow(/No remediation role configured/);
     expect(assumeRemediationRole).not.toHaveBeenCalled();
     expect(mockDb.remediationAction.create).not.toHaveBeenCalled();
   });
@@ -321,7 +321,7 @@ describe('RemediationService.previewRemediation', () => {
         remediationKey: 's3-encryption-test',
         userId: 'user_123',
       }),
-    ).rejects.toThrow(/Remediation role ARN not configured/);
+    ).rejects.toThrow(/No remediation role configured/);
     expect(assumeRemediationRole).not.toHaveBeenCalled();
     expect(mockDb.remediationAction.create).not.toHaveBeenCalled();
   });
@@ -362,7 +362,7 @@ describe('RemediationService.previewRemediation', () => {
         remediationKey: 's3-encryption-test',
         userId: 'user_123',
       }),
-    ).rejects.toThrow(/Remediation role ARN not configured/);
+    ).rejects.toThrow(/No remediation role configured/);
     expect(assumeRemediationRole).not.toHaveBeenCalled();
     expect(mockDb.remediationAction.create).not.toHaveBeenCalled();
   });
@@ -444,8 +444,10 @@ describe('RemediationService.previewRemediation', () => {
         getDecryptedCredentials: jest.fn().mockResolvedValue({
           regions: ['us-east-1'],
           externalId: 'test-external-id',
-          remediationRoleArn:
-            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+          remediationRoles: JSON.stringify({
+            'Storage:us-east-1':
+              'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1',
+          }),
         }),
       },
       awsSecurityService: { assumeRemediationRole },
@@ -477,14 +479,15 @@ describe('RemediationService.previewRemediation', () => {
 
     expect(assumeRemediationRole).toHaveBeenCalledWith(
       expect.objectContaining({
-        remediationRoleArn:
-          'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+        remediationRoles: JSON.stringify({
+          'Storage:us-east-1':
+            'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1',
+        }),
       }),
       'us-east-1',
       { findingId: 'chk_123' },
-      // Dual-read routing: no pair map configured, so the legacy ARN is
-      // resolved and passed explicitly.
-      'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+      // Pair routing: the map entry is resolved and passed explicitly.
+      'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1',
     );
   });
 
@@ -516,8 +519,6 @@ describe('RemediationService.previewRemediation', () => {
         getDecryptedCredentials: jest.fn().mockResolvedValue({
           regions: ['us-east-1'],
           externalId: 'test-external-id',
-          remediationRoleArn:
-            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
           remediationRoles: JSON.stringify({
             'Storage:us-east-1':
               'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1',
@@ -608,7 +609,10 @@ describe('RemediationService.previewRemediation', () => {
 
 describe('buildStaticPermissionScript (denylist)', () => {
   const callBuild = (permissions: string[]): string =>
-    buildStaticPermissionScript(permissions);
+    buildStaticPermissionScript(
+      permissions,
+      'OpenComp-Remediator-Storage-us-east-1',
+    );
 
   it('emits a plain Allow statement when everything is grantable', () => {
     const script = callBuild([
@@ -900,8 +904,10 @@ describe('RemediationService.previewRemediation (denylist wiring)', () => {
         getDecryptedCredentials: jest.fn().mockResolvedValue({
           regions: ['us-east-1'],
           externalId: 'test-external-id',
-          remediationRoleArn:
-            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+          remediationRoles: JSON.stringify({
+            'Storage:us-east-1':
+              'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1',
+          }),
         }),
       },
       aiRemediationService: { generateFixPlan },
@@ -974,8 +980,10 @@ describe('RemediationService.previewRemediation (denylist wiring)', () => {
         getDecryptedCredentials: jest.fn().mockResolvedValue({
           regions: ['us-east-1'],
           externalId: 'test-external-id',
-          remediationRoleArn:
-            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+          remediationRoles: JSON.stringify({
+            'Storage:us-east-1':
+              'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1',
+          }),
         }),
       },
       awsSecurityService: {
@@ -1040,8 +1048,10 @@ describe('RemediationService.previewRemediation (recheck mode)', () => {
         getDecryptedCredentials: jest.fn().mockResolvedValue({
           regions: ['us-east-1'],
           externalId: 'test-external-id',
-          remediationRoleArn:
-            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+          remediationRoles: JSON.stringify({
+            'Storage:us-east-1':
+              'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1',
+          }),
         }),
       },
       awsSecurityService: {
@@ -1362,8 +1372,10 @@ describe('RemediationService.executeRemediation (rollback surfacing)', () => {
           accessKeyId: 'a',
           secretAccessKey: 'b',
           externalId: 'test-external-id',
-          remediationRoleArn:
-            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+          remediationRoles: JSON.stringify({
+            'Storage:us-east-1':
+              'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1',
+          }),
         }),
       },
       awsSecurityService: {
@@ -1528,7 +1540,7 @@ describe('RemediationService.rollbackRemediation (blocked split)', () => {
     jest.clearAllMocks();
   });
 
-  it('refuses to roll back when the remediation role is no longer configured', async () => {
+  it('refuses to roll back when no remediation role is configured', async () => {
     const assumeRemediationRole = jest.fn();
     const service = makeService({
       credentialVaultService: {
@@ -1564,7 +1576,7 @@ describe('RemediationService.rollbackRemediation (blocked split)', () => {
         actionId: 'act_123',
         organizationId: 'org_123',
       }),
-    ).rejects.toThrow(/no longer configured/);
+    ).rejects.toThrow(/no remediation role configured/);
     expect(assumeRemediationRole).not.toHaveBeenCalled();
     expect(mockDb.remediationAction.updateMany).not.toHaveBeenCalled();
   });
@@ -1605,7 +1617,7 @@ describe('RemediationService.rollbackRemediation (blocked split)', () => {
         actionId: 'act_123',
         organizationId: 'org_123',
       }),
-    ).rejects.toThrow(/no longer configured/);
+    ).rejects.toThrow(/no remediation role configured/);
     expect(assumeRemediationRole).not.toHaveBeenCalled();
     expect(mockDb.remediationAction.updateMany).not.toHaveBeenCalled();
   });
@@ -1646,7 +1658,7 @@ describe('RemediationService.rollbackRemediation (blocked split)', () => {
         actionId: 'act_123',
         organizationId: 'org_123',
       }),
-    ).rejects.toThrow(/no longer configured/);
+    ).rejects.toThrow(/no remediation role configured/);
     expect(assumeRemediationRole).not.toHaveBeenCalled();
     expect(mockDb.remediationAction.updateMany).not.toHaveBeenCalled();
   });
@@ -1809,8 +1821,10 @@ describe('RemediationService.rollbackRemediation (blocked split)', () => {
         getDecryptedCredentials: jest.fn().mockResolvedValue({
           regions: ['us-east-1'],
           externalId: 'test-external-id',
-          remediationRoleArn:
-            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+          remediationRoles: JSON.stringify({
+            'Storage:us-east-1':
+              'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1',
+          }),
         }),
       },
       awsSecurityService: {
@@ -1876,8 +1890,10 @@ describe('RemediationService.rollbackRemediation (blocked split)', () => {
         getDecryptedCredentials: jest.fn().mockResolvedValue({
           regions: ['us-east-1'],
           externalId: 'test-external-id',
-          remediationRoleArn:
-            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+          remediationRoles: JSON.stringify({
+            'Storage:us-east-1':
+              'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1',
+          }),
         }),
       },
       awsSecurityService: {
@@ -1936,8 +1952,10 @@ describe('RemediationService.rollbackRemediation (blocked split)', () => {
         getDecryptedCredentials: jest.fn().mockResolvedValue({
           regions: ['us-east-1'],
           externalId: 'test-external-id',
-          remediationRoleArn:
-            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+          remediationRoles: JSON.stringify({
+            'Storage:us-east-1':
+              'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1',
+          }),
         }),
       },
       awsSecurityService: {
@@ -2031,8 +2049,10 @@ describe('RemediationService.rollbackRemediation (blocked split)', () => {
         getDecryptedCredentials: jest.fn().mockResolvedValue({
           regions: ['us-east-1'],
           externalId: 'test-external-id',
-          remediationRoleArn:
-            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+          remediationRoles: JSON.stringify({
+            'Storage:us-east-1':
+              'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1',
+          }),
         }),
       },
       awsSecurityService: {
@@ -2087,8 +2107,10 @@ describe('RemediationService.rollbackRemediation (blocked split)', () => {
         getDecryptedCredentials: jest.fn().mockResolvedValue({
           regions: ['us-east-1'],
           externalId: 'test-external-id',
-          remediationRoleArn:
-            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+          remediationRoles: JSON.stringify({
+            'Storage:us-east-1':
+              'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1',
+          }),
         }),
       },
       awsSecurityService: {
@@ -2187,7 +2209,26 @@ describe('RemediationService.getCapabilities', () => {
     ).resolves.toEqual({ enabled: false, aiPowered: true, remediations: [] });
   });
 
-  it('reports enabled with a configured remediation role ARN', async () => {
+  it('reports enabled with a configured pair map', async () => {
+    const service = capabilitiesService({
+      regions: ['us-east-1'],
+      externalId: 'test-external-id',
+      remediationRoles: JSON.stringify({
+        'Storage:us-east-1':
+          'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1',
+      }),
+    });
+    await expect(
+      service.getCapabilities({
+        connectionId: 'conn_123',
+        organizationId: 'org_123',
+      }),
+    ).resolves.toEqual({ enabled: true, aiPowered: true, remediations: [] });
+  });
+
+  it('reports disabled with a stored legacy ARN but no pair map', async () => {
+    // The removed single-role credential no longer opens the write path —
+    // advertising enabled here would fail late at assume time instead.
     const service = capabilitiesService({
       regions: ['us-east-1'],
       externalId: 'test-external-id',
@@ -2198,7 +2239,7 @@ describe('RemediationService.getCapabilities', () => {
         connectionId: 'conn_123',
         organizationId: 'org_123',
       }),
-    ).resolves.toEqual({ enabled: true, aiPowered: true, remediations: [] });
+    ).resolves.toEqual({ enabled: false, aiPowered: true, remediations: [] });
   });
 
   it('reports disabled with a remediation role ARN but no External ID', async () => {

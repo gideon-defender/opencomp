@@ -15094,26 +15094,6 @@
         "responses": {
           "201": {
             "description": "Exchange an auth code for device credentials completed successfully"
-          },
-          "401": {
-            "description": "Unauthorized - Invalid or missing authentication",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponseDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden - Insufficient permissions for this operation",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponseDto"
-                }
-              }
-            }
           }
         },
         "summary": "Exchange an auth code for device credentials",
@@ -15674,8 +15654,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "A device agent session revoked successfully"
+          "204": {
+            "description": "Device agent session revoked"
           },
           "401": {
             "description": "Unauthorized - Invalid or missing authentication",
@@ -25114,9 +25094,6 @@
           }
         },
         "responses": {
-          "201": {
-            "description": "Stream generated questionnaire answers completed successfully"
-          },
           "401": {
             "description": "Unauthorized - Invalid or missing authentication",
             "content": {
@@ -35423,7 +35400,7 @@
           },
           "credentials": {
             "type": "object",
-            "description": "Provider-specific credential fields. Keys differ by provider — call get-provider-details for the exact shape. For AWS (Cloud Tests) the fields are: connectionName (display name), awsType ('aws-commercial' or 'aws-govcloud'), roleArn (auditor role), regions (string array), remediationRoles (JSON string map of '<AssetClass>:<region>' to remediation role ARN, e.g. '{\"Storage:us-east-1\":\"arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1\"}' — one role per pair; the legacy single remediationRoleArn is rejected for new connections and only still read on existing ones), and awsScanMode ('comp_scanners' or 'security_hub'). The externalId is always minted server-side (org_<orgId>_<uuid>) — any client-supplied value is ignored. Omit roleArn to create a pending connection: the response returns the minted externalId show-once for the CloudShell setup script, then PUT credentials with the Role ARN to validate and activate. Omit credentials for OAuth providers — use POST /v1/integrations/oauth/start instead.",
+            "description": "Provider-specific credential fields. Keys differ by provider — call get-provider-details for the exact shape. For AWS (Cloud Tests) the fields are: connectionName (display name), awsType ('aws-commercial' or 'aws-govcloud'), roleArn (auditor role), regions (string array), remediationRoles (JSON string map of '<AssetClass>:<region>' to remediation role ARN, e.g. '{\"Storage:us-east-1\":\"arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1\"}' — one role per pair; the removed single remediationRoleArn is rejected for new connections and ignored on existing ones, whose stored values are dropped on the next credential update), and awsScanMode ('comp_scanners' or 'security_hub'). The externalId is always minted server-side (org_<orgId>_<uuid>) — any client-supplied value is ignored. Omit roleArn to create a pending connection: the response returns the minted externalId show-once for the CloudShell setup script, then PUT credentials with the Role ARN to validate and activate. Omit credentials for OAuth providers — use POST /v1/integrations/oauth/start instead.",
             "additionalProperties": true,
             "example": {
               "connectionName": "Production AWS",

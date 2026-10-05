@@ -5,6 +5,7 @@ import {
   getSetupScriptDisabledMessage,
 } from '@/components/integrations/CloudShellSetup';
 import { CredentialInput } from '@/components/integrations/CredentialInput';
+import { RemediationPairSetup } from '@/components/remediation/RemediationPairSetup';
 import { buildAwsPhase2Credentials, useAwsTwoStepConnect } from '@/hooks/use-aws-two-step-connect';
 import type { IntegrationProvider } from '@/hooks/use-integration-platform';
 import {
@@ -18,7 +19,6 @@ import {
   normalizeAwsEnvironment,
 } from '@gideon-defender/integration-platform';
 import { Button, Label } from '@trycompai/design-system';
-import { RemediationPairSetup } from '@/components/remediation/RemediationPairSetup';
 import { ArrowRight, Shield } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
@@ -689,9 +689,7 @@ function CloudSetup({
     pendingConnection,
   ]);
 
-  const connectionFields = visibleFields.filter(
-    (f) => f.id !== 'remediationRoleArn' && f.id !== 'regions' && f.id !== 'awsType',
-  );
+  const connectionFields = visibleFields.filter((f) => f.id !== 'regions' && f.id !== 'awsType');
   const regionFields = visibleFields.filter((f) => f.id === 'regions');
   const awsTypeFields = visibleFields.filter((f) => f.id === 'awsType');
   const hasSelectedAwsEnvironment =
@@ -715,8 +713,8 @@ function CloudSetup({
   const cloudShellUrl = getAwsCloudShellUrl(awsEnvironment);
 
   // Auto-remediation is offered per asset-class/region pair on every AWS
-  // connection. The deprecated single `remediationRoleArn` is never rendered
-  // here — the server rejects it for new connections with 400.
+  // connection. The removed single `remediationRoleArn` credential is never
+  // rendered here — the server rejects it for new connections with 400.
   const hasRemediation = provider.id === 'aws';
 
   return (

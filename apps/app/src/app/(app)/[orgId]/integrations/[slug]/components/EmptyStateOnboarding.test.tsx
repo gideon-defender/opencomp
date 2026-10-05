@@ -84,10 +84,8 @@ vi.mock('lucide-react', () => ({
 }));
 
 vi.mock('@gideon-defender/integration-platform', () => ({
-  awsRemediationScript: '',
   getAwsCloudShellUrl: () => 'https://console.aws.amazon.com/cloudshell',
   getAwsCloudShellScript: () => '',
-  getAwsRemediationScript: () => '',
   normalizeAwsEnvironment: (value: unknown) => (value === 'aws-us-gov' ? 'aws-us-gov' : 'aws'),
   REMEDIATION_ASSET_CLASSES: ['Storage', 'Compute', 'Network', 'Data', 'Security-Global'],
   getAwsRemediationScriptForPair: () => 'pair-script',
@@ -401,9 +399,7 @@ describe('EmptyStateOnboarding', () => {
       // Once scan regions are picked, the pair flow names the exact role.
       fireEvent.change(screen.getByLabelText('AWS Environment'), { target: { value: 'aws' } });
       fireEvent.change(screen.getByLabelText('Regions'), { target: { value: 'us-east-1' } });
-      expect(
-        screen.getByText(/Role: OpenComp-Remediator-Storage-us-east-1/),
-      ).toBeInTheDocument();
+      expect(screen.getByText(/Role: OpenComp-Remediator-Storage-us-east-1/)).toBeInTheDocument();
     });
   });
 });

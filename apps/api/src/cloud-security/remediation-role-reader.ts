@@ -11,7 +11,6 @@ import {
   subtractDeniedActions,
   type RolePolicyReader,
 } from './remediation-permission-coverage';
-import { AWS_LEGACY_REMEDIATION_ROLE_NAME } from './aws-partition.utils';
 
 export interface RemediatorCredentials {
   accessKeyId: string;
@@ -34,7 +33,7 @@ export interface RemediatorCredentials {
 export async function readRemediatorRolePermissions(params: {
   credentials: RemediatorCredentials;
   region: string;
-  roleName?: string;
+  roleName: string;
   onWarn?: (message: string) => void;
   onInfo?: (message: string) => void;
 }): Promise<{ allowed: Set<string>; denied: Set<string> }> {
@@ -46,7 +45,15 @@ export async function readRemediatorRolePermissions(params: {
       sessionToken: params.credentials.sessionToken,
     },
   });
-  const roleName = params.roleName ?? AWS_LEGACY_REMEDIATION_ROLE_NAME;
+  const roleName = params.roleName;
+  // No legacy default: callers resolve the finding's pair role first and
+  // fail closed when none is configured. Reading the monolith here would
+  // silently report the wrong role's permissions.
+  if (!roleName) {
+    throw new Error(
+      'Remediation pair role name is required to read role permissions.',
+    );
+  }
 
   // Thin SDK adapter over the shared paginated reader.
   const reader: RolePolicyReader = {

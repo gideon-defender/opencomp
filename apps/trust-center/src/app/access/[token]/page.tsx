@@ -161,9 +161,9 @@ export default async function GrantAccessPage({ params }: { params: Promise<{ to
               {resources.map((resource, index) => {
                 const key = resource.framework ?? resource.customFrameworkId ?? `res-${index}`;
                 const label = resource.framework
-                  ? (Object.hasOwn(FRAMEWORK_TITLES, resource.framework)
-                      ? FRAMEWORK_TITLES[resource.framework]
-                      : resource.framework)
+                  ? Object.hasOwn(FRAMEWORK_TITLES, resource.framework)
+                    ? FRAMEWORK_TITLES[resource.framework]
+                    : resource.framework
                   : resource.fileName;
                 // A resource with neither identifier has no download
                 // endpoint — render the label without a dead link.

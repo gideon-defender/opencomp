@@ -1,6 +1,5 @@
 import type { AwsCredentialIdentity } from '@aws-sdk/types';
 import {
-  AWS_LEGACY_REMEDIATION_ROLE_NAME,
   AWS_REMEDIATION_ROLE_NAME_PREFIX,
   getRemediationRolesParseError,
   isRemediationRoleKey,
@@ -12,7 +11,7 @@ import {
 // Single source of truth for the role-name constants lives in
 // `@gideon-defender/integration-platform` (shared with the frontend
 // setup UI). Re-exported here so existing API imports keep working.
-export { AWS_LEGACY_REMEDIATION_ROLE_NAME, AWS_REMEDIATION_ROLE_NAME_PREFIX };
+export { AWS_REMEDIATION_ROLE_NAME_PREFIX };
 
 // Remediation gate/resolve/validate helpers live in
 // `./aws-remediation-roles.utils` — re-exported here so existing API
@@ -101,24 +100,21 @@ export function parseAwsRoleArn(
 }
 
 export function isValidRemediationRoleName(roleName: string): boolean {
-  // ARN captures can include an IAM path (e.g. `team/OpenComp-Remediator`).
-  // The allowlist applies to the bare role name after the last `/`.
+  // ARN captures can include an IAM path (e.g.
+  // `team/OpenComp-Remediator-Storage-us-east-1`). The allowlist applies
+  // to the bare role name after the last `/`.
   const bareName = roleName.split('/').pop() ?? roleName;
-  return (
-    bareName === AWS_LEGACY_REMEDIATION_ROLE_NAME ||
-    bareName.startsWith(AWS_REMEDIATION_ROLE_NAME_PREFIX)
-  );
+  return bareName.startsWith(AWS_REMEDIATION_ROLE_NAME_PREFIX);
 }
 
 export function validateAwsPartitionConfig(params: {
   partition: AwsPartition;
   roleArn?: string;
   regions: string[];
-  remediationRoleArn?: string;
   /**
    * Per-pair map (`Class:region` → ARN), stored as a JSON string in
-   * credentials. Validated entry-by-entry with the same fail-closed rules
-   * as the legacy single ARN. Accepts the raw credential value.
+   * credentials. Validated entry-by-entry with fail-closed rules.
+   * Accepts the raw credential value.
    */
   remediationRoles?: Record<string, string> | string;
 }): string[] {
@@ -137,17 +133,6 @@ export function validateAwsPartitionConfig(params: {
         `IAM Role ARN partition (${parsedRoleArn.partition}) must match selected AWS environment (${params.partition}).`,
       );
     }
-  }
-
-  if (params.remediationRoleArn) {
-    validateOneRemediationArn({
-      remediationRoleArn: params.remediationRoleArn.trim(),
-      partition: params.partition,
-      roleArn: params.roleArn,
-      parsedRoleArn,
-      label: '',
-      errors,
-    });
   }
 
   if (params.remediationRoles !== undefined) {

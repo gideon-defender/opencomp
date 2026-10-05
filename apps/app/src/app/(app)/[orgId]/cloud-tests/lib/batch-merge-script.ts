@@ -4,7 +4,8 @@ import {
 } from './remediation-denylist';
 
 export interface BatchMergeScript {
-  script: string;
+  /** Runnable grant script, or null when the finding's pair role is unknown (render manual guidance instead). */
+  script: string | null;
   grantable: string[];
   blocked: string[];
 }
@@ -39,53 +40,23 @@ function batchWarningLine({ count, display }: { count: number; display: string }
  * never merged back as granted permissions. Shared merge shape via the
  * helper — same as the per-banner script below and the backend scripts.
  *
- * Pass the finding's routed pair role name (`OpenComp-Remediator-…`) when
- * known so the grant lands on the role the server reads; legacy monolith
- * default preserves old behavior when routing is unknown.
+ * Pass the finding's routed pair role name (`OpenComp-Remediator-…`) so
+ * the grant lands on the role the server reads. Unknown routing yields a
+ * null script — render manual guidance instead of a grant onto a role
+ * that may not exist.
  */
 export function buildFindingPermissionsScript(
   permissions: readonly string[],
   roleName?: string,
 ): BatchMergeScript {
   const { allowed: grantable, blocked } = splitBlockedRemediationActions(permissions);
+  if (!roleName) return { script: null, grantable, blocked };
   return {
     script: buildRemediationGrantScript({
       permissions,
       policyName: 'OpenComp-BatchPermissions',
-      ...(roleName ? { roleName } : {}),
+      roleName,
       warningLine: batchWarningLine,
-    }),
-    grantable,
-    blocked,
-  };
-}
-
-/**
- * Merge-safe script for the consolidated missing-permissions banner. Same
- * all-statements Allow merge as the per-finding script, with friendlier
- * inline comments for the multi-line CloudShell paste.
- */
-export function buildMissingPermsMergeScript(
-  permissions: readonly string[],
-  roleName = 'OpenComp-Remediator',
-): BatchMergeScript {
-  const { allowed: grantable, blocked } = splitBlockedRemediationActions(permissions);
-  return {
-    script: buildRemediationGrantScript({
-      permissions,
-      variableName: 'NEW_PERMS',
-      warningLine: batchWarningLine,
-      extraHeaderLines: ["# Merge new permissions with existing (won't overwrite Deny rules)"],
-      roleHeaderLines: [`ROLE="${roleName}"`, 'POLICY="OpenComp-BatchPermissions"'],
-      preMergeLines: [
-        '',
-        '# Read the full policy so Deny statements, Conditions, and scoped',
-        "# Resources survive the merge (empty doc if the policy doesn't exist)",
-      ],
-      postMergeLines: [
-        '',
-        'echo "Added $(echo $NEW_PERMS | jq length) permissions ($(echo $MERGED | jq length) total)"',
-      ],
     }),
     grantable,
     blocked,

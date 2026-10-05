@@ -33,13 +33,11 @@ import {
   formatBlockedActionsForDisplay,
   splitBlockedRemediationActions,
 } from './remediation-denylist';
-import { AWS_LEGACY_REMEDIATION_ROLE_NAME } from './aws-partition.utils';
 
 // Gemini Flash for every pass. Fix-plan output is structured SDK-call shapes,
 // so keep prompts strict; the manual-steps fallback below needs only clear
 // natural language, which the same model handles.
 const MODEL = google('gemini-3.8-flash');
-const REMEDIATION_ROLE_NAME = AWS_LEGACY_REMEDIATION_ROLE_NAME;
 
 export interface FindingContext {
   title: string;
@@ -211,10 +209,10 @@ NEVER list iam: writes, sts:AssumeRole, resource-policy actions, or *Acl writes.
   async suggestPermissionFix(params: {
     errorMessage: string;
     failedStep: AwsCommandStep;
-    /** Routed pair role name for prompts and grant scripts (legacy default). */
-    roleName?: string;
+    /** Routed pair role name for prompts and grant scripts. */
+    roleName: string;
   }): Promise<PermissionFix & { fixScript: string; blockedActions: string[] }> {
-    const roleName = params.roleName ?? REMEDIATION_ROLE_NAME;
+    const roleName = params.roleName;
     try {
       const { object } = await generateObject({
         model: MODEL,

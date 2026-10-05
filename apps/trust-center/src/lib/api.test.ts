@@ -120,9 +120,7 @@ describe('trustApi network layer', () => {
   it('throws on a 500 so pages can degrade explicitly', async () => {
     stubFetch({ status: 500, ok: false });
 
-    await expect(trustApi.policies('acme')).rejects.toThrow(
-      'Trust API request failed',
-    );
+    await expect(trustApi.policies('acme')).rejects.toThrow('Trust API request failed');
   });
 
   it('rejects a failed access request post', async () => {

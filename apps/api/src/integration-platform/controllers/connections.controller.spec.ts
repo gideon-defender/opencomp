@@ -870,7 +870,7 @@ describe('ConnectionsController', () => {
       expect(stored.remediationRoleArn).toBeUndefined();
     });
 
-    it('still accepts the legacy remediationRoleArn on credential updates (dual-read window)', async () => {
+    it('drops the removed remediationRoleArn on credential updates (vault + metadata migration)', async () => {
       mockRemediationTrustProbe();
       mockConnectionService.getConnectionForOrg.mockResolvedValue({
         id: 'conn_aws',
@@ -890,15 +890,57 @@ describe('ConnectionsController', () => {
         credentials: { remediationRoleArn: legacyArn },
       });
 
+      // A sent legacy value is dropped before validation and storage —
+      // nothing reads the field back, so keeping it would fake configured
+      // state for a role that can no longer assume.
       expect(result).toEqual({ success: true });
       const stored =
         mockCredentialVaultService.storeApiKeyCredentials.mock.calls[0][1];
-      expect(stored.remediationRoleArn).toBe(legacyArn);
+      expect(stored.remediationRoleArn).toBeUndefined();
       expect(mockConnectionRepository.update).toHaveBeenCalledWith(
         'conn_aws',
         expect.objectContaining({
-          metadata: expect.objectContaining({
-            remediationRoleArn: legacyArn,
+          metadata: expect.not.objectContaining({
+            remediationRoleArn: expect.anything(),
+          }),
+        }),
+      );
+    });
+
+    it('clears a pre-existing stored legacy ARN on the next credential update', async () => {
+      mockRemediationTrustProbe();
+      mockConnectionService.getConnectionForOrg.mockResolvedValue({
+        id: 'conn_aws',
+        organizationId: 'org_1',
+        status: 'active',
+        provider: { slug: 'aws' },
+        metadata: {
+          remediationRoleArn:
+            'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+        },
+      });
+      mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue({
+        roleArn: AUDITOR_ARN,
+        externalId: 'org_org_1_existing',
+        regions: ['us-east-1'],
+        awsType: 'aws',
+        remediationRoleArn:
+          'arn:aws:iam::123456789012:role/OpenComp-Remediator',
+      });
+
+      const result = await controller.updateCredentials('conn_aws', 'org_1', {
+        credentials: { regions: ['us-east-1', 'us-west-2'] },
+      });
+
+      expect(result).toEqual({ success: true });
+      const stored =
+        mockCredentialVaultService.storeApiKeyCredentials.mock.calls[0][1];
+      expect(stored.remediationRoleArn).toBeUndefined();
+      expect(mockConnectionRepository.update).toHaveBeenCalledWith(
+        'conn_aws',
+        expect.objectContaining({
+          metadata: expect.not.objectContaining({
+            remediationRoleArn: expect.anything(),
           }),
         }),
       );
@@ -1330,7 +1372,8 @@ describe('ConnectionsController', () => {
     const previousAssumerArn = process.env.SECURITY_HUB_ROLE_ASSUMER_ARN;
 
     const AUDITOR_ARN = 'arn:aws:iam::123456789012:role/OpenComp-Auditor';
-    const REMEDIATOR_ARN = 'arn:aws:iam::123456789012:role/OpenComp-Remediator';
+    const PAIR_ARN =
+      'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1';
 
     function stsCreds() {
       return {
@@ -1359,7 +1402,7 @@ describe('ConnectionsController', () => {
         externalId: 'org_1-secret',
         regions: ['us-east-1'],
         awsType: 'aws',
-        remediationRoleArn: REMEDIATOR_ARN,
+        remediationRoles: JSON.stringify({ 'Storage:us-east-1': PAIR_ARN }),
         ...overrides,
       };
     }
@@ -1404,7 +1447,7 @@ describe('ConnectionsController', () => {
       }
     });
 
-    it('validates the remediation role with a 900s session when the trust policy requires the External ID', async () => {
+    it('validates the pair role with a 900s session when the trust policy requires the External ID', async () => {
       const result = await controller.testConnection('conn_aws', 'org_1');
 
       expect(result.success).toBe(true);
@@ -1412,7 +1455,7 @@ describe('ConnectionsController', () => {
       // The remediation assume uses a 15-minute session.
       const remediationCall = assumeCmd.mock.calls.find(
         (call) =>
-          (call[0] as { RoleArn?: string }).RoleArn === REMEDIATOR_ARN &&
+          (call[0] as { RoleArn?: string }).RoleArn === PAIR_ARN &&
           (call[0] as { ExternalId?: string }).ExternalId !== undefined,
       );
       expect(remediationCall).toBeDefined();
@@ -1486,11 +1529,13 @@ describe('ConnectionsController', () => {
       expect(stsSend).not.toHaveBeenCalled();
     });
 
-    it('rejects cross-account remediation role ARNs without calling STS', async () => {
+    it('rejects cross-account pair ARNs without calling STS', async () => {
       mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue(
         awsCredentials({
-          remediationRoleArn:
-            'arn:aws:iam::999999999999:role/OpenComp-Remediator',
+          remediationRoles: JSON.stringify({
+            'Storage:us-east-1':
+              'arn:aws:iam::999999999999:role/OpenComp-Remediator-Storage-us-east-1',
+          }),
         }),
       );
 
@@ -1501,10 +1546,12 @@ describe('ConnectionsController', () => {
       expect(stsSend).not.toHaveBeenCalled();
     });
 
-    it('rejects non-remediator role names without calling STS', async () => {
+    it('rejects non-remediator pair names without calling STS', async () => {
       mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue(
         awsCredentials({
-          remediationRoleArn: 'arn:aws:iam::123456789012:role/Admin',
+          remediationRoles: JSON.stringify({
+            'Storage:us-east-1': 'arn:aws:iam::123456789012:role/Admin',
+          }),
         }),
       );
 
@@ -1515,9 +1562,9 @@ describe('ConnectionsController', () => {
       expect(stsSend).not.toHaveBeenCalled();
     });
 
-    it('skips remediation validation when no remediation role is configured', async () => {
+    it('skips remediation validation when no pair is configured', async () => {
       mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue(
-        awsCredentials({ remediationRoleArn: undefined }),
+        awsCredentials({ remediationRoles: undefined }),
       );
 
       const result = await controller.testConnection('conn_aws', 'org_1');
@@ -1525,7 +1572,7 @@ describe('ConnectionsController', () => {
       expect(result.success).toBe(true);
       expect(result.message).not.toContain('Remediation role validated');
       const remediationCall = assumeCmd.mock.calls.find(
-        (call) => (call[0] as { RoleArn?: string }).RoleArn === REMEDIATOR_ARN,
+        (call) => (call[0] as { RoleArn?: string }).RoleArn === PAIR_ARN,
       );
       expect(remediationCall).toBeUndefined();
     });
@@ -1535,7 +1582,6 @@ describe('ConnectionsController', () => {
         'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1';
       mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue(
         awsCredentials({
-          remediationRoleArn: undefined,
           remediationRoles: JSON.stringify({ 'Storage:us-east-1': pairArn }),
         }),
       );
@@ -1563,7 +1609,6 @@ describe('ConnectionsController', () => {
     it('rejects invalid pair-map entries without calling STS', async () => {
       mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue(
         awsCredentials({
-          remediationRoleArn: undefined,
           remediationRoles: JSON.stringify({
             'Storage:us-east-1': 'arn:aws:iam::123456789012:role/Admin',
           }),
@@ -1580,7 +1625,6 @@ describe('ConnectionsController', () => {
     it('rejects malformed pair-map JSON without calling STS', async () => {
       mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue(
         awsCredentials({
-          remediationRoleArn: undefined,
           remediationRoles: 'not-json',
         }),
       );
@@ -1597,7 +1641,6 @@ describe('ConnectionsController', () => {
       // object would skip every pair check yet still persist downstream.
       mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue(
         awsCredentials({
-          remediationRoleArn: undefined,
           remediationRoles: {
             'Storage:us-east-1':
               'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1',
@@ -1631,7 +1674,6 @@ describe('ConnectionsController', () => {
         'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1';
       mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue(
         awsCredentials({
-          remediationRoleArn: undefined,
           remediationRoles: JSON.stringify({ 'Storage:us-east-1': pairArn }),
         }),
       );
@@ -1660,7 +1702,6 @@ describe('ConnectionsController', () => {
         'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1';
       mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue(
         awsCredentials({
-          remediationRoleArn: undefined,
           remediationRoles: JSON.stringify({ 'Storage:us-east-1': pairArn }),
         }),
       );
@@ -1687,8 +1728,6 @@ describe('ConnectionsController', () => {
       const credentials: Record<string, string | string[]> = {
         roleArn: '  arn:aws:iam::123456789012:role/OpenComp-Auditor  ',
         externalId: '  org_1-secret  ',
-        remediationRoleArn:
-          '  arn:aws:iam::123456789012:role/OpenComp-Remediator  ',
         remediationRoles: '  {"Storage:us-east-1":"arn:aws:iam::1:role/A"}  ',
         regions: ['us-east-1'],
       };
@@ -1698,8 +1737,6 @@ describe('ConnectionsController', () => {
       expect(credentials).toMatchObject({
         roleArn: 'arn:aws:iam::123456789012:role/OpenComp-Auditor',
         externalId: 'org_1-secret',
-        remediationRoleArn:
-          'arn:aws:iam::123456789012:role/OpenComp-Remediator',
         remediationRoles: '{"Storage:us-east-1":"arn:aws:iam::1:role/A"}',
       });
       // Non-string values pass through untouched.
@@ -1722,7 +1759,9 @@ describe('ConnectionsController', () => {
         credentials: {
           roleArn: `  ${AUDITOR_ARN}  `,
           externalId: '  org_1-secret  ',
-          remediationRoleArn: `  ${REMEDIATOR_ARN}  `,
+          remediationRoles: `  ${JSON.stringify({
+            'Storage:us-east-1': PAIR_ARN,
+          })}  `,
         },
       });
 
@@ -1733,7 +1772,7 @@ describe('ConnectionsController', () => {
         expect.objectContaining({
           roleArn: AUDITOR_ARN,
           externalId: 'org_1-secret',
-          remediationRoleArn: REMEDIATOR_ARN,
+          remediationRoles: JSON.stringify({ 'Storage:us-east-1': PAIR_ARN }),
         }),
       );
     });
@@ -1756,7 +1795,6 @@ describe('ConnectionsController', () => {
       });
       mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue(
         awsCredentials({
-          remediationRoleArn: undefined,
           remediationRoles: JSON.stringify(stalePairs),
         }),
       );

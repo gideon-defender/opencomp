@@ -57,6 +57,8 @@ describe('PermissionErrorPanel denylist guidance', () => {
       <PermissionErrorPanel
         error="not authorized to perform: iam:PassRole"
         missingActions={['iam:PassRole']}
+        resourceType="AWS::S3::Bucket"
+        region="us-east-1"
       />,
     );
     const pre = document.querySelector('pre');
@@ -69,6 +71,8 @@ describe('PermissionErrorPanel denylist guidance', () => {
       <PermissionErrorPanel
         error="not authorized"
         missingActions={['s3:PutBucketEncryption', 'iam:PassRole']}
+        resourceType="AWS::S3::Bucket"
+        region="us-east-1"
       />,
     );
     const pre = document.querySelector('pre');
@@ -79,7 +83,11 @@ describe('PermissionErrorPanel denylist guidance', () => {
 
   it('parses hyphenated service names from the error when no actions are provided', () => {
     render(
-      <PermissionErrorPanel error="not authorized to perform: cognito-idp:DescribeUserPool with an explicit deny" />,
+      <PermissionErrorPanel
+        error="not authorized to perform: cognito-idp:DescribeUserPool with an explicit deny"
+        resourceType="AWS::S3::Bucket"
+        region="us-east-1"
+      />,
     );
     const pre = document.querySelector('pre');
     expect(pre?.textContent).toContain('cognito-idp:DescribeUserPool');
@@ -119,6 +127,8 @@ describe('PermissionErrorPanel denylist guidance', () => {
       <PermissionErrorPanel
         error="not authorized to perform: iam:PassRole"
         missingActions={['iam:PassRole']}
+        resourceType="AWS::S3::Bucket"
+        region="us-east-1"
       />,
     );
     expect(screen.getByText(/manual review required/i)).toBeInTheDocument();
@@ -128,7 +138,12 @@ describe('PermissionErrorPanel denylist guidance', () => {
 
   it('keeps the run-command header for executable scripts', () => {
     render(
-      <PermissionErrorPanel error="not authorized" missingActions={['s3:PutBucketEncryption']} />,
+      <PermissionErrorPanel
+        error="not authorized"
+        missingActions={['s3:PutBucketEncryption']}
+        resourceType="AWS::S3::Bucket"
+        region="us-east-1"
+      />,
     );
     expect(screen.getByText(/to add the permission/i)).toBeInTheDocument();
     expect(screen.queryByText(/manual review required/i)).not.toBeInTheDocument();

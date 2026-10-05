@@ -75,7 +75,6 @@ import { ApiAuthErrors } from '../../openapi/common-responses';
 const AWS_TRIMMED_CREDENTIAL_KEYS = [
   'roleArn',
   'externalId',
-  'remediationRoleArn',
   'remediationRoles',
 ] as const;
 
@@ -126,7 +125,7 @@ class CreateConnectionDto {
 
   @ApiPropertyOptional({
     description:
-      "Provider-specific credential fields. Keys differ by provider — call get-provider-details for the exact shape. For AWS (Cloud Tests) the fields are: connectionName (display name), awsType ('aws-commercial' or 'aws-govcloud'), roleArn (auditor role), regions (string array), remediationRoles (JSON string map of '<AssetClass>:<region>' to remediation role ARN, e.g. '{\"Storage:us-east-1\":\"arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1\"}' — one role per pair; the legacy single remediationRoleArn is rejected for new connections and only still read on existing ones), and awsScanMode ('comp_scanners' or 'security_hub'). The externalId is always minted server-side (org_<orgId>_<uuid>) — any client-supplied value is ignored. Omit roleArn to create a pending connection: the response returns the minted externalId show-once for the CloudShell setup script, then PUT credentials with the Role ARN to validate and activate. Omit credentials for OAuth providers — use POST /v1/integrations/oauth/start instead.",
+      "Provider-specific credential fields. Keys differ by provider — call get-provider-details for the exact shape. For AWS (Cloud Tests) the fields are: connectionName (display name), awsType ('aws-commercial' or 'aws-govcloud'), roleArn (auditor role), regions (string array), remediationRoles (JSON string map of '<AssetClass>:<region>' to remediation role ARN, e.g. '{\"Storage:us-east-1\":\"arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1\"}' — one role per pair; the removed single remediationRoleArn is rejected for new connections and ignored on existing ones, whose stored values are dropped on the next credential update), and awsScanMode ('comp_scanners' or 'security_hub'). The externalId is always minted server-side (org_<orgId>_<uuid>) — any client-supplied value is ignored. Omit roleArn to create a pending connection: the response returns the minted externalId show-once for the CloudShell setup script, then PUT credentials with the Role ARN to validate and activate. Omit credentials for OAuth providers — use POST /v1/integrations/oauth/start instead.",
     type: 'object',
     additionalProperties: true,
     example: {
@@ -578,12 +577,10 @@ export class ConnectionsController {
             const parsedRoleArn = parseAwsRoleArn(creds.roleArn);
             if (parsedRoleArn) updates.accountId = parsedRoleArn.accountId;
           }
-          if (typeof creds.remediationRoleArn === 'string') {
-            updates.remediationRoleArn = creds.remediationRoleArn;
-          }
           // Sync the parsed pair map (not the raw JSON) so settings UI can
           // render per-pair status without vault access. ARNs are not
-          // secrets — the legacy ARN already syncs the same way.
+          // secrets. Stored legacy single ARNs are deliberately not synced:
+          // the monolith role is removed and nothing reads that key.
           if (typeof creds.remediationRoles === 'string') {
             const pairs = parseRemediationRolesMap(creds.remediationRoles);
             if (Object.keys(pairs).length > 0) updates.remediationRoles = pairs;
@@ -686,11 +683,11 @@ export class ConnectionsController {
     if (providerSlug === 'aws' && effectiveCredentials)
       trimAwsCredentialStrings(effectiveCredentials);
     // New AWS connections cannot use the legacy single remediation role.
-    // The monolith `OpenComp-Remediator` is deprecated in favor of one role
+    // The monolith `OpenComp-Remediator` was removed in favor of one role
     // per asset-class/region pair (`remediationRoles` map). Reject before any
     // STS call or row creation so no legacy-shaped connection can be minted.
-    // Existing connections keep working: reads fall back to the stored ARN
-    // and credential updates still accept it (dual-read window).
+    // Existing connections keep working for reads while they migrate: the
+    // pair map resolves first and stored legacy values are ignored.
     if (
       providerSlug === 'aws' &&
       !!effectiveCredentials &&
@@ -769,12 +766,6 @@ export class ConnectionsController {
       }
       if (typeof credentials.externalId === 'string') {
         metadata.externalId = credentials.externalId;
-      }
-      if (
-        typeof credentials.remediationRoleArn === 'string' &&
-        credentials.remediationRoleArn
-      ) {
-        metadata.remediationRoleArn = credentials.remediationRoleArn;
       }
       if (
         typeof credentials.remediationRoles === 'string' &&
@@ -937,11 +928,6 @@ export class ConnectionsController {
     const regions = regionsValue.filter(
       (r): r is string => typeof r === 'string' && r.trim() !== '',
     );
-    const remediationRoleArn =
-      typeof credentials.remediationRoleArn === 'string' &&
-      credentials.remediationRoleArn.trim()
-        ? credentials.remediationRoleArn.trim()
-        : undefined;
     // Per-pair map, stored as a JSON string (`{"Class:region": "arn:..."}`).
     // Parsed here so every entry gets the same fail-closed validation as
     // the legacy single ARN below. Malformed JSON is rejected outright:
@@ -1010,7 +996,6 @@ export class ConnectionsController {
       partition,
       roleArn,
       regions,
-      remediationRoleArn,
       remediationRoles,
     });
     if (partitionErrors.length > 0) {
@@ -1109,14 +1094,11 @@ export class ConnectionsController {
       // Step 4 (remediation only): assume each remediation role with a
       // short session, then prove the trust policy actually requires the
       // External ID — an assume that succeeds WITHOUT it means the trust
-      // policy is too open and the ARN must not be stored. The legacy
-      // single ARN and every per-pair map entry get the identical proof.
+      // policy is too open and the ARN must not be stored. Every per-pair
+      // map entry gets the identical proof.
       const remediationTrustError = await validateRemediationRoleTrust({
         roleAssumerSts,
-        roleArns: [
-          ...(remediationRoleArn ? [remediationRoleArn] : []),
-          ...Object.values(remediationRoles ?? {}),
-        ],
+        roleArns: [...Object.values(remediationRoles ?? {})],
         externalId,
         logger: this.logger,
       });
@@ -1126,7 +1108,7 @@ export class ConnectionsController {
 
       // All validations passed!
       const remediationConfigured =
-        remediationRoleArn || Object.keys(remediationRoles ?? {}).length > 0;
+        Object.keys(remediationRoles ?? {}).length > 0;
       const remediationNote = remediationConfigured
         ? ' Remediation roles validated.'
         : '';
@@ -1716,6 +1698,14 @@ export class ConnectionsController {
       }
     }
 
+    // Drop the removed monolith credential: the field no longer exists in
+    // the manifest or validation, and nothing reads it back. Deleting here
+    // migrates the vault entry on the next credential update instead of
+    // leaving a dead ARN beside the pair map.
+    if (providerSlug === 'aws') {
+      delete mergedCredentials.remediationRoleArn;
+    }
+
     // For AWS, validate credentials BEFORE saving
     if (providerSlug === 'aws') {
       const validationResult =
@@ -1765,9 +1755,6 @@ export class ConnectionsController {
     if (typeof mergedCredentials.externalId === 'string') {
       metaUpdates.externalId = mergedCredentials.externalId;
     }
-    if (typeof mergedCredentials.remediationRoleArn === 'string') {
-      metaUpdates.remediationRoleArn = mergedCredentials.remediationRoleArn;
-    }
     if (
       typeof mergedCredentials.remediationRoles === 'string' &&
       mergedCredentials.remediationRoles.trim()
@@ -1800,6 +1787,10 @@ export class ConnectionsController {
         (connection.metadata as Record<string, unknown>) ?? {};
       const nextMetadata = { ...existingMeta, ...metaUpdates };
       if (clearRemediationRoles) delete nextMetadata.remediationRoles;
+      // The monolith credential is removed: drop the synced copy so the
+      // settings UI stops offering the legacy field. Vault cleanup happens
+      // above; this clears the display key on the same update.
+      delete nextMetadata.remediationRoleArn;
       await this.connectionRepository.update(id, {
         metadata: nextMetadata,
       });

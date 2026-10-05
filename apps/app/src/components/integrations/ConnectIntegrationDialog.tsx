@@ -31,9 +31,9 @@ import { useParams } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
+import { RemediationPairSetup } from '@/components/remediation/RemediationPairSetup';
 import { CloudShellSetup, SectionDivider, getSetupScriptDisabledMessage } from './CloudShellSetup';
 import { CredentialInput } from './CredentialInput';
-import { RemediationPairSetup } from '@/components/remediation/RemediationPairSetup';
 
 interface ConnectIntegrationDialogProps {
   open: boolean;
@@ -764,11 +764,6 @@ export function ConnectIntegrationDialog({
                 if (!provider?.setupScript) return true;
                 if (field.id === 'externalId') return false;
                 if (field.id === 'connectionName') return false;
-                // New AWS connections cannot use the deprecated single
-                // remediation role (the server rejects it with 400) — the
-                // per-pair setup below collects the `remediationRoles` map
-                // instead, so never render the legacy ARN input.
-                if (isAwsForm && field.id === 'remediationRoleArn') return false;
                 return true;
               })
               .map((field) => (

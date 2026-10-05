@@ -106,17 +106,24 @@ beforeEach(() => {
 });
 
 describe('readRemediatorRolePermissions (wire layer)', () => {
+  const roleName = 'OpenComp-Remediator-Storage-us-east-1';
+
   it('returns allowed actions and explicit denies', async () => {
     const { allowed, denied } = await readRemediatorRolePermissions({
       credentials,
       region: 'us-east-1',
+      roleName,
     });
     expect(allowed.has('s3:GetObject')).toBe(true);
     expect(denied.has('s3:DeleteBucket')).toBe(true);
   });
 
   it('wires region and credentials into the IAM client', async () => {
-    await readRemediatorRolePermissions({ credentials, region: 'eu-west-1' });
+    await readRemediatorRolePermissions({
+      credentials,
+      region: 'eu-west-1',
+      roleName,
+    });
     expect(mockIamCtor).toHaveBeenCalledWith(
       expect.objectContaining({
         region: 'eu-west-1',
@@ -125,17 +132,15 @@ describe('readRemediatorRolePermissions (wire layer)', () => {
     );
   });
 
-  it('uses the default remediator role name when none is given', async () => {
-    await readRemediatorRolePermissions({ credentials, region: 'us-east-1' });
-    const listCall = mockSend.mock.calls.find(
-      (call) =>
-        (call[0] as { constructor: { name: string } }).constructor.name ===
-        'ListRolePoliciesCommand',
-    );
-    expect(
-      (listCall?.[0] as unknown as { input: { RoleName: string } }).input
-        .RoleName,
-    ).toBe('OpenComp-Remediator');
+  it('throws instead of reading the removed monolith role when no name is given', async () => {
+    await expect(
+      readRemediatorRolePermissions({
+        credentials,
+        region: 'us-east-1',
+        roleName: undefined as unknown as string,
+      }),
+    ).rejects.toThrow(/pair role name is required/);
+    expect(mockSend).not.toHaveBeenCalled();
   });
 
   it('passes a custom role name through to IAM', async () => {
@@ -171,6 +176,7 @@ describe('readRemediatorRolePermissions (wire layer)', () => {
     const { denied } = await readRemediatorRolePermissions({
       credentials,
       region: 'us-east-1',
+      roleName: 'OpenComp-Remediator-Storage-us-east-1',
       onWarn,
     });
     // A missing document is an incomplete read, not an empty policy — the
@@ -206,6 +212,7 @@ describe('readRemediatorRolePermissions (wire layer)', () => {
     const { denied } = await readRemediatorRolePermissions({
       credentials,
       region: 'us-east-1',
+      roleName: 'OpenComp-Remediator-Storage-us-east-1',
       onWarn,
     });
     expect(denied.has('*')).toBe(true);
