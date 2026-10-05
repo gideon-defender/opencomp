@@ -4,6 +4,14 @@
 
 import * as z from "zod";
 import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
+  TaskItemResponseDto,
+  TaskItemResponseDto$zodSchema,
+} from "./taskitemresponsedto.js";
+import {
   UpdateTaskItemDto,
   UpdateTaskItemDto$zodSchema,
 } from "./updatetaskitemdto.js";
@@ -18,3 +26,13 @@ export const TaskManagementControllerUpdateTaskItemV1Request$zodSchema:
     body: UpdateTaskItemDto$zodSchema,
     id: z.string().describe("Task item ID"),
   });
+
+export type TaskManagementControllerUpdateTaskItemV1Response =
+  | TaskItemResponseDto
+  | ApiErrorResponseDto;
+
+export const TaskManagementControllerUpdateTaskItemV1Response$zodSchema:
+  z.ZodType<TaskManagementControllerUpdateTaskItemV1Response> = z.union([
+    TaskItemResponseDto$zodSchema,
+    ApiErrorResponseDto$zodSchema,
+  ]);

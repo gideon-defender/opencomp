@@ -30,8 +30,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Override the obligations for a built-in role (e.g., turn off the compliance obligation for owners). Permissions stay sourced from the hardcoded defaults.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function rolesRolesControllerUpdateBuiltInObligationsV1(
   client$: CompAiCore,
@@ -102,7 +100,7 @@ async function $do(
     Accept: "application/json",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

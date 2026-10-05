@@ -3,6 +3,10 @@
  */
 
 import * as z from "zod";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 export type RolesControllerDeleteRoleV1Request = { roleId: string };
 
@@ -15,14 +19,25 @@ export const RolesControllerDeleteRoleV1Request$zodSchema: z.ZodType<
 /**
  * Role deleted successfully
  */
-export type RolesControllerDeleteRoleV1Response = {
+export type RolesControllerDeleteRoleV1ResponseBody = {
   success?: boolean | undefined;
   message?: string | undefined;
 };
 
-export const RolesControllerDeleteRoleV1Response$zodSchema: z.ZodType<
-  RolesControllerDeleteRoleV1Response
+export const RolesControllerDeleteRoleV1ResponseBody$zodSchema: z.ZodType<
+  RolesControllerDeleteRoleV1ResponseBody
 > = z.object({
   message: z.string().optional(),
   success: z.boolean().optional(),
 }).describe("Role deleted successfully");
+
+export type RolesControllerDeleteRoleV1Response =
+  | ApiErrorResponseDto
+  | RolesControllerDeleteRoleV1ResponseBody;
+
+export const RolesControllerDeleteRoleV1Response$zodSchema: z.ZodType<
+  RolesControllerDeleteRoleV1Response
+> = z.union([
+  ApiErrorResponseDto$zodSchema,
+  z.lazy(() => RolesControllerDeleteRoleV1ResponseBody$zodSchema),
+]);

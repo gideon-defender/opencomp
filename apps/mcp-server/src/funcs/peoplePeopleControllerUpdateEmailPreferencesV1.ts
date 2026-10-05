@@ -30,8 +30,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Update current user email notification preferences in OpenComp. Invite and manage workforce members, training status, device compliance, email preferences, and employee evidence records.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function peoplePeopleControllerUpdateEmailPreferencesV1(
   client$: CompAiCore,
@@ -89,10 +87,10 @@ async function $do(
 
   const headers$ = new Headers(compactMap({
     "Content-Type": "application/json",
-    Accept: "*/*",
+    Accept: "application/json",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

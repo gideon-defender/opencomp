@@ -4,14 +4,6 @@
 
 import * as z from "zod";
 
-export type ControlsControllerFindOneV1Security = { bearer: string };
-
-export const ControlsControllerFindOneV1Security$zodSchema: z.ZodType<
-  ControlsControllerFindOneV1Security
-> = z.object({
-  bearer: z.string().describe("API Key"),
-});
-
 export type ControlsControllerFindOneV1Request = {
   id: string;
   frameworkInstanceId: string;

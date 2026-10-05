@@ -4,6 +4,10 @@
 
 import * as z from "zod";
 import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
   CreatePolicyDto,
   CreatePolicyDto$zodSchema,
 } from "./createpolicydto.js";
@@ -26,46 +30,13 @@ export const PoliciesControllerCreatePolicyV1Request$zodSchema: z.ZodType<
   ).optional(),
 });
 
-/**
- * Unauthorized - Invalid authentication or insufficient permissions
- */
-export type PoliciesControllerCreatePolicyV1UnauthorizedResponseBody = {
-  message?: string | undefined;
-};
-
-export const PoliciesControllerCreatePolicyV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<PoliciesControllerCreatePolicyV1UnauthorizedResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe(
-      "Unauthorized - Invalid authentication or insufficient permissions",
-    );
-
-/**
- * Bad Request - Invalid policy data
- */
-export type PoliciesControllerCreatePolicyV1BadRequestResponseBody = {
-  message?: string | undefined;
-};
-
-export const PoliciesControllerCreatePolicyV1BadRequestResponseBody$zodSchema:
-  z.ZodType<PoliciesControllerCreatePolicyV1BadRequestResponseBody> = z.object({
-    message: z.string().optional(),
-  }).describe("Bad Request - Invalid policy data");
-
 export type PoliciesControllerCreatePolicyV1Response =
   | PolicyResponseDto
-  | PoliciesControllerCreatePolicyV1BadRequestResponseBody
-  | PoliciesControllerCreatePolicyV1UnauthorizedResponseBody;
+  | ApiErrorResponseDto;
 
 export const PoliciesControllerCreatePolicyV1Response$zodSchema: z.ZodType<
   PoliciesControllerCreatePolicyV1Response
 > = z.union([
   PolicyResponseDto$zodSchema,
-  z.lazy(() =>
-    PoliciesControllerCreatePolicyV1BadRequestResponseBody$zodSchema
-  ),
-  z.lazy(() =>
-    PoliciesControllerCreatePolicyV1UnauthorizedResponseBody$zodSchema
-  ),
+  ApiErrorResponseDto$zodSchema,
 ]);

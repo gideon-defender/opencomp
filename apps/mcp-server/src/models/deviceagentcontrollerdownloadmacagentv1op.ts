@@ -4,16 +4,36 @@
 
 import * as z from "zod";
 import * as b64$ from "../lib/base64.js";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+
+export type DeviceAgentControllerDownloadMacAgentV1ResponseResult =
+  | ApiErrorResponseDto
+  | Uint8Array
+  | string;
+
+export const DeviceAgentControllerDownloadMacAgentV1ResponseResult$zodSchema:
+  z.ZodType<DeviceAgentControllerDownloadMacAgentV1ResponseResult> = z.union([
+    ApiErrorResponseDto$zodSchema,
+    z.string().describe("Base64-encoded binary content").transform(
+      b64$.bytesFromBase64,
+    ),
+  ]);
 
 export type DeviceAgentControllerDownloadMacAgentV1Response = {
   Headers: { [k: string]: Array<string> };
-  Result: Uint8Array | string;
+  Result: ApiErrorResponseDto | Uint8Array | string;
 };
 
 export const DeviceAgentControllerDownloadMacAgentV1Response$zodSchema:
   z.ZodType<DeviceAgentControllerDownloadMacAgentV1Response> = z.object({
     Headers: z.record(z.string(), z.array(z.string())).default({}),
-    Result: z.string().describe("Base64-encoded binary content").transform(
-      b64$.bytesFromBase64,
-    ),
+    Result: z.union([
+      ApiErrorResponseDto$zodSchema,
+      z.string().describe("Base64-encoded binary content").transform(
+        b64$.bytesFromBase64,
+      ),
+    ]),
   });

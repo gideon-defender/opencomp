@@ -24,8 +24,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Get all employee devices with fleet compliance data in OpenComp. Invite and manage workforce members, training status, device compliance, email preferences, and employee evidence records.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function peoplePeopleControllerGetDevicesV1(
   client$: CompAiCore,
@@ -69,10 +67,10 @@ async function $do(
   const path$ = pathToFunc("/v1/people/devices")();
 
   const headers$ = new Headers(compactMap({
-    Accept: "*/*",
+    Accept: "application/json",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

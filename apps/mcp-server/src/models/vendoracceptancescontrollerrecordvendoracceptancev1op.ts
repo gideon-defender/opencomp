@@ -5,6 +5,10 @@
 import * as z from "zod";
 import { ClosedEnum } from "../types/enums.js";
 import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
   CreateRiskAcceptanceDto,
   CreateRiskAcceptanceDto$zodSchema,
 } from "./createriskacceptancedto.js";
@@ -128,73 +132,6 @@ export const VendorAcceptancesControllerRecordVendorAcceptanceV1Request$zodSchem
     });
 
 /**
- * Internal server error
- */
-export type VendorAcceptancesControllerRecordVendorAcceptanceV1InternalServerErrorResponseBody =
-  { message?: string | undefined };
-
-export const VendorAcceptancesControllerRecordVendorAcceptanceV1InternalServerErrorResponseBody$zodSchema:
-  z.ZodType<
-    VendorAcceptancesControllerRecordVendorAcceptanceV1InternalServerErrorResponseBody
-  > = z.object({
-    message: z.string().optional(),
-  }).describe("Internal server error");
-
-/**
- * Vendor not found
- */
-export type VendorAcceptancesControllerRecordVendorAcceptanceV1NotFoundResponseBody =
-  { message?: string | undefined };
-
-export const VendorAcceptancesControllerRecordVendorAcceptanceV1NotFoundResponseBody$zodSchema:
-  z.ZodType<
-    VendorAcceptancesControllerRecordVendorAcceptanceV1NotFoundResponseBody
-  > = z.object({
-    message: z.string().optional(),
-  }).describe("Vendor not found");
-
-/**
- * Forbidden - User does not have permission to access vendor risks
- */
-export type VendorAcceptancesControllerRecordVendorAcceptanceV1ForbiddenResponseBody =
-  { message?: string | undefined };
-
-export const VendorAcceptancesControllerRecordVendorAcceptanceV1ForbiddenResponseBody$zodSchema:
-  z.ZodType<
-    VendorAcceptancesControllerRecordVendorAcceptanceV1ForbiddenResponseBody
-  > = z.object({
-    message: z.string().optional(),
-  }).describe(
-    "Forbidden - User does not have permission to access vendor risks",
-  );
-
-/**
- * Unauthorized - Invalid authentication
- */
-export type VendorAcceptancesControllerRecordVendorAcceptanceV1UnauthorizedResponseBody =
-  { message?: string | undefined };
-
-export const VendorAcceptancesControllerRecordVendorAcceptanceV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<
-    VendorAcceptancesControllerRecordVendorAcceptanceV1UnauthorizedResponseBody
-  > = z.object({
-    message: z.string().optional(),
-  }).describe("Unauthorized - Invalid authentication");
-
-/**
- * No owner assigned, or the acceptor is not a valid member
- */
-export type VendorAcceptancesControllerRecordVendorAcceptanceV1BadRequestResponseBody =
-  { message?: string | undefined };
-
-export const VendorAcceptancesControllerRecordVendorAcceptanceV1BadRequestResponseBody$zodSchema:
-  z.ZodType<
-    VendorAcceptancesControllerRecordVendorAcceptanceV1BadRequestResponseBody
-  > = z.object({
-    message: z.string().optional(),
-  }).describe("No owner assigned, or the acceptor is not a valid member");
-
-/**
  * User information (only for session auth)
  */
 export type VendorAcceptancesControllerRecordVendorAcceptanceV1AuthenticatedUser =
@@ -269,32 +206,14 @@ export const VendorAcceptancesControllerRecordVendorAcceptanceV1ResponseBody$zod
     }).describe("Acceptance recorded successfully");
 
 export type VendorAcceptancesControllerRecordVendorAcceptanceV1Response =
-  | VendorAcceptancesControllerRecordVendorAcceptanceV1ResponseBody
-  | VendorAcceptancesControllerRecordVendorAcceptanceV1BadRequestResponseBody
-  | VendorAcceptancesControllerRecordVendorAcceptanceV1UnauthorizedResponseBody
-  | VendorAcceptancesControllerRecordVendorAcceptanceV1ForbiddenResponseBody
-  | VendorAcceptancesControllerRecordVendorAcceptanceV1NotFoundResponseBody
-  | VendorAcceptancesControllerRecordVendorAcceptanceV1InternalServerErrorResponseBody;
+  | ApiErrorResponseDto
+  | VendorAcceptancesControllerRecordVendorAcceptanceV1ResponseBody;
 
 export const VendorAcceptancesControllerRecordVendorAcceptanceV1Response$zodSchema:
   z.ZodType<VendorAcceptancesControllerRecordVendorAcceptanceV1Response> = z
     .union([
+      ApiErrorResponseDto$zodSchema,
       z.lazy(() =>
         VendorAcceptancesControllerRecordVendorAcceptanceV1ResponseBody$zodSchema
-      ),
-      z.lazy(() =>
-        VendorAcceptancesControllerRecordVendorAcceptanceV1BadRequestResponseBody$zodSchema
-      ),
-      z.lazy(() =>
-        VendorAcceptancesControllerRecordVendorAcceptanceV1UnauthorizedResponseBody$zodSchema
-      ),
-      z.lazy(() =>
-        VendorAcceptancesControllerRecordVendorAcceptanceV1ForbiddenResponseBody$zodSchema
-      ),
-      z.lazy(() =>
-        VendorAcceptancesControllerRecordVendorAcceptanceV1NotFoundResponseBody$zodSchema
-      ),
-      z.lazy(() =>
-        VendorAcceptancesControllerRecordVendorAcceptanceV1InternalServerErrorResponseBody$zodSchema
       ),
     ]);

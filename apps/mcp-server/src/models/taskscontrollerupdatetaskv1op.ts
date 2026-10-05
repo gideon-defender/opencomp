@@ -4,6 +4,14 @@
 
 import * as z from "zod";
 import { ClosedEnum } from "../types/enums.js";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
+  TaskResponseDto,
+  TaskResponseDto$zodSchema,
+} from "./taskresponsedto.js";
 
 export const TasksControllerUpdateTaskV1Status = {
   Todo: "todo",
@@ -125,3 +133,14 @@ export const TasksControllerUpdateTaskV1Request$zodSchema: z.ZodType<
   body: z.lazy(() => TasksControllerUpdateTaskV1RequestBody$zodSchema),
   taskId: z.string().describe("Unique task identifier"),
 });
+
+export type TasksControllerUpdateTaskV1Response =
+  | TaskResponseDto
+  | ApiErrorResponseDto;
+
+export const TasksControllerUpdateTaskV1Response$zodSchema: z.ZodType<
+  TasksControllerUpdateTaskV1Response
+> = z.union([
+  TaskResponseDto$zodSchema,
+  ApiErrorResponseDto$zodSchema,
+]);

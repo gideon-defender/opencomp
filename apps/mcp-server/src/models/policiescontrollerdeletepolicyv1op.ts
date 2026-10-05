@@ -4,6 +4,10 @@
 
 import * as z from "zod";
 import { ClosedEnum } from "../types/enums.js";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 /**
  * How the request was authenticated
@@ -38,33 +42,6 @@ export const PoliciesControllerDeletePolicyV1Request$zodSchema: z.ZodType<
   ).optional(),
 });
 
-/**
- * Policy not found
- */
-export type PoliciesControllerDeletePolicyV1NotFoundResponseBody = {
-  message?: string | undefined;
-};
-
-export const PoliciesControllerDeletePolicyV1NotFoundResponseBody$zodSchema:
-  z.ZodType<PoliciesControllerDeletePolicyV1NotFoundResponseBody> = z.object({
-    message: z.string().optional(),
-  }).describe("Policy not found");
-
-/**
- * Unauthorized - Invalid authentication or insufficient permissions
- */
-export type PoliciesControllerDeletePolicyV1UnauthorizedResponseBody = {
-  message?: string | undefined;
-};
-
-export const PoliciesControllerDeletePolicyV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<PoliciesControllerDeletePolicyV1UnauthorizedResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe(
-      "Unauthorized - Invalid authentication or insufficient permissions",
-    );
-
 export type DeletedPolicy = {
   id?: string | undefined;
   name?: string | undefined;
@@ -94,16 +71,12 @@ export const PoliciesControllerDeletePolicyV1ResponseBody$zodSchema: z.ZodType<
 }).describe("Policy deleted successfully");
 
 export type PoliciesControllerDeletePolicyV1Response =
-  | PoliciesControllerDeletePolicyV1ResponseBody
-  | PoliciesControllerDeletePolicyV1UnauthorizedResponseBody
-  | PoliciesControllerDeletePolicyV1NotFoundResponseBody;
+  | ApiErrorResponseDto
+  | PoliciesControllerDeletePolicyV1ResponseBody;
 
 export const PoliciesControllerDeletePolicyV1Response$zodSchema: z.ZodType<
   PoliciesControllerDeletePolicyV1Response
 > = z.union([
+  ApiErrorResponseDto$zodSchema,
   z.lazy(() => PoliciesControllerDeletePolicyV1ResponseBody$zodSchema),
-  z.lazy(() =>
-    PoliciesControllerDeletePolicyV1UnauthorizedResponseBody$zodSchema
-  ),
-  z.lazy(() => PoliciesControllerDeletePolicyV1NotFoundResponseBody$zodSchema),
 ]);

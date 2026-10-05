@@ -7,12 +7,11 @@ import { encodeFormQuery } from "../lib/encodings.js";
 import { compactMap } from "../lib/primitives.js";
 import { safeParse } from "../lib/schemas.js";
 import { RequestOptions } from "../lib/sdks.js";
-import { resolveSecurity } from "../lib/security.js";
+import { extractSecurity, resolveGlobalSecurity } from "../lib/security.js";
 import { pathToFunc } from "../lib/url.js";
 import {
   ControlsControllerFindAllV1Request,
   ControlsControllerFindAllV1Request$zodSchema,
-  ControlsControllerFindAllV1Security,
 } from "../models/controlscontrollerfindallv1op.js";
 import { APIError } from "../models/errors/apierror.js";
 import {
@@ -34,7 +33,6 @@ import { Result } from "../types/fp.js";
  */
 export function controlsControlsControllerFindAllV1(
   client$: CompAiCore,
-  security: ControlsControllerFindAllV1Security,
   request?: ControlsControllerFindAllV1Request | undefined,
   options?: RequestOptions,
 ): APIPromise<
@@ -51,7 +49,6 @@ export function controlsControlsControllerFindAllV1(
 > {
   return new APIPromise($do(
     client$,
-    security,
     request,
     options,
   ));
@@ -59,7 +56,6 @@ export function controlsControlsControllerFindAllV1(
 
 async function $do(
   client$: CompAiCore,
-  security: ControlsControllerFindAllV1Security,
   request?: ControlsControllerFindAllV1Request | undefined,
   options?: RequestOptions,
 ): Promise<
@@ -98,18 +94,10 @@ async function $do(
   });
 
   const headers$ = new Headers(compactMap({
-    Accept: "*/*",
+    Accept: "application/json",
   }));
-
-  const requestSecurity = resolveSecurity(
-    [
-      {
-        fieldName: "Authorization",
-        type: "apiKey:header",
-        value: security?.bearer,
-      },
-    ],
-  );
+  const securityInput = await extractSecurity(client$._options.security);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,
@@ -117,7 +105,7 @@ async function $do(
     operationID: "ControlsController_findAll_v1",
     oAuth2Scopes: null,
     resolvedSecurity: requestSecurity,
-    securitySource: security,
+    securitySource: client$._options.security,
     retryConfig: options?.retries
       || client$._options.retryConfig
       || { strategy: "none" },

@@ -3,6 +3,10 @@
  */
 
 import * as z from "zod";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 export type AutomationsControllerCreateAutomationV1Request = { taskId: string };
 
@@ -10,45 +14,6 @@ export const AutomationsControllerCreateAutomationV1Request$zodSchema:
   z.ZodType<AutomationsControllerCreateAutomationV1Request> = z.object({
     taskId: z.string().describe("Unique task identifier"),
   });
-
-/**
- * Task not found
- */
-export type AutomationsControllerCreateAutomationV1NotFoundResponseBody = {
-  message?: string | undefined;
-};
-
-export const AutomationsControllerCreateAutomationV1NotFoundResponseBody$zodSchema:
-  z.ZodType<AutomationsControllerCreateAutomationV1NotFoundResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Task not found");
-
-/**
- * Unauthorized - Invalid authentication
- */
-export type AutomationsControllerCreateAutomationV1UnauthorizedResponseBody = {
-  message?: string | undefined;
-};
-
-export const AutomationsControllerCreateAutomationV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<AutomationsControllerCreateAutomationV1UnauthorizedResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Unauthorized - Invalid authentication");
-
-/**
- * Bad request - Invalid task ID or organization ID
- */
-export type AutomationsControllerCreateAutomationV1BadRequestResponseBody = {
-  message?: string | undefined;
-};
-
-export const AutomationsControllerCreateAutomationV1BadRequestResponseBody$zodSchema:
-  z.ZodType<AutomationsControllerCreateAutomationV1BadRequestResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Bad request - Invalid task ID or organization ID");
 
 export type AutomationsControllerCreateAutomationV1Automation = {
   id?: string | undefined;
@@ -78,21 +43,11 @@ export const AutomationsControllerCreateAutomationV1ResponseBody$zodSchema:
   }).describe("Automation created successfully");
 
 export type AutomationsControllerCreateAutomationV1Response =
-  | AutomationsControllerCreateAutomationV1ResponseBody
-  | AutomationsControllerCreateAutomationV1BadRequestResponseBody
-  | AutomationsControllerCreateAutomationV1UnauthorizedResponseBody
-  | AutomationsControllerCreateAutomationV1NotFoundResponseBody;
+  | ApiErrorResponseDto
+  | AutomationsControllerCreateAutomationV1ResponseBody;
 
 export const AutomationsControllerCreateAutomationV1Response$zodSchema:
   z.ZodType<AutomationsControllerCreateAutomationV1Response> = z.union([
+    ApiErrorResponseDto$zodSchema,
     z.lazy(() => AutomationsControllerCreateAutomationV1ResponseBody$zodSchema),
-    z.lazy(() =>
-      AutomationsControllerCreateAutomationV1BadRequestResponseBody$zodSchema
-    ),
-    z.lazy(() =>
-      AutomationsControllerCreateAutomationV1UnauthorizedResponseBody$zodSchema
-    ),
-    z.lazy(() =>
-      AutomationsControllerCreateAutomationV1NotFoundResponseBody$zodSchema
-    ),
   ]);

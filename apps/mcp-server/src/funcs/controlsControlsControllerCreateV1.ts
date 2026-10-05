@@ -7,9 +7,8 @@ import { encodeJSON } from "../lib/encodings.js";
 import { compactMap } from "../lib/primitives.js";
 import { safeParse } from "../lib/schemas.js";
 import { RequestOptions } from "../lib/sdks.js";
-import { resolveSecurity } from "../lib/security.js";
+import { extractSecurity, resolveGlobalSecurity } from "../lib/security.js";
 import { pathToFunc } from "../lib/url.js";
-import { ControlsControllerCreateV1Security } from "../models/controlscontrollercreatev1op.js";
 import {
   CreateControlDto,
   CreateControlDto$zodSchema,
@@ -34,7 +33,6 @@ import { Result } from "../types/fp.js";
  */
 export function controlsControlsControllerCreateV1(
   client$: CompAiCore,
-  security: ControlsControllerCreateV1Security,
   request: CreateControlDto,
   options?: RequestOptions,
 ): APIPromise<
@@ -51,7 +49,6 @@ export function controlsControlsControllerCreateV1(
 > {
   return new APIPromise($do(
     client$,
-    security,
     request,
     options,
   ));
@@ -59,7 +56,6 @@ export function controlsControlsControllerCreateV1(
 
 async function $do(
   client$: CompAiCore,
-  security: ControlsControllerCreateV1Security,
   request: CreateControlDto,
   options?: RequestOptions,
 ): Promise<
@@ -91,18 +87,10 @@ async function $do(
 
   const headers$ = new Headers(compactMap({
     "Content-Type": "application/json",
-    Accept: "*/*",
+    Accept: "application/json",
   }));
-
-  const requestSecurity = resolveSecurity(
-    [
-      {
-        fieldName: "Authorization",
-        type: "apiKey:header",
-        value: security?.bearer,
-      },
-    ],
-  );
+  const securityInput = await extractSecurity(client$._options.security);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,
@@ -110,7 +98,7 @@ async function $do(
     operationID: "ControlsController_create_v1",
     oAuth2Scopes: null,
     resolvedSecurity: requestSecurity,
-    securitySource: security,
+    securitySource: client$._options.security,
     retryConfig: options?.retries
       || client$._options.retryConfig
       || { strategy: "none" },

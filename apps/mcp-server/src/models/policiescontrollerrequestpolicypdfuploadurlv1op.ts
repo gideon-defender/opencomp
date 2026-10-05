@@ -4,6 +4,14 @@
 
 import * as z from "zod";
 import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
+  PolicyPdfUploadUrlResponseDto,
+  PolicyPdfUploadUrlResponseDto$zodSchema,
+} from "./policypdfuploadurlresponsedto.js";
+import {
   RequestPolicyPdfUploadUrlDto,
   RequestPolicyPdfUploadUrlDto$zodSchema,
 } from "./requestpolicypdfuploadurldto.js";
@@ -22,3 +30,13 @@ export const PoliciesControllerRequestPolicyPdfUploadUrlV1Request$zodSchema:
       "Organization ID (required for session auth, optional for API key auth)",
     ).optional(),
   });
+
+export type PoliciesControllerRequestPolicyPdfUploadUrlV1Response =
+  | PolicyPdfUploadUrlResponseDto
+  | ApiErrorResponseDto;
+
+export const PoliciesControllerRequestPolicyPdfUploadUrlV1Response$zodSchema:
+  z.ZodType<PoliciesControllerRequestPolicyPdfUploadUrlV1Response> = z.union([
+    PolicyPdfUploadUrlResponseDto$zodSchema,
+    ApiErrorResponseDto$zodSchema,
+  ]);

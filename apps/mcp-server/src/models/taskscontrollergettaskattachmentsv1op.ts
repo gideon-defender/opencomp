@@ -4,6 +4,10 @@
 
 import * as z from "zod";
 import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
   AttachmentResponseDto,
   AttachmentResponseDto$zodSchema,
 } from "./attachmentresponsedto.js";
@@ -16,48 +20,15 @@ export const TasksControllerGetTaskAttachmentsV1Request$zodSchema: z.ZodType<
   taskId: z.string().describe("Unique task identifier"),
 });
 
-/**
- * Task not found
- */
-export type TasksControllerGetTaskAttachmentsV1NotFoundResponseBody = {
-  message?: string | undefined;
-};
-
-export const TasksControllerGetTaskAttachmentsV1NotFoundResponseBody$zodSchema:
-  z.ZodType<TasksControllerGetTaskAttachmentsV1NotFoundResponseBody> = z.object(
-    {
-      message: z.string().optional(),
-    },
-  ).describe("Task not found");
-
-/**
- * Unauthorized - Invalid authentication
- */
-export type TasksControllerGetTaskAttachmentsV1UnauthorizedResponseBody = {
-  message?: string | undefined;
-};
-
-export const TasksControllerGetTaskAttachmentsV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<TasksControllerGetTaskAttachmentsV1UnauthorizedResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Unauthorized - Invalid authentication");
-
 export type TasksControllerGetTaskAttachmentsV1Response =
-  | Array<AttachmentResponseDto>
-  | TasksControllerGetTaskAttachmentsV1UnauthorizedResponseBody
-  | TasksControllerGetTaskAttachmentsV1NotFoundResponseBody;
+  | ApiErrorResponseDto
+  | Array<AttachmentResponseDto>;
 
 export const TasksControllerGetTaskAttachmentsV1Response$zodSchema: z.ZodType<
   TasksControllerGetTaskAttachmentsV1Response
 > = z.union([
+  ApiErrorResponseDto$zodSchema,
   z.array(AttachmentResponseDto$zodSchema).describe(
     "Attachments retrieved successfully",
-  ),
-  z.lazy(() =>
-    TasksControllerGetTaskAttachmentsV1UnauthorizedResponseBody$zodSchema
-  ),
-  z.lazy(() =>
-    TasksControllerGetTaskAttachmentsV1NotFoundResponseBody$zodSchema
   ),
 ]);

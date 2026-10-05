@@ -4,6 +4,10 @@
 
 import * as z from "zod";
 import { ClosedEnum } from "../types/enums.js";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 /**
  * How the request was authenticated
@@ -36,45 +40,6 @@ export const PeopleControllerDeleteMemberV1Request$zodSchema: z.ZodType<
   skipOffboarding: z.string(),
 });
 
-/**
- * Internal server error
- */
-export type PeopleControllerDeleteMemberV1InternalServerErrorResponseBody = {
-  message?: string | undefined;
-};
-
-export const PeopleControllerDeleteMemberV1InternalServerErrorResponseBody$zodSchema:
-  z.ZodType<PeopleControllerDeleteMemberV1InternalServerErrorResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Internal server error");
-
-/**
- * Organization or member not found
- */
-export type PeopleControllerDeleteMemberV1NotFoundResponseBody = {
-  message?: string | undefined;
-};
-
-export const PeopleControllerDeleteMemberV1NotFoundResponseBody$zodSchema:
-  z.ZodType<PeopleControllerDeleteMemberV1NotFoundResponseBody> = z.object({
-    message: z.string().optional(),
-  }).describe("Organization or member not found");
-
-/**
- * Unauthorized - Invalid authentication or insufficient permissions
- */
-export type PeopleControllerDeleteMemberV1UnauthorizedResponseBody = {
-  message?: string | undefined;
-};
-
-export const PeopleControllerDeleteMemberV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<PeopleControllerDeleteMemberV1UnauthorizedResponseBody> = z.object({
-    message: z.string().optional(),
-  }).describe(
-    "Unauthorized - Invalid authentication or insufficient permissions",
-  );
-
 export type DeletedMember = {
   id?: string | undefined;
   name?: string | undefined;
@@ -106,20 +71,12 @@ export const PeopleControllerDeleteMemberV1ResponseBody$zodSchema: z.ZodType<
 }).describe("Member deleted successfully");
 
 export type PeopleControllerDeleteMemberV1Response =
-  | PeopleControllerDeleteMemberV1ResponseBody
-  | PeopleControllerDeleteMemberV1UnauthorizedResponseBody
-  | PeopleControllerDeleteMemberV1NotFoundResponseBody
-  | PeopleControllerDeleteMemberV1InternalServerErrorResponseBody;
+  | ApiErrorResponseDto
+  | PeopleControllerDeleteMemberV1ResponseBody;
 
 export const PeopleControllerDeleteMemberV1Response$zodSchema: z.ZodType<
   PeopleControllerDeleteMemberV1Response
 > = z.union([
+  ApiErrorResponseDto$zodSchema,
   z.lazy(() => PeopleControllerDeleteMemberV1ResponseBody$zodSchema),
-  z.lazy(() =>
-    PeopleControllerDeleteMemberV1UnauthorizedResponseBody$zodSchema
-  ),
-  z.lazy(() => PeopleControllerDeleteMemberV1NotFoundResponseBody$zodSchema),
-  z.lazy(() =>
-    PeopleControllerDeleteMemberV1InternalServerErrorResponseBody$zodSchema
-  ),
 ]);

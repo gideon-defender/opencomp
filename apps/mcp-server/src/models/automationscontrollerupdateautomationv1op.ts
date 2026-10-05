@@ -4,6 +4,10 @@
 
 import * as z from "zod";
 import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
   UpdateAutomationDto,
   UpdateAutomationDto$zodSchema,
 } from "./updateautomationdto.js";
@@ -20,45 +24,6 @@ export const AutomationsControllerUpdateAutomationV1Request$zodSchema:
     body: UpdateAutomationDto$zodSchema,
     taskId: z.string().describe("Unique task identifier"),
   });
-
-/**
- * Automation not found
- */
-export type AutomationsControllerUpdateAutomationV1NotFoundResponseBody = {
-  message?: string | undefined;
-};
-
-export const AutomationsControllerUpdateAutomationV1NotFoundResponseBody$zodSchema:
-  z.ZodType<AutomationsControllerUpdateAutomationV1NotFoundResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Automation not found");
-
-/**
- * Unauthorized - Invalid authentication
- */
-export type AutomationsControllerUpdateAutomationV1UnauthorizedResponseBody = {
-  message?: string | undefined;
-};
-
-export const AutomationsControllerUpdateAutomationV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<AutomationsControllerUpdateAutomationV1UnauthorizedResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Unauthorized - Invalid authentication");
-
-/**
- * Bad request - Invalid automation ID or data
- */
-export type AutomationsControllerUpdateAutomationV1BadRequestResponseBody = {
-  message?: string | undefined;
-};
-
-export const AutomationsControllerUpdateAutomationV1BadRequestResponseBody$zodSchema:
-  z.ZodType<AutomationsControllerUpdateAutomationV1BadRequestResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Bad request - Invalid automation ID or data");
 
 export type AutomationsControllerUpdateAutomationV1Automation = {
   id?: string | undefined;
@@ -90,21 +55,11 @@ export const AutomationsControllerUpdateAutomationV1ResponseBody$zodSchema:
   }).describe("Automation updated successfully");
 
 export type AutomationsControllerUpdateAutomationV1Response =
-  | AutomationsControllerUpdateAutomationV1ResponseBody
-  | AutomationsControllerUpdateAutomationV1BadRequestResponseBody
-  | AutomationsControllerUpdateAutomationV1UnauthorizedResponseBody
-  | AutomationsControllerUpdateAutomationV1NotFoundResponseBody;
+  | ApiErrorResponseDto
+  | AutomationsControllerUpdateAutomationV1ResponseBody;
 
 export const AutomationsControllerUpdateAutomationV1Response$zodSchema:
   z.ZodType<AutomationsControllerUpdateAutomationV1Response> = z.union([
+    ApiErrorResponseDto$zodSchema,
     z.lazy(() => AutomationsControllerUpdateAutomationV1ResponseBody$zodSchema),
-    z.lazy(() =>
-      AutomationsControllerUpdateAutomationV1BadRequestResponseBody$zodSchema
-    ),
-    z.lazy(() =>
-      AutomationsControllerUpdateAutomationV1UnauthorizedResponseBody$zodSchema
-    ),
-    z.lazy(() =>
-      AutomationsControllerUpdateAutomationV1NotFoundResponseBody$zodSchema
-    ),
   ]);

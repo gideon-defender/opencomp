@@ -4,6 +4,10 @@
 
 import * as z from "zod";
 import { ClosedEnum } from "../types/enums.js";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 export const AutomationsControllerGetTaskAutomationRunsV1Status = {
   Pending: "PENDING",
@@ -50,7 +54,7 @@ export type AutomationsControllerGetTaskAutomationRunsV1Error = {};
 export const AutomationsControllerGetTaskAutomationRunsV1Error$zodSchema:
   z.ZodType<AutomationsControllerGetTaskAutomationRunsV1Error> = z.object({});
 
-export type AutomationsControllerGetTaskAutomationRunsV1Response = {
+export type ResponseBody = {
   id?: string | undefined;
   status?: AutomationsControllerGetTaskAutomationRunsV1Status | undefined;
   trigger?: Trigger | undefined;
@@ -59,15 +63,26 @@ export type AutomationsControllerGetTaskAutomationRunsV1Response = {
   error?: AutomationsControllerGetTaskAutomationRunsV1Error | null | undefined;
 };
 
+export const ResponseBody$zodSchema: z.ZodType<ResponseBody> = z.object({
+  completedAt: z.iso.datetime({ offset: true }).nullable().optional(),
+  createdAt: z.iso.datetime({ offset: true }).optional(),
+  error: z.lazy(() =>
+    AutomationsControllerGetTaskAutomationRunsV1Error$zodSchema
+  ).nullable().optional(),
+  id: z.string().optional(),
+  status: AutomationsControllerGetTaskAutomationRunsV1Status$zodSchema
+    .optional(),
+  trigger: Trigger$zodSchema.optional(),
+});
+
+export type AutomationsControllerGetTaskAutomationRunsV1Response =
+  | ApiErrorResponseDto
+  | Array<ResponseBody>;
+
 export const AutomationsControllerGetTaskAutomationRunsV1Response$zodSchema:
-  z.ZodType<AutomationsControllerGetTaskAutomationRunsV1Response> = z.object({
-    completedAt: z.iso.datetime({ offset: true }).nullable().optional(),
-    createdAt: z.iso.datetime({ offset: true }).optional(),
-    error: z.lazy(() =>
-      AutomationsControllerGetTaskAutomationRunsV1Error$zodSchema
-    ).nullable().optional(),
-    id: z.string().optional(),
-    status: AutomationsControllerGetTaskAutomationRunsV1Status$zodSchema
-      .optional(),
-    trigger: Trigger$zodSchema.optional(),
-  });
+  z.ZodType<AutomationsControllerGetTaskAutomationRunsV1Response> = z.union([
+    ApiErrorResponseDto$zodSchema,
+    z.array(z.lazy(() => ResponseBody$zodSchema)).describe(
+      "Automation runs retrieved successfully",
+    ),
+  ]);

@@ -30,8 +30,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Stream the watermarked NDA preview PDF inline for browser viewing, generating it on first view for a Trust Access request.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function trustAccessTrustAccessControllerStreamPreviewNdaV1(
   client$: CompAiCore,
@@ -98,10 +96,10 @@ async function $do(
   );
 
   const headers$ = new Headers(compactMap({
-    Accept: "*/*",
+    Accept: "application/pdf",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

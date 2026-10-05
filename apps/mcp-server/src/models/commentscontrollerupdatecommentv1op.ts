@@ -4,6 +4,14 @@
 
 import * as z from "zod";
 import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
+  CommentResponseDto,
+  CommentResponseDto$zodSchema,
+} from "./commentresponsedto.js";
+import {
   UpdateCommentDto,
   UpdateCommentDto$zodSchema,
 } from "./updatecommentdto.js";
@@ -19,3 +27,14 @@ export const CommentsControllerUpdateCommentV1Request$zodSchema: z.ZodType<
   body: UpdateCommentDto$zodSchema,
   commentId: z.string().describe("Unique comment identifier"),
 });
+
+export type CommentsControllerUpdateCommentV1Response =
+  | CommentResponseDto
+  | ApiErrorResponseDto;
+
+export const CommentsControllerUpdateCommentV1Response$zodSchema: z.ZodType<
+  CommentsControllerUpdateCommentV1Response
+> = z.union([
+  CommentResponseDto$zodSchema,
+  ApiErrorResponseDto$zodSchema,
+]);

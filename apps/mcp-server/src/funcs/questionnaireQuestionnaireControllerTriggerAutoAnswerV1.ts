@@ -30,8 +30,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Starts background answer generation for an already-parsed questionnaire and returns a run handle immediately. Poll GET /v1/questionnaire/:id until answeredQuestions equals totalQuestions, then read the answers from its questions.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function questionnaireQuestionnaireControllerTriggerAutoAnswerV1(
   client$: CompAiCore,
@@ -101,7 +99,7 @@ async function $do(
     Accept: "application/json",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

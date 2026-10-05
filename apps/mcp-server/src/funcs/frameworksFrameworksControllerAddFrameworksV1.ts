@@ -7,7 +7,7 @@ import { encodeJSON } from "../lib/encodings.js";
 import { compactMap } from "../lib/primitives.js";
 import { safeParse } from "../lib/schemas.js";
 import { RequestOptions } from "../lib/sdks.js";
-import { resolveSecurity } from "../lib/security.js";
+import { extractSecurity, resolveGlobalSecurity } from "../lib/security.js";
 import { pathToFunc } from "../lib/url.js";
 import {
   AddFrameworksDto,
@@ -22,7 +22,6 @@ import {
   UnexpectedClientError,
 } from "../models/errors/httpclienterrors.js";
 import { SDKValidationError } from "../models/errors/sdkvalidationerror.js";
-import { FrameworksControllerAddFrameworksV1Security } from "../models/frameworkscontrolleraddframeworksv1op.js";
 import { APICall, APIPromise } from "../types/async.js";
 import { Result } from "../types/fp.js";
 
@@ -34,7 +33,6 @@ import { Result } from "../types/fp.js";
  */
 export function frameworksFrameworksControllerAddFrameworksV1(
   client$: CompAiCore,
-  security: FrameworksControllerAddFrameworksV1Security,
   request: AddFrameworksDto,
   options?: RequestOptions,
 ): APIPromise<
@@ -51,7 +49,6 @@ export function frameworksFrameworksControllerAddFrameworksV1(
 > {
   return new APIPromise($do(
     client$,
-    security,
     request,
     options,
   ));
@@ -59,7 +56,6 @@ export function frameworksFrameworksControllerAddFrameworksV1(
 
 async function $do(
   client$: CompAiCore,
-  security: FrameworksControllerAddFrameworksV1Security,
   request: AddFrameworksDto,
   options?: RequestOptions,
 ): Promise<
@@ -91,18 +87,10 @@ async function $do(
 
   const headers$ = new Headers(compactMap({
     "Content-Type": "application/json",
-    Accept: "*/*",
+    Accept: "application/json",
   }));
-
-  const requestSecurity = resolveSecurity(
-    [
-      {
-        fieldName: "Authorization",
-        type: "apiKey:header",
-        value: security?.bearer,
-      },
-    ],
-  );
+  const securityInput = await extractSecurity(client$._options.security);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,
@@ -110,7 +98,7 @@ async function $do(
     operationID: "FrameworksController_addFrameworks_v1",
     oAuth2Scopes: null,
     resolvedSecurity: requestSecurity,
-    securitySource: security,
+    securitySource: client$._options.security,
     retryConfig: options?.retries
       || client$._options.retryConfig
       || { strategy: "none" },

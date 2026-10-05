@@ -4,14 +4,6 @@
 
 import * as z from "zod";
 
-export type ControlsControllerFindAllV1Security = { bearer: string };
-
-export const ControlsControllerFindAllV1Security$zodSchema: z.ZodType<
-  ControlsControllerFindAllV1Security
-> = z.object({
-  bearer: z.string().describe("API Key"),
-});
-
 export type ControlsControllerFindAllV1Request = {
   page?: string | undefined;
   perPage?: string | undefined;

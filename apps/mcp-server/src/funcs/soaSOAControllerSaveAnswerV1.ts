@@ -25,8 +25,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Save a SOA answer in OpenComp. Create, auto-fill, review, approve, and export ISO 27001 Statement of Applicability documents.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function soaSOAControllerSaveAnswerV1(
   client$: CompAiCore,
@@ -77,7 +75,7 @@ async function $do(
     Accept: "application/json",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

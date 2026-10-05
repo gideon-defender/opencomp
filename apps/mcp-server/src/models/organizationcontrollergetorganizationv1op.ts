@@ -4,6 +4,10 @@
 
 import * as z from "zod";
 import { ClosedEnum } from "../types/enums.js";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 /**
  * How the request was authenticated
@@ -36,21 +40,6 @@ export const OrganizationControllerGetOrganizationV1Request$zodSchema:
       "Include ownership data for transfer UI",
     ).optional(),
   });
-
-/**
- * Unauthorized - Invalid authentication or insufficient permissions
- */
-export type OrganizationControllerGetOrganizationV1UnauthorizedResponseBody = {
-  message?: string | undefined;
-};
-
-export const OrganizationControllerGetOrganizationV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<OrganizationControllerGetOrganizationV1UnauthorizedResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe(
-      "Unauthorized - Invalid authentication or insufficient permissions",
-    );
 
 /**
  * Organization information retrieved successfully
@@ -106,13 +95,11 @@ export const OrganizationControllerGetOrganizationV1ResponseBody$zodSchema:
   }).describe("Organization information retrieved successfully");
 
 export type OrganizationControllerGetOrganizationV1Response =
-  | OrganizationControllerGetOrganizationV1ResponseBody
-  | OrganizationControllerGetOrganizationV1UnauthorizedResponseBody;
+  | ApiErrorResponseDto
+  | OrganizationControllerGetOrganizationV1ResponseBody;
 
 export const OrganizationControllerGetOrganizationV1Response$zodSchema:
   z.ZodType<OrganizationControllerGetOrganizationV1Response> = z.union([
+    ApiErrorResponseDto$zodSchema,
     z.lazy(() => OrganizationControllerGetOrganizationV1ResponseBody$zodSchema),
-    z.lazy(() =>
-      OrganizationControllerGetOrganizationV1UnauthorizedResponseBody$zodSchema
-    ),
   ]);

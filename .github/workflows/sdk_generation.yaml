@@ -40,6 +40,13 @@ jobs:
       mode: pr
       set_version: ${{ github.event.inputs.set_version }}
       working_directory: apps/mcp-server
+      # The MCP server is pnpm-native (no bun/npm). This installs pnpm for
+      # the action (per Speakeasy's pnpm guide). NOTE: mcp-typescript ignores
+      # gen.yaml compileCommand/additionalScripts, so regen still emits bun
+      # bits — after regen, run
+      # `node apps/mcp-server/scripts/apply-pnpm-toolchain.mjs` then
+      # `pnpm install --ignore-workspace` inside apps/mcp-server.
+      pnpm_version: "10.15.0"
     secrets:
       github_access_token: ${{ secrets.GITHUB_TOKEN }}
       npm_token: ${{ secrets.NPM_TOKEN }}

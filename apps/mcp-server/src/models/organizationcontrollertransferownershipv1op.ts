@@ -3,6 +3,10 @@
  */
 
 import * as z from "zod";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 /**
  * Transfer organization ownership to another member
@@ -19,6 +23,51 @@ export const OrganizationControllerTransferOwnershipV1Request$zodSchema:
       "User ID of the current owner initiating the transfer (required for API key auth, ignored for JWT auth)",
     ),
   }).describe("Transfer organization ownership to another member");
+
+/**
+ * Not found - Organization or member not found
+ */
+export type OrganizationControllerTransferOwnershipV1NotFoundResponseBody = {
+  success?: boolean | undefined;
+  message?: string | undefined;
+};
+
+export const OrganizationControllerTransferOwnershipV1NotFoundResponseBody$zodSchema:
+  z.ZodType<OrganizationControllerTransferOwnershipV1NotFoundResponseBody> = z
+    .object({
+      message: z.string().optional(),
+      success: z.boolean().optional(),
+    }).describe("Not found - Organization or member not found");
+
+/**
+ * Forbidden - Only organization owner can transfer ownership
+ */
+export type OrganizationControllerTransferOwnershipV1ForbiddenResponseBody = {
+  success?: boolean | undefined;
+  message?: string | undefined;
+};
+
+export const OrganizationControllerTransferOwnershipV1ForbiddenResponseBody$zodSchema:
+  z.ZodType<OrganizationControllerTransferOwnershipV1ForbiddenResponseBody> = z
+    .object({
+      message: z.string().optional(),
+      success: z.boolean().optional(),
+    }).describe("Forbidden - Only organization owner can transfer ownership");
+
+/**
+ * Bad request - Invalid input
+ */
+export type OrganizationControllerTransferOwnershipV1BadRequestResponseBody = {
+  success?: boolean | undefined;
+  message?: string | undefined;
+};
+
+export const OrganizationControllerTransferOwnershipV1BadRequestResponseBody$zodSchema:
+  z.ZodType<OrganizationControllerTransferOwnershipV1BadRequestResponseBody> = z
+    .object({
+      message: z.string().optional(),
+      success: z.boolean().optional(),
+    }).describe("Bad request - Invalid input");
 
 export type CurrentOwner = {
   memberId?: string | undefined;
@@ -45,31 +94,43 @@ export const NewOwner$zodSchema: z.ZodType<NewOwner> = z.object({
 });
 
 /**
- * Not found - Organization or member not found
- *
- * @remarks
- *
- * Forbidden - Only organization owner can transfer ownership
- *
- * Unauthorized - Invalid or missing authentication
- *
- * Bad request - Invalid input
- *
  * Ownership transferred successfully
  */
-export type OrganizationControllerTransferOwnershipV1Response = {
+export type OrganizationControllerTransferOwnershipV1ResponseBody = {
   success?: boolean | undefined;
   message?: string | undefined;
   currentOwner?: CurrentOwner | undefined;
   newOwner?: NewOwner | undefined;
 };
 
-export const OrganizationControllerTransferOwnershipV1Response$zodSchema:
-  z.ZodType<OrganizationControllerTransferOwnershipV1Response> = z.object({
+export const OrganizationControllerTransferOwnershipV1ResponseBody$zodSchema:
+  z.ZodType<OrganizationControllerTransferOwnershipV1ResponseBody> = z.object({
     currentOwner: z.lazy(() => CurrentOwner$zodSchema).optional(),
     message: z.string().optional(),
     newOwner: z.lazy(() => NewOwner$zodSchema).optional(),
     success: z.boolean().optional(),
-  }).describe(
-    "Not found - Organization or member not found\n\nForbidden - Only organization owner can transfer ownership\n\nUnauthorized - Invalid or missing authentication\n\nBad request - Invalid input\n\nOwnership transferred successfully",
-  );
+  }).describe("Ownership transferred successfully");
+
+export type OrganizationControllerTransferOwnershipV1Response =
+  | ApiErrorResponseDto
+  | OrganizationControllerTransferOwnershipV1ResponseBody
+  | OrganizationControllerTransferOwnershipV1BadRequestResponseBody
+  | OrganizationControllerTransferOwnershipV1ForbiddenResponseBody
+  | OrganizationControllerTransferOwnershipV1NotFoundResponseBody;
+
+export const OrganizationControllerTransferOwnershipV1Response$zodSchema:
+  z.ZodType<OrganizationControllerTransferOwnershipV1Response> = z.union([
+    ApiErrorResponseDto$zodSchema,
+    z.lazy(() =>
+      OrganizationControllerTransferOwnershipV1ResponseBody$zodSchema
+    ),
+    z.lazy(() =>
+      OrganizationControllerTransferOwnershipV1BadRequestResponseBody$zodSchema
+    ),
+    z.lazy(() =>
+      OrganizationControllerTransferOwnershipV1ForbiddenResponseBody$zodSchema
+    ),
+    z.lazy(() =>
+      OrganizationControllerTransferOwnershipV1NotFoundResponseBody$zodSchema
+    ),
+  ]);

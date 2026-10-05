@@ -3,6 +3,10 @@
  */
 
 import * as z from "zod";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 export type RolesControllerGetBuiltInObligationsV1Request = { name: string };
 
@@ -24,15 +28,25 @@ export const RolesControllerGetBuiltInObligationsV1Obligations$zodSchema:
 /**
  * Effective obligations for the built-in role
  */
-export type RolesControllerGetBuiltInObligationsV1Response = {
+export type RolesControllerGetBuiltInObligationsV1ResponseBody = {
   name?: string | undefined;
   obligations?: RolesControllerGetBuiltInObligationsV1Obligations | undefined;
 };
 
-export const RolesControllerGetBuiltInObligationsV1Response$zodSchema:
-  z.ZodType<RolesControllerGetBuiltInObligationsV1Response> = z.object({
+export const RolesControllerGetBuiltInObligationsV1ResponseBody$zodSchema:
+  z.ZodType<RolesControllerGetBuiltInObligationsV1ResponseBody> = z.object({
     name: z.string().optional(),
     obligations: z.lazy(() =>
       RolesControllerGetBuiltInObligationsV1Obligations$zodSchema
     ).optional(),
   }).describe("Effective obligations for the built-in role");
+
+export type RolesControllerGetBuiltInObligationsV1Response =
+  | ApiErrorResponseDto
+  | RolesControllerGetBuiltInObligationsV1ResponseBody;
+
+export const RolesControllerGetBuiltInObligationsV1Response$zodSchema:
+  z.ZodType<RolesControllerGetBuiltInObligationsV1Response> = z.union([
+    ApiErrorResponseDto$zodSchema,
+    z.lazy(() => RolesControllerGetBuiltInObligationsV1ResponseBody$zodSchema),
+  ]);

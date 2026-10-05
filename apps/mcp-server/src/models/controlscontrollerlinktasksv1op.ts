@@ -5,14 +5,6 @@
 import * as z from "zod";
 import { LinkTasksDto, LinkTasksDto$zodSchema } from "./linktasksdto.js";
 
-export type ControlsControllerLinkTasksV1Security = { bearer: string };
-
-export const ControlsControllerLinkTasksV1Security$zodSchema: z.ZodType<
-  ControlsControllerLinkTasksV1Security
-> = z.object({
-  bearer: z.string().describe("API Key"),
-});
-
 export type ControlsControllerLinkTasksV1Request = {
   id: string;
   frameworkInstanceId: string;

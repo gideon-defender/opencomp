@@ -4,14 +4,6 @@
 
 import * as z from "zod";
 
-export type ControlsControllerDeleteV1Security = { bearer: string };
-
-export const ControlsControllerDeleteV1Security$zodSchema: z.ZodType<
-  ControlsControllerDeleteV1Security
-> = z.object({
-  bearer: z.string().describe("API Key"),
-});
-
 export type ControlsControllerDeleteV1Request = { id: string };
 
 export const ControlsControllerDeleteV1Request$zodSchema: z.ZodType<

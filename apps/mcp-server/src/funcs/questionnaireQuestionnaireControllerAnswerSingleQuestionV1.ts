@@ -30,8 +30,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Generate an answer for one security questionnaire item using the organization evidence library and return source references for review.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function questionnaireQuestionnaireControllerAnswerSingleQuestionV1(
   client$: CompAiCore,
@@ -92,7 +90,7 @@ async function $do(
     Accept: "application/json",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

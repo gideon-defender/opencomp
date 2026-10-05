@@ -30,8 +30,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Enable/disable a custom framework on the trust portal and set its status in OpenComp. Configure the live Trust Center, custom domain, public overview, FAQs, compliance resources, documents, links, and vendor disclosures.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function trustPortalTrustPortalControllerUpdateCustomFrameworkV1(
   client$: CompAiCore,
@@ -92,10 +90,10 @@ async function $do(
 
   const headers$ = new Headers(compactMap({
     "Content-Type": "application/json",
-    Accept: "*/*",
+    Accept: "application/json",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

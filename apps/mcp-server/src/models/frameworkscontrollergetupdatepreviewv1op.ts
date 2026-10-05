@@ -4,13 +4,6 @@
 
 import * as z from "zod";
 
-export type FrameworksControllerGetUpdatePreviewV1Security = { bearer: string };
-
-export const FrameworksControllerGetUpdatePreviewV1Security$zodSchema:
-  z.ZodType<FrameworksControllerGetUpdatePreviewV1Security> = z.object({
-    bearer: z.string().describe("API Key"),
-  });
-
 export type FrameworksControllerGetUpdatePreviewV1Request = { id: string };
 
 export const FrameworksControllerGetUpdatePreviewV1Request$zodSchema: z.ZodType<

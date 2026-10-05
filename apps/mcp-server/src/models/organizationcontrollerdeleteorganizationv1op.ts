@@ -4,6 +4,10 @@
 
 import * as z from "zod";
 import { ClosedEnum } from "../types/enums.js";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 /**
  * How the request was authenticated
@@ -24,34 +28,6 @@ export const OrganizationControllerDeleteOrganizationV1AuthType$zodSchema = z
     "api-key",
     "session",
   ]).describe("How the request was authenticated");
-
-/**
- * Organization not found
- */
-export type OrganizationControllerDeleteOrganizationV1NotFoundResponseBody = {
-  message?: string | undefined;
-};
-
-export const OrganizationControllerDeleteOrganizationV1NotFoundResponseBody$zodSchema:
-  z.ZodType<OrganizationControllerDeleteOrganizationV1NotFoundResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Organization not found");
-
-/**
- * Unauthorized - Invalid authentication or insufficient permissions
- */
-export type OrganizationControllerDeleteOrganizationV1UnauthorizedResponseBody =
-  { message?: string | undefined };
-
-export const OrganizationControllerDeleteOrganizationV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<
-    OrganizationControllerDeleteOrganizationV1UnauthorizedResponseBody
-  > = z.object({
-    message: z.string().optional(),
-  }).describe(
-    "Unauthorized - Invalid authentication or insufficient permissions",
-  );
 
 export type DeletedOrganization = {
   id?: string | undefined;
@@ -82,19 +58,13 @@ export const OrganizationControllerDeleteOrganizationV1ResponseBody$zodSchema:
   }).describe("Organization deleted successfully");
 
 export type OrganizationControllerDeleteOrganizationV1Response =
-  | OrganizationControllerDeleteOrganizationV1ResponseBody
-  | OrganizationControllerDeleteOrganizationV1UnauthorizedResponseBody
-  | OrganizationControllerDeleteOrganizationV1NotFoundResponseBody;
+  | ApiErrorResponseDto
+  | OrganizationControllerDeleteOrganizationV1ResponseBody;
 
 export const OrganizationControllerDeleteOrganizationV1Response$zodSchema:
   z.ZodType<OrganizationControllerDeleteOrganizationV1Response> = z.union([
+    ApiErrorResponseDto$zodSchema,
     z.lazy(() =>
       OrganizationControllerDeleteOrganizationV1ResponseBody$zodSchema
-    ),
-    z.lazy(() =>
-      OrganizationControllerDeleteOrganizationV1UnauthorizedResponseBody$zodSchema
-    ),
-    z.lazy(() =>
-      OrganizationControllerDeleteOrganizationV1NotFoundResponseBody$zodSchema
     ),
   ]);

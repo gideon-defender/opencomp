@@ -3,6 +3,10 @@
  */
 
 import * as z from "zod";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 export type RolesControllerGetPermissionsForRolesV1Request = { roles: string };
 
@@ -14,11 +18,21 @@ export const RolesControllerGetPermissionsForRolesV1Request$zodSchema:
 /**
  * Merged permissions for the requested roles
  */
-export type RolesControllerGetPermissionsForRolesV1Response = {
+export type RolesControllerGetPermissionsForRolesV1ResponseBody = {
   permissions?: { [k: string]: Array<string> } | undefined;
 };
 
-export const RolesControllerGetPermissionsForRolesV1Response$zodSchema:
-  z.ZodType<RolesControllerGetPermissionsForRolesV1Response> = z.object({
+export const RolesControllerGetPermissionsForRolesV1ResponseBody$zodSchema:
+  z.ZodType<RolesControllerGetPermissionsForRolesV1ResponseBody> = z.object({
     permissions: z.record(z.string(), z.array(z.string())).optional(),
   }).describe("Merged permissions for the requested roles");
+
+export type RolesControllerGetPermissionsForRolesV1Response =
+  | ApiErrorResponseDto
+  | RolesControllerGetPermissionsForRolesV1ResponseBody;
+
+export const RolesControllerGetPermissionsForRolesV1Response$zodSchema:
+  z.ZodType<RolesControllerGetPermissionsForRolesV1Response> = z.union([
+    ApiErrorResponseDto$zodSchema,
+    z.lazy(() => RolesControllerGetPermissionsForRolesV1ResponseBody$zodSchema),
+  ]);

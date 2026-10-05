@@ -30,8 +30,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Returns the effective obligations for a built-in role (owner, admin, auditor, employee, contractor) — DB override if present, else the hardcoded default.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function rolesRolesControllerGetBuiltInObligationsV1(
   client$: CompAiCore,
@@ -101,7 +99,7 @@ async function $do(
     Accept: "application/json",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

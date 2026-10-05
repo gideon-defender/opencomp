@@ -4,9 +4,17 @@
 
 import * as z from "zod";
 import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
   TrustDocumentSignedUrlDto,
   TrustDocumentSignedUrlDto$zodSchema,
 } from "./trustdocumentsignedurldto.js";
+import {
+  TrustDocumentUrlResponseDto,
+  TrustDocumentUrlResponseDto$zodSchema,
+} from "./trustdocumenturlresponsedto.js";
 
 export type TrustPortalControllerGetTrustDocumentUrlV1Request = {
   documentId: string;
@@ -18,3 +26,13 @@ export const TrustPortalControllerGetTrustDocumentUrlV1Request$zodSchema:
     body: TrustDocumentSignedUrlDto$zodSchema,
     documentId: z.string(),
   });
+
+export type TrustPortalControllerGetTrustDocumentUrlV1Response =
+  | TrustDocumentUrlResponseDto
+  | ApiErrorResponseDto;
+
+export const TrustPortalControllerGetTrustDocumentUrlV1Response$zodSchema:
+  z.ZodType<TrustPortalControllerGetTrustDocumentUrlV1Response> = z.union([
+    TrustDocumentUrlResponseDto$zodSchema,
+    ApiErrorResponseDto$zodSchema,
+  ]);

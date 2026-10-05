@@ -4,6 +4,14 @@
 
 import * as z from "zod";
 import { ClosedEnum } from "../types/enums.js";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
+  PaginatedTaskItemResponseDto,
+  PaginatedTaskItemResponseDto$zodSchema,
+} from "./paginatedtaskitemresponsedto.js";
 
 /**
  * Type of entity
@@ -141,3 +149,13 @@ export const TaskManagementControllerGetTaskItemsV1Request$zodSchema: z.ZodType<
   status: TaskManagementControllerGetTaskItemsV1Status$zodSchema.optional()
     .describe("Filter by status"),
 });
+
+export type TaskManagementControllerGetTaskItemsV1Response =
+  | PaginatedTaskItemResponseDto
+  | ApiErrorResponseDto;
+
+export const TaskManagementControllerGetTaskItemsV1Response$zodSchema:
+  z.ZodType<TaskManagementControllerGetTaskItemsV1Response> = z.union([
+    PaginatedTaskItemResponseDto$zodSchema,
+    ApiErrorResponseDto$zodSchema,
+  ]);

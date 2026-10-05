@@ -8,15 +8,6 @@ import {
   RollbackFrameworkDto$zodSchema,
 } from "./rollbackframeworkdto.js";
 
-export type FrameworksControllerRollbackFrameworkV1Security = {
-  bearer: string;
-};
-
-export const FrameworksControllerRollbackFrameworkV1Security$zodSchema:
-  z.ZodType<FrameworksControllerRollbackFrameworkV1Security> = z.object({
-    bearer: z.string().describe("API Key"),
-  });
-
 export type FrameworksControllerRollbackFrameworkV1Request = {
   id: string;
   body: RollbackFrameworkDto;

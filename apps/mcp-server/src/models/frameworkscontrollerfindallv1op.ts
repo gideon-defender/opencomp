@@ -4,14 +4,6 @@
 
 import * as z from "zod";
 
-export type FrameworksControllerFindAllV1Security = { bearer: string };
-
-export const FrameworksControllerFindAllV1Security$zodSchema: z.ZodType<
-  FrameworksControllerFindAllV1Security
-> = z.object({
-  bearer: z.string().describe("API Key"),
-});
-
 export type FrameworksControllerFindAllV1Request = {
   includeControls?: boolean | undefined;
   includeScores?: boolean | undefined;

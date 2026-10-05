@@ -1,6 +1,4 @@
-/// <reference types="bun-types" />
-
-import { build } from "bun";
+import { build } from "esbuild";
 import { chmod, cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { packExtension } from "@anthropic-ai/mcpb";
 import { join } from "node:path";
@@ -43,14 +41,15 @@ export const toolNames: Array<{ name: string; description: string }>= ${JSON.str
   await writeFile("./src/tool-names.ts", toolNamesContent);
 
   await build({
-    entrypoints: [entrypoint],
+    entryPoints: [entrypoint],
+    bundle: true,
     outdir: destinationDir,
-    sourcemap: shouldPack ? "none" : "linked",
-    target: "node",
+    sourcemap: shouldPack ? false : true,
+    platform: "node",
+    target: "node20",
     format: "esm",
     minify: shouldPack,
-    throw: true,
-    banner: "#!/usr/bin/env node",
+    banner: { js: "#!/usr/bin/env node" },
   });
 
   // Set executable permissions on the output file

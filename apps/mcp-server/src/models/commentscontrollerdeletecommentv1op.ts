@@ -3,6 +3,10 @@
  */
 
 import * as z from "zod";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 /**
  * Delete comment request body
@@ -33,31 +37,6 @@ export const CommentsControllerDeleteCommentV1Request$zodSchema: z.ZodType<
 });
 
 /**
- * Comment not found
- */
-export type CommentsControllerDeleteCommentV1NotFoundResponseBody = {
-  message?: string | undefined;
-};
-
-export const CommentsControllerDeleteCommentV1NotFoundResponseBody$zodSchema:
-  z.ZodType<CommentsControllerDeleteCommentV1NotFoundResponseBody> = z.object({
-    message: z.string().optional(),
-  }).describe("Comment not found");
-
-/**
- * Unauthorized - Invalid authentication
- */
-export type CommentsControllerDeleteCommentV1UnauthorizedResponseBody = {
-  message?: string | undefined;
-};
-
-export const CommentsControllerDeleteCommentV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<CommentsControllerDeleteCommentV1UnauthorizedResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Unauthorized - Invalid authentication");
-
-/**
  * Comment deleted successfully
  */
 export type CommentsControllerDeleteCommentV1ResponseBody = {
@@ -75,16 +54,12 @@ export const CommentsControllerDeleteCommentV1ResponseBody$zodSchema: z.ZodType<
 }).describe("Comment deleted successfully");
 
 export type CommentsControllerDeleteCommentV1Response =
-  | CommentsControllerDeleteCommentV1ResponseBody
-  | CommentsControllerDeleteCommentV1UnauthorizedResponseBody
-  | CommentsControllerDeleteCommentV1NotFoundResponseBody;
+  | ApiErrorResponseDto
+  | CommentsControllerDeleteCommentV1ResponseBody;
 
 export const CommentsControllerDeleteCommentV1Response$zodSchema: z.ZodType<
   CommentsControllerDeleteCommentV1Response
 > = z.union([
+  ApiErrorResponseDto$zodSchema,
   z.lazy(() => CommentsControllerDeleteCommentV1ResponseBody$zodSchema),
-  z.lazy(() =>
-    CommentsControllerDeleteCommentV1UnauthorizedResponseBody$zodSchema
-  ),
-  z.lazy(() => CommentsControllerDeleteCommentV1NotFoundResponseBody$zodSchema),
 ]);

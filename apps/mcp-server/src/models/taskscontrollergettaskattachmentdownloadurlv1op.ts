@@ -3,6 +3,10 @@
  */
 
 import * as z from "zod";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 export type TasksControllerGetTaskAttachmentDownloadUrlV1Request = {
   taskId: string;
@@ -14,31 +18,6 @@ export const TasksControllerGetTaskAttachmentDownloadUrlV1Request$zodSchema:
     attachmentId: z.string().describe("Unique attachment identifier"),
     taskId: z.string().describe("Unique task identifier"),
   });
-
-/**
- * Task or attachment not found
- */
-export type TasksControllerGetTaskAttachmentDownloadUrlV1NotFoundResponseBody =
-  { message?: string | undefined };
-
-export const TasksControllerGetTaskAttachmentDownloadUrlV1NotFoundResponseBody$zodSchema:
-  z.ZodType<TasksControllerGetTaskAttachmentDownloadUrlV1NotFoundResponseBody> =
-    z.object({
-      message: z.string().optional(),
-    }).describe("Task or attachment not found");
-
-/**
- * Unauthorized - Invalid authentication
- */
-export type TasksControllerGetTaskAttachmentDownloadUrlV1UnauthorizedResponseBody =
-  { message?: string | undefined };
-
-export const TasksControllerGetTaskAttachmentDownloadUrlV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<
-    TasksControllerGetTaskAttachmentDownloadUrlV1UnauthorizedResponseBody
-  > = z.object({
-    message: z.string().optional(),
-  }).describe("Unauthorized - Invalid authentication");
 
 /**
  * Download URL generated successfully
@@ -60,19 +39,13 @@ export const TasksControllerGetTaskAttachmentDownloadUrlV1ResponseBody$zodSchema
     }).describe("Download URL generated successfully");
 
 export type TasksControllerGetTaskAttachmentDownloadUrlV1Response =
-  | TasksControllerGetTaskAttachmentDownloadUrlV1ResponseBody
-  | TasksControllerGetTaskAttachmentDownloadUrlV1UnauthorizedResponseBody
-  | TasksControllerGetTaskAttachmentDownloadUrlV1NotFoundResponseBody;
+  | ApiErrorResponseDto
+  | TasksControllerGetTaskAttachmentDownloadUrlV1ResponseBody;
 
 export const TasksControllerGetTaskAttachmentDownloadUrlV1Response$zodSchema:
   z.ZodType<TasksControllerGetTaskAttachmentDownloadUrlV1Response> = z.union([
+    ApiErrorResponseDto$zodSchema,
     z.lazy(() =>
       TasksControllerGetTaskAttachmentDownloadUrlV1ResponseBody$zodSchema
-    ),
-    z.lazy(() =>
-      TasksControllerGetTaskAttachmentDownloadUrlV1UnauthorizedResponseBody$zodSchema
-    ),
-    z.lazy(() =>
-      TasksControllerGetTaskAttachmentDownloadUrlV1NotFoundResponseBody$zodSchema
     ),
   ]);

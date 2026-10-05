@@ -3,6 +3,10 @@
  */
 
 import * as z from "zod";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 export type TasksControllerDeleteTaskAttachmentV1Request = {
   taskId: string;
@@ -15,32 +19,6 @@ export const TasksControllerDeleteTaskAttachmentV1Request$zodSchema: z.ZodType<
   attachmentId: z.string().describe("Unique attachment identifier"),
   taskId: z.string().describe("Unique task identifier"),
 });
-
-/**
- * Task or attachment not found
- */
-export type TasksControllerDeleteTaskAttachmentV1NotFoundResponseBody = {
-  message?: string | undefined;
-};
-
-export const TasksControllerDeleteTaskAttachmentV1NotFoundResponseBody$zodSchema:
-  z.ZodType<TasksControllerDeleteTaskAttachmentV1NotFoundResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Task or attachment not found");
-
-/**
- * Unauthorized - Invalid authentication
- */
-export type TasksControllerDeleteTaskAttachmentV1UnauthorizedResponseBody = {
-  message?: string | undefined;
-};
-
-export const TasksControllerDeleteTaskAttachmentV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<TasksControllerDeleteTaskAttachmentV1UnauthorizedResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Unauthorized - Invalid authentication");
 
 /**
  * Attachment deleted successfully
@@ -59,18 +37,12 @@ export const TasksControllerDeleteTaskAttachmentV1ResponseBody$zodSchema:
   }).describe("Attachment deleted successfully");
 
 export type TasksControllerDeleteTaskAttachmentV1Response =
-  | TasksControllerDeleteTaskAttachmentV1ResponseBody
-  | TasksControllerDeleteTaskAttachmentV1UnauthorizedResponseBody
-  | TasksControllerDeleteTaskAttachmentV1NotFoundResponseBody;
+  | ApiErrorResponseDto
+  | TasksControllerDeleteTaskAttachmentV1ResponseBody;
 
 export const TasksControllerDeleteTaskAttachmentV1Response$zodSchema: z.ZodType<
   TasksControllerDeleteTaskAttachmentV1Response
 > = z.union([
+  ApiErrorResponseDto$zodSchema,
   z.lazy(() => TasksControllerDeleteTaskAttachmentV1ResponseBody$zodSchema),
-  z.lazy(() =>
-    TasksControllerDeleteTaskAttachmentV1UnauthorizedResponseBody$zodSchema
-  ),
-  z.lazy(() =>
-    TasksControllerDeleteTaskAttachmentV1NotFoundResponseBody$zodSchema
-  ),
 ]);

@@ -30,8 +30,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Map organization controls to an ISMS document in OpenComp. Create and manage ISO 27001 ISMS documents, control mappings, register rows, and narratives, and run wizard-based setup, approval, and drift review workflows.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function ismsISMSControllerAddControlsV1(
   client$: CompAiCore,
@@ -98,10 +96,10 @@ async function $do(
 
   const headers$ = new Headers(compactMap({
     "Content-Type": "application/json",
-    Accept: "*/*",
+    Accept: "application/json",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

@@ -3,19 +3,33 @@
  */
 
 import * as z from "zod";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 /**
  * Upload file and trigger async parsing. Returns runId for realtime tracking.
  */
-export type QuestionnaireControllerUploadAndParseV1Response = {
+export type QuestionnaireControllerUploadAndParseV1ResponseBody = {
   runId?: string | undefined;
   publicAccessToken?: string | undefined;
 };
 
-export const QuestionnaireControllerUploadAndParseV1Response$zodSchema:
-  z.ZodType<QuestionnaireControllerUploadAndParseV1Response> = z.object({
+export const QuestionnaireControllerUploadAndParseV1ResponseBody$zodSchema:
+  z.ZodType<QuestionnaireControllerUploadAndParseV1ResponseBody> = z.object({
     publicAccessToken: z.string().optional(),
     runId: z.string().optional(),
   }).describe(
     "Upload file and trigger async parsing. Returns runId for realtime tracking.",
   );
+
+export type QuestionnaireControllerUploadAndParseV1Response =
+  | ApiErrorResponseDto
+  | QuestionnaireControllerUploadAndParseV1ResponseBody;
+
+export const QuestionnaireControllerUploadAndParseV1Response$zodSchema:
+  z.ZodType<QuestionnaireControllerUploadAndParseV1Response> = z.union([
+    ApiErrorResponseDto$zodSchema,
+    z.lazy(() => QuestionnaireControllerUploadAndParseV1ResponseBody$zodSchema),
+  ]);

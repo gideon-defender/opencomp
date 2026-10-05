@@ -4,6 +4,10 @@
 
 import * as z from "zod";
 import { ClosedEnum } from "../types/enums.js";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 export const RisksControllerGetRiskByIdV1Category = {
   Customer: "customer",
@@ -195,57 +199,6 @@ export const RisksControllerGetRiskByIdV1Request$zodSchema: z.ZodType<
 });
 
 /**
- * Internal server error
- */
-export type RisksControllerGetRiskByIdV1InternalServerErrorResponseBody = {
-  message?: string | undefined;
-};
-
-export const RisksControllerGetRiskByIdV1InternalServerErrorResponseBody$zodSchema:
-  z.ZodType<RisksControllerGetRiskByIdV1InternalServerErrorResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Internal server error");
-
-/**
- * Risk not found
- */
-export type RisksControllerGetRiskByIdV1NotFoundResponseBody = {
-  message?: string | undefined;
-};
-
-export const RisksControllerGetRiskByIdV1NotFoundResponseBody$zodSchema:
-  z.ZodType<RisksControllerGetRiskByIdV1NotFoundResponseBody> = z.object({
-    message: z.string().optional(),
-  }).describe("Risk not found");
-
-/**
- * Forbidden - User does not have permission to access this risk
- */
-export type RisksControllerGetRiskByIdV1ForbiddenResponseBody = {
-  message?: string | undefined;
-};
-
-export const RisksControllerGetRiskByIdV1ForbiddenResponseBody$zodSchema:
-  z.ZodType<RisksControllerGetRiskByIdV1ForbiddenResponseBody> = z.object({
-    message: z.string().optional(),
-  }).describe("Forbidden - User does not have permission to access this risk");
-
-/**
- * Unauthorized - Invalid authentication or insufficient permissions
- */
-export type RisksControllerGetRiskByIdV1UnauthorizedResponseBody = {
-  message?: string | undefined;
-};
-
-export const RisksControllerGetRiskByIdV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<RisksControllerGetRiskByIdV1UnauthorizedResponseBody> = z.object({
-    message: z.string().optional(),
-  }).describe(
-    "Unauthorized - Invalid authentication or insufficient permissions",
-  );
-
-/**
  * User information (only for session auth)
  */
 export type RisksControllerGetRiskByIdV1AuthenticatedUser = {
@@ -324,20 +277,12 @@ export const RisksControllerGetRiskByIdV1ResponseBody$zodSchema: z.ZodType<
 }).describe("Risk retrieved successfully");
 
 export type RisksControllerGetRiskByIdV1Response =
-  | RisksControllerGetRiskByIdV1ResponseBody
-  | RisksControllerGetRiskByIdV1UnauthorizedResponseBody
-  | RisksControllerGetRiskByIdV1ForbiddenResponseBody
-  | RisksControllerGetRiskByIdV1NotFoundResponseBody
-  | RisksControllerGetRiskByIdV1InternalServerErrorResponseBody;
+  | ApiErrorResponseDto
+  | RisksControllerGetRiskByIdV1ResponseBody;
 
 export const RisksControllerGetRiskByIdV1Response$zodSchema: z.ZodType<
   RisksControllerGetRiskByIdV1Response
 > = z.union([
+  ApiErrorResponseDto$zodSchema,
   z.lazy(() => RisksControllerGetRiskByIdV1ResponseBody$zodSchema),
-  z.lazy(() => RisksControllerGetRiskByIdV1UnauthorizedResponseBody$zodSchema),
-  z.lazy(() => RisksControllerGetRiskByIdV1ForbiddenResponseBody$zodSchema),
-  z.lazy(() => RisksControllerGetRiskByIdV1NotFoundResponseBody$zodSchema),
-  z.lazy(() =>
-    RisksControllerGetRiskByIdV1InternalServerErrorResponseBody$zodSchema
-  ),
 ]);

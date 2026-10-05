@@ -30,8 +30,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Publishes a draft policy version, making it the active/current version of the policy. Pass the versionId of the draft you want to publish — for example one created via create-policy-version and then edited.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function policiesPoliciesControllerPublishPolicyVersionV1(
   client$: CompAiCore,
@@ -107,7 +105,7 @@ async function $do(
     ),
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

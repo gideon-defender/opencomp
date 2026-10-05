@@ -4,6 +4,10 @@
 
 import * as z from "zod";
 import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
   PeopleResponseDto,
   PeopleResponseDto$zodSchema,
 } from "./peopleresponsedto.js";
@@ -24,90 +28,13 @@ export const PeopleControllerUpdateMemberV1Request$zodSchema: z.ZodType<
   id: z.string().describe("Member ID"),
 });
 
-/**
- * Internal server error
- */
-export type PeopleControllerUpdateMemberV1InternalServerErrorResponseBody = {
-  message?: string | undefined;
-};
-
-export const PeopleControllerUpdateMemberV1InternalServerErrorResponseBody$zodSchema:
-  z.ZodType<PeopleControllerUpdateMemberV1InternalServerErrorResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Internal server error");
-
-/**
- * Conflict - Login email already used by another account, or the member belongs to other organizations
- */
-export type PeopleControllerUpdateMemberV1ConflictResponseBody = {
-  message?: string | undefined;
-};
-
-export const PeopleControllerUpdateMemberV1ConflictResponseBody$zodSchema:
-  z.ZodType<PeopleControllerUpdateMemberV1ConflictResponseBody> = z.object({
-    message: z.string().optional(),
-  }).describe(
-    "Conflict - Login email already used by another account, or the member belongs to other organizations",
-  );
-
-/**
- * Organization, member, or user not found
- */
-export type PeopleControllerUpdateMemberV1NotFoundResponseBody = {
-  message?: string | undefined;
-};
-
-export const PeopleControllerUpdateMemberV1NotFoundResponseBody$zodSchema:
-  z.ZodType<PeopleControllerUpdateMemberV1NotFoundResponseBody> = z.object({
-    message: z.string().optional(),
-  }).describe("Organization, member, or user not found");
-
-/**
- * Unauthorized - Invalid authentication or insufficient permissions
- */
-export type PeopleControllerUpdateMemberV1UnauthorizedResponseBody = {
-  message?: string | undefined;
-};
-
-export const PeopleControllerUpdateMemberV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<PeopleControllerUpdateMemberV1UnauthorizedResponseBody> = z.object({
-    message: z.string().optional(),
-  }).describe(
-    "Unauthorized - Invalid authentication or insufficient permissions",
-  );
-
-/**
- * Bad Request - Invalid update data or user conflict
- */
-export type PeopleControllerUpdateMemberV1BadRequestResponseBody = {
-  message?: string | undefined;
-};
-
-export const PeopleControllerUpdateMemberV1BadRequestResponseBody$zodSchema:
-  z.ZodType<PeopleControllerUpdateMemberV1BadRequestResponseBody> = z.object({
-    message: z.string().optional(),
-  }).describe("Bad Request - Invalid update data or user conflict");
-
 export type PeopleControllerUpdateMemberV1Response =
   | PeopleResponseDto
-  | PeopleControllerUpdateMemberV1BadRequestResponseBody
-  | PeopleControllerUpdateMemberV1UnauthorizedResponseBody
-  | PeopleControllerUpdateMemberV1NotFoundResponseBody
-  | PeopleControllerUpdateMemberV1ConflictResponseBody
-  | PeopleControllerUpdateMemberV1InternalServerErrorResponseBody;
+  | ApiErrorResponseDto;
 
 export const PeopleControllerUpdateMemberV1Response$zodSchema: z.ZodType<
   PeopleControllerUpdateMemberV1Response
 > = z.union([
   PeopleResponseDto$zodSchema,
-  z.lazy(() => PeopleControllerUpdateMemberV1BadRequestResponseBody$zodSchema),
-  z.lazy(() =>
-    PeopleControllerUpdateMemberV1UnauthorizedResponseBody$zodSchema
-  ),
-  z.lazy(() => PeopleControllerUpdateMemberV1NotFoundResponseBody$zodSchema),
-  z.lazy(() => PeopleControllerUpdateMemberV1ConflictResponseBody$zodSchema),
-  z.lazy(() =>
-    PeopleControllerUpdateMemberV1InternalServerErrorResponseBody$zodSchema
-  ),
+  ApiErrorResponseDto$zodSchema,
 ]);

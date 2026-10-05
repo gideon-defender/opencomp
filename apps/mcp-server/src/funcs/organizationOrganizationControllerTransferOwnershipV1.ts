@@ -30,8 +30,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Transfers organization ownership to another member. The current owner will become an admin and keep all other roles. The new owner will receive the owner role while keeping their existing roles. Only the current organization owner can.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function organizationOrganizationControllerTransferOwnershipV1(
   client$: CompAiCore,
@@ -93,7 +91,7 @@ async function $do(
     Accept: "application/json",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

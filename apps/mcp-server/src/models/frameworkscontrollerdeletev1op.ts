@@ -4,14 +4,6 @@
 
 import * as z from "zod";
 
-export type FrameworksControllerDeleteV1Security = { bearer: string };
-
-export const FrameworksControllerDeleteV1Security$zodSchema: z.ZodType<
-  FrameworksControllerDeleteV1Security
-> = z.object({
-  bearer: z.string().describe("API Key"),
-});
-
 export type FrameworksControllerDeleteV1Request = { id: string };
 
 export const FrameworksControllerDeleteV1Request$zodSchema: z.ZodType<

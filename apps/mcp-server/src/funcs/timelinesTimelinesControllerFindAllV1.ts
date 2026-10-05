@@ -5,7 +5,7 @@
 import { CompAiCore } from "../core.js";
 import { compactMap } from "../lib/primitives.js";
 import { RequestOptions } from "../lib/sdks.js";
-import { resolveSecurity } from "../lib/security.js";
+import { extractSecurity, resolveGlobalSecurity } from "../lib/security.js";
 import { pathToFunc } from "../lib/url.js";
 import { APIError } from "../models/errors/apierror.js";
 import {
@@ -16,7 +16,6 @@ import {
   UnexpectedClientError,
 } from "../models/errors/httpclienterrors.js";
 import { SDKValidationError } from "../models/errors/sdkvalidationerror.js";
-import { TimelinesControllerFindAllV1Security } from "../models/timelinescontrollerfindallv1op.js";
 import { APICall, APIPromise } from "../types/async.js";
 import { Result } from "../types/fp.js";
 
@@ -28,7 +27,6 @@ import { Result } from "../types/fp.js";
  */
 export function timelinesTimelinesControllerFindAllV1(
   client$: CompAiCore,
-  security: TimelinesControllerFindAllV1Security,
   options?: RequestOptions,
 ): APIPromise<
   Result<
@@ -44,14 +42,12 @@ export function timelinesTimelinesControllerFindAllV1(
 > {
   return new APIPromise($do(
     client$,
-    security,
     options,
   ));
 }
 
 async function $do(
   client$: CompAiCore,
-  security: TimelinesControllerFindAllV1Security,
   options?: RequestOptions,
 ): Promise<
   [
@@ -71,18 +67,10 @@ async function $do(
   const path$ = pathToFunc("/v1/timelines")();
 
   const headers$ = new Headers(compactMap({
-    Accept: "*/*",
+    Accept: "application/json",
   }));
-
-  const requestSecurity = resolveSecurity(
-    [
-      {
-        fieldName: "Authorization",
-        type: "apiKey:header",
-        value: security?.bearer,
-      },
-    ],
-  );
+  const securityInput = await extractSecurity(client$._options.security);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,
@@ -90,7 +78,7 @@ async function $do(
     operationID: "TimelinesController_findAll_v1",
     oAuth2Scopes: null,
     resolvedSecurity: requestSecurity,
-    securitySource: security,
+    securitySource: client$._options.security,
     retryConfig: options?.retries
       || client$._options.retryConfig
       || { strategy: "none" },

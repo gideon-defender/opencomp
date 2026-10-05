@@ -4,6 +4,10 @@
 
 import * as z from "zod";
 import { ClosedEnum } from "../types/enums.js";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 /**
  * Residual likelihood frozen at acceptance
@@ -117,58 +121,6 @@ export const RiskAcceptancesControllerListRiskAcceptancesV1Request$zodSchema:
     id: z.string().describe("Risk ID"),
   });
 
-/**
- * Internal server error
- */
-export type RiskAcceptancesControllerListRiskAcceptancesV1InternalServerErrorResponseBody =
-  { message?: string | undefined };
-
-export const RiskAcceptancesControllerListRiskAcceptancesV1InternalServerErrorResponseBody$zodSchema:
-  z.ZodType<
-    RiskAcceptancesControllerListRiskAcceptancesV1InternalServerErrorResponseBody
-  > = z.object({
-    message: z.string().optional(),
-  }).describe("Internal server error");
-
-/**
- * Risk not found
- */
-export type RiskAcceptancesControllerListRiskAcceptancesV1NotFoundResponseBody =
-  { message?: string | undefined };
-
-export const RiskAcceptancesControllerListRiskAcceptancesV1NotFoundResponseBody$zodSchema:
-  z.ZodType<
-    RiskAcceptancesControllerListRiskAcceptancesV1NotFoundResponseBody
-  > = z.object({
-    message: z.string().optional(),
-  }).describe("Risk not found");
-
-/**
- * Forbidden - User does not have permission to access this risk
- */
-export type RiskAcceptancesControllerListRiskAcceptancesV1ForbiddenResponseBody =
-  { message?: string | undefined };
-
-export const RiskAcceptancesControllerListRiskAcceptancesV1ForbiddenResponseBody$zodSchema:
-  z.ZodType<
-    RiskAcceptancesControllerListRiskAcceptancesV1ForbiddenResponseBody
-  > = z.object({
-    message: z.string().optional(),
-  }).describe("Forbidden - User does not have permission to access this risk");
-
-/**
- * Unauthorized - Invalid authentication
- */
-export type RiskAcceptancesControllerListRiskAcceptancesV1UnauthorizedResponseBody =
-  { message?: string | undefined };
-
-export const RiskAcceptancesControllerListRiskAcceptancesV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<
-    RiskAcceptancesControllerListRiskAcceptancesV1UnauthorizedResponseBody
-  > = z.object({
-    message: z.string().optional(),
-  }).describe("Unauthorized - Invalid authentication");
-
 export type RiskAcceptancesControllerListRiskAcceptancesV1Data = {
   id?: string | undefined;
   acceptedById?: string | null | undefined;
@@ -255,27 +207,13 @@ export const RiskAcceptancesControllerListRiskAcceptancesV1ResponseBody$zodSchem
     }).describe("Acceptance history retrieved successfully (newest first)");
 
 export type RiskAcceptancesControllerListRiskAcceptancesV1Response =
-  | RiskAcceptancesControllerListRiskAcceptancesV1ResponseBody
-  | RiskAcceptancesControllerListRiskAcceptancesV1UnauthorizedResponseBody
-  | RiskAcceptancesControllerListRiskAcceptancesV1ForbiddenResponseBody
-  | RiskAcceptancesControllerListRiskAcceptancesV1NotFoundResponseBody
-  | RiskAcceptancesControllerListRiskAcceptancesV1InternalServerErrorResponseBody;
+  | ApiErrorResponseDto
+  | RiskAcceptancesControllerListRiskAcceptancesV1ResponseBody;
 
 export const RiskAcceptancesControllerListRiskAcceptancesV1Response$zodSchema:
   z.ZodType<RiskAcceptancesControllerListRiskAcceptancesV1Response> = z.union([
+    ApiErrorResponseDto$zodSchema,
     z.lazy(() =>
       RiskAcceptancesControllerListRiskAcceptancesV1ResponseBody$zodSchema
-    ),
-    z.lazy(() =>
-      RiskAcceptancesControllerListRiskAcceptancesV1UnauthorizedResponseBody$zodSchema
-    ),
-    z.lazy(() =>
-      RiskAcceptancesControllerListRiskAcceptancesV1ForbiddenResponseBody$zodSchema
-    ),
-    z.lazy(() =>
-      RiskAcceptancesControllerListRiskAcceptancesV1NotFoundResponseBody$zodSchema
-    ),
-    z.lazy(() =>
-      RiskAcceptancesControllerListRiskAcceptancesV1InternalServerErrorResponseBody$zodSchema
     ),
   ]);

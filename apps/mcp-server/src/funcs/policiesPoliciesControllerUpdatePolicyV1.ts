@@ -30,8 +30,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Update compliance policy details or content while keeping policy workflows connected to controls, tasks, and approvals.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function policiesPoliciesControllerUpdatePolicyV1(
   client$: CompAiCore,
@@ -106,7 +104,7 @@ async function $do(
     ),
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

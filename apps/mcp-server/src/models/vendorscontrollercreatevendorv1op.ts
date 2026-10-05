@@ -4,6 +4,10 @@
 
 import * as z from "zod";
 import { ClosedEnum } from "../types/enums.js";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 export const VendorsControllerCreateVendorV1Category = {
   Cloud: "cloud",
@@ -143,47 +147,6 @@ export const VendorsControllerCreateVendorV1AuthType$zodSchema = z.enum([
 ]).describe("How the request was authenticated");
 
 /**
- * Internal server error
- */
-export type VendorsControllerCreateVendorV1InternalServerErrorResponseBody = {
-  message?: string | undefined;
-};
-
-export const VendorsControllerCreateVendorV1InternalServerErrorResponseBody$zodSchema:
-  z.ZodType<VendorsControllerCreateVendorV1InternalServerErrorResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Internal server error");
-
-/**
- * Organization not found
- */
-export type VendorsControllerCreateVendorV1NotFoundResponseBody = {
-  message?: string | undefined;
-};
-
-export const VendorsControllerCreateVendorV1NotFoundResponseBody$zodSchema:
-  z.ZodType<VendorsControllerCreateVendorV1NotFoundResponseBody> = z.object({
-    message: z.string().optional(),
-  }).describe("Organization not found");
-
-/**
- * Unauthorized - Invalid authentication or insufficient permissions
- */
-export type VendorsControllerCreateVendorV1UnauthorizedResponseBody = {
-  message?: string | undefined;
-};
-
-export const VendorsControllerCreateVendorV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<VendorsControllerCreateVendorV1UnauthorizedResponseBody> = z.object(
-    {
-      message: z.string().optional(),
-    },
-  ).describe(
-    "Unauthorized - Invalid authentication or insufficient permissions",
-  );
-
-/**
  * Bad request - Invalid input data
  */
 export type VendorsControllerCreateVendorV1BadRequestResponseBody = {
@@ -276,22 +239,14 @@ export const VendorsControllerCreateVendorV1ResponseBody$zodSchema: z.ZodType<
 }).describe("Vendor created successfully");
 
 export type VendorsControllerCreateVendorV1Response =
+  | ApiErrorResponseDto
   | VendorsControllerCreateVendorV1ResponseBody
-  | VendorsControllerCreateVendorV1BadRequestResponseBody
-  | VendorsControllerCreateVendorV1UnauthorizedResponseBody
-  | VendorsControllerCreateVendorV1NotFoundResponseBody
-  | VendorsControllerCreateVendorV1InternalServerErrorResponseBody;
+  | VendorsControllerCreateVendorV1BadRequestResponseBody;
 
 export const VendorsControllerCreateVendorV1Response$zodSchema: z.ZodType<
   VendorsControllerCreateVendorV1Response
 > = z.union([
+  ApiErrorResponseDto$zodSchema,
   z.lazy(() => VendorsControllerCreateVendorV1ResponseBody$zodSchema),
   z.lazy(() => VendorsControllerCreateVendorV1BadRequestResponseBody$zodSchema),
-  z.lazy(() =>
-    VendorsControllerCreateVendorV1UnauthorizedResponseBody$zodSchema
-  ),
-  z.lazy(() => VendorsControllerCreateVendorV1NotFoundResponseBody$zodSchema),
-  z.lazy(() =>
-    VendorsControllerCreateVendorV1InternalServerErrorResponseBody$zodSchema
-  ),
 ]);

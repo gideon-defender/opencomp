@@ -3,18 +3,32 @@
  */
 
 import * as z from "zod";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 /**
  * Save manual or generated answer
  */
-export type QuestionnaireControllerSaveAnswerV1Response = {
+export type QuestionnaireControllerSaveAnswerV1ResponseBody = {
   success?: boolean | undefined;
   error?: string | null | undefined;
 };
 
+export const QuestionnaireControllerSaveAnswerV1ResponseBody$zodSchema:
+  z.ZodType<QuestionnaireControllerSaveAnswerV1ResponseBody> = z.object({
+    error: z.string().nullable().optional(),
+    success: z.boolean().optional(),
+  }).describe("Save manual or generated answer");
+
+export type QuestionnaireControllerSaveAnswerV1Response =
+  | ApiErrorResponseDto
+  | QuestionnaireControllerSaveAnswerV1ResponseBody;
+
 export const QuestionnaireControllerSaveAnswerV1Response$zodSchema: z.ZodType<
   QuestionnaireControllerSaveAnswerV1Response
-> = z.object({
-  error: z.string().nullable().optional(),
-  success: z.boolean().optional(),
-}).describe("Save manual or generated answer");
+> = z.union([
+  ApiErrorResponseDto$zodSchema,
+  z.lazy(() => QuestionnaireControllerSaveAnswerV1ResponseBody$zodSchema),
+]);

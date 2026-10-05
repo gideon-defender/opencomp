@@ -20,13 +20,18 @@ import { ExportQuestionnaireDto } from "../models/exportquestionnairedto.js";
 import { APICall, APIPromise } from "../types/async.js";
 import { Result } from "../types/fp.js";
 
+export enum QuestionnaireControllerAutoAnswerAndExportV1AcceptEnum {
+  textCsvAccept = "text/csv",
+  applicationPdfAccept = "application/pdf",
+  applicationVndOpenxmlformatsOfficedocumentSpreadsheetmlSheetAccept =
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+}
+
 /**
  * Export generated questionnaire answers
  *
  * @remarks
  * Generate and export questionnaire answers from a submitted payload using approved organization evidence.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function questionnaireQuestionnaireControllerAutoAnswerAndExportV1(
   client$: CompAiCore,
@@ -54,7 +59,10 @@ export function questionnaireQuestionnaireControllerAutoAnswerAndExportV1(
 async function $do(
   client$: CompAiCore,
   _request: ExportQuestionnaireDto,
-  options?: RequestOptions,
+  options?: RequestOptions & {
+    acceptHeaderOverride?:
+      QuestionnaireControllerAutoAnswerAndExportV1AcceptEnum;
+  },
 ): Promise<
   [
     Result<
@@ -74,10 +82,11 @@ async function $do(
 
   const headers$ = new Headers(compactMap({
     "Content-Type": "application/json",
-    Accept: "*/*",
+    Accept: options?.acceptHeaderOverride
+      || "text/csv;q=1, application/pdf;q=0.7, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;q=0",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

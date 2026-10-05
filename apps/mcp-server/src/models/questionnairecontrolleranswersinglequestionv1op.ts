@@ -3,6 +3,10 @@
  */
 
 import * as z from "zod";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 export type QuestionnaireControllerAnswerSingleQuestionV1Source = {};
 
@@ -35,15 +39,28 @@ export const QuestionnaireControllerAnswerSingleQuestionV1Data$zodSchema:
 /**
  * Generated single answer result
  */
-export type QuestionnaireControllerAnswerSingleQuestionV1Response = {
+export type QuestionnaireControllerAnswerSingleQuestionV1ResponseBody = {
   success?: boolean | undefined;
   data?: QuestionnaireControllerAnswerSingleQuestionV1Data | undefined;
 };
 
+export const QuestionnaireControllerAnswerSingleQuestionV1ResponseBody$zodSchema:
+  z.ZodType<QuestionnaireControllerAnswerSingleQuestionV1ResponseBody> = z
+    .object({
+      data: z.lazy(() =>
+        QuestionnaireControllerAnswerSingleQuestionV1Data$zodSchema
+      ).optional(),
+      success: z.boolean().optional(),
+    }).describe("Generated single answer result");
+
+export type QuestionnaireControllerAnswerSingleQuestionV1Response =
+  | ApiErrorResponseDto
+  | QuestionnaireControllerAnswerSingleQuestionV1ResponseBody;
+
 export const QuestionnaireControllerAnswerSingleQuestionV1Response$zodSchema:
-  z.ZodType<QuestionnaireControllerAnswerSingleQuestionV1Response> = z.object({
-    data: z.lazy(() =>
-      QuestionnaireControllerAnswerSingleQuestionV1Data$zodSchema
-    ).optional(),
-    success: z.boolean().optional(),
-  }).describe("Generated single answer result");
+  z.ZodType<QuestionnaireControllerAnswerSingleQuestionV1Response> = z.union([
+    ApiErrorResponseDto$zodSchema,
+    z.lazy(() =>
+      QuestionnaireControllerAnswerSingleQuestionV1ResponseBody$zodSchema
+    ),
+  ]);

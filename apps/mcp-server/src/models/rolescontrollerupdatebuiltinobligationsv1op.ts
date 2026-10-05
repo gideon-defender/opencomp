@@ -4,6 +4,10 @@
 
 import * as z from "zod";
 import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
   UpdateBuiltInObligationsDto,
   UpdateBuiltInObligationsDto$zodSchema,
 } from "./updatebuiltinobligationsdto.js";
@@ -31,17 +35,29 @@ export const RolesControllerUpdateBuiltInObligationsV1Obligations$zodSchema:
 /**
  * Obligations updated
  */
-export type RolesControllerUpdateBuiltInObligationsV1Response = {
+export type RolesControllerUpdateBuiltInObligationsV1ResponseBody = {
   name?: string | undefined;
   obligations?:
     | RolesControllerUpdateBuiltInObligationsV1Obligations
     | undefined;
 };
 
-export const RolesControllerUpdateBuiltInObligationsV1Response$zodSchema:
-  z.ZodType<RolesControllerUpdateBuiltInObligationsV1Response> = z.object({
+export const RolesControllerUpdateBuiltInObligationsV1ResponseBody$zodSchema:
+  z.ZodType<RolesControllerUpdateBuiltInObligationsV1ResponseBody> = z.object({
     name: z.string().optional(),
     obligations: z.lazy(() =>
       RolesControllerUpdateBuiltInObligationsV1Obligations$zodSchema
     ).optional(),
   }).describe("Obligations updated");
+
+export type RolesControllerUpdateBuiltInObligationsV1Response =
+  | ApiErrorResponseDto
+  | RolesControllerUpdateBuiltInObligationsV1ResponseBody;
+
+export const RolesControllerUpdateBuiltInObligationsV1Response$zodSchema:
+  z.ZodType<RolesControllerUpdateBuiltInObligationsV1Response> = z.union([
+    ApiErrorResponseDto$zodSchema,
+    z.lazy(() =>
+      RolesControllerUpdateBuiltInObligationsV1ResponseBody$zodSchema
+    ),
+  ]);

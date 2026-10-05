@@ -24,8 +24,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Revoke an organization API key when an integration is retired, credentials rotate, or access should be removed.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function organizationOrganizationControllerRevokeApiKeyV1(
   client$: CompAiCore,
@@ -69,10 +67,10 @@ async function $do(
   const path$ = pathToFunc("/v1/organization/api-keys/revoke")();
 
   const headers$ = new Headers(compactMap({
-    Accept: "*/*",
+    Accept: "application/json",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

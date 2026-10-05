@@ -4,6 +4,10 @@
 
 import * as z from "zod";
 import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
   PolicyResponseDto,
   PolicyResponseDto$zodSchema,
 } from "./policyresponsedto.js";
@@ -28,60 +32,13 @@ export const PoliciesControllerUpdatePolicyV1Request$zodSchema: z.ZodType<
   ).optional(),
 });
 
-/**
- * Policy not found
- */
-export type PoliciesControllerUpdatePolicyV1NotFoundResponseBody = {
-  message?: string | undefined;
-};
-
-export const PoliciesControllerUpdatePolicyV1NotFoundResponseBody$zodSchema:
-  z.ZodType<PoliciesControllerUpdatePolicyV1NotFoundResponseBody> = z.object({
-    message: z.string().optional(),
-  }).describe("Policy not found");
-
-/**
- * Unauthorized - Invalid authentication or insufficient permissions
- */
-export type PoliciesControllerUpdatePolicyV1UnauthorizedResponseBody = {
-  message?: string | undefined;
-};
-
-export const PoliciesControllerUpdatePolicyV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<PoliciesControllerUpdatePolicyV1UnauthorizedResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe(
-      "Unauthorized - Invalid authentication or insufficient permissions",
-    );
-
-/**
- * Bad Request - Invalid update data
- */
-export type PoliciesControllerUpdatePolicyV1BadRequestResponseBody = {
-  message?: string | undefined;
-};
-
-export const PoliciesControllerUpdatePolicyV1BadRequestResponseBody$zodSchema:
-  z.ZodType<PoliciesControllerUpdatePolicyV1BadRequestResponseBody> = z.object({
-    message: z.string().optional(),
-  }).describe("Bad Request - Invalid update data");
-
 export type PoliciesControllerUpdatePolicyV1Response =
   | PolicyResponseDto
-  | PoliciesControllerUpdatePolicyV1BadRequestResponseBody
-  | PoliciesControllerUpdatePolicyV1UnauthorizedResponseBody
-  | PoliciesControllerUpdatePolicyV1NotFoundResponseBody;
+  | ApiErrorResponseDto;
 
 export const PoliciesControllerUpdatePolicyV1Response$zodSchema: z.ZodType<
   PoliciesControllerUpdatePolicyV1Response
 > = z.union([
   PolicyResponseDto$zodSchema,
-  z.lazy(() =>
-    PoliciesControllerUpdatePolicyV1BadRequestResponseBody$zodSchema
-  ),
-  z.lazy(() =>
-    PoliciesControllerUpdatePolicyV1UnauthorizedResponseBody$zodSchema
-  ),
-  z.lazy(() => PoliciesControllerUpdatePolicyV1NotFoundResponseBody$zodSchema),
+  ApiErrorResponseDto$zodSchema,
 ]);

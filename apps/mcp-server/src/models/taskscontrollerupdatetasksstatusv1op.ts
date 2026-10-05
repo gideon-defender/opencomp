@@ -4,6 +4,10 @@
 
 import * as z from "zod";
 import { ClosedEnum } from "../types/enums.js";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 export const TasksControllerUpdateTasksStatusV1Status = {
   Todo: "todo",
@@ -49,12 +53,22 @@ export const TasksControllerUpdateTasksStatusV1Request$zodSchema: z.ZodType<
 /**
  * Tasks updated successfully
  */
-export type TasksControllerUpdateTasksStatusV1Response = {
+export type TasksControllerUpdateTasksStatusV1ResponseBody = {
   updatedCount?: number | undefined;
 };
 
+export const TasksControllerUpdateTasksStatusV1ResponseBody$zodSchema:
+  z.ZodType<TasksControllerUpdateTasksStatusV1ResponseBody> = z.object({
+    updatedCount: z.number().optional(),
+  }).describe("Tasks updated successfully");
+
+export type TasksControllerUpdateTasksStatusV1Response =
+  | ApiErrorResponseDto
+  | TasksControllerUpdateTasksStatusV1ResponseBody;
+
 export const TasksControllerUpdateTasksStatusV1Response$zodSchema: z.ZodType<
   TasksControllerUpdateTasksStatusV1Response
-> = z.object({
-  updatedCount: z.number().optional(),
-}).describe("Tasks updated successfully");
+> = z.union([
+  ApiErrorResponseDto$zodSchema,
+  z.lazy(() => TasksControllerUpdateTasksStatusV1ResponseBody$zodSchema),
+]);

@@ -4,6 +4,10 @@
 
 import * as z from "zod";
 import { ClosedEnum } from "../types/enums.js";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 /**
  * How the request was authenticated
@@ -92,47 +96,6 @@ export const OrganizationControllerUpdateOrganizationV1Request$zodSchema:
   }).describe("Organization update data");
 
 /**
- * Organization not found
- */
-export type OrganizationControllerUpdateOrganizationV1NotFoundResponseBody = {
-  message?: string | undefined;
-};
-
-export const OrganizationControllerUpdateOrganizationV1NotFoundResponseBody$zodSchema:
-  z.ZodType<OrganizationControllerUpdateOrganizationV1NotFoundResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Organization not found");
-
-/**
- * Unauthorized - Invalid authentication or insufficient permissions
- */
-export type OrganizationControllerUpdateOrganizationV1UnauthorizedResponseBody =
-  { message?: string | undefined };
-
-export const OrganizationControllerUpdateOrganizationV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<
-    OrganizationControllerUpdateOrganizationV1UnauthorizedResponseBody
-  > = z.object({
-    message: z.string().optional(),
-  }).describe(
-    "Unauthorized - Invalid authentication or insufficient permissions",
-  );
-
-/**
- * Bad Request - Invalid update data
- */
-export type OrganizationControllerUpdateOrganizationV1BadRequestResponseBody = {
-  message?: string | undefined;
-};
-
-export const OrganizationControllerUpdateOrganizationV1BadRequestResponseBody$zodSchema:
-  z.ZodType<OrganizationControllerUpdateOrganizationV1BadRequestResponseBody> =
-    z.object({
-      message: z.string().optional(),
-    }).describe("Bad Request - Invalid update data");
-
-/**
  * Organization updated successfully
  */
 export type OrganizationControllerUpdateOrganizationV1ResponseBody = {
@@ -186,23 +149,13 @@ export const OrganizationControllerUpdateOrganizationV1ResponseBody$zodSchema:
   }).describe("Organization updated successfully");
 
 export type OrganizationControllerUpdateOrganizationV1Response =
-  | OrganizationControllerUpdateOrganizationV1ResponseBody
-  | OrganizationControllerUpdateOrganizationV1BadRequestResponseBody
-  | OrganizationControllerUpdateOrganizationV1UnauthorizedResponseBody
-  | OrganizationControllerUpdateOrganizationV1NotFoundResponseBody;
+  | ApiErrorResponseDto
+  | OrganizationControllerUpdateOrganizationV1ResponseBody;
 
 export const OrganizationControllerUpdateOrganizationV1Response$zodSchema:
   z.ZodType<OrganizationControllerUpdateOrganizationV1Response> = z.union([
+    ApiErrorResponseDto$zodSchema,
     z.lazy(() =>
       OrganizationControllerUpdateOrganizationV1ResponseBody$zodSchema
-    ),
-    z.lazy(() =>
-      OrganizationControllerUpdateOrganizationV1BadRequestResponseBody$zodSchema
-    ),
-    z.lazy(() =>
-      OrganizationControllerUpdateOrganizationV1UnauthorizedResponseBody$zodSchema
-    ),
-    z.lazy(() =>
-      OrganizationControllerUpdateOrganizationV1NotFoundResponseBody$zodSchema
     ),
   ]);

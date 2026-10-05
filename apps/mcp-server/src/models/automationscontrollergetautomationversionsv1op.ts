@@ -3,6 +3,10 @@
  */
 
 import * as z from "zod";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 export type AutomationsControllerGetAutomationVersionsV1Request = {
   taskId: string;
@@ -41,19 +45,32 @@ export const AutomationsControllerGetAutomationVersionsV1Version$zodSchema:
 /**
  * Versions retrieved successfully
  */
-export type AutomationsControllerGetAutomationVersionsV1Response = {
+export type AutomationsControllerGetAutomationVersionsV1ResponseBody = {
   success?: boolean | undefined;
   versions?:
     | Array<AutomationsControllerGetAutomationVersionsV1Version>
     | undefined;
 };
 
+export const AutomationsControllerGetAutomationVersionsV1ResponseBody$zodSchema:
+  z.ZodType<AutomationsControllerGetAutomationVersionsV1ResponseBody> = z
+    .object({
+      success: z.boolean().optional(),
+      versions: z.array(
+        z.lazy(() =>
+          AutomationsControllerGetAutomationVersionsV1Version$zodSchema
+        ),
+      ).optional(),
+    }).describe("Versions retrieved successfully");
+
+export type AutomationsControllerGetAutomationVersionsV1Response =
+  | ApiErrorResponseDto
+  | AutomationsControllerGetAutomationVersionsV1ResponseBody;
+
 export const AutomationsControllerGetAutomationVersionsV1Response$zodSchema:
-  z.ZodType<AutomationsControllerGetAutomationVersionsV1Response> = z.object({
-    success: z.boolean().optional(),
-    versions: z.array(
-      z.lazy(() =>
-        AutomationsControllerGetAutomationVersionsV1Version$zodSchema
-      ),
-    ).optional(),
-  }).describe("Versions retrieved successfully");
+  z.ZodType<AutomationsControllerGetAutomationVersionsV1Response> = z.union([
+    ApiErrorResponseDto$zodSchema,
+    z.lazy(() =>
+      AutomationsControllerGetAutomationVersionsV1ResponseBody$zodSchema
+    ),
+  ]);

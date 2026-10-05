@@ -30,8 +30,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Marks a single vendor's access for a departing member as revoked, optionally attaching evidence and notes, as part of offboarding access removal.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function offboardingChecklistOffboardingChecklistControllerRevokeVendorAccessV1(
   client$: CompAiCore,
@@ -106,10 +104,10 @@ async function $do(
   );
 
   const headers$ = new Headers(compactMap({
-    Accept: "*/*",
+    Accept: "application/json",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

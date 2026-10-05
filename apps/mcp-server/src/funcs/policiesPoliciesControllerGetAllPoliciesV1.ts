@@ -30,8 +30,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * List compliance policies used for SOC 2, ISO 27001, HIPAA, and GDPR evidence. Active policies are returned by default; use includeArchived=true to include archived rows and excludeContent=true when you only need policy metadata.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function policiesPoliciesControllerGetAllPoliciesV1(
   client$: CompAiCore,
@@ -103,7 +101,7 @@ async function $do(
     ),
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

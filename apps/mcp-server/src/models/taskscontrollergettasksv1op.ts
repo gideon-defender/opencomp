@@ -4,6 +4,10 @@
 
 import * as z from "zod";
 import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
   TaskResponseDto,
   TaskResponseDto$zodSchema,
 } from "./taskresponsedto.js";
@@ -20,26 +24,13 @@ export const TasksControllerGetTasksV1Request$zodSchema: z.ZodType<
   ).optional(),
 });
 
-/**
- * Unauthorized - Invalid authentication
- */
-export type TasksControllerGetTasksV1ResponseBody = {
-  message?: string | undefined;
-};
-
-export const TasksControllerGetTasksV1ResponseBody$zodSchema: z.ZodType<
-  TasksControllerGetTasksV1ResponseBody
-> = z.object({
-  message: z.string().optional(),
-}).describe("Unauthorized - Invalid authentication");
-
 export type TasksControllerGetTasksV1Response =
-  | Array<TaskResponseDto>
-  | TasksControllerGetTasksV1ResponseBody;
+  | ApiErrorResponseDto
+  | Array<TaskResponseDto>;
 
 export const TasksControllerGetTasksV1Response$zodSchema: z.ZodType<
   TasksControllerGetTasksV1Response
 > = z.union([
+  ApiErrorResponseDto$zodSchema,
   z.array(TaskResponseDto$zodSchema).describe("Tasks retrieved successfully"),
-  z.lazy(() => TasksControllerGetTasksV1ResponseBody$zodSchema),
 ]);

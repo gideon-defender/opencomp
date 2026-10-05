@@ -25,8 +25,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Create a new SOA document in OpenComp. Create, auto-fill, review, approve, and export ISO 27001 Statement of Applicability documents.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function soaSOAControllerCreateDocumentV1(
   client$: CompAiCore,
@@ -74,10 +72,10 @@ async function $do(
 
   const headers$ = new Headers(compactMap({
     "Content-Type": "application/json",
-    Accept: "*/*",
+    Accept: "application/json",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

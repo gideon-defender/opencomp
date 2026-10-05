@@ -4,16 +4,37 @@
 
 import * as z from "zod";
 import * as b64$ from "../lib/base64.js";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+
+export type DeviceAgentControllerDownloadWindowsAgentV1ResponseResult =
+  | ApiErrorResponseDto
+  | Uint8Array
+  | string;
+
+export const DeviceAgentControllerDownloadWindowsAgentV1ResponseResult$zodSchema:
+  z.ZodType<DeviceAgentControllerDownloadWindowsAgentV1ResponseResult> = z
+    .union([
+      ApiErrorResponseDto$zodSchema,
+      z.string().describe("Base64-encoded binary content").transform(
+        b64$.bytesFromBase64,
+      ),
+    ]);
 
 export type DeviceAgentControllerDownloadWindowsAgentV1Response = {
   Headers: { [k: string]: Array<string> };
-  Result: Uint8Array | string;
+  Result: ApiErrorResponseDto | Uint8Array | string;
 };
 
 export const DeviceAgentControllerDownloadWindowsAgentV1Response$zodSchema:
   z.ZodType<DeviceAgentControllerDownloadWindowsAgentV1Response> = z.object({
     Headers: z.record(z.string(), z.array(z.string())).default({}),
-    Result: z.string().describe("Base64-encoded binary content").transform(
-      b64$.bytesFromBase64,
-    ),
+    Result: z.union([
+      ApiErrorResponseDto$zodSchema,
+      z.string().describe("Base64-encoded binary content").transform(
+        b64$.bytesFromBase64,
+      ),
+    ]),
   });

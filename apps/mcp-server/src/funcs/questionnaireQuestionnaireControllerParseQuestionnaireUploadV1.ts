@@ -32,13 +32,18 @@ import { isBlobLike } from "../types/blobs.js";
 import { Result } from "../types/fp.js";
 import { isReadableStream } from "../types/streams.js";
 
+export enum QuestionnaireControllerParseQuestionnaireUploadV1AcceptEnum {
+  textCsvAccept = "text/csv",
+  applicationPdfAccept = "application/pdf",
+  applicationVndOpenxmlformatsOfficedocumentSpreadsheetmlSheetAccept =
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+}
+
 /**
  * Auto-answer uploaded questionnaire
  *
  * @remarks
  * Upload a questionnaire file and generate answer exports from approved organization evidence in PDF, CSV, or XLSX format.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function questionnaireQuestionnaireControllerParseQuestionnaireUploadV1(
   client$: CompAiCore,
@@ -66,7 +71,10 @@ export function questionnaireQuestionnaireControllerParseQuestionnaireUploadV1(
 async function $do(
   client$: CompAiCore,
   request: QuestionnaireControllerParseQuestionnaireUploadV1Request,
-  options?: RequestOptions,
+  options?: RequestOptions & {
+    acceptHeaderOverride?:
+      QuestionnaireControllerParseQuestionnaireUploadV1AcceptEnum;
+  },
 ): Promise<
   [
     Result<
@@ -130,10 +138,11 @@ async function $do(
   const path$ = pathToFunc("/v1/questionnaire/parse/upload")();
 
   const headers$ = new Headers(compactMap({
-    Accept: "*/*",
+    Accept: options?.acceptHeaderOverride
+      || "text/csv;q=1, application/pdf;q=0.7, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;q=0",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

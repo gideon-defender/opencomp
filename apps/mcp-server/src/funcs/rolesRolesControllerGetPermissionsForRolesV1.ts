@@ -30,8 +30,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Returns the merged permissions for the given custom role names. Used by the frontend to resolve effective permissions for users with custom roles.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function rolesRolesControllerGetPermissionsForRolesV1(
   client$: CompAiCore,
@@ -95,7 +93,7 @@ async function $do(
     Accept: "application/json",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

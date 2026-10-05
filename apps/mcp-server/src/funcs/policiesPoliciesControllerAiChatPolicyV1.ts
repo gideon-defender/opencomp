@@ -25,13 +25,16 @@ import {
 import { APICall, APIPromise } from "../types/async.js";
 import { Result } from "../types/fp.js";
 
+export enum PoliciesControllerAiChatPolicyV1AcceptEnum {
+  applicationJsonAccept = "application/json",
+  textEventStreamAccept = "text/event-stream",
+}
+
 /**
  * Chat with AI about a policy
  *
  * @remarks
  * Ask policy-specific questions and request draft improvements while preserving human review before policy changes are applied.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function policiesPoliciesControllerAiChatPolicyV1(
   client$: CompAiCore,
@@ -59,7 +62,9 @@ export function policiesPoliciesControllerAiChatPolicyV1(
 async function $do(
   client$: CompAiCore,
   request: PoliciesControllerAiChatPolicyV1Request,
-  options?: RequestOptions,
+  options?: RequestOptions & {
+    acceptHeaderOverride?: PoliciesControllerAiChatPolicyV1AcceptEnum;
+  },
 ): Promise<
   [
     Result<
@@ -98,7 +103,8 @@ async function $do(
 
   const headers$ = new Headers(compactMap({
     "Content-Type": "application/json",
-    Accept: "text/event-stream",
+    Accept: options?.acceptHeaderOverride
+      || "application/json;q=1, text/event-stream;q=0",
     "X-Organization-Id": encodeSimple(
       "X-Organization-Id",
       payload$.xOrganizationId,
@@ -106,7 +112,7 @@ async function $do(
     ),
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

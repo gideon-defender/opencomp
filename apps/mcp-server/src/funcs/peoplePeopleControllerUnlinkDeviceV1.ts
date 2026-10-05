@@ -30,8 +30,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Resets the fleetDmLabelId for a member, effectively unlinking their device from FleetDM. This will disconnect the device from the organization.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function peoplePeopleControllerUnlinkDeviceV1(
   client$: CompAiCore,
@@ -100,7 +98,7 @@ async function $do(
     Accept: "application/json",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

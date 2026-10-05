@@ -3,6 +3,10 @@
  */
 
 import * as z from "zod";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 export type TrustAccessControllerGetPublicSecurityQuestionnaireV1Request = {
   friendlyUrl: string;
@@ -19,12 +23,24 @@ export const TrustAccessControllerGetPublicSecurityQuestionnaireV1Request$zodSch
 /**
  * Security Questionnaire visibility retrieved successfully
  */
-export type TrustAccessControllerGetPublicSecurityQuestionnaireV1Response = {
-  enabled?: boolean | undefined;
-};
+export type TrustAccessControllerGetPublicSecurityQuestionnaireV1ResponseBody =
+  { enabled?: boolean | undefined };
+
+export const TrustAccessControllerGetPublicSecurityQuestionnaireV1ResponseBody$zodSchema:
+  z.ZodType<TrustAccessControllerGetPublicSecurityQuestionnaireV1ResponseBody> =
+    z.object({
+      enabled: z.boolean().optional(),
+    }).describe("Security Questionnaire visibility retrieved successfully");
+
+export type TrustAccessControllerGetPublicSecurityQuestionnaireV1Response =
+  | ApiErrorResponseDto
+  | TrustAccessControllerGetPublicSecurityQuestionnaireV1ResponseBody;
 
 export const TrustAccessControllerGetPublicSecurityQuestionnaireV1Response$zodSchema:
   z.ZodType<TrustAccessControllerGetPublicSecurityQuestionnaireV1Response> = z
-    .object({
-      enabled: z.boolean().optional(),
-    }).describe("Security Questionnaire visibility retrieved successfully");
+    .union([
+      ApiErrorResponseDto$zodSchema,
+      z.lazy(() =>
+        TrustAccessControllerGetPublicSecurityQuestionnaireV1ResponseBody$zodSchema
+      ),
+    ]);

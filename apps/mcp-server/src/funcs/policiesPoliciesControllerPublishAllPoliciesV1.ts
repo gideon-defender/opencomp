@@ -30,8 +30,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Publish draft policies in bulk so approved policy content can power Trust Center sharing, questionnaire answers, and audit evidence.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function policiesPoliciesControllerPublishAllPoliciesV1(
   client$: CompAiCore,
@@ -91,7 +89,7 @@ async function $do(
   const path$ = pathToFunc("/v1/policies/publish-all")();
 
   const headers$ = new Headers(compactMap({
-    Accept: "*/*",
+    Accept: "application/json",
     "X-Organization-Id": encodeSimple(
       "X-Organization-Id",
       payload$?.xOrganizationId,
@@ -99,7 +97,7 @@ async function $do(
     ),
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

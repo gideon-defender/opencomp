@@ -3,6 +3,10 @@
  */
 
 import * as z from "zod";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 export type PoliciesControllerGetPolicyVersionsV1Request = {
   xOrganizationId?: string | undefined;
@@ -17,32 +21,6 @@ export const PoliciesControllerGetPolicyVersionsV1Request$zodSchema: z.ZodType<
     "Organization ID (required for session auth, optional for API key auth)",
   ).optional(),
 });
-
-/**
- * Resource not found
- */
-export type PoliciesControllerGetPolicyVersionsV1NotFoundResponseBody = {
-  message?: string | undefined;
-};
-
-export const PoliciesControllerGetPolicyVersionsV1NotFoundResponseBody$zodSchema:
-  z.ZodType<PoliciesControllerGetPolicyVersionsV1NotFoundResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Resource not found");
-
-/**
- * Unauthorized
- */
-export type PoliciesControllerGetPolicyVersionsV1UnauthorizedResponseBody = {
-  message?: string | undefined;
-};
-
-export const PoliciesControllerGetPolicyVersionsV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<PoliciesControllerGetPolicyVersionsV1UnauthorizedResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Unauthorized");
 
 export type PoliciesControllerGetPolicyVersionsV1Version = {};
 
@@ -69,18 +47,12 @@ export const PoliciesControllerGetPolicyVersionsV1ResponseBody$zodSchema:
   }).describe("Policy versions retrieved successfully");
 
 export type PoliciesControllerGetPolicyVersionsV1Response =
-  | PoliciesControllerGetPolicyVersionsV1ResponseBody
-  | PoliciesControllerGetPolicyVersionsV1UnauthorizedResponseBody
-  | PoliciesControllerGetPolicyVersionsV1NotFoundResponseBody;
+  | ApiErrorResponseDto
+  | PoliciesControllerGetPolicyVersionsV1ResponseBody;
 
 export const PoliciesControllerGetPolicyVersionsV1Response$zodSchema: z.ZodType<
   PoliciesControllerGetPolicyVersionsV1Response
 > = z.union([
+  ApiErrorResponseDto$zodSchema,
   z.lazy(() => PoliciesControllerGetPolicyVersionsV1ResponseBody$zodSchema),
-  z.lazy(() =>
-    PoliciesControllerGetPolicyVersionsV1UnauthorizedResponseBody$zodSchema
-  ),
-  z.lazy(() =>
-    PoliciesControllerGetPolicyVersionsV1NotFoundResponseBody$zodSchema
-  ),
 ]);

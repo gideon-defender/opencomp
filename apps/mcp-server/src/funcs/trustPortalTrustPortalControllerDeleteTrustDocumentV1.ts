@@ -30,8 +30,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Delete (deactivate) a trust portal document in OpenComp. Configure the live Trust Center, custom domain, public overview, FAQs, compliance resources, documents, links, and vendor disclosures.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function trustPortalTrustPortalControllerDeleteTrustDocumentV1(
   client$: CompAiCore,
@@ -102,7 +100,7 @@ async function $do(
     Accept: "application/json",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,
