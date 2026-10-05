@@ -26,6 +26,8 @@ import {
   AZURE_SYSTEM_PROMPT,
   buildAzureFixPlanPrompt,
 } from './azure-ai-remediation.prompt';
+import { withGcpAllowlistSection } from './gcp-remediation-prompt-allowlist';
+import type { GcpRemediationAssetClass } from '@gideon-defender/integration-platform';
 import { normalizeFixPlan } from './plan-normalizer';
 import {
   buildRemediationGrantScript,
@@ -543,10 +545,13 @@ Produce 3-8 ordered steps. Each step is a single concrete action the customer ca
 
   // ─── GCP Methods ──────────────────────────────────────────────────────
 
-  async generateGcpFixPlan(finding: FindingContext): Promise<GcpFixPlan> {
+  async generateGcpFixPlan(
+    finding: FindingContext,
+    opts?: { assetClass?: GcpRemediationAssetClass },
+  ): Promise<GcpFixPlan> {
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        let object = await this.requestGcpFixPlan(finding);
+        let object = await this.requestGcpFixPlan(finding, opts);
 
         // canAutoFix=true with zero fixSteps surfaces as "AI generated an
         // empty fix plan" and (with caching) a Retry that does nothing.
@@ -556,14 +561,14 @@ Produce 3-8 ordered steps. Each step is a single concrete action the customer ca
           this.logger.warn(
             `Empty GCP fix plan for ${finding.findingKey}; regenerating once`,
           );
-          const retry = await this.requestGcpFixPlan(finding);
+          const retry = await this.requestGcpFixPlan(finding, opts);
           // Prefer a retry that is usable OR correctly non-auto-fixable —
           // either beats returning the original empty canAutoFix=true plan.
           if (retry.fixSteps.length > 0 || !retry.canAutoFix) object = retry;
         }
 
         this.logger.log(
-          `GCP AI plan for ${finding.findingKey}: canAutoFix=${object.canAutoFix}, risk=${object.risk}`,
+          `GCP AI plan for ${finding.findingKey}: canAutoFix=${object.canAutoFix}, risk=${object.risk}, assetClass=${opts?.assetClass ?? 'unscoped'}`,
         );
         return object;
       } catch (err) {
@@ -580,13 +585,17 @@ Produce 3-8 ordered steps. Each step is a single concrete action the customer ca
   /** Single GCP fix-plan generation pass. */
   private async requestGcpFixPlan(
     finding: FindingContext,
+    opts?: { assetClass?: GcpRemediationAssetClass },
   ): Promise<GcpFixPlan> {
     // MODEL rejects `temperature` — do not re-add it.
     const { object } = await generateObject({
       model: MODEL,
       schema: gcpFixPlanSchema,
       system: GCP_SYSTEM_PROMPT,
-      prompt: buildGcpFixPlanPrompt(finding),
+      prompt: withGcpAllowlistSection(
+        buildGcpFixPlanPrompt(finding),
+        opts?.assetClass,
+      ),
     });
     return object;
   }
@@ -595,13 +604,15 @@ Produce 3-8 ordered steps. Each step is a single concrete action the customer ca
     finding: FindingContext;
     originalPlan: GcpFixPlan;
     realGcpState: Record<string, unknown>;
+    assetClass?: GcpRemediationAssetClass;
   }): Promise<GcpFixPlan> {
     try {
       const { object } = await generateObject({
         model: MODEL,
         schema: gcpFixPlanSchema,
         system: GCP_SYSTEM_PROMPT,
-        prompt: `You previously analyzed this GCP finding and generated read steps. Those read steps have been executed against the REAL GCP account. Here is the REAL data:
+        prompt: withGcpAllowlistSection(
+          `You previously analyzed this GCP finding and generated read steps. Those read steps have been executed against the REAL GCP account. Here is the REAL data:
 
 REAL GCP STATE (from executing read steps):
 ${JSON.stringify(params.realGcpState, null, 2)}
@@ -618,6 +629,8 @@ CRITICAL INSTRUCTIONS:
 6. The "body" field is sent directly as JSON to fetch(). If it contains strings like "enabled for all services" instead of actual JSON, the API will ignore it silently.
 
 Generate the complete fix plan with EXACT JSON values from the real GCP state.`,
+          params.assetClass,
+        ),
       });
 
       this.logger.log(`GCP AI refined plan for ${params.finding.findingKey}`);

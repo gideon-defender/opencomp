@@ -1117,3 +1117,76 @@ describe('AiRemediationService.suggestPermissionFix denylist', () => {
     expect(result.fixScript).not.toContain("'; touch");
   });
 });
+
+describe('AiRemediationService GCP allowlist prompt section', () => {
+  const generateObjectMock = generateObject as unknown as jest.Mock;
+
+  beforeEach(() => {
+    generateObjectMock.mockReset();
+  });
+
+  const finding = {
+    title: 'finding',
+    description: null,
+    severity: 'high',
+    resourceType: 'gcp-storage-bucket',
+    resourceId: 'my-bucket',
+    remediation: null,
+    findingKey: 'fk',
+    evidence: {},
+  };
+
+  it('GCP: appends the class allowlist section when assetClass is provided', async () => {
+    generateObjectMock.mockResolvedValueOnce({
+      object: { canAutoFix: true, fixSteps: [{ method: 'PATCH' }] },
+    });
+
+    const service = new AiRemediationService();
+    await service.generateGcpFixPlan(finding, { assetClass: 'Storage' });
+
+    const prompt = generateObjectMock.mock.calls[0][0].prompt as string;
+    expect(prompt).toContain('asset class: Storage');
+    expect(prompt).toContain('storage.googleapis.com/storage/v1/b/');
+  });
+
+  it('GCP: leaves the prompt unchanged without assetClass (backward compatible)', async () => {
+    generateObjectMock.mockResolvedValueOnce({
+      object: { canAutoFix: true, fixSteps: [{ method: 'PATCH' }] },
+    });
+
+    const service = new AiRemediationService();
+    await service.generateGcpFixPlan(finding);
+
+    const prompt = generateObjectMock.mock.calls[0][0].prompt as string;
+    expect(prompt).not.toContain('EXECUTION ALLOWLIST');
+  });
+
+  it('GCP: appends the class allowlist section when refining with assetClass', async () => {
+    generateObjectMock.mockResolvedValueOnce({
+      object: { canAutoFix: true, fixSteps: [{ method: 'PATCH' }] },
+    });
+
+    const service = new AiRemediationService();
+    await service.refineGcpFixPlan({
+      finding,
+      originalPlan: {
+        canAutoFix: true,
+        fixSteps: [],
+        readSteps: [],
+        rollbackSteps: [],
+        currentState: {},
+        proposedState: {},
+        description: 'plan',
+        risk: 'low',
+        rollbackSupported: false,
+        requiresAcknowledgment: false,
+      },
+      realGcpState: {},
+      assetClass: 'Storage',
+    });
+
+    const prompt = generateObjectMock.mock.calls[0][0].prompt as string;
+    expect(prompt).toContain('asset class: Storage');
+    expect(prompt).toContain('storage.googleapis.com/storage/v1/b/');
+  });
+});

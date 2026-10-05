@@ -200,14 +200,17 @@ export type {
 // GCP remediator roles + allowlist + setup script (Phase 1): shared by the
 // API (identity routing, validation) and the frontend (per-pair setup UI).
 export {
+  decodeGcpPathnameToFixedPoint,
   gcpRollbackDeletePrefixAllowed,
   isGcpAllowlistedFixStep,
+  splitGcpPathSegments,
 } from './manifests/gcp/remediation-allowlist';
 export type { GcpAllowlistedCall } from './manifests/gcp/remediation-allowlist';
 export {
   APPROVAL_GATED_GCP_ASSET_CLASSES,
   GCP_FIX_FORWARD_ALLOWLIST,
   GCP_NEVER_ALLOW_PERMISSIONS,
+  GCP_NEVER_ALLOW_ROLES,
   GCP_REMEDIATION_ASSET_CLASSES,
   GCP_REMEDIATOR_SA_EMAIL_PATTERN,
   GCP_REMEDIATOR_SA_NAME,

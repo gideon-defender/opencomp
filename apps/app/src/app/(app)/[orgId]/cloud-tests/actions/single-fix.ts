@@ -53,6 +53,7 @@ interface SingleFixInput {
   checkResultId: string;
   remediationKey: string;
   acknowledgment?: string;
+  expectedPlanHash?: string;
 }
 
 export async function startSingleFix(
@@ -79,6 +80,7 @@ export async function startSingleFix(
       remediationKey: input.remediationKey,
       userId: session.user.id,
       acknowledgment: input.acknowledgment,
+      expectedPlanHash: input.expectedPlanHash,
     });
 
     const accessToken = await triggerAuth.createPublicToken({

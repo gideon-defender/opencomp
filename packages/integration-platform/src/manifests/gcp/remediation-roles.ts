@@ -245,4 +245,8 @@ export function getGcpRemediationMapParseError(value: unknown): string | null {
 }
 
 // Re-exported here so `remediation-roles` stays the single import path.
-export { GCP_FIX_FORWARD_ALLOWLIST, GCP_NEVER_ALLOW_PERMISSIONS } from './remediation-allowlist';
+export {
+  GCP_FIX_FORWARD_ALLOWLIST,
+  GCP_NEVER_ALLOW_PERMISSIONS,
+  GCP_NEVER_ALLOW_ROLES,
+} from './remediation-allowlist';

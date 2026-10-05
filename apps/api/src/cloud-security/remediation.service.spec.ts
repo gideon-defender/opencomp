@@ -1,5 +1,5 @@
 import { db } from '@db';
-import { RemediationService } from './remediation.service';
+import { hashAwsPlanSteps, RemediationService } from './remediation.service';
 import { CredentialVaultService } from '../integration-platform/services/credential-vault.service';
 import { AWSSecurityService } from './providers/aws-security.service';
 import { AiRemediationService } from './ai-remediation.service';
@@ -1252,6 +1252,90 @@ describe('RemediationService.previewRemediation (recheck mode)', () => {
     expect(preview.needsFreshPreview).toBeUndefined();
   });
 
+  it('binds the recheck to the cached plan hash so Apply works after Recheck', async () => {
+    const service = makeRecheckService(new Set(['s3:PutBucketEncryption']));
+    const fixSteps = [
+      {
+        service: 's3',
+        command: 'PutBucketEncryptionCommand',
+        params: { Bucket: 'test-bucket' },
+        purpose: 'fix',
+      },
+    ];
+    const rollbackSteps = [
+      {
+        service: 's3',
+        command: 'DeleteBucketEncryptionCommand',
+        params: { Bucket: 'test-bucket' },
+        purpose: 'rollback',
+      },
+    ];
+    (
+      service as unknown as {
+        planCache: Map<
+          string,
+          {
+            plan: unknown;
+            timestamp: number;
+            permissionsList?: string[];
+            blockedPermissionsList?: string[];
+          }
+        >;
+      }
+    ).planCache.set(cacheKey, {
+      plan: {
+        canAutoFix: true,
+        description: 'cached plan',
+        requiredPermissions: ['s3:PutBucketEncryption'],
+        fixSteps,
+        rollbackSteps,
+      },
+      timestamp: Date.now(),
+      permissionsList: ['s3:PutBucketEncryption'],
+      blockedPermissionsList: [],
+    });
+
+    const preview = (await service.previewRemediation({
+      connectionId: 'conn_123',
+      organizationId: 'org_123',
+      checkResultId: 'chk_123',
+      remediationKey: 's3-encryption-test',
+      cachedPermissions: ['s3:PutBucketEncryption'],
+    })) as unknown as {
+      planHash?: string;
+    };
+
+    // Without the hash the dialog sends no expectedPlanHash and execute
+    // fails closed — Recheck then Apply must carry the same binding a
+    // fresh preview returns for these exact steps.
+    expect(preview.planHash).toBe(
+      hashAwsPlanSteps(fixSteps, rollbackSteps, {
+        organizationId: 'org_123',
+        connectionId: 'conn_123',
+        checkResultId: 'chk_123',
+        remediationKey: 's3-encryption-test',
+      }),
+    );
+  });
+
+  it('omits the plan hash on a cache-miss recheck with no plan to bind to', async () => {
+    const service = makeRecheckService(new Set(['s3:PutBucketEncryption']));
+
+    const preview = (await service.previewRemediation({
+      connectionId: 'conn_123',
+      organizationId: 'org_123',
+      checkResultId: 'chk_123',
+      remediationKey: 's3-encryption-test',
+      cachedPermissions: ['s3:PutBucketEncryption'],
+    })) as unknown as {
+      planHash?: string;
+    };
+
+    // No cached plan exists (server restart / expiry) — binding a hash to
+    // nothing would be a lie, so execute must fail closed instead.
+    expect(preview.planHash).toBeUndefined();
+  });
+
   it('ignores stale cached plans instead of serving them', async () => {
     const service = makeRecheckService(new Set(['s3:PutBucketEncryption']));
     (
@@ -1306,6 +1390,15 @@ describe('RemediationService.executeRemediation (rollback surfacing)', () => {
     purpose: 'Undo versioning fix',
   };
 
+  // Mirrors executeParams identifiers below: the service hashes the same
+  // binding from its own params, so spec hashes must use these values.
+  const AWS_BINDING = {
+    organizationId: 'org_123',
+    connectionId: 'conn_123',
+    checkResultId: 'chk_123',
+    remediationKey: 's3-versioning',
+  };
+
   function setupExecuteMocks(params: {
     fixErrorMessage: string;
     rollbackError?: string;
@@ -1313,6 +1406,8 @@ describe('RemediationService.executeRemediation (rollback surfacing)', () => {
     fixSteps?: (typeof fixStep)[];
     rollbackSteps?: (typeof rollbackStep)[];
     skippedResults?: boolean;
+    refinedFixSteps?: (typeof fixStep)[];
+    repairResult?: typeof fixStep | null;
   }) {
     mockDb.integrationConnection.findFirst.mockResolvedValue({
       id: 'conn_123',
@@ -1346,7 +1441,13 @@ describe('RemediationService.executeRemediation (rollback surfacing)', () => {
     };
     const aiRemediationService = {
       generateFixPlan: jest.fn().mockResolvedValue(plan),
-      refineFixPlan: jest.fn().mockResolvedValue(plan),
+      refineFixPlan: jest.fn().mockResolvedValue({
+        ...plan,
+        fixSteps: params.refinedFixSteps ?? plan.fixSteps,
+      }),
+      refineStepFromError: jest
+        .fn()
+        .mockResolvedValue(params.repairResult ?? null),
       // Echo the failure context as the customer-facing reason so the
       // test can assert on what the service passes down.
       generateManualSteps: jest
@@ -1422,6 +1523,9 @@ describe('RemediationService.executeRemediation (rollback surfacing)', () => {
     remediationKey: 's3-versioning',
     userId: 'user_123',
     acknowledgment: 'acknowledged',
+    // Binds execute to the mocked refined plan ([fixStep] by default):
+    // execute refuses without it. Tests with custom steps override this.
+    expectedPlanHash: hashAwsPlanSteps([fixStep], [rollbackStep], AWS_BINDING),
   };
 
   beforeEach(() => {
@@ -1481,7 +1585,14 @@ describe('RemediationService.executeRemediation (rollback surfacing)', () => {
       rollbackSteps: [rollbackStep],
     });
 
-    const result = (await service.executeRemediation(executeParams)) as {
+    const result = (await service.executeRemediation({
+      ...executeParams,
+      expectedPlanHash: hashAwsPlanSteps(
+        [fixStep, { ...fixStep, purpose: 'Second fix step' }],
+        [rollbackStep],
+        AWS_BINDING,
+      ),
+    })) as {
       error?: string;
       guidedSteps?: string[];
     };
@@ -1489,9 +1600,12 @@ describe('RemediationService.executeRemediation (rollback surfacing)', () => {
     expect(result.error).toContain('cannot be paired');
     expect(result.guidedSteps).toEqual(['manual step']);
     // Pairing validation happens before Phase 3 — the fix steps never
-    // executed (only the empty Phase-1 read call ran).
+    // executed (only the empty Phase-1 read call ran). Calls are arg
+    // arrays, so inspect the first arg's steps.
     const executedFixCalls = mockExecutePlanSteps.mock.calls.filter(
-      (call: { steps?: unknown[] }) => (call.steps ?? []).length > 0,
+      (call) =>
+        ((call[0] as { steps?: unknown[] } | undefined)?.steps ?? []).length >
+        0,
     );
     expect(executedFixCalls).toEqual([]);
   });
@@ -1532,6 +1646,219 @@ describe('RemediationService.executeRemediation (rollback surfacing)', () => {
 
     expect(result.error).toContain('partially modified');
     expect(result.error).toContain('was skipped');
+  });
+
+  it('refuses to execute when refinement rewrites the acknowledged plan', async () => {
+    // The acknowledged hash covers the previewed steps, but refinement
+    // rewrote the bucket after the pre-check — the post-refine check must
+    // refuse instead of executing the rewritten plan.
+    const rewrittenStep = {
+      ...fixStep,
+      params: { ...fixStep.params, Bucket: 'other-bucket' },
+    };
+    const service = setupExecuteMocks({
+      fixErrorMessage: 'unused',
+      refinedFixSteps: [rewrittenStep],
+    });
+
+    const result = (await service.executeRemediation({
+      ...executeParams,
+      expectedPlanHash: hashAwsPlanSteps(
+        [fixStep],
+        [rollbackStep],
+        AWS_BINDING,
+      ),
+    })) as { error?: string };
+
+    expect(result.error).toContain('previewed plan changed');
+    // The pre-check passed (previewed plan matched), so only the empty
+    // Phase-1 read call ran — the rewritten fix never executed. Calls are
+    // arg arrays, so inspect the first arg's steps.
+    const executedFixCalls = mockExecutePlanSteps.mock.calls.filter(
+      (call) =>
+        ((call[0] as { steps?: unknown[] } | undefined)?.steps ?? []).length >
+        0,
+    );
+    expect(executedFixCalls).toEqual([]);
+  });
+
+  it('executes when refinement preserves the acknowledged plan', async () => {
+    const service = setupExecuteMocks({
+      fixErrorMessage: 'InternalError: step failed unexpectedly',
+    });
+
+    const result = (await service.executeRemediation({
+      ...executeParams,
+      expectedPlanHash: hashAwsPlanSteps(
+        [fixStep],
+        [rollbackStep],
+        AWS_BINDING,
+      ),
+    })) as { error?: string };
+
+    // The failure came from execution itself, which proves the
+    // post-refine hash check passed on the unchanged plan.
+    expect(result.error).toContain('InternalError: step failed unexpectedly');
+  });
+
+  it('refuses when rollback steps changed after acknowledgment', async () => {
+    // Fix steps identical, rollback swapped: the acknowledged hash no
+    // longer matches, so execute must refuse before running anything.
+    const service = setupExecuteMocks({
+      fixErrorMessage: 'unused',
+      rollbackSteps: [{ ...rollbackStep, params: { Bucket: 'other' } }],
+    });
+
+    await expect(service.executeRemediation(executeParams)).rejects.toThrow(
+      /previewed plan changed/,
+    );
+    expect(mockExecutePlanSteps).not.toHaveBeenCalled();
+  });
+
+  it('refuses to execute without the previewed plan hash', async () => {
+    const service = setupExecuteMocks({
+      fixErrorMessage: 'unused',
+    });
+
+    await expect(
+      service.executeRemediation({
+        connectionId: 'conn_123',
+        organizationId: 'org_123',
+        checkResultId: 'chk_123',
+        remediationKey: 's3-versioning',
+        userId: 'user_123',
+        acknowledgment: 'acknowledged',
+      }),
+    ).rejects.toThrow(/requires the previewed plan hash/);
+    // Nothing executed — refusal happens before the action record work.
+    expect(mockExecutePlanSteps).not.toHaveBeenCalled();
+  });
+
+  it('refuses to execute on an empty plan hash instead of running blind', async () => {
+    const service = setupExecuteMocks({
+      fixErrorMessage: 'unused',
+    });
+
+    await expect(
+      service.executeRemediation({ ...executeParams, expectedPlanHash: '' }),
+    ).rejects.toThrow(/requires the previewed plan hash/);
+    expect(mockExecutePlanSteps).not.toHaveBeenCalled();
+  });
+
+  it('fast-fails on a stale hash before doing any work', async () => {
+    const service = setupExecuteMocks({
+      fixErrorMessage: 'unused',
+    });
+
+    await expect(
+      service.executeRemediation({
+        ...executeParams,
+        expectedPlanHash: 'aws-stalehash',
+      }),
+    ).rejects.toThrow(/previewed plan changed/);
+    expect(mockExecutePlanSteps).not.toHaveBeenCalled();
+  });
+
+  it('hashes only executed fields: purpose rewording is not a plan change', () => {
+    expect(hashAwsPlanSteps([fixStep], [], AWS_BINDING)).toBe(
+      hashAwsPlanSteps(
+        [{ ...fixStep, purpose: 'Reworded description' }],
+        [],
+        AWS_BINDING,
+      ),
+    );
+    expect(hashAwsPlanSteps([fixStep], [], AWS_BINDING)).not.toBe(
+      hashAwsPlanSteps(
+        [{ ...fixStep, params: { ...fixStep.params, Bucket: 'other' } }],
+        [],
+        AWS_BINDING,
+      ),
+    );
+  });
+
+  it('hashes params independent of key order', () => {
+    const reordered = {
+      ...fixStep,
+      params: {
+        VersioningConfiguration: { Status: 'Enabled' },
+        Bucket: 'b',
+      },
+    };
+    expect(hashAwsPlanSteps([fixStep], [], AWS_BINDING)).toBe(
+      hashAwsPlanSteps([reordered], [], AWS_BINDING),
+    );
+  });
+
+  it('hashes plans apart across findings with identical steps', () => {
+    // Same generic fix shape: without the finding binding, the two
+    // hashes collide and finding B runs on finding A's approval.
+    const otherFinding = { ...AWS_BINDING, checkResultId: 'chk_456' };
+    expect(hashAwsPlanSteps([fixStep], [], AWS_BINDING)).not.toBe(
+      hashAwsPlanSteps([fixStep], [], otherFinding),
+    );
+  });
+
+  it('in-execution repair keeps a same-target fix and returns it', async () => {
+    const repaired = {
+      ...fixStep,
+      params: {
+        ...fixStep.params,
+        VersioningConfiguration: { Status: 'Enabled' },
+      },
+    };
+    const service = setupExecuteMocks({
+      fixErrorMessage: 'InternalError: step failed unexpectedly',
+      repairResult: repaired,
+    });
+
+    await service.executeRemediation(executeParams);
+
+    const repairCall = mockExecutePlanSteps.mock.calls.find(
+      (call) =>
+        typeof (call[0] as { repairStep?: unknown })?.repairStep === 'function',
+    );
+    expect(repairCall).toBeDefined();
+    const repairStep = (
+      repairCall as Array<{ repairStep: (args: never) => Promise<unknown> }>
+    )[0].repairStep;
+    await expect(
+      repairStep({
+        step: fixStep,
+        awsError: 'Missing required param',
+        stepIndex: 0,
+      } as never),
+    ).resolves.toEqual(repaired);
+  });
+
+  it('in-execution repair refuses a target change and retries the original step', async () => {
+    const service = setupExecuteMocks({
+      fixErrorMessage: 'InternalError: step failed unexpectedly',
+      repairResult: {
+        ...fixStep,
+        command: 'DeleteBucketCommand',
+      },
+    });
+
+    await service.executeRemediation(executeParams);
+
+    const repairCall = mockExecutePlanSteps.mock.calls.find(
+      (call) =>
+        typeof (call[0] as { repairStep?: unknown })?.repairStep === 'function',
+    );
+    expect(repairCall).toBeDefined();
+    const repairStep = (
+      repairCall as Array<{ repairStep: (args: never) => Promise<unknown> }>
+    )[0].repairStep;
+    // Returns the original step (same params → the executor surfaces the
+    // original AWS error and auto-rollback runs) instead of the
+    // target-changed repair.
+    await expect(
+      repairStep({
+        step: fixStep,
+        awsError: 'Missing required param',
+        stepIndex: 0,
+      } as never),
+    ).resolves.toEqual(fixStep);
   });
 });
 

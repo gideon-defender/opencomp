@@ -1,0 +1,12 @@
+# Build outputs
+.next/
+.turbo/
+
+# Generated code
+src/generated/
+coverage/
+
+# Test artifacts
+playwright-report/
+test-results/
+.playwright/

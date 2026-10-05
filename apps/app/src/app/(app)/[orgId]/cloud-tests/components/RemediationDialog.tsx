@@ -15,6 +15,7 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { startPreview, startSingleFix } from '../actions/single-fix';
+import { expectedPlanHashParam } from '@/trigger/tasks/cloud-security/plan-hash';
 import { formatBlockedActionsForDisplay } from '../lib/remediation-denylist';
 import { extractJsonSegments } from './extract-json-segments';
 import { PermissionErrorPanel } from './PermissionErrorPanel';
@@ -82,6 +83,7 @@ interface PreviewData {
   blockedPermissions?: string[];
   blockedPermissionsMessage?: string;
   needsFreshPreview?: string;
+  planHash?: string;
 }
 
 const RISK_STYLES: Record<string, string> = {
@@ -640,6 +642,7 @@ export function RemediationDialog({
         checkResultId,
         remediationKey,
         acknowledgment: acknowledgment ?? undefined,
+        ...expectedPlanHashParam(preview),
       });
       if (result.error || !result.data) {
         setError(result.error || t('cloudTests_failedToStartFix'));
