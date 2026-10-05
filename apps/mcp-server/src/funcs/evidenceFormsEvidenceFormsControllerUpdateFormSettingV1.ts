@@ -30,8 +30,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Update document relevance setting in OpenComp. Collect, review, upload, and export structured evidence submissions for compliance tasks and document requirements.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function evidenceFormsEvidenceFormsControllerUpdateFormSettingV1(
   client$: CompAiCore,
@@ -98,7 +96,7 @@ async function $do(
   );
 
   const headers$ = new Headers(compactMap({
-    Accept: "*/*",
+    Accept: "application/json",
     "X-Organization-Id": encodeSimple(
       "X-Organization-Id",
       payload$.xOrganizationId,
@@ -106,7 +104,7 @@ async function $do(
     ),
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

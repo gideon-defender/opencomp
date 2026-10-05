@@ -3,6 +3,10 @@
  */
 
 import * as z from "zod";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 export type BuiltInRole = {
   name?: string | undefined;
@@ -44,14 +48,25 @@ export const CustomRole$zodSchema: z.ZodType<CustomRole> = z.object({
 /**
  * List of roles
  */
-export type RolesControllerListRolesV1Response = {
+export type RolesControllerListRolesV1ResponseBody = {
   builtInRoles?: Array<BuiltInRole> | undefined;
   customRoles?: Array<CustomRole> | undefined;
 };
 
-export const RolesControllerListRolesV1Response$zodSchema: z.ZodType<
-  RolesControllerListRolesV1Response
+export const RolesControllerListRolesV1ResponseBody$zodSchema: z.ZodType<
+  RolesControllerListRolesV1ResponseBody
 > = z.object({
   builtInRoles: z.array(z.lazy(() => BuiltInRole$zodSchema)).optional(),
   customRoles: z.array(z.lazy(() => CustomRole$zodSchema)).optional(),
 }).describe("List of roles");
+
+export type RolesControllerListRolesV1Response =
+  | ApiErrorResponseDto
+  | RolesControllerListRolesV1ResponseBody;
+
+export const RolesControllerListRolesV1Response$zodSchema: z.ZodType<
+  RolesControllerListRolesV1Response
+> = z.union([
+  ApiErrorResponseDto$zodSchema,
+  z.lazy(() => RolesControllerListRolesV1ResponseBody$zodSchema),
+]);

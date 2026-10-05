@@ -46,17 +46,10 @@ export const ControlsControllerUnlinkDocumentTypeV1FormType$zodSchema = z.enum([
   "account_types",
 ]).describe("Evidence form type to unlink from the control");
 
-export type ControlsControllerUnlinkDocumentTypeV1Security = { bearer: string };
-
-export const ControlsControllerUnlinkDocumentTypeV1Security$zodSchema:
-  z.ZodType<ControlsControllerUnlinkDocumentTypeV1Security> = z.object({
-    bearer: z.string().describe("API Key"),
-  });
-
 export type ControlsControllerUnlinkDocumentTypeV1Request = {
   id: string;
-  formType: ControlsControllerUnlinkDocumentTypeV1FormType;
   frameworkInstanceId: string;
+  formType: ControlsControllerUnlinkDocumentTypeV1FormType;
 };
 
 export const ControlsControllerUnlinkDocumentTypeV1Request$zodSchema: z.ZodType<

@@ -3,12 +3,29 @@
  */
 
 import * as z from "zod";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 /**
  * Parsed questionnaire content
  */
-export type QuestionnaireControllerParseQuestionnaireV1Response = {};
+export type QuestionnaireControllerParseQuestionnaireV1ResponseBody = {};
+
+export const QuestionnaireControllerParseQuestionnaireV1ResponseBody$zodSchema:
+  z.ZodType<QuestionnaireControllerParseQuestionnaireV1ResponseBody> = z.object(
+    {},
+  ).describe("Parsed questionnaire content");
+
+export type QuestionnaireControllerParseQuestionnaireV1Response =
+  | ApiErrorResponseDto
+  | QuestionnaireControllerParseQuestionnaireV1ResponseBody;
 
 export const QuestionnaireControllerParseQuestionnaireV1Response$zodSchema:
-  z.ZodType<QuestionnaireControllerParseQuestionnaireV1Response> = z.object({})
-    .describe("Parsed questionnaire content");
+  z.ZodType<QuestionnaireControllerParseQuestionnaireV1Response> = z.union([
+    ApiErrorResponseDto$zodSchema,
+    z.lazy(() =>
+      QuestionnaireControllerParseQuestionnaireV1ResponseBody$zodSchema
+    ),
+  ]);

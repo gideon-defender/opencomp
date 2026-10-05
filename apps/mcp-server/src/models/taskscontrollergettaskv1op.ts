@@ -4,6 +4,10 @@
 
 import * as z from "zod";
 import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
   TaskResponseDto,
   TaskResponseDto$zodSchema,
 } from "./taskresponsedto.js";
@@ -16,26 +20,13 @@ export const TasksControllerGetTaskV1Request$zodSchema: z.ZodType<
   taskId: z.string().describe("Unique task identifier"),
 });
 
-/**
- * Task not found
- */
-export type TasksControllerGetTaskV1ResponseBody = {
-  message?: string | undefined;
-};
-
-export const TasksControllerGetTaskV1ResponseBody$zodSchema: z.ZodType<
-  TasksControllerGetTaskV1ResponseBody
-> = z.object({
-  message: z.string().optional(),
-}).describe("Task not found");
-
 export type TasksControllerGetTaskV1Response =
   | TaskResponseDto
-  | TasksControllerGetTaskV1ResponseBody;
+  | ApiErrorResponseDto;
 
 export const TasksControllerGetTaskV1Response$zodSchema: z.ZodType<
   TasksControllerGetTaskV1Response
 > = z.union([
   TaskResponseDto$zodSchema,
-  z.lazy(() => TasksControllerGetTaskV1ResponseBody$zodSchema),
+  ApiErrorResponseDto$zodSchema,
 ]);

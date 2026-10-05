@@ -4,48 +4,20 @@
 
 import * as z from "zod";
 import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
   AttachmentResponseDto,
   AttachmentResponseDto$zodSchema,
 } from "./attachmentresponsedto.js";
 
-/**
- * Unauthorized - Invalid authentication
- */
-export type AttachmentsControllerCreateAttachmentV1UnauthorizedResponseBody = {
-  message?: string | undefined;
-};
-
-export const AttachmentsControllerCreateAttachmentV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<AttachmentsControllerCreateAttachmentV1UnauthorizedResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Unauthorized - Invalid authentication");
-
-/**
- * Invalid file data, unsupported file type, or file too large
- */
-export type AttachmentsControllerCreateAttachmentV1BadRequestResponseBody = {
-  message?: string | undefined;
-};
-
-export const AttachmentsControllerCreateAttachmentV1BadRequestResponseBody$zodSchema:
-  z.ZodType<AttachmentsControllerCreateAttachmentV1BadRequestResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Invalid file data, unsupported file type, or file too large");
-
 export type AttachmentsControllerCreateAttachmentV1Response =
   | AttachmentResponseDto
-  | AttachmentsControllerCreateAttachmentV1BadRequestResponseBody
-  | AttachmentsControllerCreateAttachmentV1UnauthorizedResponseBody;
+  | ApiErrorResponseDto;
 
 export const AttachmentsControllerCreateAttachmentV1Response$zodSchema:
   z.ZodType<AttachmentsControllerCreateAttachmentV1Response> = z.union([
     AttachmentResponseDto$zodSchema,
-    z.lazy(() =>
-      AttachmentsControllerCreateAttachmentV1BadRequestResponseBody$zodSchema
-    ),
-    z.lazy(() =>
-      AttachmentsControllerCreateAttachmentV1UnauthorizedResponseBody$zodSchema
-    ),
+    ApiErrorResponseDto$zodSchema,
   ]);

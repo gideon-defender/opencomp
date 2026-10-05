@@ -3,6 +3,14 @@
  */
 
 import * as z from "zod";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
+  DomainStatusResponseDto,
+  DomainStatusResponseDto$zodSchema,
+} from "./domainstatusresponsedto.js";
 
 export type TrustPortalControllerGetDomainStatusV1Request = { domain: string };
 
@@ -11,3 +19,13 @@ export const TrustPortalControllerGetDomainStatusV1Request$zodSchema: z.ZodType<
 > = z.object({
   domain: z.string().describe("The domain name to check status for"),
 });
+
+export type TrustPortalControllerGetDomainStatusV1Response =
+  | DomainStatusResponseDto
+  | ApiErrorResponseDto;
+
+export const TrustPortalControllerGetDomainStatusV1Response$zodSchema:
+  z.ZodType<TrustPortalControllerGetDomainStatusV1Response> = z.union([
+    DomainStatusResponseDto$zodSchema,
+    ApiErrorResponseDto$zodSchema,
+  ]);

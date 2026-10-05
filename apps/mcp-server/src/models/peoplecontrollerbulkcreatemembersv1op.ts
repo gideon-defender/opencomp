@@ -5,6 +5,10 @@
 import * as z from "zod";
 import { ClosedEnum } from "../types/enums.js";
 import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
   PeopleResponseDto,
   PeopleResponseDto$zodSchema,
 } from "./peopleresponsedto.js";
@@ -27,61 +31,6 @@ export const PeopleControllerBulkCreateMembersV1AuthType$zodSchema = z.enum([
   "api-key",
   "session",
 ]).describe("How the request was authenticated");
-
-/**
- * Internal server error
- */
-export type PeopleControllerBulkCreateMembersV1InternalServerErrorResponseBody =
-  { message?: string | undefined };
-
-export const PeopleControllerBulkCreateMembersV1InternalServerErrorResponseBody$zodSchema:
-  z.ZodType<
-    PeopleControllerBulkCreateMembersV1InternalServerErrorResponseBody
-  > = z.object({
-    message: z.string().optional(),
-  }).describe("Internal server error");
-
-/**
- * Organization not found
- */
-export type PeopleControllerBulkCreateMembersV1NotFoundResponseBody = {
-  message?: string | undefined;
-};
-
-export const PeopleControllerBulkCreateMembersV1NotFoundResponseBody$zodSchema:
-  z.ZodType<PeopleControllerBulkCreateMembersV1NotFoundResponseBody> = z.object(
-    {
-      message: z.string().optional(),
-    },
-  ).describe("Organization not found");
-
-/**
- * Unauthorized - Invalid authentication or insufficient permissions
- */
-export type PeopleControllerBulkCreateMembersV1UnauthorizedResponseBody = {
-  message?: string | undefined;
-};
-
-export const PeopleControllerBulkCreateMembersV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<PeopleControllerBulkCreateMembersV1UnauthorizedResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe(
-      "Unauthorized - Invalid authentication or insufficient permissions",
-    );
-
-/**
- * Bad Request - Invalid bulk data or validation errors
- */
-export type PeopleControllerBulkCreateMembersV1BadRequestResponseBody = {
-  message?: string | undefined;
-};
-
-export const PeopleControllerBulkCreateMembersV1BadRequestResponseBody$zodSchema:
-  z.ZodType<PeopleControllerBulkCreateMembersV1BadRequestResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Bad Request - Invalid bulk data or validation errors");
 
 export type PeopleControllerBulkCreateMembersV1Error = {
   index?: number | undefined;
@@ -162,26 +111,12 @@ export const PeopleControllerBulkCreateMembersV1ResponseBody$zodSchema:
   }).describe("Bulk member creation completed");
 
 export type PeopleControllerBulkCreateMembersV1Response =
-  | PeopleControllerBulkCreateMembersV1ResponseBody
-  | PeopleControllerBulkCreateMembersV1BadRequestResponseBody
-  | PeopleControllerBulkCreateMembersV1UnauthorizedResponseBody
-  | PeopleControllerBulkCreateMembersV1NotFoundResponseBody
-  | PeopleControllerBulkCreateMembersV1InternalServerErrorResponseBody;
+  | ApiErrorResponseDto
+  | PeopleControllerBulkCreateMembersV1ResponseBody;
 
 export const PeopleControllerBulkCreateMembersV1Response$zodSchema: z.ZodType<
   PeopleControllerBulkCreateMembersV1Response
 > = z.union([
+  ApiErrorResponseDto$zodSchema,
   z.lazy(() => PeopleControllerBulkCreateMembersV1ResponseBody$zodSchema),
-  z.lazy(() =>
-    PeopleControllerBulkCreateMembersV1BadRequestResponseBody$zodSchema
-  ),
-  z.lazy(() =>
-    PeopleControllerBulkCreateMembersV1UnauthorizedResponseBody$zodSchema
-  ),
-  z.lazy(() =>
-    PeopleControllerBulkCreateMembersV1NotFoundResponseBody$zodSchema
-  ),
-  z.lazy(() =>
-    PeopleControllerBulkCreateMembersV1InternalServerErrorResponseBody$zodSchema
-  ),
 ]);

@@ -3,18 +3,32 @@
  */
 
 import * as z from "zod";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 /**
  * Delete questionnaire answer
  */
-export type QuestionnaireControllerDeleteAnswerV1Response = {
+export type QuestionnaireControllerDeleteAnswerV1ResponseBody = {
   success?: boolean | undefined;
   error?: string | null | undefined;
 };
 
+export const QuestionnaireControllerDeleteAnswerV1ResponseBody$zodSchema:
+  z.ZodType<QuestionnaireControllerDeleteAnswerV1ResponseBody> = z.object({
+    error: z.string().nullable().optional(),
+    success: z.boolean().optional(),
+  }).describe("Delete questionnaire answer");
+
+export type QuestionnaireControllerDeleteAnswerV1Response =
+  | ApiErrorResponseDto
+  | QuestionnaireControllerDeleteAnswerV1ResponseBody;
+
 export const QuestionnaireControllerDeleteAnswerV1Response$zodSchema: z.ZodType<
   QuestionnaireControllerDeleteAnswerV1Response
-> = z.object({
-  error: z.string().nullable().optional(),
-  success: z.boolean().optional(),
-}).describe("Delete questionnaire answer");
+> = z.union([
+  ApiErrorResponseDto$zodSchema,
+  z.lazy(() => QuestionnaireControllerDeleteAnswerV1ResponseBody$zodSchema),
+]);

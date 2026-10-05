@@ -34,7 +34,9 @@ mcp-typescript:
   version: 0.2.6
   additionalDependencies:
     dependencies: {}
-    devDependencies: {}
+    devDependencies:
+      esbuild: ^0.25.0
+      tsx: ^4.19.0
     peerDependencies: {}
   advancedFlags: []
   author: OpenComp

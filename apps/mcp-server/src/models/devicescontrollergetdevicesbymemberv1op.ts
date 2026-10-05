@@ -4,6 +4,10 @@
 
 import * as z from "zod";
 import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
   DevicesByMemberResponseDto,
   DevicesByMemberResponseDto$zodSchema,
 } from "./devicesbymemberresponsedto.js";
@@ -16,47 +20,13 @@ export const DevicesControllerGetDevicesByMemberV1Request$zodSchema: z.ZodType<
   memberId: z.string().describe("Member ID to get devices for"),
 });
 
-/**
- * Organization or member not found
- */
-export type DevicesControllerGetDevicesByMemberV1NotFoundResponseBody = {
-  message?: string | undefined;
-};
-
-export const DevicesControllerGetDevicesByMemberV1NotFoundResponseBody$zodSchema:
-  z.ZodType<DevicesControllerGetDevicesByMemberV1NotFoundResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Organization or member not found");
-
-/**
- * Unauthorized - Invalid authentication or insufficient permissions
- */
-export type DevicesControllerGetDevicesByMemberV1UnauthorizedResponseBody = {
-  message?: string | undefined;
-};
-
-export const DevicesControllerGetDevicesByMemberV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<DevicesControllerGetDevicesByMemberV1UnauthorizedResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe(
-      "Unauthorized - Invalid authentication or insufficient permissions",
-    );
-
 export type DevicesControllerGetDevicesByMemberV1Response =
   | DevicesByMemberResponseDto
-  | DevicesControllerGetDevicesByMemberV1UnauthorizedResponseBody
-  | DevicesControllerGetDevicesByMemberV1NotFoundResponseBody;
+  | ApiErrorResponseDto;
 
 export const DevicesControllerGetDevicesByMemberV1Response$zodSchema: z.ZodType<
   DevicesControllerGetDevicesByMemberV1Response
 > = z.union([
   DevicesByMemberResponseDto$zodSchema,
-  z.lazy(() =>
-    DevicesControllerGetDevicesByMemberV1UnauthorizedResponseBody$zodSchema
-  ),
-  z.lazy(() =>
-    DevicesControllerGetDevicesByMemberV1NotFoundResponseBody$zodSchema
-  ),
+  ApiErrorResponseDto$zodSchema,
 ]);

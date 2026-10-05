@@ -19,13 +19,16 @@ import { SDKValidationError } from "../models/errors/sdkvalidationerror.js";
 import { APICall, APIPromise } from "../types/async.js";
 import { Result } from "../types/fp.js";
 
+export enum DeviceAgentControllerDownloadWindowsAgentV1AcceptEnum {
+  applicationJsonAccept = "application/json",
+  applicationZipAccept = "application/zip",
+}
+
 /**
  * Download Windows Device Agent ZIP
  *
  * @remarks
  * Downloads a ZIP package containing the OpenComp Device Agent installer for Windows, along with setup scripts and instructions. The package includes an MSI installer, setup batch script customized for the organization and user, and a.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function deviceAgentDeviceAgentControllerDownloadWindowsAgentV1(
   client$: CompAiCore,
@@ -50,7 +53,10 @@ export function deviceAgentDeviceAgentControllerDownloadWindowsAgentV1(
 
 async function $do(
   client$: CompAiCore,
-  options?: RequestOptions,
+  options?: RequestOptions & {
+    acceptHeaderOverride?:
+      DeviceAgentControllerDownloadWindowsAgentV1AcceptEnum;
+  },
 ): Promise<
   [
     Result<
@@ -69,10 +75,11 @@ async function $do(
   const path$ = pathToFunc("/v1/device-agent/windows")();
 
   const headers$ = new Headers(compactMap({
-    Accept: "application/zip",
+    Accept: options?.acceptHeaderOverride
+      || "application/json;q=1, application/zip;q=0",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

@@ -24,8 +24,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Retrieve Trust Center settings used to configure public status, custom domains, framework visibility, resources, FAQs, and access rules.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function trustPortalTrustPortalControllerGetSettingsV1(
   client$: CompAiCore,
@@ -69,10 +67,10 @@ async function $do(
   const path$ = pathToFunc("/v1/trust-portal/settings")();
 
   const headers$ = new Headers(compactMap({
-    Accept: "*/*",
+    Accept: "application/json",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

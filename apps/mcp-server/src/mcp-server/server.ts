@@ -48,6 +48,16 @@ import { tool$contextContextControllerDeleteContextV1 } from "./tools/contextCon
 import { tool$contextContextControllerGetAllContextV1 } from "./tools/contextContextControllerGetAllContextV1.js";
 import { tool$contextContextControllerGetContextByIdV1 } from "./tools/contextContextControllerGetContextByIdV1.js";
 import { tool$contextContextControllerUpdateContextV1 } from "./tools/contextContextControllerUpdateContextV1.js";
+import { tool$controlsControlsControllerCreateV1 } from "./tools/controlsControlsControllerCreateV1.js";
+import { tool$controlsControlsControllerDeleteV1 } from "./tools/controlsControlsControllerDeleteV1.js";
+import { tool$controlsControlsControllerFindAllV1 } from "./tools/controlsControlsControllerFindAllV1.js";
+import { tool$controlsControlsControllerFindOneV1 } from "./tools/controlsControlsControllerFindOneV1.js";
+import { tool$controlsControlsControllerGetOptionsV1 } from "./tools/controlsControlsControllerGetOptionsV1.js";
+import { tool$controlsControlsControllerLinkDocumentTypesV1 } from "./tools/controlsControlsControllerLinkDocumentTypesV1.js";
+import { tool$controlsControlsControllerLinkPoliciesV1 } from "./tools/controlsControlsControllerLinkPoliciesV1.js";
+import { tool$controlsControlsControllerLinkRequirementsV1 } from "./tools/controlsControlsControllerLinkRequirementsV1.js";
+import { tool$controlsControlsControllerLinkTasksV1 } from "./tools/controlsControlsControllerLinkTasksV1.js";
+import { tool$controlsControlsControllerUnlinkDocumentTypeV1 } from "./tools/controlsControlsControllerUnlinkDocumentTypeV1.js";
 import { tool$deviceAgentDeviceAgentControllerCheckInV1 } from "./tools/deviceAgentDeviceAgentControllerCheckInV1.js";
 import { tool$deviceAgentDeviceAgentControllerDownloadMacAgentV1 } from "./tools/deviceAgentDeviceAgentControllerDownloadMacAgentV1.js";
 import { tool$deviceAgentDeviceAgentControllerDownloadWindowsAgentV1 } from "./tools/deviceAgentDeviceAgentControllerDownloadWindowsAgentV1.js";
@@ -87,6 +97,24 @@ import { tool$findingsFindingsControllerGetFindingHistoryV1 } from "./tools/find
 import { tool$findingsFindingsControllerGetOrganizationFindingsV1 } from "./tools/findingsFindingsControllerGetOrganizationFindingsV1.js";
 import { tool$findingsFindingsControllerListFindingsV1 } from "./tools/findingsFindingsControllerListFindingsV1.js";
 import { tool$findingsFindingsControllerUpdateFindingV1 } from "./tools/findingsFindingsControllerUpdateFindingV1.js";
+import { tool$frameworksFrameworksControllerAddFrameworksV1 } from "./tools/frameworksFrameworksControllerAddFrameworksV1.js";
+import { tool$frameworksFrameworksControllerCreateCustomV1 } from "./tools/frameworksFrameworksControllerCreateCustomV1.js";
+import { tool$frameworksFrameworksControllerCreateRequirementV1 } from "./tools/frameworksFrameworksControllerCreateRequirementV1.js";
+import { tool$frameworksFrameworksControllerDeleteV1 } from "./tools/frameworksFrameworksControllerDeleteV1.js";
+import { tool$frameworksFrameworksControllerFindAllV1 } from "./tools/frameworksFrameworksControllerFindAllV1.js";
+import { tool$frameworksFrameworksControllerFindAvailableV1 } from "./tools/frameworksFrameworksControllerFindAvailableV1.js";
+import { tool$frameworksFrameworksControllerFindOneV1 } from "./tools/frameworksFrameworksControllerFindOneV1.js";
+import { tool$frameworksFrameworksControllerFindRequirementV1 } from "./tools/frameworksFrameworksControllerFindRequirementV1.js";
+import { tool$frameworksFrameworksControllerGetAllUpdateStatusesV1 } from "./tools/frameworksFrameworksControllerGetAllUpdateStatusesV1.js";
+import { tool$frameworksFrameworksControllerGetScoresV1 } from "./tools/frameworksFrameworksControllerGetScoresV1.js";
+import { tool$frameworksFrameworksControllerGetSyncHistoryV1 } from "./tools/frameworksFrameworksControllerGetSyncHistoryV1.js";
+import { tool$frameworksFrameworksControllerGetUpdatePreviewV1 } from "./tools/frameworksFrameworksControllerGetUpdatePreviewV1.js";
+import { tool$frameworksFrameworksControllerGetUpdateStatusV1 } from "./tools/frameworksFrameworksControllerGetUpdateStatusV1.js";
+import { tool$frameworksFrameworksControllerLinkControlsV1 } from "./tools/frameworksFrameworksControllerLinkControlsV1.js";
+import { tool$frameworksFrameworksControllerLinkRequirementsV1 } from "./tools/frameworksFrameworksControllerLinkRequirementsV1.js";
+import { tool$frameworksFrameworksControllerRollbackFrameworkV1 } from "./tools/frameworksFrameworksControllerRollbackFrameworkV1.js";
+import { tool$frameworksFrameworksControllerSyncFrameworkV1 } from "./tools/frameworksFrameworksControllerSyncFrameworkV1.js";
+import { tool$frameworksFrameworksControllerUpdateCustomV1 } from "./tools/frameworksFrameworksControllerUpdateCustomV1.js";
 import { tool$integrationsChecksControllerListConnectionChecksV1 } from "./tools/integrationsChecksControllerListConnectionChecksV1.js";
 import { tool$integrationsChecksControllerListProviderChecksV1 } from "./tools/integrationsChecksControllerListProviderChecksV1.js";
 import { tool$integrationsChecksControllerRunConnectionChecksV1 } from "./tools/integrationsChecksControllerRunConnectionChecksV1.js";
@@ -284,7 +312,6 @@ import { tool$securityPenetrationTestsSecurityPenetrationTestsControllerGetProgr
 import { tool$securityPenetrationTestsSecurityPenetrationTestsControllerGetReportV1 } from "./tools/securityPenetrationTestsSecurityPenetrationTestsControllerGetReportV1.js";
 import { tool$securityPenetrationTestsSecurityPenetrationTestsControllerListV1 } from "./tools/securityPenetrationTestsSecurityPenetrationTestsControllerListV1.js";
 import { tool$soaSOAControllerApproveDocumentV1 } from "./tools/soaSOAControllerApproveDocumentV1.js";
-import { tool$soaSOAControllerAutoFillV1 } from "./tools/soaSOAControllerAutoFillV1.js";
 import { tool$soaSOAControllerCreateDocumentV1 } from "./tools/soaSOAControllerCreateDocumentV1.js";
 import { tool$soaSOAControllerDeclineDocumentV1 } from "./tools/soaSOAControllerDeclineDocumentV1.js";
 import { tool$soaSOAControllerEnsureSetupV1 } from "./tools/soaSOAControllerEnsureSetupV1.js";
@@ -329,6 +356,9 @@ import { tool$tasksTasksControllerUpdateTasksAssigneeV1 } from "./tools/tasksTas
 import { tool$tasksTasksControllerUpdateTasksStatusV1 } from "./tools/tasksTasksControllerUpdateTasksStatusV1.js";
 import { tool$tasksTasksControllerUpdateTaskV1 } from "./tools/tasksTasksControllerUpdateTaskV1.js";
 import { tool$tasksTasksControllerUploadTaskAttachmentV1 } from "./tools/tasksTasksControllerUploadTaskAttachmentV1.js";
+import { tool$timelinesTimelinesControllerFindAllV1 } from "./tools/timelinesTimelinesControllerFindAllV1.js";
+import { tool$timelinesTimelinesControllerFindOneV1 } from "./tools/timelinesTimelinesControllerFindOneV1.js";
+import { tool$timelinesTimelinesControllerMarkReadyForReviewV1 } from "./tools/timelinesTimelinesControllerMarkReadyForReviewV1.js";
 import { tool$trainingTrainingControllerGenerateCertificateV1 } from "./tools/trainingTrainingControllerGenerateCertificateV1.js";
 import { tool$trainingTrainingControllerGenerateHipaaCertificateV1 } from "./tools/trainingTrainingControllerGenerateHipaaCertificateV1.js";
 import { tool$trainingTrainingControllerGetCompletionsV1 } from "./tools/trainingTrainingControllerGetCompletionsV1.js";
@@ -413,7 +443,7 @@ export function createMCPServer(deps: {
 }) {
   const server = new McpServer({
     name: "CompAi",
-    version: "0.2.6",
+    version: "0.3.0",
   });
 
   const getClient = deps.getSDK || (() =>
@@ -498,6 +528,9 @@ export function createMCPServer(deps: {
   tool(tool$attachmentsAttachmentsControllerCreateAttachmentV1);
   tool(tool$attachmentsAttachmentsControllerGetAttachmentDownloadUrlV1);
   tool(tool$uploadsUploadsControllerCreateUploadUrlV1);
+  tool(tool$timelinesTimelinesControllerFindAllV1);
+  tool(tool$timelinesTimelinesControllerFindOneV1);
+  tool(tool$timelinesTimelinesControllerMarkReadyForReviewV1);
   tool(tool$integrationsConnectionsControllerListProvidersV1);
   tool(tool$integrationsConnectionsControllerGetProviderV1);
   tool(tool$integrationsConnectionsControllerListConnectionsV1);
@@ -757,7 +790,6 @@ export function createMCPServer(deps: {
   tool(tool$knowledgeBaseKnowledgeBaseControllerDeleteManualAnswerV1);
   tool(tool$knowledgeBaseKnowledgeBaseControllerDeleteAllManualAnswersV1);
   tool(tool$soaSOAControllerSaveAnswerV1);
-  tool(tool$soaSOAControllerAutoFillV1);
   tool(tool$soaSOAControllerCreateDocumentV1);
   tool(tool$soaSOAControllerEnsureSetupV1);
   tool(tool$soaSOAControllerGetSetupV1);
@@ -817,7 +849,35 @@ export function createMCPServer(deps: {
   tool(tool$evidenceFormsEvidenceFormsControllerReviewSubmissionV1);
   tool(tool$evidenceFormsEvidenceFormsControllerUploadFileV1);
   tool(tool$evidenceFormsEvidenceFormsControllerExportCsvV1);
+  tool(tool$frameworksFrameworksControllerFindAllV1);
+  tool(tool$frameworksFrameworksControllerAddFrameworksV1);
+  tool(tool$frameworksFrameworksControllerFindAvailableV1);
+  tool(tool$frameworksFrameworksControllerGetScoresV1);
+  tool(tool$frameworksFrameworksControllerGetAllUpdateStatusesV1);
+  tool(tool$frameworksFrameworksControllerFindOneV1);
+  tool(tool$frameworksFrameworksControllerDeleteV1);
+  tool(tool$frameworksFrameworksControllerFindRequirementV1);
+  tool(tool$frameworksFrameworksControllerCreateCustomV1);
+  tool(tool$frameworksFrameworksControllerUpdateCustomV1);
+  tool(tool$frameworksFrameworksControllerCreateRequirementV1);
+  tool(tool$frameworksFrameworksControllerLinkRequirementsV1);
+  tool(tool$frameworksFrameworksControllerLinkControlsV1);
+  tool(tool$frameworksFrameworksControllerGetUpdateStatusV1);
+  tool(tool$frameworksFrameworksControllerGetUpdatePreviewV1);
+  tool(tool$frameworksFrameworksControllerSyncFrameworkV1);
+  tool(tool$frameworksFrameworksControllerRollbackFrameworkV1);
+  tool(tool$frameworksFrameworksControllerGetSyncHistoryV1);
   tool(tool$auditLogsAuditLogControllerGetAuditLogsV1);
+  tool(tool$controlsControlsControllerFindAllV1);
+  tool(tool$controlsControlsControllerCreateV1);
+  tool(tool$controlsControlsControllerGetOptionsV1);
+  tool(tool$controlsControlsControllerFindOneV1);
+  tool(tool$controlsControlsControllerDeleteV1);
+  tool(tool$controlsControlsControllerLinkPoliciesV1);
+  tool(tool$controlsControlsControllerLinkTasksV1);
+  tool(tool$controlsControlsControllerLinkRequirementsV1);
+  tool(tool$controlsControlsControllerLinkDocumentTypesV1);
+  tool(tool$controlsControlsControllerUnlinkDocumentTypeV1);
   tool(tool$securityPenetrationTestsSecurityPenetrationTestsControllerListV1);
   tool(tool$securityPenetrationTestsSecurityPenetrationTestsControllerCreateV1);
   tool(

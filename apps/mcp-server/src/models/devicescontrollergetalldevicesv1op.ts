@@ -5,6 +5,10 @@
 import * as z from "zod";
 import { ClosedEnum } from "../types/enums.js";
 import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
   DeviceResponseDto,
   DeviceResponseDto$zodSchema,
 } from "./deviceresponsedto.js";
@@ -27,46 +31,6 @@ export const DevicesControllerGetAllDevicesV1AuthType$zodSchema = z.enum([
   "api-key",
   "session",
 ]).describe("How the request was authenticated");
-
-/**
- * Internal server error - FleetDM integration issue
- */
-export type DevicesControllerGetAllDevicesV1InternalServerErrorResponseBody = {
-  message?: string | undefined;
-};
-
-export const DevicesControllerGetAllDevicesV1InternalServerErrorResponseBody$zodSchema:
-  z.ZodType<DevicesControllerGetAllDevicesV1InternalServerErrorResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Internal server error - FleetDM integration issue");
-
-/**
- * Organization not found
- */
-export type DevicesControllerGetAllDevicesV1NotFoundResponseBody = {
-  message?: string | undefined;
-};
-
-export const DevicesControllerGetAllDevicesV1NotFoundResponseBody$zodSchema:
-  z.ZodType<DevicesControllerGetAllDevicesV1NotFoundResponseBody> = z.object({
-    message: z.string().optional(),
-  }).describe("Organization not found");
-
-/**
- * Unauthorized - Invalid authentication or insufficient permissions
- */
-export type DevicesControllerGetAllDevicesV1UnauthorizedResponseBody = {
-  message?: string | undefined;
-};
-
-export const DevicesControllerGetAllDevicesV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<DevicesControllerGetAllDevicesV1UnauthorizedResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe(
-      "Unauthorized - Invalid authentication or insufficient permissions",
-    );
 
 export type DevicesControllerGetAllDevicesV1AuthenticatedUser = {
   id?: string | undefined;
@@ -104,20 +68,12 @@ export const DevicesControllerGetAllDevicesV1ResponseBody$zodSchema: z.ZodType<
 }).describe("Devices retrieved successfully");
 
 export type DevicesControllerGetAllDevicesV1Response =
-  | DevicesControllerGetAllDevicesV1ResponseBody
-  | DevicesControllerGetAllDevicesV1UnauthorizedResponseBody
-  | DevicesControllerGetAllDevicesV1NotFoundResponseBody
-  | DevicesControllerGetAllDevicesV1InternalServerErrorResponseBody;
+  | ApiErrorResponseDto
+  | DevicesControllerGetAllDevicesV1ResponseBody;
 
 export const DevicesControllerGetAllDevicesV1Response$zodSchema: z.ZodType<
   DevicesControllerGetAllDevicesV1Response
 > = z.union([
+  ApiErrorResponseDto$zodSchema,
   z.lazy(() => DevicesControllerGetAllDevicesV1ResponseBody$zodSchema),
-  z.lazy(() =>
-    DevicesControllerGetAllDevicesV1UnauthorizedResponseBody$zodSchema
-  ),
-  z.lazy(() => DevicesControllerGetAllDevicesV1NotFoundResponseBody$zodSchema),
-  z.lazy(() =>
-    DevicesControllerGetAllDevicesV1InternalServerErrorResponseBody$zodSchema
-  ),
 ]);

@@ -8,15 +8,6 @@ import {
   CreateCustomRequirementDto$zodSchema,
 } from "./createcustomrequirementdto.js";
 
-export type FrameworksControllerCreateRequirementV1Security = {
-  bearer: string;
-};
-
-export const FrameworksControllerCreateRequirementV1Security$zodSchema:
-  z.ZodType<FrameworksControllerCreateRequirementV1Security> = z.object({
-    bearer: z.string().describe("API Key"),
-  });
-
 export type FrameworksControllerCreateRequirementV1Request = {
   id: string;
   body: CreateCustomRequirementDto;

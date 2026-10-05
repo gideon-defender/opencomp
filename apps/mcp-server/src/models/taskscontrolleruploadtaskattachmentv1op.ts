@@ -4,6 +4,10 @@
 
 import * as z from "zod";
 import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
   AttachmentResponseDto,
   AttachmentResponseDto$zodSchema,
 } from "./attachmentresponsedto.js";
@@ -24,62 +28,13 @@ export const TasksControllerUploadTaskAttachmentV1Request$zodSchema: z.ZodType<
   taskId: z.string().describe("Unique task identifier"),
 });
 
-/**
- * Task not found
- */
-export type TasksControllerUploadTaskAttachmentV1NotFoundResponseBody = {
-  message?: string | undefined;
-};
-
-export const TasksControllerUploadTaskAttachmentV1NotFoundResponseBody$zodSchema:
-  z.ZodType<TasksControllerUploadTaskAttachmentV1NotFoundResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Task not found");
-
-/**
- * Unauthorized - Invalid authentication
- */
-export type TasksControllerUploadTaskAttachmentV1UnauthorizedResponseBody = {
-  message?: string | undefined;
-};
-
-export const TasksControllerUploadTaskAttachmentV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<TasksControllerUploadTaskAttachmentV1UnauthorizedResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Unauthorized - Invalid authentication");
-
-/**
- * Invalid file data or file too large
- */
-export type TasksControllerUploadTaskAttachmentV1BadRequestResponseBody = {
-  message?: string | undefined;
-};
-
-export const TasksControllerUploadTaskAttachmentV1BadRequestResponseBody$zodSchema:
-  z.ZodType<TasksControllerUploadTaskAttachmentV1BadRequestResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Invalid file data or file too large");
-
 export type TasksControllerUploadTaskAttachmentV1Response =
   | AttachmentResponseDto
-  | TasksControllerUploadTaskAttachmentV1BadRequestResponseBody
-  | TasksControllerUploadTaskAttachmentV1UnauthorizedResponseBody
-  | TasksControllerUploadTaskAttachmentV1NotFoundResponseBody;
+  | ApiErrorResponseDto;
 
 export const TasksControllerUploadTaskAttachmentV1Response$zodSchema: z.ZodType<
   TasksControllerUploadTaskAttachmentV1Response
 > = z.union([
   AttachmentResponseDto$zodSchema,
-  z.lazy(() =>
-    TasksControllerUploadTaskAttachmentV1BadRequestResponseBody$zodSchema
-  ),
-  z.lazy(() =>
-    TasksControllerUploadTaskAttachmentV1UnauthorizedResponseBody$zodSchema
-  ),
-  z.lazy(() =>
-    TasksControllerUploadTaskAttachmentV1NotFoundResponseBody$zodSchema
-  ),
+  ApiErrorResponseDto$zodSchema,
 ]);

@@ -4,6 +4,10 @@
 
 import * as z from "zod";
 import { ClosedEnum } from "../types/enums.js";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 export const ContextControllerGetAllContextV1AuthType = {
   ApiKey: "api-key",
@@ -31,50 +35,6 @@ export const ContextControllerGetAllContextV1Request$zodSchema: z.ZodType<
   perPage: z.string().describe("Items per page").optional(),
   search: z.string().describe("Search by question text").optional(),
 });
-
-/**
- * Internal server error
- */
-export type ContextControllerGetAllContextV1InternalServerErrorResponseBody = {
-  message?: string | undefined;
-  statusCode?: number | undefined;
-};
-
-export const ContextControllerGetAllContextV1InternalServerErrorResponseBody$zodSchema:
-  z.ZodType<ContextControllerGetAllContextV1InternalServerErrorResponseBody> = z
-    .object({
-      message: z.string().optional(),
-      statusCode: z.number().optional(),
-    }).describe("Internal server error");
-
-/**
- * Organization not found
- */
-export type ContextControllerGetAllContextV1NotFoundResponseBody = {
-  message?: string | undefined;
-  statusCode?: number | undefined;
-};
-
-export const ContextControllerGetAllContextV1NotFoundResponseBody$zodSchema:
-  z.ZodType<ContextControllerGetAllContextV1NotFoundResponseBody> = z.object({
-    message: z.string().optional(),
-    statusCode: z.number().optional(),
-  }).describe("Organization not found");
-
-/**
- * Unauthorized - Invalid or missing authentication
- */
-export type ContextControllerGetAllContextV1UnauthorizedResponseBody = {
-  message?: string | undefined;
-  statusCode?: number | undefined;
-};
-
-export const ContextControllerGetAllContextV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<ContextControllerGetAllContextV1UnauthorizedResponseBody> = z
-    .object({
-      message: z.string().optional(),
-      statusCode: z.number().optional(),
-    }).describe("Unauthorized - Invalid or missing authentication");
 
 export type ContextControllerGetAllContextV1Data = {
   id?: string | undefined;
@@ -117,20 +77,12 @@ export const ContextControllerGetAllContextV1ResponseBody$zodSchema: z.ZodType<
 }).describe("Context entries retrieved successfully");
 
 export type ContextControllerGetAllContextV1Response =
-  | ContextControllerGetAllContextV1ResponseBody
-  | ContextControllerGetAllContextV1UnauthorizedResponseBody
-  | ContextControllerGetAllContextV1NotFoundResponseBody
-  | ContextControllerGetAllContextV1InternalServerErrorResponseBody;
+  | ApiErrorResponseDto
+  | ContextControllerGetAllContextV1ResponseBody;
 
 export const ContextControllerGetAllContextV1Response$zodSchema: z.ZodType<
   ContextControllerGetAllContextV1Response
 > = z.union([
+  ApiErrorResponseDto$zodSchema,
   z.lazy(() => ContextControllerGetAllContextV1ResponseBody$zodSchema),
-  z.lazy(() =>
-    ContextControllerGetAllContextV1UnauthorizedResponseBody$zodSchema
-  ),
-  z.lazy(() => ContextControllerGetAllContextV1NotFoundResponseBody$zodSchema),
-  z.lazy(() =>
-    ContextControllerGetAllContextV1InternalServerErrorResponseBody$zodSchema
-  ),
 ]);

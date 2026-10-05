@@ -4,6 +4,10 @@
 
 import * as z from "zod";
 import { ClosedEnum } from "../types/enums.js";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 export const ContextControllerDeleteContextV1AuthType = {
   ApiKey: "api-key",
@@ -25,50 +29,6 @@ export const ContextControllerDeleteContextV1Request$zodSchema: z.ZodType<
 > = z.object({
   id: z.string().describe("Context entry ID"),
 });
-
-/**
- * Internal server error
- */
-export type ContextControllerDeleteContextV1InternalServerErrorResponseBody = {
-  message?: string | undefined;
-  statusCode?: number | undefined;
-};
-
-export const ContextControllerDeleteContextV1InternalServerErrorResponseBody$zodSchema:
-  z.ZodType<ContextControllerDeleteContextV1InternalServerErrorResponseBody> = z
-    .object({
-      message: z.string().optional(),
-      statusCode: z.number().optional(),
-    }).describe("Internal server error");
-
-/**
- * Context entry not found
- */
-export type ContextControllerDeleteContextV1NotFoundResponseBody = {
-  message?: string | undefined;
-  statusCode?: number | undefined;
-};
-
-export const ContextControllerDeleteContextV1NotFoundResponseBody$zodSchema:
-  z.ZodType<ContextControllerDeleteContextV1NotFoundResponseBody> = z.object({
-    message: z.string().optional(),
-    statusCode: z.number().optional(),
-  }).describe("Context entry not found");
-
-/**
- * Unauthorized - Invalid or missing authentication
- */
-export type ContextControllerDeleteContextV1UnauthorizedResponseBody = {
-  message?: string | undefined;
-  statusCode?: number | undefined;
-};
-
-export const ContextControllerDeleteContextV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<ContextControllerDeleteContextV1UnauthorizedResponseBody> = z
-    .object({
-      message: z.string().optional(),
-      statusCode: z.number().optional(),
-    }).describe("Unauthorized - Invalid or missing authentication");
 
 export type DeletedContext = {
   id?: string | undefined;
@@ -98,20 +58,12 @@ export const ContextControllerDeleteContextV1ResponseBody$zodSchema: z.ZodType<
 }).describe("Context entry deleted successfully");
 
 export type ContextControllerDeleteContextV1Response =
-  | ContextControllerDeleteContextV1ResponseBody
-  | ContextControllerDeleteContextV1UnauthorizedResponseBody
-  | ContextControllerDeleteContextV1NotFoundResponseBody
-  | ContextControllerDeleteContextV1InternalServerErrorResponseBody;
+  | ApiErrorResponseDto
+  | ContextControllerDeleteContextV1ResponseBody;
 
 export const ContextControllerDeleteContextV1Response$zodSchema: z.ZodType<
   ContextControllerDeleteContextV1Response
 > = z.union([
+  ApiErrorResponseDto$zodSchema,
   z.lazy(() => ContextControllerDeleteContextV1ResponseBody$zodSchema),
-  z.lazy(() =>
-    ContextControllerDeleteContextV1UnauthorizedResponseBody$zodSchema
-  ),
-  z.lazy(() => ContextControllerDeleteContextV1NotFoundResponseBody$zodSchema),
-  z.lazy(() =>
-    ContextControllerDeleteContextV1InternalServerErrorResponseBody$zodSchema
-  ),
 ]);

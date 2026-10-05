@@ -3,6 +3,14 @@
  */
 
 import * as z from "zod";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
+  TriggerAutoAnswerResponseDto,
+  TriggerAutoAnswerResponseDto$zodSchema,
+} from "./triggerautoanswerresponsedto.js";
 
 export type QuestionnaireControllerTriggerAutoAnswerV1Request = { id: string };
 
@@ -10,3 +18,13 @@ export const QuestionnaireControllerTriggerAutoAnswerV1Request$zodSchema:
   z.ZodType<QuestionnaireControllerTriggerAutoAnswerV1Request> = z.object({
     id: z.string(),
   });
+
+export type QuestionnaireControllerTriggerAutoAnswerV1Response =
+  | TriggerAutoAnswerResponseDto
+  | ApiErrorResponseDto;
+
+export const QuestionnaireControllerTriggerAutoAnswerV1Response$zodSchema:
+  z.ZodType<QuestionnaireControllerTriggerAutoAnswerV1Response> = z.union([
+    TriggerAutoAnswerResponseDto$zodSchema,
+    ApiErrorResponseDto$zodSchema,
+  ]);

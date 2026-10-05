@@ -37,8 +37,6 @@ import { isReadableStream } from "../types/streams.js";
  *
  * @remarks
  * Upload a security questionnaire file, extract questions, save the parsed questionnaire, and return its identifier and question count.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function questionnaireQuestionnaireControllerUploadAndParseUploadV1(
   client$: CompAiCore,
@@ -130,7 +128,7 @@ async function $do(
     Accept: "application/json",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

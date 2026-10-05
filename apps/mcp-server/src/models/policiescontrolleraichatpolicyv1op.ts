@@ -7,6 +7,10 @@ import {
   AISuggestPolicyRequestDto,
   AISuggestPolicyRequestDto$zodSchema,
 } from "./aisuggestpolicyrequestdto.js";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 export type PoliciesControllerAiChatPolicyV1Request = {
   xOrganizationId?: string | undefined;
@@ -23,3 +27,14 @@ export const PoliciesControllerAiChatPolicyV1Request$zodSchema: z.ZodType<
     "Organization ID (required for session auth, optional for API key auth)",
   ).optional(),
 });
+
+export type PoliciesControllerAiChatPolicyV1Response =
+  | ApiErrorResponseDto
+  | string;
+
+export const PoliciesControllerAiChatPolicyV1Response$zodSchema: z.ZodType<
+  PoliciesControllerAiChatPolicyV1Response
+> = z.union([
+  ApiErrorResponseDto$zodSchema,
+  z.string().describe("Streaming AI response"),
+]);

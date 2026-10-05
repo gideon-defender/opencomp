@@ -3,6 +3,10 @@
  */
 
 import * as z from "zod";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 export type TasksControllerDeleteTaskV1Request = { taskId: string };
 
@@ -15,14 +19,25 @@ export const TasksControllerDeleteTaskV1Request$zodSchema: z.ZodType<
 /**
  * Task deleted successfully
  */
-export type TasksControllerDeleteTaskV1Response = {
+export type TasksControllerDeleteTaskV1ResponseBody = {
   success?: boolean | undefined;
   message?: string | undefined;
 };
 
-export const TasksControllerDeleteTaskV1Response$zodSchema: z.ZodType<
-  TasksControllerDeleteTaskV1Response
+export const TasksControllerDeleteTaskV1ResponseBody$zodSchema: z.ZodType<
+  TasksControllerDeleteTaskV1ResponseBody
 > = z.object({
   message: z.string().optional(),
   success: z.boolean().optional(),
 }).describe("Task deleted successfully");
+
+export type TasksControllerDeleteTaskV1Response =
+  | ApiErrorResponseDto
+  | TasksControllerDeleteTaskV1ResponseBody;
+
+export const TasksControllerDeleteTaskV1Response$zodSchema: z.ZodType<
+  TasksControllerDeleteTaskV1Response
+> = z.union([
+  ApiErrorResponseDto$zodSchema,
+  z.lazy(() => TasksControllerDeleteTaskV1ResponseBody$zodSchema),
+]);

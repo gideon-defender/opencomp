@@ -4,6 +4,10 @@
 
 import * as z from "zod";
 import { ClosedEnum } from "../types/enums.js";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 /**
  * Type of entity
@@ -58,13 +62,27 @@ export const ByStatus$zodSchema: z.ZodType<ByStatus> = z.object({
 /**
  * Task items statistics retrieved successfully
  */
-export type TaskManagementControllerGetTaskItemsStatsV1Response = {
+export type TaskManagementControllerGetTaskItemsStatsV1ResponseBody = {
   total?: number | undefined;
   byStatus?: ByStatus | undefined;
 };
 
+export const TaskManagementControllerGetTaskItemsStatsV1ResponseBody$zodSchema:
+  z.ZodType<TaskManagementControllerGetTaskItemsStatsV1ResponseBody> = z.object(
+    {
+      byStatus: z.lazy(() => ByStatus$zodSchema).optional(),
+      total: z.number().optional(),
+    },
+  ).describe("Task items statistics retrieved successfully");
+
+export type TaskManagementControllerGetTaskItemsStatsV1Response =
+  | ApiErrorResponseDto
+  | TaskManagementControllerGetTaskItemsStatsV1ResponseBody;
+
 export const TaskManagementControllerGetTaskItemsStatsV1Response$zodSchema:
-  z.ZodType<TaskManagementControllerGetTaskItemsStatsV1Response> = z.object({
-    byStatus: z.lazy(() => ByStatus$zodSchema).optional(),
-    total: z.number().optional(),
-  }).describe("Task items statistics retrieved successfully");
+  z.ZodType<TaskManagementControllerGetTaskItemsStatsV1Response> = z.union([
+    ApiErrorResponseDto$zodSchema,
+    z.lazy(() =>
+      TaskManagementControllerGetTaskItemsStatsV1ResponseBody$zodSchema
+    ),
+  ]);

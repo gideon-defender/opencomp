@@ -30,8 +30,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Trigger a vendor risk assessment so OpenComp can update third-party risk evidence and vendor security review status.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function vendorsVendorsControllerTriggerAssessmentV1(
   client$: CompAiCore,
@@ -98,10 +96,10 @@ async function $do(
   );
 
   const headers$ = new Headers(compactMap({
-    Accept: "*/*",
+    Accept: "application/json",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

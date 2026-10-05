@@ -30,8 +30,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Update a risk record as mitigation work progresses so compliance reports reflect the current risk posture.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function risksRisksControllerUpdateRiskV1(
   client$: CompAiCore,
@@ -101,7 +99,7 @@ async function $do(
     Accept: "application/json",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

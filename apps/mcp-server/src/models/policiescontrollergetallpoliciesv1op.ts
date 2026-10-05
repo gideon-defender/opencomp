@@ -5,6 +5,10 @@
 import * as z from "zod";
 import { ClosedEnum } from "../types/enums.js";
 import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
   PolicyResponseDto,
   PolicyResponseDto$zodSchema,
 } from "./policyresponsedto.js";
@@ -49,21 +53,6 @@ export const PoliciesControllerGetAllPoliciesV1Request$zodSchema: z.ZodType<
 });
 
 /**
- * Unauthorized - Invalid authentication or insufficient permissions
- */
-export type PoliciesControllerGetAllPoliciesV1UnauthorizedResponseBody = {
-  message?: string | undefined;
-};
-
-export const PoliciesControllerGetAllPoliciesV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<PoliciesControllerGetAllPoliciesV1UnauthorizedResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe(
-      "Unauthorized - Invalid authentication or insufficient permissions",
-    );
-
-/**
  * Authenticated user information (only present for session auth)
  */
 export type PoliciesControllerGetAllPoliciesV1AuthenticatedUser = {
@@ -103,13 +92,11 @@ export const PoliciesControllerGetAllPoliciesV1ResponseBody$zodSchema:
 
 export type PoliciesControllerGetAllPoliciesV1Response =
   | PoliciesControllerGetAllPoliciesV1ResponseBody
-  | PoliciesControllerGetAllPoliciesV1UnauthorizedResponseBody;
+  | ApiErrorResponseDto;
 
 export const PoliciesControllerGetAllPoliciesV1Response$zodSchema: z.ZodType<
   PoliciesControllerGetAllPoliciesV1Response
 > = z.union([
   z.lazy(() => PoliciesControllerGetAllPoliciesV1ResponseBody$zodSchema),
-  z.lazy(() =>
-    PoliciesControllerGetAllPoliciesV1UnauthorizedResponseBody$zodSchema
-  ),
+  ApiErrorResponseDto$zodSchema,
 ]);

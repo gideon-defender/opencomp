@@ -24,8 +24,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * List all manual answers for an organization in OpenComp. Upload source documents, process them for retrieval, and manage reusable manual answers that power questionnaires and AI policy workflows.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function knowledgeBaseKnowledgeBaseControllerListManualAnswersV1(
   client$: CompAiCore,
@@ -69,10 +67,10 @@ async function $do(
   const path$ = pathToFunc("/v1/knowledge-base/manual-answers")();
 
   const headers$ = new Headers(compactMap({
-    Accept: "*/*",
+    Accept: "application/json",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

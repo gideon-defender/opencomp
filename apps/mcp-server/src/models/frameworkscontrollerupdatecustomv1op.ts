@@ -8,14 +8,6 @@ import {
   UpdateCustomFrameworkDto$zodSchema,
 } from "./updatecustomframeworkdto.js";
 
-export type FrameworksControllerUpdateCustomV1Security = { bearer: string };
-
-export const FrameworksControllerUpdateCustomV1Security$zodSchema: z.ZodType<
-  FrameworksControllerUpdateCustomV1Security
-> = z.object({
-  bearer: z.string().describe("API Key"),
-});
-
 export type FrameworksControllerUpdateCustomV1Request = {
   id: string;
   body: UpdateCustomFrameworkDto;

@@ -3,6 +3,10 @@
  */
 
 import * as z from "zod";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 export type RolesControllerGetRoleV1Request = { roleId: string };
 
@@ -21,7 +25,7 @@ export const RolesControllerGetRoleV1Permissions$zodSchema: z.ZodType<
 /**
  * Role details
  */
-export type RolesControllerGetRoleV1Response = {
+export type RolesControllerGetRoleV1ResponseBody = {
   id?: string | undefined;
   name?: string | undefined;
   permissions?: RolesControllerGetRoleV1Permissions | undefined;
@@ -30,8 +34,8 @@ export type RolesControllerGetRoleV1Response = {
   updatedAt?: string | undefined;
 };
 
-export const RolesControllerGetRoleV1Response$zodSchema: z.ZodType<
-  RolesControllerGetRoleV1Response
+export const RolesControllerGetRoleV1ResponseBody$zodSchema: z.ZodType<
+  RolesControllerGetRoleV1ResponseBody
 > = z.object({
   createdAt: z.iso.datetime({ offset: true }).optional(),
   id: z.string().optional(),
@@ -41,3 +45,14 @@ export const RolesControllerGetRoleV1Response$zodSchema: z.ZodType<
     .optional(),
   updatedAt: z.iso.datetime({ offset: true }).optional(),
 }).describe("Role details");
+
+export type RolesControllerGetRoleV1Response =
+  | ApiErrorResponseDto
+  | RolesControllerGetRoleV1ResponseBody;
+
+export const RolesControllerGetRoleV1Response$zodSchema: z.ZodType<
+  RolesControllerGetRoleV1Response
+> = z.union([
+  ApiErrorResponseDto$zodSchema,
+  z.lazy(() => RolesControllerGetRoleV1ResponseBody$zodSchema),
+]);

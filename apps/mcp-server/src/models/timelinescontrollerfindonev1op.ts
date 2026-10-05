@@ -4,14 +4,6 @@
 
 import * as z from "zod";
 
-export type TimelinesControllerFindOneV1Security = { bearer: string };
-
-export const TimelinesControllerFindOneV1Security$zodSchema: z.ZodType<
-  TimelinesControllerFindOneV1Security
-> = z.object({
-  bearer: z.string().describe("API Key"),
-});
-
 export type TimelinesControllerFindOneV1Request = { id: string };
 
 export const TimelinesControllerFindOneV1Request$zodSchema: z.ZodType<

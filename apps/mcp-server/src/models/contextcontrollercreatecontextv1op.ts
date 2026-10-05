@@ -4,6 +4,10 @@
 
 import * as z from "zod";
 import { ClosedEnum } from "../types/enums.js";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 export const ContextControllerCreateContextV1AuthType = {
   ApiKey: "api-key",
@@ -17,50 +21,6 @@ export const ContextControllerCreateContextV1AuthType$zodSchema = z.enum([
   "api-key",
   "session",
 ]);
-
-/**
- * Internal server error
- */
-export type ContextControllerCreateContextV1InternalServerErrorResponseBody = {
-  message?: string | undefined;
-  statusCode?: number | undefined;
-};
-
-export const ContextControllerCreateContextV1InternalServerErrorResponseBody$zodSchema:
-  z.ZodType<ContextControllerCreateContextV1InternalServerErrorResponseBody> = z
-    .object({
-      message: z.string().optional(),
-      statusCode: z.number().optional(),
-    }).describe("Internal server error");
-
-/**
- * Organization not found
- */
-export type ContextControllerCreateContextV1NotFoundResponseBody = {
-  message?: string | undefined;
-  statusCode?: number | undefined;
-};
-
-export const ContextControllerCreateContextV1NotFoundResponseBody$zodSchema:
-  z.ZodType<ContextControllerCreateContextV1NotFoundResponseBody> = z.object({
-    message: z.string().optional(),
-    statusCode: z.number().optional(),
-  }).describe("Organization not found");
-
-/**
- * Unauthorized - Invalid or missing authentication
- */
-export type ContextControllerCreateContextV1UnauthorizedResponseBody = {
-  message?: string | undefined;
-  statusCode?: number | undefined;
-};
-
-export const ContextControllerCreateContextV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<ContextControllerCreateContextV1UnauthorizedResponseBody> = z
-    .object({
-      message: z.string().optional(),
-      statusCode: z.number().optional(),
-    }).describe("Unauthorized - Invalid or missing authentication");
 
 /**
  * Bad request - Invalid input data
@@ -106,24 +66,16 @@ export const ContextControllerCreateContextV1ResponseBody$zodSchema: z.ZodType<
 }).describe("Context entry created successfully");
 
 export type ContextControllerCreateContextV1Response =
+  | ApiErrorResponseDto
   | ContextControllerCreateContextV1ResponseBody
-  | ContextControllerCreateContextV1BadRequestResponseBody
-  | ContextControllerCreateContextV1UnauthorizedResponseBody
-  | ContextControllerCreateContextV1NotFoundResponseBody
-  | ContextControllerCreateContextV1InternalServerErrorResponseBody;
+  | ContextControllerCreateContextV1BadRequestResponseBody;
 
 export const ContextControllerCreateContextV1Response$zodSchema: z.ZodType<
   ContextControllerCreateContextV1Response
 > = z.union([
+  ApiErrorResponseDto$zodSchema,
   z.lazy(() => ContextControllerCreateContextV1ResponseBody$zodSchema),
   z.lazy(() =>
     ContextControllerCreateContextV1BadRequestResponseBody$zodSchema
-  ),
-  z.lazy(() =>
-    ContextControllerCreateContextV1UnauthorizedResponseBody$zodSchema
-  ),
-  z.lazy(() => ContextControllerCreateContextV1NotFoundResponseBody$zodSchema),
-  z.lazy(() =>
-    ContextControllerCreateContextV1InternalServerErrorResponseBody$zodSchema
   ),
 ]);

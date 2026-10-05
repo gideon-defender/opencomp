@@ -3,6 +3,10 @@
  */
 
 import * as z from "zod";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 export type TrustAccessControllerGetPublicFaviconV1Request = {
   friendlyUrl: string;
@@ -18,13 +22,23 @@ export const TrustAccessControllerGetPublicFaviconV1Request$zodSchema:
 /**
  * Favicon URL retrieved successfully
  */
-export type TrustAccessControllerGetPublicFaviconV1Response = {
+export type TrustAccessControllerGetPublicFaviconV1ResponseBody = {
   faviconUrl?: string | null | undefined;
 };
 
-export const TrustAccessControllerGetPublicFaviconV1Response$zodSchema:
-  z.ZodType<TrustAccessControllerGetPublicFaviconV1Response> = z.object({
+export const TrustAccessControllerGetPublicFaviconV1ResponseBody$zodSchema:
+  z.ZodType<TrustAccessControllerGetPublicFaviconV1ResponseBody> = z.object({
     faviconUrl: z.string().nullable().optional().describe(
       "Signed URL to the favicon, or null if not set",
     ),
   }).describe("Favicon URL retrieved successfully");
+
+export type TrustAccessControllerGetPublicFaviconV1Response =
+  | ApiErrorResponseDto
+  | TrustAccessControllerGetPublicFaviconV1ResponseBody;
+
+export const TrustAccessControllerGetPublicFaviconV1Response$zodSchema:
+  z.ZodType<TrustAccessControllerGetPublicFaviconV1Response> = z.union([
+    ApiErrorResponseDto$zodSchema,
+    z.lazy(() => TrustAccessControllerGetPublicFaviconV1ResponseBody$zodSchema),
+  ]);

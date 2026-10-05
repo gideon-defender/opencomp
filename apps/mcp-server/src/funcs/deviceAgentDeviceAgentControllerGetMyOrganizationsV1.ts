@@ -67,7 +67,7 @@ async function $do(
   const path$ = pathToFunc("/v1/device-agent/my-organizations")();
 
   const headers$ = new Headers(compactMap({
-    Accept: "*/*",
+    Accept: "application/json",
   }));
   const securityInput = await extractSecurity(client$._options.security);
   const requestSecurity = resolveGlobalSecurity(securityInput);

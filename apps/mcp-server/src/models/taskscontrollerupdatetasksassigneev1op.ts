@@ -3,6 +3,10 @@
  */
 
 import * as z from "zod";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 export type TasksControllerUpdateTasksAssigneeV1Request = {
   taskIds: Array<string>;
@@ -21,12 +25,22 @@ export const TasksControllerUpdateTasksAssigneeV1Request$zodSchema: z.ZodType<
 /**
  * Tasks updated successfully
  */
-export type TasksControllerUpdateTasksAssigneeV1Response = {
+export type TasksControllerUpdateTasksAssigneeV1ResponseBody = {
   updatedCount?: number | undefined;
 };
 
+export const TasksControllerUpdateTasksAssigneeV1ResponseBody$zodSchema:
+  z.ZodType<TasksControllerUpdateTasksAssigneeV1ResponseBody> = z.object({
+    updatedCount: z.number().optional(),
+  }).describe("Tasks updated successfully");
+
+export type TasksControllerUpdateTasksAssigneeV1Response =
+  | ApiErrorResponseDto
+  | TasksControllerUpdateTasksAssigneeV1ResponseBody;
+
 export const TasksControllerUpdateTasksAssigneeV1Response$zodSchema: z.ZodType<
   TasksControllerUpdateTasksAssigneeV1Response
-> = z.object({
-  updatedCount: z.number().optional(),
-}).describe("Tasks updated successfully");
+> = z.union([
+  ApiErrorResponseDto$zodSchema,
+  z.lazy(() => TasksControllerUpdateTasksAssigneeV1ResponseBody$zodSchema),
+]);

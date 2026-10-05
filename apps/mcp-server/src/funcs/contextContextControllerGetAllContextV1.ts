@@ -30,8 +30,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * List organization context entries used as approved source material for evidence, questionnaires, policies, and AI workflows.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function contextContextControllerGetAllContextV1(
   client$: CompAiCore,
@@ -99,7 +97,7 @@ async function $do(
     Accept: "application/json",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

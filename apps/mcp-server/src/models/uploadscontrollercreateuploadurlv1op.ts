@@ -4,9 +4,17 @@
 
 import * as z from "zod";
 import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
   CreateUploadUrlDto,
   CreateUploadUrlDto$zodSchema,
 } from "./createuploadurldto.js";
+import {
+  UploadUrlResponseDto,
+  UploadUrlResponseDto$zodSchema,
+} from "./uploadurlresponsedto.js";
 
 export type UploadsControllerCreateUploadUrlV1Request = {
   xOrganizationId?: string | undefined;
@@ -21,3 +29,14 @@ export const UploadsControllerCreateUploadUrlV1Request$zodSchema: z.ZodType<
     "Organization ID (required for session auth, optional for API key auth)",
   ).optional(),
 });
+
+export type UploadsControllerCreateUploadUrlV1Response =
+  | UploadUrlResponseDto
+  | ApiErrorResponseDto;
+
+export const UploadsControllerCreateUploadUrlV1Response$zodSchema: z.ZodType<
+  UploadsControllerCreateUploadUrlV1Response
+> = z.union([
+  UploadUrlResponseDto$zodSchema,
+  ApiErrorResponseDto$zodSchema,
+]);

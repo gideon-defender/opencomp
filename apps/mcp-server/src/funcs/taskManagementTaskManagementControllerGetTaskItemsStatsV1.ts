@@ -30,8 +30,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Get task items statistics for an entity in OpenComp. Manage task items and attachments linked to operational entities such as risks and vendors.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function taskManagementTaskManagementControllerGetTaskItemsStatsV1(
   client$: CompAiCore,
@@ -98,7 +96,7 @@ async function $do(
     Accept: "application/json",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

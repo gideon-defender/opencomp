@@ -5,6 +5,10 @@
 import * as z from "zod";
 import * as b64$ from "../lib/base64.js";
 import { ClosedEnum } from "../types/enums.js";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 /**
  * Source of the upload
@@ -58,15 +62,28 @@ export const QuestionnaireControllerUploadAndParseUploadV1Request$zodSchema:
 /**
  * Upload file, parse questions (no answers), save to DB, return questionnaireId
  */
-export type QuestionnaireControllerUploadAndParseUploadV1Response = {
+export type QuestionnaireControllerUploadAndParseUploadV1ResponseBody = {
   questionnaireId?: string | undefined;
   totalQuestions?: number | undefined;
 };
 
+export const QuestionnaireControllerUploadAndParseUploadV1ResponseBody$zodSchema:
+  z.ZodType<QuestionnaireControllerUploadAndParseUploadV1ResponseBody> = z
+    .object({
+      questionnaireId: z.string().optional(),
+      totalQuestions: z.number().optional(),
+    }).describe(
+      "Upload file, parse questions (no answers), save to DB, return questionnaireId",
+    );
+
+export type QuestionnaireControllerUploadAndParseUploadV1Response =
+  | ApiErrorResponseDto
+  | QuestionnaireControllerUploadAndParseUploadV1ResponseBody;
+
 export const QuestionnaireControllerUploadAndParseUploadV1Response$zodSchema:
-  z.ZodType<QuestionnaireControllerUploadAndParseUploadV1Response> = z.object({
-    questionnaireId: z.string().optional(),
-    totalQuestions: z.number().optional(),
-  }).describe(
-    "Upload file, parse questions (no answers), save to DB, return questionnaireId",
-  );
+  z.ZodType<QuestionnaireControllerUploadAndParseUploadV1Response> = z.union([
+    ApiErrorResponseDto$zodSchema,
+    z.lazy(() =>
+      QuestionnaireControllerUploadAndParseUploadV1ResponseBody$zodSchema
+    ),
+  ]);

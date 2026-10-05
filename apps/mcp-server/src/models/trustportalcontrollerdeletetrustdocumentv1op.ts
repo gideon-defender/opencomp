@@ -4,6 +4,10 @@
 
 import * as z from "zod";
 import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
   DeleteTrustDocumentDto,
   DeleteTrustDocumentDto$zodSchema,
 } from "./deletetrustdocumentdto.js";
@@ -22,11 +26,23 @@ export const TrustPortalControllerDeleteTrustDocumentV1Request$zodSchema:
 /**
  * Document deleted successfully
  */
-export type TrustPortalControllerDeleteTrustDocumentV1Response = {
+export type TrustPortalControllerDeleteTrustDocumentV1ResponseBody = {
   success?: boolean | undefined;
 };
 
-export const TrustPortalControllerDeleteTrustDocumentV1Response$zodSchema:
-  z.ZodType<TrustPortalControllerDeleteTrustDocumentV1Response> = z.object({
+export const TrustPortalControllerDeleteTrustDocumentV1ResponseBody$zodSchema:
+  z.ZodType<TrustPortalControllerDeleteTrustDocumentV1ResponseBody> = z.object({
     success: z.boolean().optional(),
   }).describe("Document deleted successfully");
+
+export type TrustPortalControllerDeleteTrustDocumentV1Response =
+  | ApiErrorResponseDto
+  | TrustPortalControllerDeleteTrustDocumentV1ResponseBody;
+
+export const TrustPortalControllerDeleteTrustDocumentV1Response$zodSchema:
+  z.ZodType<TrustPortalControllerDeleteTrustDocumentV1Response> = z.union([
+    ApiErrorResponseDto$zodSchema,
+    z.lazy(() =>
+      TrustPortalControllerDeleteTrustDocumentV1ResponseBody$zodSchema
+    ),
+  ]);

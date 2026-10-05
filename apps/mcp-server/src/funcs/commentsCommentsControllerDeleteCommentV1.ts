@@ -30,8 +30,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Delete a comment in OpenComp. Create and manage collaboration comments on compliance entities such as tasks, policies, risks, vendors, and findings.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function commentsCommentsControllerDeleteCommentV1(
   client$: CompAiCore,
@@ -102,7 +100,7 @@ async function $do(
     Accept: "application/json",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

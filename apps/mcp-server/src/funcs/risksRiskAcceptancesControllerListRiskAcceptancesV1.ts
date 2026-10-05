@@ -30,8 +30,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Returns the residual-risk acceptance history for a risk, newest first. Each event freezes the residual rating at acceptance and carries a stale flag set when the risk's residual rating has changed since (ISO 27001 6.1.3(f)).
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function risksRiskAcceptancesControllerListRiskAcceptancesV1(
   client$: CompAiCore,
@@ -103,7 +101,7 @@ async function $do(
     Accept: "application/json",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

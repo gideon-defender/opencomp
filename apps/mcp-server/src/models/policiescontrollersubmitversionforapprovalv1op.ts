@@ -4,6 +4,10 @@
 
 import * as z from "zod";
 import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
   SubmitForApprovalDto,
   SubmitForApprovalDto$zodSchema,
 } from "./submitforapprovaldto.js";
@@ -28,45 +32,6 @@ export const PoliciesControllerSubmitVersionForApprovalV1Request$zodSchema:
   });
 
 /**
- * Resource not found
- */
-export type PoliciesControllerSubmitVersionForApprovalV1NotFoundResponseBody = {
-  message?: string | undefined;
-};
-
-export const PoliciesControllerSubmitVersionForApprovalV1NotFoundResponseBody$zodSchema:
-  z.ZodType<PoliciesControllerSubmitVersionForApprovalV1NotFoundResponseBody> =
-    z.object({
-      message: z.string().optional(),
-    }).describe("Resource not found");
-
-/**
- * Unauthorized
- */
-export type PoliciesControllerSubmitVersionForApprovalV1UnauthorizedResponseBody =
-  { message?: string | undefined };
-
-export const PoliciesControllerSubmitVersionForApprovalV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<
-    PoliciesControllerSubmitVersionForApprovalV1UnauthorizedResponseBody
-  > = z.object({
-    message: z.string().optional(),
-  }).describe("Unauthorized");
-
-/**
- * Invalid request
- */
-export type PoliciesControllerSubmitVersionForApprovalV1BadRequestResponseBody =
-  { message?: string | undefined };
-
-export const PoliciesControllerSubmitVersionForApprovalV1BadRequestResponseBody$zodSchema:
-  z.ZodType<
-    PoliciesControllerSubmitVersionForApprovalV1BadRequestResponseBody
-  > = z.object({
-    message: z.string().optional(),
-  }).describe("Invalid request");
-
-/**
  * Version submitted for approval
  */
 export type PoliciesControllerSubmitVersionForApprovalV1ResponseBody = {
@@ -82,23 +47,13 @@ export const PoliciesControllerSubmitVersionForApprovalV1ResponseBody$zodSchema:
     }).describe("Version submitted for approval");
 
 export type PoliciesControllerSubmitVersionForApprovalV1Response =
-  | PoliciesControllerSubmitVersionForApprovalV1ResponseBody
-  | PoliciesControllerSubmitVersionForApprovalV1BadRequestResponseBody
-  | PoliciesControllerSubmitVersionForApprovalV1UnauthorizedResponseBody
-  | PoliciesControllerSubmitVersionForApprovalV1NotFoundResponseBody;
+  | ApiErrorResponseDto
+  | PoliciesControllerSubmitVersionForApprovalV1ResponseBody;
 
 export const PoliciesControllerSubmitVersionForApprovalV1Response$zodSchema:
   z.ZodType<PoliciesControllerSubmitVersionForApprovalV1Response> = z.union([
+    ApiErrorResponseDto$zodSchema,
     z.lazy(() =>
       PoliciesControllerSubmitVersionForApprovalV1ResponseBody$zodSchema
-    ),
-    z.lazy(() =>
-      PoliciesControllerSubmitVersionForApprovalV1BadRequestResponseBody$zodSchema
-    ),
-    z.lazy(() =>
-      PoliciesControllerSubmitVersionForApprovalV1UnauthorizedResponseBody$zodSchema
-    ),
-    z.lazy(() =>
-      PoliciesControllerSubmitVersionForApprovalV1NotFoundResponseBody$zodSchema
     ),
   ]);

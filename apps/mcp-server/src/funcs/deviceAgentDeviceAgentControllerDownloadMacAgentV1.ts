@@ -19,13 +19,16 @@ import { SDKValidationError } from "../models/errors/sdkvalidationerror.js";
 import { APICall, APIPromise } from "../types/async.js";
 import { Result } from "../types/fp.js";
 
+export enum DeviceAgentControllerDownloadMacAgentV1AcceptEnum {
+  applicationJsonAccept = "application/json",
+  applicationXAppleDiskimageAccept = "application/x-apple-diskimage",
+}
+
 /**
  * Download macOS Device Agent
  *
  * @remarks
  * Downloads the OpenComp Device Agent installer for macOS as a DMG file. The agent helps monitor device compliance and security policies.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function deviceAgentDeviceAgentControllerDownloadMacAgentV1(
   client$: CompAiCore,
@@ -50,7 +53,9 @@ export function deviceAgentDeviceAgentControllerDownloadMacAgentV1(
 
 async function $do(
   client$: CompAiCore,
-  options?: RequestOptions,
+  options?: RequestOptions & {
+    acceptHeaderOverride?: DeviceAgentControllerDownloadMacAgentV1AcceptEnum;
+  },
 ): Promise<
   [
     Result<
@@ -69,10 +74,11 @@ async function $do(
   const path$ = pathToFunc("/v1/device-agent/mac")();
 
   const headers$ = new Headers(compactMap({
-    Accept: "application/x-apple-diskimage",
+    Accept: options?.acceptHeaderOverride
+      || "application/json;q=1, application/x-apple-diskimage;q=0",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

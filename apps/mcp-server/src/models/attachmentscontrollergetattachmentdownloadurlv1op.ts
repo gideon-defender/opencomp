@@ -3,6 +3,10 @@
  */
 
 import * as z from "zod";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 export type AttachmentsControllerGetAttachmentDownloadUrlV1Request = {
   attachmentId: string;
@@ -16,19 +20,30 @@ export const AttachmentsControllerGetAttachmentDownloadUrlV1Request$zodSchema:
 /**
  * Download URL generated successfully
  */
-export type AttachmentsControllerGetAttachmentDownloadUrlV1Response = {
+export type AttachmentsControllerGetAttachmentDownloadUrlV1ResponseBody = {
   downloadUrl?: string | undefined;
   expiresIn?: number | undefined;
 };
 
-export const AttachmentsControllerGetAttachmentDownloadUrlV1Response$zodSchema:
-  z.ZodType<AttachmentsControllerGetAttachmentDownloadUrlV1Response> = z.object(
-    {
+export const AttachmentsControllerGetAttachmentDownloadUrlV1ResponseBody$zodSchema:
+  z.ZodType<AttachmentsControllerGetAttachmentDownloadUrlV1ResponseBody> = z
+    .object({
       downloadUrl: z.string().optional().describe(
         "Signed URL for downloading the file",
       ),
       expiresIn: z.number().optional().describe(
         "URL expiration time in seconds",
       ),
-    },
-  ).describe("Download URL generated successfully");
+    }).describe("Download URL generated successfully");
+
+export type AttachmentsControllerGetAttachmentDownloadUrlV1Response =
+  | ApiErrorResponseDto
+  | AttachmentsControllerGetAttachmentDownloadUrlV1ResponseBody;
+
+export const AttachmentsControllerGetAttachmentDownloadUrlV1Response$zodSchema:
+  z.ZodType<AttachmentsControllerGetAttachmentDownloadUrlV1Response> = z.union([
+    ApiErrorResponseDto$zodSchema,
+    z.lazy(() =>
+      AttachmentsControllerGetAttachmentDownloadUrlV1ResponseBody$zodSchema
+    ),
+  ]);

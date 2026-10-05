@@ -8,14 +8,6 @@ import {
   LinkPoliciesDto$zodSchema,
 } from "./linkpoliciesdto.js";
 
-export type ControlsControllerLinkPoliciesV1Security = { bearer: string };
-
-export const ControlsControllerLinkPoliciesV1Security$zodSchema: z.ZodType<
-  ControlsControllerLinkPoliciesV1Security
-> = z.object({
-  bearer: z.string().describe("API Key"),
-});
-
 export type ControlsControllerLinkPoliciesV1Request = {
   id: string;
   frameworkInstanceId: string;

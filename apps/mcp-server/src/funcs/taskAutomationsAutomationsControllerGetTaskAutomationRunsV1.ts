@@ -30,8 +30,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Get all automation runs for a task in OpenComp. Create, version, run, and inspect automated evidence collection workflows attached to compliance tasks.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function taskAutomationsAutomationsControllerGetTaskAutomationRunsV1(
   client$: CompAiCore,
@@ -103,7 +101,7 @@ async function $do(
     Accept: "application/json",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

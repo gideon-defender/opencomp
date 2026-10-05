@@ -7,7 +7,7 @@ import { encodeJSON, encodeSimple } from "../lib/encodings.js";
 import { compactMap } from "../lib/primitives.js";
 import { safeParse } from "../lib/schemas.js";
 import { RequestOptions } from "../lib/sdks.js";
-import { resolveSecurity } from "../lib/security.js";
+import { extractSecurity, resolveGlobalSecurity } from "../lib/security.js";
 import { pathToFunc } from "../lib/url.js";
 import { APIError } from "../models/errors/apierror.js";
 import {
@@ -21,7 +21,6 @@ import { SDKValidationError } from "../models/errors/sdkvalidationerror.js";
 import {
   FrameworksControllerRollbackFrameworkV1Request,
   FrameworksControllerRollbackFrameworkV1Request$zodSchema,
-  FrameworksControllerRollbackFrameworkV1Security,
 } from "../models/frameworkscontrollerrollbackframeworkv1op.js";
 import { APICall, APIPromise } from "../types/async.js";
 import { Result } from "../types/fp.js";
@@ -34,7 +33,6 @@ import { Result } from "../types/fp.js";
  */
 export function frameworksFrameworksControllerRollbackFrameworkV1(
   client$: CompAiCore,
-  security: FrameworksControllerRollbackFrameworkV1Security,
   request: FrameworksControllerRollbackFrameworkV1Request,
   options?: RequestOptions,
 ): APIPromise<
@@ -51,7 +49,6 @@ export function frameworksFrameworksControllerRollbackFrameworkV1(
 > {
   return new APIPromise($do(
     client$,
-    security,
     request,
     options,
   ));
@@ -59,7 +56,6 @@ export function frameworksFrameworksControllerRollbackFrameworkV1(
 
 async function $do(
   client$: CompAiCore,
-  security: FrameworksControllerRollbackFrameworkV1Security,
   request: FrameworksControllerRollbackFrameworkV1Request,
   options?: RequestOptions,
 ): Promise<
@@ -101,18 +97,10 @@ async function $do(
 
   const headers$ = new Headers(compactMap({
     "Content-Type": "application/json",
-    Accept: "*/*",
+    Accept: "application/json",
   }));
-
-  const requestSecurity = resolveSecurity(
-    [
-      {
-        fieldName: "Authorization",
-        type: "apiKey:header",
-        value: security?.bearer,
-      },
-    ],
-  );
+  const securityInput = await extractSecurity(client$._options.security);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,
@@ -120,7 +108,7 @@ async function $do(
     operationID: "FrameworksController_rollbackFramework_v1",
     oAuth2Scopes: null,
     resolvedSecurity: requestSecurity,
-    securitySource: security,
+    securitySource: client$._options.security,
     retryConfig: options?.retries
       || client$._options.retryConfig
       || { strategy: "none" },

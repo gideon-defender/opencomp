@@ -7,7 +7,7 @@ import { encodeSimple } from "../lib/encodings.js";
 import { compactMap } from "../lib/primitives.js";
 import { safeParse } from "../lib/schemas.js";
 import { RequestOptions } from "../lib/sdks.js";
-import { resolveSecurity } from "../lib/security.js";
+import { extractSecurity, resolveGlobalSecurity } from "../lib/security.js";
 import { pathToFunc } from "../lib/url.js";
 import { APIError } from "../models/errors/apierror.js";
 import {
@@ -21,7 +21,6 @@ import { SDKValidationError } from "../models/errors/sdkvalidationerror.js";
 import {
   FrameworksControllerGetUpdateStatusV1Request,
   FrameworksControllerGetUpdateStatusV1Request$zodSchema,
-  FrameworksControllerGetUpdateStatusV1Security,
 } from "../models/frameworkscontrollergetupdatestatusv1op.js";
 import { APICall, APIPromise } from "../types/async.js";
 import { Result } from "../types/fp.js";
@@ -34,7 +33,6 @@ import { Result } from "../types/fp.js";
  */
 export function frameworksFrameworksControllerGetUpdateStatusV1(
   client$: CompAiCore,
-  security: FrameworksControllerGetUpdateStatusV1Security,
   request: FrameworksControllerGetUpdateStatusV1Request,
   options?: RequestOptions,
 ): APIPromise<
@@ -51,7 +49,6 @@ export function frameworksFrameworksControllerGetUpdateStatusV1(
 > {
   return new APIPromise($do(
     client$,
-    security,
     request,
     options,
   ));
@@ -59,7 +56,6 @@ export function frameworksFrameworksControllerGetUpdateStatusV1(
 
 async function $do(
   client$: CompAiCore,
-  security: FrameworksControllerGetUpdateStatusV1Security,
   request: FrameworksControllerGetUpdateStatusV1Request,
   options?: RequestOptions,
 ): Promise<
@@ -100,18 +96,10 @@ async function $do(
   );
 
   const headers$ = new Headers(compactMap({
-    Accept: "*/*",
+    Accept: "application/json",
   }));
-
-  const requestSecurity = resolveSecurity(
-    [
-      {
-        fieldName: "Authorization",
-        type: "apiKey:header",
-        value: security?.bearer,
-      },
-    ],
-  );
+  const securityInput = await extractSecurity(client$._options.security);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,
@@ -119,7 +107,7 @@ async function $do(
     operationID: "FrameworksController_getUpdateStatus_v1",
     oAuth2Scopes: null,
     resolvedSecurity: requestSecurity,
-    securitySource: security,
+    securitySource: client$._options.security,
     retryConfig: options?.retries
       || client$._options.retryConfig
       || { strategy: "none" },

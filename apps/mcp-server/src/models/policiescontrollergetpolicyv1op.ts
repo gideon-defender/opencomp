@@ -4,6 +4,10 @@
 
 import * as z from "zod";
 import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
   PolicyResponseDto,
   PolicyResponseDto$zodSchema,
 } from "./policyresponsedto.js";
@@ -22,41 +26,13 @@ export const PoliciesControllerGetPolicyV1Request$zodSchema: z.ZodType<
   ).optional(),
 });
 
-/**
- * Policy not found
- */
-export type PoliciesControllerGetPolicyV1NotFoundResponseBody = {
-  message?: string | undefined;
-};
-
-export const PoliciesControllerGetPolicyV1NotFoundResponseBody$zodSchema:
-  z.ZodType<PoliciesControllerGetPolicyV1NotFoundResponseBody> = z.object({
-    message: z.string().optional(),
-  }).describe("Policy not found");
-
-/**
- * Unauthorized - Invalid authentication or insufficient permissions
- */
-export type PoliciesControllerGetPolicyV1UnauthorizedResponseBody = {
-  message?: string | undefined;
-};
-
-export const PoliciesControllerGetPolicyV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<PoliciesControllerGetPolicyV1UnauthorizedResponseBody> = z.object({
-    message: z.string().optional(),
-  }).describe(
-    "Unauthorized - Invalid authentication or insufficient permissions",
-  );
-
 export type PoliciesControllerGetPolicyV1Response =
   | PolicyResponseDto
-  | PoliciesControllerGetPolicyV1UnauthorizedResponseBody
-  | PoliciesControllerGetPolicyV1NotFoundResponseBody;
+  | ApiErrorResponseDto;
 
 export const PoliciesControllerGetPolicyV1Response$zodSchema: z.ZodType<
   PoliciesControllerGetPolicyV1Response
 > = z.union([
   PolicyResponseDto$zodSchema,
-  z.lazy(() => PoliciesControllerGetPolicyV1UnauthorizedResponseBody$zodSchema),
-  z.lazy(() => PoliciesControllerGetPolicyV1NotFoundResponseBody$zodSchema),
+  ApiErrorResponseDto$zodSchema,
 ]);

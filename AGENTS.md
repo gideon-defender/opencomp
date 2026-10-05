@@ -7,7 +7,7 @@
 - **Run workspace scripts**: `pnpm --filter <name> run <script>` (never `npm --workspace=`). Inside a package dir, `pnpm run <script>` works.
 - **Binaries**: `pnpm exec <bin>` (never `npx`). One-off downloads: `pnpm dlx <pkg>`.
 - **Overrides**: `pnpm.overrides` in root `package.json` (parent-scoped: `"parent>child": "range"`). Never npm `overrides`.
-- **`apps/mcp-server` is the exception**: standalone Speakeasy project, excluded from workspaces, keeps its own npm + `package-lock.json`.
+- **`apps/mcp-server` is the exception**: standalone Speakeasy project, excluded from workspaces, keeps its own pnpm + `pnpm-lock.yaml` (run pnpm with `--ignore-workspace` inside that dir). Its build script bundles with esbuild and runs under tsx — no bun, no npm.
 - **Build**: `pnpm run build` (uses turbo). Filter: `pnpm --filter=@gideon-defender/app run build`
 - **Typecheck**: `pnpm run typecheck` or `pnpm exec turbo run typecheck --filter=@gideon-defender/api`
 - **Tests (app)**: `cd apps/app && pnpm exec vitest run`

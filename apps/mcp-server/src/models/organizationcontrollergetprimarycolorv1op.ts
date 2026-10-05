@@ -4,6 +4,10 @@
 
 import * as z from "zod";
 import { ClosedEnum } from "../types/enums.js";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 /**
  * How the request was authenticated
@@ -38,34 +42,6 @@ export const OrganizationControllerGetPrimaryColorV1Request$zodSchema:
   });
 
 /**
- * Organization not found
- */
-export type OrganizationControllerGetPrimaryColorV1NotFoundResponseBody = {
-  message?: string | undefined;
-};
-
-export const OrganizationControllerGetPrimaryColorV1NotFoundResponseBody$zodSchema:
-  z.ZodType<OrganizationControllerGetPrimaryColorV1NotFoundResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Organization not found");
-
-/**
- * Unauthorized - Invalid authentication or insufficient permissions
- */
-export type OrganizationControllerGetPrimaryColorV1UnauthorizedResponseBody = {
-  message?: string | undefined;
-};
-
-export const OrganizationControllerGetPrimaryColorV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<OrganizationControllerGetPrimaryColorV1UnauthorizedResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe(
-      "Unauthorized - Invalid authentication or insufficient permissions",
-    );
-
-/**
  * Organization primary color retrieved successfully
  */
 export type OrganizationControllerGetPrimaryColorV1ResponseBody = {
@@ -83,17 +59,11 @@ export const OrganizationControllerGetPrimaryColorV1ResponseBody$zodSchema:
   }).describe("Organization primary color retrieved successfully");
 
 export type OrganizationControllerGetPrimaryColorV1Response =
-  | OrganizationControllerGetPrimaryColorV1ResponseBody
-  | OrganizationControllerGetPrimaryColorV1UnauthorizedResponseBody
-  | OrganizationControllerGetPrimaryColorV1NotFoundResponseBody;
+  | ApiErrorResponseDto
+  | OrganizationControllerGetPrimaryColorV1ResponseBody;
 
 export const OrganizationControllerGetPrimaryColorV1Response$zodSchema:
   z.ZodType<OrganizationControllerGetPrimaryColorV1Response> = z.union([
+    ApiErrorResponseDto$zodSchema,
     z.lazy(() => OrganizationControllerGetPrimaryColorV1ResponseBody$zodSchema),
-    z.lazy(() =>
-      OrganizationControllerGetPrimaryColorV1UnauthorizedResponseBody$zodSchema
-    ),
-    z.lazy(() =>
-      OrganizationControllerGetPrimaryColorV1NotFoundResponseBody$zodSchema
-    ),
   ]);

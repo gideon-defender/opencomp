@@ -4,6 +4,10 @@
 
 import * as z from "zod";
 import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
   UpdateVersionContentDto,
   UpdateVersionContentDto$zodSchema,
 } from "./updateversioncontentdto.js";
@@ -28,45 +32,6 @@ export const PoliciesControllerUpdateVersionContentV1Request$zodSchema:
   });
 
 /**
- * Resource not found
- */
-export type PoliciesControllerUpdateVersionContentV1NotFoundResponseBody = {
-  message?: string | undefined;
-};
-
-export const PoliciesControllerUpdateVersionContentV1NotFoundResponseBody$zodSchema:
-  z.ZodType<PoliciesControllerUpdateVersionContentV1NotFoundResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Resource not found");
-
-/**
- * Unauthorized
- */
-export type PoliciesControllerUpdateVersionContentV1UnauthorizedResponseBody = {
-  message?: string | undefined;
-};
-
-export const PoliciesControllerUpdateVersionContentV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<PoliciesControllerUpdateVersionContentV1UnauthorizedResponseBody> =
-    z.object({
-      message: z.string().optional(),
-    }).describe("Unauthorized");
-
-/**
- * Invalid request
- */
-export type PoliciesControllerUpdateVersionContentV1BadRequestResponseBody = {
-  message?: string | undefined;
-};
-
-export const PoliciesControllerUpdateVersionContentV1BadRequestResponseBody$zodSchema:
-  z.ZodType<PoliciesControllerUpdateVersionContentV1BadRequestResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Invalid request");
-
-/**
  * Version content updated
  */
 export type PoliciesControllerUpdateVersionContentV1ResponseBody = {
@@ -79,23 +44,13 @@ export const PoliciesControllerUpdateVersionContentV1ResponseBody$zodSchema:
   }).describe("Version content updated");
 
 export type PoliciesControllerUpdateVersionContentV1Response =
-  | PoliciesControllerUpdateVersionContentV1ResponseBody
-  | PoliciesControllerUpdateVersionContentV1BadRequestResponseBody
-  | PoliciesControllerUpdateVersionContentV1UnauthorizedResponseBody
-  | PoliciesControllerUpdateVersionContentV1NotFoundResponseBody;
+  | ApiErrorResponseDto
+  | PoliciesControllerUpdateVersionContentV1ResponseBody;
 
 export const PoliciesControllerUpdateVersionContentV1Response$zodSchema:
   z.ZodType<PoliciesControllerUpdateVersionContentV1Response> = z.union([
+    ApiErrorResponseDto$zodSchema,
     z.lazy(() =>
       PoliciesControllerUpdateVersionContentV1ResponseBody$zodSchema
-    ),
-    z.lazy(() =>
-      PoliciesControllerUpdateVersionContentV1BadRequestResponseBody$zodSchema
-    ),
-    z.lazy(() =>
-      PoliciesControllerUpdateVersionContentV1UnauthorizedResponseBody$zodSchema
-    ),
-    z.lazy(() =>
-      PoliciesControllerUpdateVersionContentV1NotFoundResponseBody$zodSchema
     ),
   ]);

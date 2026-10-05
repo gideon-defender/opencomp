@@ -8,14 +8,6 @@ import {
   SyncFrameworkDto$zodSchema,
 } from "./syncframeworkdto.js";
 
-export type FrameworksControllerSyncFrameworkV1Security = { bearer: string };
-
-export const FrameworksControllerSyncFrameworkV1Security$zodSchema: z.ZodType<
-  FrameworksControllerSyncFrameworkV1Security
-> = z.object({
-  bearer: z.string().describe("API Key"),
-});
-
 export type FrameworksControllerSyncFrameworkV1Request = {
   id: string;
   body: SyncFrameworkDto;

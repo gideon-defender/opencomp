@@ -4,78 +4,21 @@
 
 import * as z from "zod";
 import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
   PeopleResponseDto,
   PeopleResponseDto$zodSchema,
 } from "./peopleresponsedto.js";
 
-/**
- * Internal server error
- */
-export type PeopleControllerCreateMemberV1InternalServerErrorResponseBody = {
-  message?: string | undefined;
-};
-
-export const PeopleControllerCreateMemberV1InternalServerErrorResponseBody$zodSchema:
-  z.ZodType<PeopleControllerCreateMemberV1InternalServerErrorResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Internal server error");
-
-/**
- * Organization or user not found
- */
-export type PeopleControllerCreateMemberV1NotFoundResponseBody = {
-  message?: string | undefined;
-};
-
-export const PeopleControllerCreateMemberV1NotFoundResponseBody$zodSchema:
-  z.ZodType<PeopleControllerCreateMemberV1NotFoundResponseBody> = z.object({
-    message: z.string().optional(),
-  }).describe("Organization or user not found");
-
-/**
- * Unauthorized - Invalid authentication or insufficient permissions
- */
-export type PeopleControllerCreateMemberV1UnauthorizedResponseBody = {
-  message?: string | undefined;
-};
-
-export const PeopleControllerCreateMemberV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<PeopleControllerCreateMemberV1UnauthorizedResponseBody> = z.object({
-    message: z.string().optional(),
-  }).describe(
-    "Unauthorized - Invalid authentication or insufficient permissions",
-  );
-
-/**
- * Bad Request - Invalid member data or user already exists
- */
-export type PeopleControllerCreateMemberV1BadRequestResponseBody = {
-  message?: string | undefined;
-};
-
-export const PeopleControllerCreateMemberV1BadRequestResponseBody$zodSchema:
-  z.ZodType<PeopleControllerCreateMemberV1BadRequestResponseBody> = z.object({
-    message: z.string().optional(),
-  }).describe("Bad Request - Invalid member data or user already exists");
-
 export type PeopleControllerCreateMemberV1Response =
   | PeopleResponseDto
-  | PeopleControllerCreateMemberV1BadRequestResponseBody
-  | PeopleControllerCreateMemberV1UnauthorizedResponseBody
-  | PeopleControllerCreateMemberV1NotFoundResponseBody
-  | PeopleControllerCreateMemberV1InternalServerErrorResponseBody;
+  | ApiErrorResponseDto;
 
 export const PeopleControllerCreateMemberV1Response$zodSchema: z.ZodType<
   PeopleControllerCreateMemberV1Response
 > = z.union([
   PeopleResponseDto$zodSchema,
-  z.lazy(() => PeopleControllerCreateMemberV1BadRequestResponseBody$zodSchema),
-  z.lazy(() =>
-    PeopleControllerCreateMemberV1UnauthorizedResponseBody$zodSchema
-  ),
-  z.lazy(() => PeopleControllerCreateMemberV1NotFoundResponseBody$zodSchema),
-  z.lazy(() =>
-    PeopleControllerCreateMemberV1InternalServerErrorResponseBody$zodSchema
-  ),
+  ApiErrorResponseDto$zodSchema,
 ]);

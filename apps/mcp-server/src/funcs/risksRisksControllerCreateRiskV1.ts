@@ -30,8 +30,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Create a risk record with ownership and context so compliance teams can track mitigation and remediation work.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function risksRisksControllerCreateRiskV1(
   client$: CompAiCore,
@@ -92,7 +90,7 @@ async function $do(
     Accept: "application/json",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

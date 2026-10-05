@@ -24,8 +24,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Exports a zip archive containing the offboarding checklist evidence for every member in the organization, for audits, handovers, or record-keeping.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function offboardingChecklistOffboardingChecklistControllerExportAllEvidenceV1(
   client$: CompAiCore,
@@ -69,10 +67,10 @@ async function $do(
   const path$ = pathToFunc("/v1/offboarding-checklist/export-all")();
 
   const headers$ = new Headers(compactMap({
-    Accept: "*/*",
+    Accept: "application/json",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

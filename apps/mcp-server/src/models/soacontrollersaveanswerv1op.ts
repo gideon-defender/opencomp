@@ -3,16 +3,31 @@
  */
 
 import * as z from "zod";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 /**
  * Answer saved successfully
  */
-export type SOAControllerSaveAnswerV1Response = {
+export type SOAControllerSaveAnswerV1ResponseBody = {
   success?: boolean | undefined;
 };
 
-export const SOAControllerSaveAnswerV1Response$zodSchema: z.ZodType<
-  SOAControllerSaveAnswerV1Response
+export const SOAControllerSaveAnswerV1ResponseBody$zodSchema: z.ZodType<
+  SOAControllerSaveAnswerV1ResponseBody
 > = z.object({
   success: z.boolean().optional(),
 }).describe("Answer saved successfully");
+
+export type SOAControllerSaveAnswerV1Response =
+  | ApiErrorResponseDto
+  | SOAControllerSaveAnswerV1ResponseBody;
+
+export const SOAControllerSaveAnswerV1Response$zodSchema: z.ZodType<
+  SOAControllerSaveAnswerV1Response
+> = z.union([
+  ApiErrorResponseDto$zodSchema,
+  z.lazy(() => SOAControllerSaveAnswerV1ResponseBody$zodSchema),
+]);

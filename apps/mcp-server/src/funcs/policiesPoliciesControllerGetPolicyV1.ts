@@ -30,8 +30,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Retrieve a single compliance policy by its ID, including current content, draft content, review status, framework links, and audit metadata. Use this to read or inspect one policy in detail. If you only have a policy name, find its ID first by listing compliance policies.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function policiesPoliciesControllerGetPolicyV1(
   client$: CompAiCore,
@@ -105,7 +103,7 @@ async function $do(
     ),
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

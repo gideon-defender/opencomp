@@ -4,6 +4,14 @@
 
 import * as z from "zod";
 import { ClosedEnum } from "../types/enums.js";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
+  CommentResponseDto,
+  CommentResponseDto$zodSchema,
+} from "./commentresponsedto.js";
 
 /**
  * Type of entity
@@ -43,3 +51,16 @@ export const CommentsControllerGetCommentsV1Request$zodSchema: z.ZodType<
     "Type of entity",
   ),
 });
+
+export type CommentsControllerGetCommentsV1Response =
+  | ApiErrorResponseDto
+  | Array<CommentResponseDto>;
+
+export const CommentsControllerGetCommentsV1Response$zodSchema: z.ZodType<
+  CommentsControllerGetCommentsV1Response
+> = z.union([
+  ApiErrorResponseDto$zodSchema,
+  z.array(CommentResponseDto$zodSchema).describe(
+    "Comments retrieved successfully",
+  ),
+]);

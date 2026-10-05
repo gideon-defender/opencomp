@@ -30,8 +30,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Links an uploaded PDF to a compliance policy after the file has been PUT to a presigned S3 URL. Call this after request-policy-pdf-upload-url returned an s3Key and you successfully uploaded the file bytes to that URL. The endpoint verifies the file exists in S3 before linking it to the policy or version.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function policiesPoliciesControllerConfirmPolicyPdfUploadedV1(
   client$: CompAiCore,
@@ -101,7 +99,7 @@ async function $do(
 
   const headers$ = new Headers(compactMap({
     "Content-Type": "application/json",
-    Accept: "*/*",
+    Accept: "application/json",
     "X-Organization-Id": encodeSimple(
       "X-Organization-Id",
       payload$.xOrganizationId,
@@ -109,7 +107,7 @@ async function $do(
     ),
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

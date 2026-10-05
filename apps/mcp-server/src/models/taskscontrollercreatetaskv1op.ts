@@ -4,6 +4,14 @@
 
 import * as z from "zod";
 import { ClosedEnum } from "../types/enums.js";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
+  TaskResponseDto,
+  TaskResponseDto$zodSchema,
+} from "./taskresponsedto.js";
 
 export const TasksControllerCreateTaskV1Frequency = {
   Daily: "daily",
@@ -52,3 +60,14 @@ export const TasksControllerCreateTaskV1Request$zodSchema: z.ZodType<
     "Vendor ID to connect this task to",
   ),
 });
+
+export type TasksControllerCreateTaskV1Response =
+  | TaskResponseDto
+  | ApiErrorResponseDto;
+
+export const TasksControllerCreateTaskV1Response$zodSchema: z.ZodType<
+  TasksControllerCreateTaskV1Response
+> = z.union([
+  TaskResponseDto$zodSchema,
+  ApiErrorResponseDto$zodSchema,
+]);

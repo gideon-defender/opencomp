@@ -30,8 +30,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Generates a presigned S3 URL for uploading a policy PDF directly to storage. Use this when attaching a PDF to a compliance policy — the file bytes are uploaded straight to S3 without passing through the API. Requires the policy ID; if you only know the policy name, look it up first via the list-compliance-policies tool. After uploading the file to the returned URL, finalize the attachment by calling confirm-policy-pdf-uploaded with the same s3Key.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function policiesPoliciesControllerRequestPolicyPdfUploadUrlV1(
   client$: CompAiCore,
@@ -109,7 +107,7 @@ async function $do(
     ),
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

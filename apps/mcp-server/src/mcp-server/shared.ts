@@ -22,24 +22,19 @@ export async function consumeStream(
   stream: ReadableStream<Uint8Array>,
 ): Promise<Uint8Array> {
   const reader = stream.getReader();
-  // Copy each chunk into a fresh ArrayBuffer-backed view: BlobPart requires
-  // ArrayBuffer views, but stream chunks may be SharedArrayBuffer-backed.
-  // (Re-applied after each `speakeasy run` — the generator emits plain
-  // Uint8Array here, which fails tsc. See repo plan Phase 3 follow-up for a
-  // durable custom-code/patch rule.)
-  const chunks: Uint8Array<ArrayBuffer>[] = [];
+  const chunks: Uint8Array[] = [];
 
   try {
     while (true) {
       const { done, value } = await reader.read();
-      if (value != null) chunks.push(new Uint8Array(value));
+      if (value != null) chunks.push(value);
       if (done) break;
     }
   } finally {
     reader.releaseLock();
   }
 
-  return new Uint8Array(await new Blob(chunks).arrayBuffer());
+  return new Uint8Array(await new Blob(chunks as BlobPart[]).arrayBuffer());
 }
 
 export function isAsyncIterable(

@@ -5,6 +5,10 @@
 import * as z from "zod";
 import { ClosedEnum } from "../types/enums.js";
 import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
+import {
   PeopleResponseDto,
   PeopleResponseDto$zodSchema,
 } from "./peopleresponsedto.js";
@@ -46,45 +50,6 @@ export const PeopleControllerGetAllPeopleV1Request$zodSchema: z.ZodType<
   onboardBefore: z.string(),
 });
 
-/**
- * Internal server error
- */
-export type PeopleControllerGetAllPeopleV1InternalServerErrorResponseBody = {
-  message?: string | undefined;
-};
-
-export const PeopleControllerGetAllPeopleV1InternalServerErrorResponseBody$zodSchema:
-  z.ZodType<PeopleControllerGetAllPeopleV1InternalServerErrorResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Internal server error");
-
-/**
- * Organization not found
- */
-export type PeopleControllerGetAllPeopleV1NotFoundResponseBody = {
-  message?: string | undefined;
-};
-
-export const PeopleControllerGetAllPeopleV1NotFoundResponseBody$zodSchema:
-  z.ZodType<PeopleControllerGetAllPeopleV1NotFoundResponseBody> = z.object({
-    message: z.string().optional(),
-  }).describe("Organization not found");
-
-/**
- * Unauthorized - Invalid authentication or insufficient permissions
- */
-export type PeopleControllerGetAllPeopleV1UnauthorizedResponseBody = {
-  message?: string | undefined;
-};
-
-export const PeopleControllerGetAllPeopleV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<PeopleControllerGetAllPeopleV1UnauthorizedResponseBody> = z.object({
-    message: z.string().optional(),
-  }).describe(
-    "Unauthorized - Invalid authentication or insufficient permissions",
-  );
-
 export type PeopleControllerGetAllPeopleV1AuthenticatedUser = {
   id?: string | undefined;
   email?: string | undefined;
@@ -121,20 +86,12 @@ export const PeopleControllerGetAllPeopleV1ResponseBody$zodSchema: z.ZodType<
 }).describe("People retrieved successfully");
 
 export type PeopleControllerGetAllPeopleV1Response =
-  | PeopleControllerGetAllPeopleV1ResponseBody
-  | PeopleControllerGetAllPeopleV1UnauthorizedResponseBody
-  | PeopleControllerGetAllPeopleV1NotFoundResponseBody
-  | PeopleControllerGetAllPeopleV1InternalServerErrorResponseBody;
+  | ApiErrorResponseDto
+  | PeopleControllerGetAllPeopleV1ResponseBody;
 
 export const PeopleControllerGetAllPeopleV1Response$zodSchema: z.ZodType<
   PeopleControllerGetAllPeopleV1Response
 > = z.union([
+  ApiErrorResponseDto$zodSchema,
   z.lazy(() => PeopleControllerGetAllPeopleV1ResponseBody$zodSchema),
-  z.lazy(() =>
-    PeopleControllerGetAllPeopleV1UnauthorizedResponseBody$zodSchema
-  ),
-  z.lazy(() => PeopleControllerGetAllPeopleV1NotFoundResponseBody$zodSchema),
-  z.lazy(() =>
-    PeopleControllerGetAllPeopleV1InternalServerErrorResponseBody$zodSchema
-  ),
 ]);

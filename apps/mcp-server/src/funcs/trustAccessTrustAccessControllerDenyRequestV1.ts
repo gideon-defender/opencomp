@@ -30,8 +30,6 @@ import { Result } from "../types/fp.js";
  *
  * @remarks
  * Reject a Trust Center access request with a review reason so customer security access decisions stay auditable.
- *
- * If set, this operation will use {@link Security.apikey} from the global security.
  */
 export function trustAccessTrustAccessControllerDenyRequestV1(
   client$: CompAiCore,
@@ -99,10 +97,10 @@ async function $do(
 
   const headers$ = new Headers(compactMap({
     "Content-Type": "application/json",
-    Accept: "*/*",
+    Accept: "application/json",
   }));
   const securityInput = await extractSecurity(client$._options.security);
-  const requestSecurity = resolveGlobalSecurity(securityInput, [0]);
+  const requestSecurity = resolveGlobalSecurity(securityInput);
 
   const context = {
     options: client$._options,

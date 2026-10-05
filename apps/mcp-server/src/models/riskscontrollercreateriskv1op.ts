@@ -4,6 +4,10 @@
 
 import * as z from "zod";
 import { ClosedEnum } from "../types/enums.js";
+import {
+  ApiErrorResponseDto,
+  ApiErrorResponseDto$zodSchema,
+} from "./apierrorresponsedto.js";
 
 export const RisksControllerCreateRiskV1Category = {
   Customer: "customer",
@@ -187,45 +191,6 @@ export const RisksControllerCreateRiskV1AuthType$zodSchema = z.enum([
 ]).describe("How the request was authenticated");
 
 /**
- * Internal server error
- */
-export type RisksControllerCreateRiskV1InternalServerErrorResponseBody = {
-  message?: string | undefined;
-};
-
-export const RisksControllerCreateRiskV1InternalServerErrorResponseBody$zodSchema:
-  z.ZodType<RisksControllerCreateRiskV1InternalServerErrorResponseBody> = z
-    .object({
-      message: z.string().optional(),
-    }).describe("Internal server error");
-
-/**
- * Organization not found
- */
-export type RisksControllerCreateRiskV1NotFoundResponseBody = {
-  message?: string | undefined;
-};
-
-export const RisksControllerCreateRiskV1NotFoundResponseBody$zodSchema:
-  z.ZodType<RisksControllerCreateRiskV1NotFoundResponseBody> = z.object({
-    message: z.string().optional(),
-  }).describe("Organization not found");
-
-/**
- * Unauthorized - Invalid authentication or insufficient permissions
- */
-export type RisksControllerCreateRiskV1UnauthorizedResponseBody = {
-  message?: string | undefined;
-};
-
-export const RisksControllerCreateRiskV1UnauthorizedResponseBody$zodSchema:
-  z.ZodType<RisksControllerCreateRiskV1UnauthorizedResponseBody> = z.object({
-    message: z.string().optional(),
-  }).describe(
-    "Unauthorized - Invalid authentication or insufficient permissions",
-  );
-
-/**
  * Bad request - Invalid input data
  */
 export type RisksControllerCreateRiskV1BadRequestResponseBody = {
@@ -320,20 +285,14 @@ export const RisksControllerCreateRiskV1ResponseBody$zodSchema: z.ZodType<
 }).describe("Risk created successfully");
 
 export type RisksControllerCreateRiskV1Response =
+  | ApiErrorResponseDto
   | RisksControllerCreateRiskV1ResponseBody
-  | RisksControllerCreateRiskV1BadRequestResponseBody
-  | RisksControllerCreateRiskV1UnauthorizedResponseBody
-  | RisksControllerCreateRiskV1NotFoundResponseBody
-  | RisksControllerCreateRiskV1InternalServerErrorResponseBody;
+  | RisksControllerCreateRiskV1BadRequestResponseBody;
 
 export const RisksControllerCreateRiskV1Response$zodSchema: z.ZodType<
   RisksControllerCreateRiskV1Response
 > = z.union([
+  ApiErrorResponseDto$zodSchema,
   z.lazy(() => RisksControllerCreateRiskV1ResponseBody$zodSchema),
   z.lazy(() => RisksControllerCreateRiskV1BadRequestResponseBody$zodSchema),
-  z.lazy(() => RisksControllerCreateRiskV1UnauthorizedResponseBody$zodSchema),
-  z.lazy(() => RisksControllerCreateRiskV1NotFoundResponseBody$zodSchema),
-  z.lazy(() =>
-    RisksControllerCreateRiskV1InternalServerErrorResponseBody$zodSchema
-  ),
 ]);

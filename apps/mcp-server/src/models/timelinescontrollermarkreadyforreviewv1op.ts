@@ -4,15 +4,6 @@
 
 import * as z from "zod";
 
-export type TimelinesControllerMarkReadyForReviewV1Security = {
-  bearer: string;
-};
-
-export const TimelinesControllerMarkReadyForReviewV1Security$zodSchema:
-  z.ZodType<TimelinesControllerMarkReadyForReviewV1Security> = z.object({
-    bearer: z.string().describe("API Key"),
-  });
-
 export type TimelinesControllerMarkReadyForReviewV1Request = {
   id: string;
   phaseId: string;

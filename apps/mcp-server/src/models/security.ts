@@ -4,8 +4,8 @@
 
 import * as z from "zod";
 
-export type Security = { apikey?: string | undefined };
+export type Security = { apikey: string };
 
 export const Security$zodSchema: z.ZodType<Security> = z.object({
-  apikey: z.string().describe("API key for authentication").optional(),
+  apikey: z.string().describe("API key for authentication"),
 });
