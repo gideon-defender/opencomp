@@ -14,7 +14,7 @@ import type { IntegrationCredentialValues } from './ensure-valid-credentials';
  * Credential keys injected by {@link injectAwsResolvedSession} and consumed by
  * the AWS manifest checks (`assumeAwsSession` in the integration-platform
  * package). Underscore-prefixed so they never collide with real AWS connection
- * credential fields (roleArn, externalId, regions, awsType, remediationRoleArn).
+ * credential fields (roleArn, externalId, regions, awsType, remediationRoles).
  */
 export const RESOLVED_AWS_SESSION_KEYS = {
   accessKeyId: '__resolvedAccessKeyId',

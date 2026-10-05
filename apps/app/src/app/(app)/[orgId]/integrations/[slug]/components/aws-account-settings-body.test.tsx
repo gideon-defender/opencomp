@@ -27,20 +27,9 @@ vi.mock('@/hooks/use-integration-platform', () => ({
   useIntegrationMutations: () => mutations,
 }));
 
-vi.mock('@/components/integrations/CloudShellSetup', () => ({
-  CloudShellSetup: ({
-    disabled,
-    disabledMessage,
-  }: {
-    disabled?: boolean;
-    disabledMessage?: string;
-  }) => (
-    <div
-      data-testid="cloud-shell-setup"
-      data-disabled={disabled ? 'true' : 'false'}
-      data-disabled-message={disabledMessage ?? ''}
-    />
-  ),
+vi.mock('@gideon-defender/integration-platform', () => ({
+  normalizeAwsEnvironment: (value: unknown) => (value === 'aws-us-gov' ? 'aws-us-gov' : 'aws'),
+  parseRemediationRolesMap: () => ({}),
 }));
 
 vi.mock('@/components/integrations/CredentialInput', () => ({
@@ -59,13 +48,6 @@ vi.mock('@/components/integrations/CredentialInput', () => ({
       onChange={(event) => onChange(event.target.value)}
     />
   ),
-}));
-
-vi.mock('@gideon-defender/integration-platform', () => ({
-  getAwsCloudShellUrl: () => 'https://console.aws.amazon.com/cloudshell',
-  getAwsRemediationScript: () => '',
-  normalizeAwsEnvironment: (value: unknown) => (value === 'aws-us-gov' ? 'aws-us-gov' : 'aws'),
-  parseRemediationRolesMap: () => ({}),
 }));
 
 vi.mock('@gideon-defender/ui/badge', () => ({
@@ -166,34 +148,22 @@ describe('AwsAccountSettingsBody externalId display', () => {
     expect(screen.getByText('—')).toBeInTheDocument();
   });
 
-  it('disables the setup script with guidance when no externalId is on file', () => {
+  it('shows the legacy banner and no single-role input for monolith connections', () => {
     state.connection = {
       id: 'conn_legacy',
       status: 'active',
       createdAt: new Date().toISOString(),
-      metadata: { connectionName: 'Legacy' },
-    };
-    renderBody();
-
-    const setup = screen.getByTestId('cloud-shell-setup');
-    expect(setup).toHaveAttribute('data-disabled', 'true');
-    expect(setup.getAttribute('data-disabled-message')).toContain('reconnect');
-  });
-
-  it('enables the setup script when the server-minted externalId is on file', () => {
-    state.connection = {
-      id: 'conn_aws',
-      status: 'active',
-      createdAt: new Date().toISOString(),
       metadata: {
-        connectionName: 'Prod',
-        accountId: '123456789012',
-        externalId: 'org_org_1_issued',
+        connectionName: 'Legacy',
+        remediationRoleArn: 'arn:aws:iam::123456789012:role/OpenComp-Remediator',
       },
     };
     renderBody();
 
-    expect(screen.getByTestId('cloud-shell-setup')).toHaveAttribute('data-disabled', 'false');
+    // The stored monolith ARN is ignored server-side: the banner points at
+    // the pair table, and the removed single-role field stays hidden.
+    expect(screen.getByText('awsSettings.legacyRemediationBanner')).toBeInTheDocument();
+    expect(screen.queryByLabelText('remediationRoleArn')).not.toBeInTheDocument();
   });
 
   it('reports an error without a success toast when the metadata update fails', async () => {

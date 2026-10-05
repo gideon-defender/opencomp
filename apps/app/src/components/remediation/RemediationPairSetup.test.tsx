@@ -5,8 +5,7 @@ import { RemediationPairSetup } from './RemediationPairSetup';
 
 const PAIR_ARN = 'arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1';
 const WRONG_PAIR_ARN = 'arn:aws:iam::123456789012:role/OpenComp-Remediator-Compute-us-east-1';
-const GOV_ARN =
-  'arn:aws-us-gov:iam::123456789012:role/OpenComp-Remediator-Storage-us-gov-west-1';
+const GOV_ARN = 'arn:aws-us-gov:iam::123456789012:role/OpenComp-Remediator-Storage-us-gov-west-1';
 
 function renderSetup(overrides: Record<string, unknown> = {}) {
   const onChange = vi.fn();
@@ -52,9 +51,7 @@ describe('RemediationPairSetup', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
 
-    expect(onChange).toHaveBeenCalledWith(
-      JSON.stringify({ 'Storage:us-east-1': PAIR_ARN }),
-    );
+    expect(onChange).toHaveBeenCalledWith(JSON.stringify({ 'Storage:us-east-1': PAIR_ARN }));
   });
 
   it('rejects an ARN from a different pair', () => {
@@ -66,7 +63,9 @@ describe('RemediationPairSetup', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
 
     expect(
-      screen.getByText('ARN must reference the "OpenComp-Remediator-Storage-us-east-1" role for this pair.'),
+      screen.getByText(
+        'ARN must reference the "OpenComp-Remediator-Storage-us-east-1" role for this pair.',
+      ),
     ).toBeInTheDocument();
     expect(onChange).not.toHaveBeenCalled();
   });
@@ -85,9 +84,7 @@ describe('RemediationPairSetup', () => {
     fireEvent.change(screen.getByLabelText(/Pair Role ARN/), { target: { value: GOV_ARN } });
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
 
-    expect(onChange).toHaveBeenCalledWith(
-      JSON.stringify({ 'Storage:us-gov-west-1': GOV_ARN }),
-    );
+    expect(onChange).toHaveBeenCalledWith(JSON.stringify({ 'Storage:us-gov-west-1': GOV_ARN }));
   });
 
   it('merges into already-configured pairs and removes them', () => {

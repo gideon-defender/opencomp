@@ -1,0 +1,5 @@
+# Build outputs (mirrors root .prettierignore)
+.next/
+
+# Generated Next.js types
+next-env.d.ts

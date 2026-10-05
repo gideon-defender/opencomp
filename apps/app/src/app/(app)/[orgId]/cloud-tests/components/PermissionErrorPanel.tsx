@@ -58,9 +58,8 @@ export function PermissionErrorPanel({
 }: PermissionErrorPanelProps) {
   const [copied, setCopied] = useState(false);
 
-  // Scope the client fallback script to the finding's routed pair role
-  // when both inputs are known; legacy monolith default otherwise (same
-  // fallback the server and the batch dialog apply).
+  // Scope the client fallback script to the finding's routed pair role.
+  // Unknown routing builds no script — manual guidance only.
   const pairRoleName = useMemo(() => {
     if (!resourceType || !region?.trim()) return undefined;
     try {
@@ -135,7 +134,8 @@ export function PermissionErrorPanel({
 
   const script = serviceLinkedRole
     ? serviceLinkedRole.command
-    : (backendScript ?? (isGcp || isAzure ? null : buildAwsFixScript(actions, pairRoleName)));
+    : (backendScript ??
+      (isGcp || isAzure || !pairRoleName ? null : buildAwsFixScript(actions, pairRoleName)));
 
   // A guidance-only script names manual-review actions but runs nothing —
   // label it as guidance so nobody pastes it expecting a grant.

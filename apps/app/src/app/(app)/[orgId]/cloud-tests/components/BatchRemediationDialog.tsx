@@ -122,9 +122,9 @@ function FindingPermissions({
   const [copied, setCopied] = useState(false);
   const [retrying, setRetrying] = useState(false);
 
-  // Scope the grant script to the finding's routed pair role when both
-  // inputs are known; legacy monolith default otherwise (same fallback
-  // the server applies when no pair map covers the finding).
+  // Scope the grant script to the finding's routed pair role; unknown
+  // routing builds no script (manual guidance only, never the removed
+  // monolith role).
   const roleName = useMemo(() => {
     if (!resourceType || !region?.trim()) return undefined;
     try {
@@ -155,7 +155,8 @@ function FindingPermissions({
   }, [grantable]);
   // Guidance-only when every action needs manual review — nothing to run,
   // so copy/CloudShell buttons stay hidden (same as PermissionErrorPanel).
-  const guidanceOnly = isGuidanceOnlyScript(script);
+  // A null script (pair role unknown) hides them the same way.
+  const guidanceOnly = !script || isGuidanceOnlyScript(script);
 
   return (
     <div className="ml-[30px] mt-1.5 space-y-1.5">
@@ -182,7 +183,7 @@ function FindingPermissions({
         ))}
       </div>
       <div className="flex gap-1.5">
-        {!guidanceOnly && (
+        {!guidanceOnly && script && (
           <>
             <button
               type="button"

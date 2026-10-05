@@ -6,13 +6,16 @@ import {
 } from './remediation-denylist';
 import { buildRemediationGrantScript } from './remediation-script';
 
+const PAIR_ROLE = 'OpenComp-Remediator-Storage-us-east-1';
+
 describe('buildRemediationGrantScript', () => {
   it('emits the backend AutoFix shape by default', () => {
     const script = buildRemediationGrantScript({
       permissions: ['s3:ListBucket'],
       policyName: 'OpenComp-AutoFix',
+      roleName: PAIR_ROLE,
     });
-    expect(script).toContain('ROLE="OpenComp-Remediator" POLICY="OpenComp-AutoFix"');
+    expect(script).toContain(`ROLE="${PAIR_ROLE}" POLICY="OpenComp-AutoFix"`);
     expect(script).toContain(`NEW='${JSON.stringify(['s3:ListBucket'])}'`);
     expect(script).toContain('aws iam put-role-policy');
     expect(script).not.toContain('WARNING');
@@ -30,6 +33,7 @@ describe('buildRemediationGrantScript', () => {
       expect(() =>
         buildRemediationGrantScript({
           permissions: ['s3:ListBucket'],
+          roleName: PAIR_ROLE,
           roleHeaderLines: [`ROLE="${roleName}"`, 'POLICY="P"'],
         }),
       ).toThrow(/unsafe role name|malformed ROLE header/);
@@ -40,6 +44,7 @@ describe('buildRemediationGrantScript', () => {
     const script = buildRemediationGrantScript({
       permissions: ['s3:ListBucket', 'iam:PassRole'],
       policyName: 'OpenComp-AutoFix',
+      roleName: PAIR_ROLE,
     });
     expect(script).toContain('WARNING');
     expect(script).toContain('iam:PassRole');
@@ -51,6 +56,7 @@ describe('buildRemediationGrantScript', () => {
     const script = buildRemediationGrantScript({
       permissions: ['iam:PassRole'],
       policyName: 'OpenComp-AutoFix',
+      roleName: PAIR_ROLE,
     });
     expect(script.startsWith('# No grantable permissions')).toBe(true);
     expect(script).not.toContain('aws iam put-role-policy');
@@ -59,6 +65,7 @@ describe('buildRemediationGrantScript', () => {
   it('supports caller policy names, variables, and extra lines', () => {
     const script = buildRemediationGrantScript({
       permissions: ['s3:ListBucket'],
+      roleName: PAIR_ROLE,
       variableName: 'NEW_PERMS',
       warningLine: () => '',
       extraHeaderLines: ['# custom header'],
@@ -78,20 +85,21 @@ describe('buildRemediationGrantScript', () => {
     expect(script).not.toContain('$NEW ');
   });
 
-  it('matches the legacy batch finding-builder output exactly', () => {
+  it('matches the batch finding-builder output exactly', () => {
     // Guards the unification: the shared helper must render byte-identical
     // scripts to the hand-rolled builder it replaced.
     const permissions = ['s3:ListBucket', 'iam:PassRole'];
     const script = buildRemediationGrantScript({
       permissions,
       policyName: 'OpenComp-BatchPermissions',
+      roleName: PAIR_ROLE,
       warningLine: ({ count, display }) =>
         `# WARNING: excluded ${count} permission(s) requiring manual review: ${display}`,
     });
     const { allowed, blocked } = splitBlockedRemediationActions(permissions);
     const expected = [
       `# WARNING: excluded 1 permission(s) requiring manual review: ${formatBlockedActionsForDisplay(blocked)}`,
-      'ROLE="OpenComp-Remediator" POLICY="OpenComp-BatchPermissions"',
+      `ROLE="${PAIR_ROLE}" POLICY="OpenComp-BatchPermissions"`,
       `NEW='${JSON.stringify(allowed)}'`,
       ...rolePolicyMergeScriptLines('NEW'),
     ].join('\n');

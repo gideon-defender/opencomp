@@ -1,5 +1,5 @@
-import type { CSSProperties } from 'react';
 import { isSafeHttpUrl } from '@/lib/urls';
+import type { CSSProperties } from 'react';
 
 export const DEFAULT_PRIMARY_COLOR = '#d92231';
 
@@ -42,20 +42,14 @@ function darken(hex: string, amount: number): string {
 
 function soften(hex: string, amount: number): string {
   const { r, g, b } = hexToRgb(hex);
-  return rgbToHex(
-    r + (255 - r) * amount,
-    g + (255 - g) * amount,
-    b + (255 - b) * amount,
-  );
+  return rgbToHex(r + (255 - r) * amount, g + (255 - g) * amount, b + (255 - b) * amount);
 }
 
 /**
  * Resolve the effective brand color, falling back to the default red when
  * the org has not set a valid hex color in trust branding settings.
  */
-export function resolvePrimaryColor(
-  primaryColor: string | null | undefined,
-): string {
+export function resolvePrimaryColor(primaryColor: string | null | undefined): string {
   return normalizeHexColor(primaryColor) ?? DEFAULT_PRIMARY_COLOR;
 }
 
@@ -64,9 +58,7 @@ export function resolvePrimaryColor(
  * `bg-primary` etc. from `--color-primary`, so setting these inline on the
  * page root applies the org's brand color with a computed hover + soft tint.
  */
-export function brandStyleFor(
-  primaryColor: string | null | undefined,
-): CSSProperties {
+export function brandStyleFor(primaryColor: string | null | undefined): CSSProperties {
   const primary = resolvePrimaryColor(primaryColor);
   return {
     '--color-primary': primary,
@@ -79,9 +71,7 @@ export function brandStyleFor(
  * Only render org-controlled image URLs that are safe http(s). S3 signed
  * URLs, uploads, and plain https logos pass; javascript:/data: never render.
  */
-export function safeBrandImageUrl(
-  url: string | null | undefined,
-): string | null {
+export function safeBrandImageUrl(url: string | null | undefined): string | null {
   if (!url) return null;
   return isSafeHttpUrl(url) ? url : null;
 }

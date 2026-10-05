@@ -1,6 +1,5 @@
 'use client';
 
-import { CloudShellSetup } from '@/components/integrations/CloudShellSetup';
 import { CredentialInput } from '@/components/integrations/CredentialInput';
 import type { IntegrationProvider } from '@/hooks/use-integration-platform';
 import {
@@ -8,8 +7,6 @@ import {
   useIntegrationMutations,
 } from '@/hooks/use-integration-platform';
 import {
-  getAwsCloudShellUrl,
-  getAwsRemediationScript,
   normalizeAwsEnvironment,
   parseRemediationRolesMap,
 } from '@gideon-defender/integration-platform';
@@ -46,10 +43,8 @@ export function AwsAccountSettingsBody({
     useIntegrationMutations();
 
   const [roleArn, setRoleArn] = useState('');
-  const [remediationRoleArn, setRemediationRoleArn] = useState('');
   const [regions, setRegions] = useState<string[]>([]);
   const [savingCredentials, setSavingCredentials] = useState(false);
-  const [savingRemediation, setSavingRemediation] = useState(false);
   const [savingRemediationRoles, setSavingRemediationRoles] = useState(false);
   const [savingRegions, setSavingRegions] = useState(false);
   const [savingAwsType, setSavingAwsType] = useState(false);
@@ -65,16 +60,16 @@ export function AwsAccountSettingsBody({
   // value in the setup script creates a role the server will reject.
   const externalId = (metadata.externalId as string) ?? '';
   // Pair map syncs from the server as a parsed record (see the credentials
-  // update endpoint); the legacy single ARN stays as dual-read fallback.
+  // update endpoint).
   const remediationRolesMap = parseRemediationRolesMap(metadata.remediationRoles);
-  const hasRemediation =
-    Boolean(metadata.remediationRoleArn) || Object.keys(remediationRolesMap).length > 0;
+  const hasRemediation = Object.keys(remediationRolesMap).length > 0;
+  // Stored monolith ARNs are ignored server-side since Phase 4: the banner
+  // below points those connections at the pair table instead of offering
+  // the removed single-role field.
   const showLegacyBanner =
     Boolean(metadata.remediationRoleArn) && Object.keys(remediationRolesMap).length === 0;
   const regionsField = provider.credentialFields?.find((f) => f.id === 'regions');
   const awsEnvironment = normalizeAwsEnvironment(awsType);
-  const remediationScript = getAwsRemediationScript(awsEnvironment);
-  const cloudShellUrl = getAwsCloudShellUrl(awsEnvironment);
   const filteredRegionOptions =
     regionsField?.options?.filter((option) =>
       awsEnvironment === 'aws-us-gov'
@@ -84,27 +79,21 @@ export function AwsAccountSettingsBody({
 
   const [prevAwsConnection, setPrevAwsConnection] = useState(connection);
   const [prevAwsRoleArn, setPrevAwsRoleArn] = useState(metadata.roleArn);
-  const [prevAwsRemediationRoleArn, setPrevAwsRemediationRoleArn] = useState(
-    metadata.remediationRoleArn,
-  );
   const [prevAwsRegions, setPrevAwsRegions] = useState(metadata.regions);
   const [prevAwsTypeMeta, setPrevAwsTypeMeta] = useState(metadata.awsType);
   if (
     prevAwsConnection !== connection ||
     prevAwsRoleArn !== metadata.roleArn ||
-    prevAwsRemediationRoleArn !== metadata.remediationRoleArn ||
     prevAwsRegions !== metadata.regions ||
     prevAwsTypeMeta !== metadata.awsType
   ) {
     setPrevAwsConnection(connection);
     setPrevAwsRoleArn(metadata.roleArn);
-    setPrevAwsRemediationRoleArn(metadata.remediationRoleArn);
     setPrevAwsRegions(metadata.regions);
     setPrevAwsTypeMeta(metadata.awsType);
     if (connection) {
       const nextAwsType = typeof metadata.awsType === 'string' ? metadata.awsType : 'aws';
       setRoleArn((metadata.roleArn as string) ?? '');
-      setRemediationRoleArn((metadata.remediationRoleArn as string) ?? '');
       setRegions(
         Array.isArray(metadata.regions)
           ? (metadata.regions as string[]).filter((region) =>
@@ -168,21 +157,6 @@ export function AwsAccountSettingsBody({
     if (arnMatch) meta.accountId = arnMatch[1];
     await saveField({ roleArn }, meta, setSavingCredentials, t('awsSettings.credentialsSaved'));
   }, [awsEnvironment, roleArn, saveField, t]);
-
-  const handleSaveRemediation = useCallback(async () => {
-    const expectedPrefix =
-      awsEnvironment === 'aws-us-gov' ? 'arn:aws-us-gov:iam::' : 'arn:aws:iam::';
-    if (remediationRoleArn && !remediationRoleArn.startsWith(expectedPrefix)) {
-      toast.error(t('awsSettings.remediationRoleArnEnvMismatch'));
-      return;
-    }
-    await saveField(
-      { remediationRoleArn },
-      { remediationRoleArn },
-      setSavingRemediation,
-      t('awsSettings.remediationRoleSaved'),
-    );
-  }, [awsEnvironment, remediationRoleArn, saveField, t]);
 
   const handleSaveRemediationRoles = useCallback(
     async (serializedMap: string) => {
@@ -385,37 +359,6 @@ export function AwsAccountSettingsBody({
             {t('awsSettings.legacyRemediationBanner')}
           </p>
         )}
-        <CloudShellSetup
-          script={remediationScript}
-          externalId={externalId}
-          cloudShellUrl={cloudShellUrl}
-          disabled={!externalId}
-          disabledMessage="No External ID on file for this connection — reconnect to issue one."
-          title={t('awsSettings.setupScript')}
-          subtitle={t('awsSettings.setupScriptSubtitle')}
-          footnote=""
-        />
-        <AccountSettingsFieldGroup label={t('awsSettings.remediationRoleArnLabel')}>
-          <CredentialInput
-            field={{
-              id: 'remediationRoleArn',
-              label: '',
-              type: 'text',
-              required: false,
-              placeholder: 'arn:aws:iam::123456789012:role/OpenComp-Remediator',
-            }}
-            value={remediationRoleArn}
-            onChange={(v) => setRemediationRoleArn(v as string)}
-          />
-        </AccountSettingsFieldGroup>
-        <Button
-          onClick={() => void handleSaveRemediation()}
-          loading={savingRemediation}
-          disabled={savingRemediation}
-          size="sm"
-        >
-          {t('awsSettings.save')}
-        </Button>
       </AccountSettingsSection>
 
       {regionsField && (

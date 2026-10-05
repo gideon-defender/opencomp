@@ -1,6 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { AssumeRoleCommand, STSClient } from '@aws-sdk/client-sts';
-import { retryAssume } from '@gideon-defender/integration-platform';
+import {
+  isRemediationRoleKey,
+  parseRemediationRolesMap,
+  retryAssume,
+} from '@gideon-defender/integration-platform';
 import {
   CostExplorerClient,
   GetCostAndUsageCommand,
@@ -9,6 +13,7 @@ import {
 import type { SecurityFinding } from '../cloud-security.service';
 import {
   type AwsPartition,
+  expectedRemediationRoleNameForKey,
   getAwsBaseCredentials,
   getAwsDefaultRegion,
   getAwsPartitionForRegion,
@@ -17,6 +22,7 @@ import {
   normalizeAwsPartition,
   parseAwsRoleArn,
   validateAwsPartitionConfig,
+  validateOneRemediationArn,
 } from '../aws-partition.utils';
 import type {
   AwsCredentials,
@@ -527,32 +533,29 @@ export class AWSSecurityService {
    * Assume the remediation IAM role for write access.
    * Uses a separate role ARN so the audit role stays read-only.
    * Fails closed: rejects auditor-role reuse, cross-account ARNs, and
-   * non-remediator role names before any STS call (see
-   * validateAwsPartitionConfig). Never falls back to auditor credentials.
+   * non-remediator role names before any STS call. Never falls back to
+   * auditor credentials.
    *
-   * Pass `remediationRoleArn` to assume a per-pair role resolved via
-   * `resolveRemediationRoleArn` — otherwise the legacy single ARN from
-   * credentials is used (dual-read window).
+   * Pass the pair role ARN resolved via `resolveRemediationRoleArn` — it
+   * must be one of the connection's configured `remediationRoles` entries.
    */
   async assumeRemediationRole(
     credentials: Record<string, unknown>,
     region: string,
     sessionContext?: RemediationSessionContext,
-    remediationRoleArn?: string,
+    pairRoleArn?: string,
   ): Promise<AwsCredentials> {
-    // An explicitly passed blank override is a caller bug, not "absent" —
-    // falling back to the legacy ARN would silently assume the wrong role.
-    if (remediationRoleArn !== undefined && !remediationRoleArn.trim()) {
+    // A blank override is a caller bug, not "absent" — proceeding would
+    // assume the wrong role or throw a confusing STS error downstream.
+    if (pairRoleArn !== undefined && !pairRoleArn.trim()) {
       throw new Error(
         'Invalid per-pair remediation role override: expected a role ARN, got blank.',
       );
     }
-    const effectiveArn =
-      (remediationRoleArn?.trim() ? remediationRoleArn.trim() : undefined) ??
-      (credentials.remediationRoleArn as string | undefined);
-    if (!effectiveArn || !effectiveArn.trim()) {
+    const effectiveArn = pairRoleArn?.trim();
+    if (!effectiveArn) {
       throw new Error(
-        'Remediation role ARN not configured. Add a Remediation Role ARN to your AWS connection.',
+        'Remediation role ARN not configured. Add the pair role for this finding\u2019s asset class and region to your AWS connection.',
       );
     }
 
@@ -571,18 +574,35 @@ export class AWSSecurityService {
       credentials.awsType ?? getAwsPartitionForRegion(region),
     );
 
-    // Fail closed on role confusion before touching STS. Validates the
-    // effective ARN — the per-pair override or the legacy single ARN.
+    // Fail closed on role confusion before touching STS. The ARN must be
+    // one of the connection's configured pair entries — a valid but
+    // unconfigured ARN (another account's pair, a hand-typed name) must
+    // not assume here. Then enforce the same partition/account/binding
+    // rules as save-time validation.
     const auditorRoleArn =
       typeof credentials.roleArn === 'string' ? credentials.roleArn : undefined;
-    const configErrors = validateAwsPartitionConfig({
-      partition,
-      roleArn: auditorRoleArn,
-      regions: [region],
-      remediationRoleArn: effectiveArn,
-    });
-    if (configErrors.length > 0) {
-      throw new Error(configErrors.join(' '));
+    const pairs = parseRemediationRolesMap(credentials.remediationRoles);
+    const matchedKey = Object.keys(pairs).find(
+      (key) => pairs[key] === effectiveArn,
+    );
+    const pairErrors: string[] = [];
+    if (!matchedKey || !isRemediationRoleKey(matchedKey)) {
+      pairErrors.push(
+        'Remediation role ARN is not a configured pair for this connection. Add the pair role for this finding\u2019s asset class and region to your AWS connection.',
+      );
+    } else {
+      validateOneRemediationArn({
+        remediationRoleArn: effectiveArn,
+        partition,
+        roleArn: auditorRoleArn,
+        parsedRoleArn: auditorRoleArn ? parseAwsRoleArn(auditorRoleArn) : null,
+        label: `remediationRoles["${matchedKey}"]`,
+        errors: pairErrors,
+        expectedRoleName: expectedRemediationRoleNameForKey(matchedKey),
+      });
+    }
+    if (pairErrors.length > 0) {
+      throw new Error(pairErrors.join(' '));
     }
 
     return this.assumeRole({

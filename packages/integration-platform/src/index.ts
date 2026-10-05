@@ -146,11 +146,7 @@ export type { AwsEnvironment } from './manifests/aws/credentials';
 
 // AWS remediation role script (split from credentials to respect the
 // 300-line file limit) — same public import path as before.
-export {
-  awsRemediationScript,
-  getAwsRemediationScript,
-  getAwsRemediationScriptForPair,
-} from './manifests/aws/remediation-script';
+export { getAwsRemediationScriptForPair } from './manifests/aws/remediation-script';
 export type { RemediationScriptPair } from './manifests/aws/remediation-script';
 
 // Asset-class x region remediator roles (Phase 2): shared by the API

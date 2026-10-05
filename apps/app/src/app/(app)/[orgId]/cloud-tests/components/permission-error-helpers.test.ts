@@ -87,18 +87,20 @@ describe('detectServiceLinkedRole', () => {
 });
 
 describe('buildAwsFixScript', () => {
+  const PAIR_ROLE = 'OpenComp-Remediator-Storage-us-east-1';
+
   it('returns null for an empty action list', () => {
-    expect(buildAwsFixScript([])).toBeNull();
+    expect(buildAwsFixScript([], PAIR_ROLE)).toBeNull();
   });
 
   it('returns guidance (not a grant) when every action is blocked', () => {
-    const script = buildAwsFixScript(['iam:PassRole']);
+    const script = buildAwsFixScript(['iam:PassRole'], PAIR_ROLE);
     expect(script).toMatch(/manual review/i);
     expect(script).not.toContain('put-role-policy');
   });
 
   it('grants allowed actions and warns about blocked ones', () => {
-    const script = buildAwsFixScript(['s3:PutBucketEncryption', 'iam:PassRole']);
+    const script = buildAwsFixScript(['s3:PutBucketEncryption', 'iam:PassRole'], PAIR_ROLE);
     expect(script).toContain('s3:PutBucketEncryption');
     expect(script).toContain('put-role-policy');
     expect(script).toMatch(/WARNING/i);

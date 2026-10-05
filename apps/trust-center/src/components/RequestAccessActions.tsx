@@ -1,12 +1,12 @@
 'use client';
 
+import { publicApiBase } from '@/lib/api';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FileCheck, KeyRound, X } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { publicApiBase } from '@/lib/api';
 
 const requestAccessSchema = z.object({
   name: z.string().trim().min(1, 'Full name is required').max(100),

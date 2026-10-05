@@ -1,5 +1,4 @@
 import {
-  AWS_LEGACY_REMEDIATION_ROLE_NAME,
   AWS_REMEDIATION_ROLE_NAME_PREFIX,
   findingToAssetClass,
   isRemediationRoleKey,
@@ -16,11 +15,10 @@ import {
 
 /**
  * Fail-closed gate for auto-remediation: the write path needs an External ID
- * plus either the legacy remediation role ARN or a non-empty
- * `remediationRoles` pair map (`assumeRemediationRole` throws when the
- * resolved ARN is blank). Callers must return guided-only manual steps
- * (preview) or throw (execute/rollback) when this is false — never fall
- * back to the read-only auditor credentials for writes.
+ * plus a non-empty `remediationRoles` pair map (`assumeRemediationRole`
+ * throws when the resolved ARN is blank). Callers must return guided-only
+ * manual steps (preview) or throw (execute/rollback) when this is false —
+ * never fall back to the read-only auditor credentials for writes.
  */
 export function hasRemediationRole(
   credentials: Record<string, unknown>,
@@ -30,22 +28,6 @@ export function hasRemediationRole(
     credentials.externalId.trim().length === 0
   ) {
     return false;
-  }
-  if (
-    typeof credentials.remediationRoleArn === 'string' &&
-    credentials.remediationRoleArn.trim().length > 0
-  ) {
-    const parsedLegacy = parseAwsRoleArn(credentials.remediationRoleArn);
-    if (
-      parsedLegacy !== null &&
-      isValidRemediationRoleName(parsedLegacy.roleName) &&
-      !parsedLegacy.roleName.includes('/')
-    ) {
-      return true;
-    }
-    // Invalid legacy ARN falls through to the pair-map check below — a bad
-    // legacy value plus a good pair entry still counts as configured, while
-    // a bad legacy value alone stays fail-closed.
   }
   // Count only usable entries: a map whose keys are malformed (or whose
   // values are not valid remediator ARNs) can never satisfy
@@ -76,10 +58,9 @@ export function hasRemediationRole(
 }
 
 /**
- * Resolve the remediation role ARN for one finding: pair map first
- * (`Class:region` key), legacy single ARN as fallback during the dual-read
- * window. Returns `undefined` when neither is configured — callers treat
- * that as "no write path" and stay guided-only / throw.
+ * Resolve the remediation role ARN for one finding from the pair map
+ * (`Class:region` key). Returns `undefined` when no pair is configured —
+ * callers treat that as "no write path" and stay guided-only / throw.
  */
 export function resolveRemediationRoleArn(params: {
   credentials: Record<string, unknown>;
@@ -106,13 +87,11 @@ export function resolveRemediationRoleArn(params: {
         }
       }
     } catch {
-      // Invalid region or unroutable type falls through to legacy below.
+      // Invalid region or unroutable type leaves the role unresolved —
+      // every caller already fails closed on undefined.
     }
   }
-  const legacy = params.credentials.remediationRoleArn;
-  return typeof legacy === 'string' && legacy.trim()
-    ? legacy.trim()
-    : undefined;
+  return undefined;
 }
 
 /**
@@ -128,24 +107,24 @@ export function remediationRoleNameFromArn(
 
 /**
  * Validate one remediation ARN against the auditor connection. Shared by
- * the legacy single-ARN check and the per-pair map check so both enforce
- * the identical fail-closed rules.
+ * every per-pair map entry so all pairs enforce the identical fail-closed
+ * rules.
  */
 export function validateOneRemediationArn(args: {
   remediationRoleArn: string;
   partition: AwsPartition;
   roleArn: string | undefined;
   parsedRoleArn: { partition: AwsPartition; accountId: string } | null;
-  /** Prefix for map-entry errors, e.g. `remediationRoles["Storage:us-east-1"]`. Empty for the legacy field. */
+  /** Prefix for map-entry errors, e.g. `remediationRoles["Storage:us-east-1"]`. */
   label: string;
   errors: string[];
   /**
    * Exact IAM role name the ARN must carry (bare name after the last `/`).
-   * Set for per-pair map entries so `Storage:us-east-1` cannot point at the
-   * `Security-Global` role (or any other pair's role) — that would silently
-   * promote the finding to a wider-blast-radius role at assume time.
+   * `Storage:us-east-1` must not point at the `Security-Global` role (or
+   * any other pair's role) — that would silently promote the finding to a
+   * wider-blast-radius role at assume time.
    */
-  expectedRoleName?: string;
+  expectedRoleName: string;
 }): void {
   const {
     remediationRoleArn,
@@ -187,11 +166,12 @@ export function validateOneRemediationArn(args: {
       `${where}Remediation Role ARN account (${parsedRemediationArn.accountId}) must match the auditor Role ARN account (${parsedRoleArn.accountId}).`,
     );
   }
-  // Only OpenComp remediator roles are assumable for writes. Anything
-  // else (auditor role, admin role, service role) is role confusion.
+  // Only OpenComp remediator pair roles are assumable for writes.
+  // Anything else (auditor role, admin role, service role) is role
+  // confusion.
   if (!isValidRemediationRoleName(parsedRemediationArn.roleName)) {
     errors.push(
-      `${where}Remediation Role ARN must reference ${AWS_LEGACY_REMEDIATION_ROLE_NAME} (legacy) or ${AWS_REMEDIATION_ROLE_NAME_PREFIX}<AssetClass>-<region> (e.g. OpenComp-Remediator-Storage-us-east-1). Got role name "${parsedRemediationArn.roleName}".`,
+      `${where}Remediation Role ARN must reference ${AWS_REMEDIATION_ROLE_NAME_PREFIX}<AssetClass>-<region> (e.g. OpenComp-Remediator-Storage-us-east-1). Got role name "${parsedRemediationArn.roleName}".`,
     );
   }
   // Pair isolation: the ARN must name exactly the role the map key routes
@@ -199,19 +179,9 @@ export function validateOneRemediationArn(args: {
   // bare-name check would accept `extra-path/<name>` — a different IAM
   // role object sharing the suffix (generated scripts manage path-less
   // roles only, so paths never legitimately appear here).
-  if (args.expectedRoleName) {
-    if (parsedRemediationArn.roleName !== args.expectedRoleName) {
-      errors.push(
-        `${where}Remediation Role ARN must reference the "${args.expectedRoleName}" role for this pair. Got role name "${parsedRemediationArn.roleName}".`,
-      );
-    }
-  } else if (parsedRemediationArn.roleName.includes('/')) {
-    // Legacy field: assume uses the full ARN while `iam:*` reads and grant
-    // scripts use the bare name after the last `/` — a pathed ARN splits
-    // those targets onto different IAM objects. Generated scripts manage
-    // path-less roles only, so reject paths here.
+  if (parsedRemediationArn.roleName !== args.expectedRoleName) {
     errors.push(
-      `${where}Remediation Role ARN must not include an IAM path. Use the bare role name (e.g. "${AWS_LEGACY_REMEDIATION_ROLE_NAME}"). Got role name "${parsedRemediationArn.roleName}".`,
+      `${where}Remediation Role ARN must reference the "${args.expectedRoleName}" role for this pair. Got role name "${parsedRemediationArn.roleName}".`,
     );
   }
 }

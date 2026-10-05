@@ -1,17 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  buildFindingPermissionsScript,
-  buildMissingPermsMergeScript,
-  isGuidanceOnlyScript,
-} from './batch-merge-script';
+import { buildFindingPermissionsScript, isGuidanceOnlyScript } from './batch-merge-script';
+
+const PAIR_ROLE = 'OpenComp-Remediator-Storage-us-east-1';
 
 describe('buildFindingPermissionsScript', () => {
   it('emits an executable merge script when everything is grantable', () => {
-    const { script, grantable, blocked } = buildFindingPermissionsScript([
-      's3:PutBucketEncryption',
-      'logs:PutMetricFilter',
-    ]);
+    const { script, grantable, blocked } = buildFindingPermissionsScript(
+      ['s3:PutBucketEncryption', 'logs:PutMetricFilter'],
+      PAIR_ROLE,
+    );
     expect(blocked).toEqual([]);
     expect(grantable).toEqual(['logs:PutMetricFilter', 's3:PutBucketEncryption']);
     expect(script).toContain('put-role-policy');
@@ -21,10 +19,10 @@ describe('buildFindingPermissionsScript', () => {
   });
 
   it('omits blocked actions from NEW while warning (never Deny)', () => {
-    const { script, blocked } = buildFindingPermissionsScript([
-      's3:PutBucketEncryption',
-      'iam:PutRolePolicy',
-    ]);
+    const { script, blocked } = buildFindingPermissionsScript(
+      ['s3:PutBucketEncryption', 'iam:PutRolePolicy'],
+      PAIR_ROLE,
+    );
     expect(blocked).toEqual(['iam:PutRolePolicy']);
     expect(script).toContain('WARNING');
     expect(script).toContain('iam:PutRolePolicy');
@@ -35,7 +33,10 @@ describe('buildFindingPermissionsScript', () => {
   });
 
   it('returns guidance (no command) when every action is blocked', () => {
-    const { script } = buildFindingPermissionsScript(['iam:PassRole', 's3:PutBucketPolicy']);
+    const { script } = buildFindingPermissionsScript(
+      ['iam:PassRole', 's3:PutBucketPolicy'],
+      PAIR_ROLE,
+    );
     expect(script).toMatch(/manual review/i);
     expect(script).not.toContain('put-role-policy');
     expect(isGuidanceOnlyScript(script)).toBe(true);
@@ -49,8 +50,19 @@ describe('buildFindingPermissionsScript', () => {
     expect(script).toContain('ROLE="OpenComp-Remediator-Storage-us-east-1"');
   });
 
+  it('returns a null script when no role is routed (render manual guidance)', () => {
+    const { script, grantable, blocked } = buildFindingPermissionsScript([
+      's3:PutBucketEncryption',
+    ]);
+    // Never mint a grant onto the removed monolith role — callers hide
+    // the copy buttons and show the chips as manual requirements.
+    expect(script).toBeNull();
+    expect(grantable).toEqual(['s3:PutBucketEncryption']);
+    expect(blocked).toEqual([]);
+  });
+
   it('reads the full policy so Deny/Conditions survive (no [0] truncation)', () => {
-    const { script } = buildFindingPermissionsScript(['s3:PutBucketEncryption']);
+    const { script } = buildFindingPermissionsScript(['s3:PutBucketEncryption'], PAIR_ROLE);
     // The full PolicyDocument feeds the merge — Deny statements, Conditions,
     // and scoped Resources survive re-runs instead of being replaced.
     expect(script).toContain('--query PolicyDocument --output json');
@@ -58,48 +70,6 @@ describe('buildFindingPermissionsScript', () => {
     expect(script).not.toContain('| [0]');
     // `[.. | strings]` flattens arrays, single strings, and null alike.
     expect(script).toContain('[.. | strings]');
-  });
-});
-
-describe('buildMissingPermsMergeScript', () => {
-  it('emits the merge flow with grantable permissions only', () => {
-    const { script, blocked } = buildMissingPermsMergeScript([
-      's3:PutBucketEncryption',
-      'iam:PassRole',
-    ]);
-    expect(blocked).toEqual(['iam:PassRole']);
-    expect(script).toContain('WARNING');
-    expect(script).toContain('NEW_PERMS=\'["s3:PutBucketEncryption"]\'');
-    expect(script).not.toContain('"iam:PassRole"');
-    expect(script).toContain('[.. | strings]');
-    expect(script).not.toContain('| [0]');
-  });
-
-  it('returns guidance (no command) when every action is blocked', () => {
-    const { script } = buildMissingPermsMergeScript(['iam:PassRole']);
-    expect(script).toMatch(/manual review/i);
-    expect(script).not.toContain('put-role-policy');
-    expect(isGuidanceOnlyScript(script)).toBe(true);
-  });
-
-  it('renders the routed pair role in the header instead of the monolith default', () => {
-    const { script } = buildMissingPermsMergeScript(
-      ['s3:PutBucketEncryption'],
-      'OpenComp-Remediator-Storage-us-east-1',
-    );
-    expect(script).toContain('ROLE="OpenComp-Remediator-Storage-us-east-1"');
-    expect(script).not.toContain('ROLE="OpenComp-Remediator"');
-  });
-
-  it('keeps the monolith default when no role is routed', () => {
-    const { script } = buildMissingPermsMergeScript(['s3:PutBucketEncryption']);
-    expect(script).toContain('ROLE="OpenComp-Remediator"');
-  });
-
-  it('throws fail-closed on an unsafe routed role name', () => {
-    expect(() =>
-      buildMissingPermsMergeScript(['s3:PutBucketEncryption'], 'Storage"; evil #'),
-    ).toThrow(/malformed ROLE header|unsafe role name/);
   });
 });
 
@@ -122,10 +92,10 @@ describe('isGuidanceOnlyScript', () => {
   });
 
   it('still treats warning-plus-command scripts as runnable', () => {
-    const { script } = buildFindingPermissionsScript([
-      's3:PutBucketEncryption',
-      'iam:PutRolePolicy',
-    ]);
+    const { script } = buildFindingPermissionsScript(
+      ['s3:PutBucketEncryption', 'iam:PutRolePolicy'],
+      PAIR_ROLE,
+    );
     expect(script).toContain('WARNING');
     expect(isGuidanceOnlyScript(script)).toBe(false);
   });

@@ -19,7 +19,7 @@ Once connected, OpenComp scans the regions you select and produces findings mapp
 - **Auth model**: AWS STS `AssumeRole` from a OpenComp–managed principal into a role in your account
 - **External ID**: Required in the trust policy so only a specific OpenComp organization can assume the role
 - **Permissions**: `SecurityAudit` + `ViewOnlyAccess` managed policies, plus two small inline policies for Cost Explorer reads and SSM document metadata
-- **Optional auto-remediation**: Separate per asset-class x region roles (`OpenComp-Remediator-{AssetClass}-{Region}`, e.g. `OpenComp-Remediator-Storage-us-east-1`) can be created to enable auto-fix actions — each role is **only used when you explicitly trigger a fix** for a matching finding. The audit role stays read-only. Connections created earlier may still use the legacy single `OpenComp-Remediator` role as a fallback.
+- **Optional auto-remediation**: Separate per asset-class x region roles (`OpenComp-Remediator-{AssetClass}-{Region}`, e.g. `OpenComp-Remediator-Storage-us-east-1`) can be created to enable auto-fix actions — each role is **only used when you explicitly trigger a fix** for a matching finding. The audit role stays read-only.
 
 ## Prerequisites
 
@@ -56,6 +56,40 @@ The OpenComp UI walks you through the full flow and displays the exact CloudShel
     Click **Save and Connect**. OpenComp validates the role, then queues an initial scan across all selected regions.
   </Step>
 </Steps>
+
+## Migrate from the legacy remediation role
+
+Connections created earlier may use a single `OpenComp-Remediator` role for all auto-fixes. If your connection settings show the legacy-role notice, move to per-pair roles: one `OpenComp-Remediator-{AssetClass}-{Region}` role per asset class and region you want auto-fix in. Each role carries only that pair's fix-forward writes. Fixes use pair roles only — the stored single role is ignored.
+
+<Steps>
+  <Step title="Create one role per pair in OpenComp">
+    Open the connection settings and find the remediation roles table. Each row names its pair and the exact role to create. Click the terminal button on a row, run that row's script in AWS CloudShell, and paste the printed Role ARN back into the same row. Repeat for every class and region you want auto-fix in — start with `Storage` and `Data`, and add `Security-Global` last (every use of it needs human approval). Click **Save**. The table counts configured pairs (for example, `3/9 configured`).
+  </Step>
+  <Step title="Confirm the pairs work">
+    Every row you need shows **Configured**. Trigger one fix on a matching finding and confirm it runs — or wait for the next scan, since fixes route to pair roles automatically once they exist.
+  </Step>
+  <Step title="Delete the legacy role in AWS">
+    Only delete `OpenComp-Remediator` after the pairs you need show **Configured**. IAM refuses to delete a role that still has policies, so remove its inline policies first (list them to catch leftovers from older script versions), detach anything managed, then delete the role:
+
+    ```bash
+    aws iam list-role-policies --role-name OpenComp-Remediator
+    aws iam list-attached-role-policies --role-name OpenComp-Remediator
+    for p in OpenComp-StorageRemediation OpenComp-ComputeRemediation OpenComp-NetworkRemediation OpenComp-SecurityRemediation OpenComp-MessagingRemediation OpenComp-ExtendedRemediation; do
+      aws iam delete-role-policy --role-name OpenComp-Remediator --policy-name "$p" 2>/dev/null || true
+    done
+    aws iam delete-role --role-name OpenComp-Remediator
+    ```
+
+    GovCloud accounts: run this in the GovCloud partition — the role ARN uses `aws-us-gov` throughout.
+  </Step>
+  <Step title="Confirm in OpenComp">
+    Reopen the connection settings. The legacy-role notice is gone and your pair rows still show **Configured**.
+  </Step>
+</Steps>
+
+<Note>
+  Deleting the legacy role before the pairs are ready is safe but degrades auto-fix: findings without a matching pair role fall back to manual guidance until you configure that pair. Nothing breaks and no scan data is lost.
+</Note>
 
 ## What gets scanned
 
@@ -157,10 +191,9 @@ Subscribe the security on-call email — not an individual inbox. Confirm the SN
 </Accordion>
 
 <Accordion title="Auto-remediation isn't available" icon="wrench">
-  Auto-remediation requires per-pair `OpenComp-Remediator-{AssetClass}-{Region}` roles (or the
-  legacy `OpenComp-Remediator` role as fallback). Run the CloudShell script for the finding's asset
+  Auto-remediation requires per-pair `OpenComp-Remediator-{AssetClass}-{Region}` roles. Run the CloudShell script for the finding's asset
   class and region, then paste its Role ARN into the matching row of the **remediation roles table**
-  in the connection settings.
+  in the connection settings. If the connection previously used the single `OpenComp-Remediator` role, follow [Migrate from the legacy remediation role](#migrate-from-the-legacy-remediation-role) first — that role is no longer read.
 </Accordion>
 
 ## Support

@@ -46,13 +46,12 @@ describe('buildAwsPhase2Credentials', () => {
     expect(shaped.regions).toEqual(['us-east-1']);
   });
 
-  it('strips the deprecated single remediation role but keeps the pair map', () => {
+  it('passes the pair map through untouched', () => {
     const shaped = buildAwsPhase2Credentials({
       roleArn: 'arn:aws:iam::123456789012:role/OpenComp-Auditor',
-      remediationRoleArn: 'arn:aws:iam::123456789012:role/OpenComp-Remediator',
-      remediationRoles: '{"Storage:us-east-1":"arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1"}',
+      remediationRoles:
+        '{"Storage:us-east-1":"arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1"}',
     });
-    expect(shaped.remediationRoleArn).toBeUndefined();
     expect(shaped.remediationRoles).toBe(
       '{"Storage:us-east-1":"arn:aws:iam::123456789012:role/OpenComp-Remediator-Storage-us-east-1"}',
     );

@@ -17,7 +17,8 @@ export interface RemediationGrantScriptOptions {
   permissions: readonly string[];
   /** Policy to write, e.g. `OpenComp-AutoFix` or `OpenComp-BatchPermissions`. */
   policyName?: string;
-  roleName?: string;
+  /** Pair role targeted by the grant (`OpenComp-Remediator-{AssetClass}-{Region}`). Required: a grant without a target role must never render. */
+  roleName: string;
   /** Shell variable holding the JSON action array. */
   variableName?: string;
   /** Warning prepended when some actions need manual review. */
@@ -35,7 +36,6 @@ export interface RemediationGrantScriptOptions {
 }
 
 const DEFAULT_POLICY_NAME = 'OpenComp-AutoFix';
-const DEFAULT_ROLE_NAME = 'OpenComp-Remediator';
 const DEFAULT_VARIABLE_NAME = 'NEW';
 
 /**
@@ -77,7 +77,7 @@ export function buildRemediationGrantScript(options: RemediationGrantScriptOptio
   const {
     permissions,
     policyName = DEFAULT_POLICY_NAME,
-    roleName = DEFAULT_ROLE_NAME,
+    roleName,
     variableName = DEFAULT_VARIABLE_NAME,
     warningLine = defaultWarningLine,
     emptyLine = defaultEmptyLine,

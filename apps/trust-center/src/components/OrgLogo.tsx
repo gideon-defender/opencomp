@@ -15,13 +15,7 @@ function initialsFor(name: string): string {
  * Org logo from /settings upload, with initials fallback. `logoUrl` is an
  * org-controlled S3 signed URL — only safe http(s) values render as <img>.
  */
-export function OrgLogo({
-  name,
-  logoUrl,
-}: {
-  name: string;
-  logoUrl: string | null | undefined;
-}) {
+export function OrgLogo({ name, logoUrl }: { name: string; logoUrl: string | null | undefined }) {
   const src = safeBrandImageUrl(logoUrl);
   if (src) {
     return (

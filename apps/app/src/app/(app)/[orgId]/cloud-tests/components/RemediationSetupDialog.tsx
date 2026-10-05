@@ -1,5 +1,7 @@
 'use client';
 
+import { RemediationPairPicker } from '@/components/remediation/RemediationPairPicker';
+import { RemediationScriptPanel } from '@/components/remediation/RemediationScriptPanel';
 import { useApi } from '@/hooks/use-api';
 import {
   getAwsCloudShellUrl,
@@ -23,8 +25,6 @@ import {
 import { Loader2, Terminal } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { RemediationPairPicker } from '@/components/remediation/RemediationPairPicker';
-import { RemediationScriptPanel } from '@/components/remediation/RemediationScriptPanel';
 
 export function RemediationSetupDialog({
   open,

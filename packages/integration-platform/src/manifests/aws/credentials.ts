@@ -72,15 +72,6 @@ export const awsCredentialFields = [
       'Minted by the server when the connection is created and shown once in the setup flow. Paste it nowhere — the setup script already carries it. Existing connections keep their stored value.',
   },
   {
-    id: 'remediationRoleArn',
-    label: 'Remediation Role ARN',
-    type: 'text' as const,
-    required: false,
-    placeholder: 'arn:aws:iam::123456789012:role/OpenComp-Remediator',
-    helpText:
-      'Legacy single role, kept for existing connections only — new connections are rejected when it is sent. New setups use one OpenComp-Remediator-{AssetClass}-{Region} role per asset-class/region pair. The audit role stays read-only.',
-  },
-  {
     id: 'regions',
     label: 'Regions to scan',
     type: 'multi-select' as const,
@@ -146,16 +137,7 @@ export const awsCredentialSchema = z.object({
       'Must be a valid IAM Role ARN',
     ),
   externalId: z.string().min(1).optional().or(z.literal('')),
-  remediationRoleArn: z
-    .string()
-    .regex(
-      /^arn:(aws|aws-us-gov):iam::\d{12}:role\/[A-Za-z0-9_+=,.@/-]+$/,
-      'Must be a valid IAM Role ARN',
-    )
-    .optional()
-    .or(z.literal('')),
   // Per-pair map, stored as a JSON string: { "Class:region": "arn:..." }.
-  // Preferred over the legacy single ARN (dual-read window keeps both).
   // Shape-checked server-side in validateAwsPartitionConfig; the schema
   // only asserts "looks like a JSON object" so malformed input fails here.
   remediationRoles: z

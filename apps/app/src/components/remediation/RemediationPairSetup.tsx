@@ -19,7 +19,7 @@ import { RemediationScriptPanel } from './RemediationScriptPanel';
  * Inline per-pair remediation setup for the AWS onboarding flows (connect
  * dialog + empty-state onboarding). Collects one role ARN per
  * asset-class/region pair into the serialized `remediationRoles` map — the
- * deprecated single `remediationRoleArn` is never offered, so new
+ * removed single `remediationRoleArn` is never offered, so new
  * connections cannot be born on the monolith role.
  *
  * Unlike `RemediationSetupDialog` (settings, existing connection) this owns

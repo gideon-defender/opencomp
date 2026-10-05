@@ -60,7 +60,7 @@ function isStaleRollbackClaim(updatedAt: unknown): boolean {
 }
 
 const REMEDIATION_ROLE_MISSING_GUIDANCE =
-  'Auto-remediation is not configured for this AWS connection. Add a Remediation Role ARN to the connection settings and make sure an External ID is set (reconnect your AWS account if needed) to enable one-click fixes. Until then, follow the AWS console steps for this finding manually.';
+  'Auto-remediation is not configured for this AWS connection. Add a per-pair remediation role in the connection settings and make sure an External ID is set (reconnect your AWS account if needed) to enable one-click fixes. Until then, follow the AWS console steps for this finding manually.';
 
 interface ExecutePermissionError {
   missingActions: string[];
@@ -261,7 +261,7 @@ export class RemediationService {
           severity: finding.severity,
         });
       }
-      if (!pairRoleArn) {
+      if (!pairRoleArn || !pairRoleName) {
         // Same situation as the full-preview path below: no pair role for
         // this finding means guided-only manual steps, not a 500. A fresh
         // preview degrades gracefully, so recheck must too.
@@ -397,7 +397,7 @@ export class RemediationService {
         severity: finding.severity,
       });
     }
-    if (!pairRoleArn) {
+    if (!pairRoleArn || !pairRoleName) {
       return buildManualRemediationPreview({
         remediation: `[MANUAL] No remediation role is configured for this finding's asset class and region. Add the ${pairExpectedRoleName} role to the connection settings to enable one-click fixes. Until then, follow the AWS console steps for this finding manually.`,
         description: finding.description,
@@ -535,7 +535,7 @@ export class RemediationService {
                 onInfo: (message) => this.logger.log(message),
               });
             this.logger.log(
-              `${pairRoleName ?? 'Remediation role'} has ${existingActions.size} actions. Needed: ${permissionsList.length}`,
+              `${pairRoleName} has ${existingActions.size} actions. Needed: ${permissionsList.length}`,
             );
             const missing = permissionsList.filter(
               (p) =>
@@ -693,7 +693,7 @@ export class RemediationService {
     // read-only.
     if (!hasRemediationRole(credentials)) {
       throw new Error(
-        'Remediation role ARN not configured for this AWS connection. Add a Remediation Role ARN to enable auto-remediation.',
+        'No remediation role configured for this AWS connection. Add the pair role for this finding\u2019s asset class and region in the connection settings to enable auto-remediation.',
       );
     }
 
@@ -718,7 +718,7 @@ export class RemediationService {
         `Cannot auto-execute: findings in the ${executeAssetClass} asset class require human approval. Apply the fix manually in the AWS console.`,
       );
     }
-    if (!pairRoleArn) {
+    if (!pairRoleArn || !pairRoleName) {
       throw new Error(
         `No remediation role configured for this finding's asset class and region. Add the ${pairExpectedRoleName} role to the connection settings.`,
       );
@@ -1242,7 +1242,7 @@ export class RemediationService {
     // credentials.
     if (!hasRemediationRole(credentials)) {
       throw new Error(
-        'Cannot rollback: remediation role ARN is no longer configured for this AWS connection.',
+        'Cannot rollback: no remediation role configured for this AWS connection. Add the pair role for this finding\u2019s asset class and region in the connection settings.',
       );
     }
 
@@ -1267,7 +1267,7 @@ export class RemediationService {
         `Cannot rollback: findings in the ${rollbackAssetClass} asset class require human approval. Undo the change manually in the AWS console.`,
       );
     }
-    if (!pairRoleArn) {
+    if (!pairRoleArn || !pairRoleName) {
       throw new Error(
         `Cannot rollback: no remediation role configured for this finding's asset class and region. Add the ${pairExpectedRoleName} role to the connection settings.`,
       );
@@ -1555,8 +1555,8 @@ export class RemediationService {
     errorMessage: string;
     failedStep: AwsCommandStep;
     fallbackPermissions: string[];
-    /** Routed pair role name for grant scripts (legacy default when absent). */
-    roleName?: string;
+    /** Routed pair role name for grant scripts. */
+    roleName: string;
   }): Promise<ExecutePermissionError> {
     try {
       const suggestion = await this.aiRemediationService.suggestPermissionFix({

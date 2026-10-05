@@ -15,11 +15,11 @@ export const BLOCKED_PERMISSIONS_MESSAGE =
  */
 export function buildStaticPermissionScript(
   permissions: string[],
-  roleName?: string,
+  roleName: string,
 ): string {
   return buildRemediationGrantScript({
     permissions,
     policyName: 'OpenComp-AutoFix',
-    ...(roleName ? { roleName } : {}),
+    roleName,
   });
 }
