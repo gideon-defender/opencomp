@@ -260,11 +260,18 @@ export type { GcpRemediationScriptPair } from './manifests/gcp/remediation-scrip
 // (per-pair setup UI).
 export {
   AZURE_FIX_FORWARD_ACTIONS,
+  AZURE_FIX_FORWARD_ALLOWLIST,
   AZURE_NEVER_ALLOW_ACTIONS,
   AZURE_NEVER_ALLOW_ROLES,
+  azureRollbackDeletePrefixAllowed,
   buildAzureCustomRoleDefinition,
+  isAzureAllowlistedFixStep,
+  normalizeAzureUrlForAllowlist,
 } from './manifests/azure/remediation-allowlist';
-export type { AzureCustomRoleDefinition } from './manifests/azure/remediation-allowlist';
+export type {
+  AzureAllowlistedCall,
+  AzureCustomRoleDefinition,
+} from './manifests/azure/remediation-allowlist';
 export {
   APPROVAL_GATED_AZURE_ASSET_CLASSES,
   AZURE_REMEDIATION_ASSET_CLASSES,

@@ -101,7 +101,7 @@ export class ExecuteRemediationDto {
 
   @ApiPropertyOptional({
     description:
-      'Hash of the previewed plan being acknowledged (planHash from the preview response). Required for AWS and GCP execute: execute refuses when it is missing or when the plan changed.',
+      'Hash of the previewed plan being acknowledged (planHash from the preview response). Required for AWS, GCP, and Azure execute: execute refuses when it is missing or when the plan changed.',
   })
   @IsOptional()
   @IsString()
