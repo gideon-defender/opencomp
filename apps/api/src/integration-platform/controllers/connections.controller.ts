@@ -52,8 +52,12 @@ import {
   getManifest,
   getAllManifests,
   getActiveManifests,
+  getAzureRemediationMapParseError,
   getGcpRemediationMapParseError,
   getRemediationRolesParseError,
+  parseAzureRemediationKey,
+  parseAzureRemediationMap,
+  parseAzureRemediationSecrets,
   parseGcpRemediationMap,
   parseRemediationRolesMap,
   TASK_TEMPLATE_INFO,
@@ -70,6 +74,10 @@ import {
 import { getProviderSummary } from '../utils/provider-summary';
 import { validateRemediationRoleTrust } from './remediation-trust.validator';
 import { validateGcpRemediationTrust } from '../../cloud-security/gcp-remediation-trust.validator';
+import {
+  validateAzureRemediationTrust,
+  type AzureTrustBinding,
+} from '../../cloud-security/azure-remediation-trust.validator';
 import { GcpImpersonationService } from '../../cloud-security/gcp-impersonation.service';
 import { generateAwsExternalId } from './external-id.utils';
 import { ApiAuthErrors } from '../../openapi/common-responses';
@@ -1763,6 +1771,152 @@ export class ConnectionsController {
   }
 
   /**
+   * Bind (or clear) remediator-SP pairs on an Azure OAuth connection.
+   * Stores SP application IDs in `azureRemediation` (mirrored to metadata
+   * for display) and client secrets in `azureRemediationSecrets` (vault
+   * only — never metadata, never logged). A non-empty binding is stored
+   * only after the trust probe passes: every SP mints for the bound app in
+   * the connection tenant, holds no wildcard/never-allow grant, and
+   * carries a fix-forward grant for its class. Secret rotation resends
+   * both keys together; there is no secrets-only update.
+   */
+  private async updateAzureRemediationBinding(args: {
+    id: string;
+    organizationId: string;
+    connection: { metadata?: unknown };
+    azureRemediation: string;
+    azureRemediationSecrets?: string;
+  }) {
+    const parseError = getAzureRemediationMapParseError(args.azureRemediation);
+    if (parseError) {
+      throw new HttpException(parseError, HttpStatus.BAD_REQUEST);
+    }
+    const pairs = parseAzureRemediationMap(args.azureRemediation);
+    const secrets = parseAzureRemediationSecrets(args.azureRemediationSecrets);
+    for (const key of Object.keys(pairs)) {
+      if (!secrets[key]) {
+        throw new HttpException(
+          `azureRemediationSecrets["${key}"]: missing client secret for this binding — re-run the setup script and paste back the map and secrets together.`,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    }
+    for (const key of Object.keys(secrets)) {
+      if (!pairs[key]) {
+        throw new HttpException(
+          `azureRemediationSecrets["${key}"]: no matching azureRemediation binding — secrets cannot exist without a pair.`,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    }
+
+    const existingCredentials =
+      await this.credentialVaultService.getDecryptedCredentials(args.id);
+    if (Object.keys(pairs).length > 0) {
+      const tenantId =
+        typeof existingCredentials?.tenantId === 'string'
+          ? existingCredentials.tenantId
+          : undefined;
+      if (!tenantId) {
+        throw new HttpException(
+          'Cannot verify the remediator trust without the connection tenant. Reconnect the Azure integration, then set the binding again.',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      const bindings: AzureTrustBinding[] = [];
+      for (const [key, appId] of Object.entries(pairs)) {
+        const split = parseAzureRemediationKey(key);
+        if (!split) {
+          throw new HttpException(
+            `azureRemediation["${key}"]: internal key error after validation`,
+            HttpStatus.INTERNAL_SERVER_ERROR,
+          );
+        }
+        bindings.push({
+          key,
+          assetClass: split.assetClass,
+          subscriptionId: split.subscriptionId,
+          appId,
+          secret: secrets[key],
+        });
+      }
+      const trustError = await validateAzureRemediationTrust({
+        tenantId,
+        bindings,
+        logger: this.logger,
+      });
+      if (trustError) {
+        throw new HttpException(trustError, HttpStatus.BAD_REQUEST);
+      }
+    }
+
+    const mergedCredentials = {
+      ...(existingCredentials ?? {}),
+    } as Record<string, string | string[]>;
+    if (Object.keys(pairs).length === 0) {
+      delete mergedCredentials.azureRemediation;
+      delete mergedCredentials.azureRemediationSecrets;
+    } else {
+      mergedCredentials.azureRemediation = args.azureRemediation;
+      mergedCredentials.azureRemediationSecrets =
+        args.azureRemediationSecrets ?? '';
+    }
+    await this.credentialVaultService.storeApiKeyCredentials(
+      args.id,
+      mergedCredentials,
+    );
+
+    const existingMeta = (args.connection.metadata ?? {}) as Record<
+      string,
+      unknown
+    >;
+    const nextMetadata = { ...existingMeta };
+    if (Object.keys(pairs).length > 0) {
+      nextMetadata.azureRemediation = pairs;
+    } else {
+      delete nextMetadata.azureRemediation;
+      delete nextMetadata.azureRemediationSecrets;
+    }
+    try {
+      await this.connectionRepository.update(args.id, {
+        metadata: nextMetadata,
+      });
+    } catch (metadataError) {
+      // Same vault/metadata agreement discipline as the GCP binding: the
+      // vault write above already flipped the active credential version
+      // while metadata still shows the old binding. Flip the vault back to
+      // the snapshot so display state (metadata) and effective state
+      // (vault) cannot disagree, then surface the original failure.
+      this.logger.error(
+        `Azure binding metadata update failed on ${args.id} — restoring previous vault version`,
+        metadataError instanceof Error
+          ? metadataError.stack
+          : String(metadataError),
+      );
+      if (existingCredentials) {
+        try {
+          await this.credentialVaultService.storeApiKeyCredentials(
+            args.id,
+            existingCredentials,
+          );
+        } catch (restoreError) {
+          this.logger.error(
+            `Failed to restore vault version on ${args.id} after metadata failure — vault and metadata disagree, retry the binding update`,
+            restoreError instanceof Error
+              ? restoreError.stack
+              : String(restoreError),
+          );
+        }
+      }
+      throw metadataError;
+    }
+    this.logger.log(
+      `Updated Azure remediator binding on connection ${args.id} (${Object.keys(pairs).length} pairs)`,
+    );
+    return { success: true };
+  }
+
+  /**
    * Update credentials for a custom auth connection
    */
   @Put(':id/credentials')
@@ -1809,6 +1963,34 @@ export class ConnectionsController {
         organizationId,
         connection,
         gcpRemediation: body.credentials.gcpRemediation as string,
+      });
+    }
+
+    // Same carve-out for Azure remediator-SP bindings: the pair map plus
+    // the SP secrets carry no token material and are validated +
+    // trust-probed below. Only these two keys may ride along — anything
+    // else hits the OAuth blanket reject.
+    const azureBindingKeys =
+      body.credentials != null ? Object.keys(body.credentials) : [];
+    const isAzureRemediationBindingUpdate =
+      providerSlug === 'azure' &&
+      body.credentials != null &&
+      typeof body.credentials.azureRemediation === 'string' &&
+      azureBindingKeys.every(
+        (key) =>
+          key === 'azureRemediation' || key === 'azureRemediationSecrets',
+      );
+    if (isAzureRemediationBindingUpdate) {
+      const secrets =
+        typeof body.credentials.azureRemediationSecrets === 'string'
+          ? body.credentials.azureRemediationSecrets
+          : undefined;
+      return this.updateAzureRemediationBinding({
+        id,
+        organizationId,
+        connection,
+        azureRemediation: body.credentials.azureRemediation as string,
+        azureRemediationSecrets: secrets,
       });
     }
 

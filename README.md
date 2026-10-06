@@ -218,6 +218,60 @@ full-access (`comp_service`) Redis role for BullMQ, falling back to
 
 ---
 
+### Cloud Tests Configuration
+
+Cloud tests collect security posture from AWS, GCP, and Azure. Each cloud
+connects differently, and OAuth-based clouds (GCP, Azure) need platform-level
+OAuth app credentials before any connection works.
+
+#### 1. Callback URL
+
+GCP and Azure OAuth both redirect back to the API. Register this URL in each
+provider's app registration (type **Web**):
+
+```
+{BASE_URL}/v1/integrations/oauth/callback
+```
+
+(`BASE_URL` is the API's public URL, e.g. `https://api.dev.gideondefender.com`
+in dev, `http://localhost:3333` locally.)
+
+#### 2. Per-cloud setup
+
+| Cloud           | Auth                           | What to configure                                                                                                                                                                                                                                                                                                                                                                               |
+| --------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AWS (`aws`)     | IAM role assumption (no OAuth) | Nothing platform-wide. Each connection renders its own CloudShell script with a per-connection external ID — run it in the target account.                                                                                                                                                                                                                                                      |
+| GCP (`gcp`)     | OAuth2                         | Google Cloud Console → **APIs & Services → Credentials** → **OAuth client ID** (Web application), with the callback URL above in **Authorized redirect URIs**. Actual access is limited by IAM roles — connecting users only need read-only roles like `roles/securitycenter.findingsViewer`.                                                                                                   |
+| Azure (`azure`) | OAuth2                         | Azure Portal → **App registrations** → **New registration**, account type **Accounts in any organizational directory** (multitenant), with the callback URL above as a **Web** redirect URI. Then **Certificates & secrets** → new client secret. Actual access is controlled by Azure RBAC — connecting users need at least **Reader** (plus **Security Reader** for Defender for Cloud data). |
+
+#### 3. Store the platform credentials
+
+OAuth credentials are read from the database, not env vars — one row per
+provider (org-level rows take precedence, platform rows are the fallback).
+Save them via the admin endpoint (same call per provider, different slug and
+values):
+
+```sh
+curl -X POST "$BASE_URL/v1/admin/integrations/credentials" \
+  -H "Authorization: Bearer <admin-session-or-service-token>" \
+  -H "Content-Type: application/json" \
+  -d '{"providerSlug": "azure", "clientId": "<app-id>", "clientSecret": "<secret>"}'
+```
+
+Verify with the availability check:
+
+```sh
+curl "$BASE_URL/v1/integrations/oauth/availability?providerSlug=azure"
+# {"available": true, "hasPlatformCredentials": true, ...}
+```
+
+> ⚠️ `No OAuth credentials available for <provider>` means neither an
+> org-level nor a platform-level credential row exists for that exact slug
+> (`gcp`, `azure`). Creating the GCP row does not cover Azure — repeat step 3
+> per cloud.
+
+---
+
 ### Languages (i18n)
 
 The app ships with English and Spanish locales. The locale is resolved from

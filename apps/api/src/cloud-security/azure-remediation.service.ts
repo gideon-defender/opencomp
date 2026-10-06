@@ -10,6 +10,12 @@ import {
   executeAzurePlanSteps,
   validateAzurePlanSteps,
 } from './azure-command-executor';
+import {
+  resolveAzureExecutionIdentity,
+  resolveAzureRemediationIdentity,
+} from './azure-remediation-role-resolver';
+import { mintAzureSpToken } from './azure-remediation-identity';
+import { checkAzureWriteAccess } from './azure-remediation-preconditions';
 import type { AzureFixPlan } from './azure-ai-remediation.prompt';
 
 const PLAN_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
@@ -76,11 +82,38 @@ export class AzureRemediationService {
     checkResultId: string;
     remediationKey: string;
   }) {
-    const { finding, accessToken } = await this.resolveContext(
+    const { finding, accessToken, credentials } = await this.resolveContext(
       params.connectionId,
       params.organizationId,
       params.checkResultId,
     );
+
+    // Approval-gated classes never auto-execute: surface guided steps
+    // without spending an AI plan call. A configured binding there
+    // enables reads, never writes.
+    const gate = resolveAzureRemediationIdentity({
+      credentials: credentials ?? {},
+      resourceType: finding.resourceType,
+      subscriptionId: this.extractSubscriptionId(finding.resourceId) ?? '',
+    });
+    if (gate.approvalGated) {
+      return this.buildGuidedResponse({
+        canAutoFix: false,
+        risk: 'high',
+        description: finding.title,
+        currentState: {},
+        proposedState: {},
+        readSteps: [],
+        fixSteps: [],
+        rollbackSteps: [],
+        rollbackSupported: false,
+        requiresAcknowledgment: false,
+        reason: `${gate.assetClass} findings require human approval — a configured binding enables reads, never writes.`,
+        guidedSteps: [
+          `${gate.assetClass} findings require human approval. Review the finding in the Azure Portal and apply the fix manually.`,
+        ],
+      });
+    }
 
     // Generate AI plan
     let plan = await this.aiRemediationService.generateAzureFixPlan(finding);
@@ -148,7 +181,7 @@ export class AzureRemediationService {
     userId: string;
     acknowledgment?: string;
   }) {
-    const { finding, accessToken } = await this.resolveContext(
+    const { finding, accessToken, credentials } = await this.resolveContext(
       params.connectionId,
       params.organizationId,
       params.checkResultId,
@@ -157,6 +190,32 @@ export class AzureRemediationService {
     if (!accessToken) {
       throw new Error('Azure access token unavailable. Check credentials.');
     }
+
+    // Resolve the class SP that must execute this fix. Unbound pairs and
+    // approval-gated classes throw here — fixes never run on the user
+    // OAuth token, which carries unbounded RBAC. Reads below keep the
+    // auditor token; only writes use the SP token.
+    const identity = resolveAzureExecutionIdentity({
+      credentials: credentials ?? {},
+      resourceType: finding.resourceType,
+      subscriptionId: this.extractSubscriptionId(finding.resourceId) ?? '',
+    });
+    const tenantId =
+      typeof credentials?.tenantId === 'string'
+        ? credentials.tenantId
+        : undefined;
+    if (!tenantId) {
+      throw new Error(
+        'Azure tenant unavailable for this connection. Reconnect the integration.',
+      );
+    }
+    const spToken = (
+      await mintAzureSpToken({
+        tenantId,
+        clientId: identity.spAppId,
+        clientSecret: identity.secret,
+      })
+    ).accessToken;
 
     // Retrieve or regenerate plan
     const cacheKey = `${params.connectionId}:${params.checkResultId}:${params.remediationKey}`;
@@ -262,13 +321,12 @@ export class AzureRemediationService {
         };
       }
 
-      // Phase 2.5: Pre-flight — check write permissions and self-heal before executing
-      const subscriptionId = this.extractSubscriptionId(
-        plan.fixSteps[0]?.url || finding.resourceId,
-      );
-      if (subscriptionId) {
-        await this.ensureWriteAccess(accessToken, subscriptionId);
-      }
+      // Phase 2.5: Pre-flight — the executor identity must provably hold a
+      // write grant. Fail closed: unproven writes do not run.
+      await checkAzureWriteAccess({
+        accessToken: spToken,
+        subscriptionId: identity.subscriptionId,
+      });
 
       // Phase 3: Execute fix steps with self-healing retry
       // Executor auto-handles: provider registration, throttling, retries, provisioning waits
@@ -288,7 +346,7 @@ export class AzureRemediationService {
 
       let fixResult = await executeAzurePlanSteps({
         steps: plan.fixSteps,
-        accessToken,
+        accessToken: spToken,
         autoRollbackSteps: plan.rollbackSteps,
       });
 
@@ -297,7 +355,7 @@ export class AzureRemediationService {
         const permError = parseAzurePermissionError(fixResult.error.message);
         if (permError?.isPermissionError) {
           this.logger.warn(
-            `Permission error: ${fixResult.error.message}. Assign the required Azure role to the app registration.`,
+            `Permission error: ${fixResult.error.message}. Re-run the setup script for the bound pair ${identity.expectedKey} to repair the binding.`,
           );
         }
       }
@@ -327,7 +385,7 @@ export class AzureRemediationService {
           plan = retryPlan;
           fixResult = await executeAzurePlanSteps({
             steps: plan.fixSteps,
-            accessToken,
+            accessToken: spToken,
             autoRollbackSteps: plan.rollbackSteps,
           });
         }
@@ -355,6 +413,11 @@ export class AzureRemediationService {
             appliedState: {
               error: fixResult.error.message,
               stepIndex: fixResult.error.stepIndex,
+              executedAs: {
+                spAppId: identity.spAppId,
+                assetClass: identity.assetClass,
+                key: identity.expectedKey,
+              },
               completedSteps: fixResult.results
                 .filter((r) => r.success)
                 .map((r) => ({
@@ -436,6 +499,11 @@ export class AzureRemediationService {
             })),
             rollbackSteps: plan.rollbackSteps,
             verified,
+            executedAs: {
+              spAppId: identity.spAppId,
+              assetClass: identity.assetClass,
+              key: identity.expectedKey,
+            },
           } as unknown as Prisma.InputJsonValue,
           executedAt: new Date(),
         },
@@ -502,16 +570,41 @@ export class AzureRemediationService {
       throw new Error('No rollback steps available for this action.');
     }
 
-    // Get fresh access token (auto-refreshes if expired)
-    const accessToken = await this.getValidAzureToken(
+    // Resolve the class SP that must run the rollback — same gates as
+    // execute. The binding is re-resolved (not trusted from stored state)
+    // so a binding removed since the fix refuses instead of running on
+    // the user token.
+    const rollbackCreds = await this.resolveCredentials(
       action.connectionId,
       action.organizationId,
     );
-    if (!accessToken) {
+    if (!rollbackCreds) {
       throw new Error(
-        'Cannot obtain Azure access token for rollback. Please reconnect the integration.',
+        'Cannot obtain Azure credentials for rollback. Please reconnect the integration.',
       );
     }
+    const rollbackIdentity = resolveAzureExecutionIdentity({
+      credentials: rollbackCreds,
+      resourceType:
+        typeof action.resourceType === 'string' ? action.resourceType : null,
+      subscriptionId: this.extractSubscriptionId(action.resourceId) ?? '',
+    });
+    const rollbackTenant =
+      typeof rollbackCreds.tenantId === 'string'
+        ? rollbackCreds.tenantId
+        : undefined;
+    if (!rollbackTenant) {
+      throw new Error(
+        'Azure tenant unavailable for this connection. Reconnect the integration.',
+      );
+    }
+    const rollbackSpToken = (
+      await mintAzureSpToken({
+        tenantId: rollbackTenant,
+        clientId: rollbackIdentity.spAppId,
+        clientSecret: rollbackIdentity.secret,
+      })
+    ).accessToken;
 
     this.logger.log(
       `Rolling back action ${action.id}: ${rollbackSteps.length} steps`,
@@ -522,28 +615,26 @@ export class AzureRemediationService {
       );
     }
 
-    // Pre-flight: ensure write access before rollback
-    const subscriptionId = this.extractSubscriptionId(
-      (rollbackSteps[0] as { url?: string })?.url || action.checkResultId,
-    );
-    if (subscriptionId) {
-      await this.ensureWriteAccess(accessToken, subscriptionId);
-    }
+    // Pre-flight: the executor identity must provably hold a write grant.
+    await checkAzureWriteAccess({
+      accessToken: rollbackSpToken,
+      subscriptionId: rollbackIdentity.subscriptionId,
+    });
 
     const result = await executeAzurePlanSteps({
       steps: rollbackSteps as Parameters<
         typeof executeAzurePlanSteps
       >[0]['steps'],
-      accessToken,
+      accessToken: rollbackSpToken,
       isRollback: true,
     });
 
     // If permission error during rollback, log clearly
-    if (result.error && subscriptionId) {
+    if (result.error) {
       const permError = parseAzurePermissionError(result.error.message);
       if (permError?.isPermissionError) {
         this.logger.warn(
-          `Rollback permission error: ${result.error.message}. Assign the required Azure role to the app registration.`,
+          `Rollback permission error: ${result.error.message}. Re-run the setup script for the bound pair ${rollbackIdentity.expectedKey} to repair the binding.`,
         );
       }
     }
@@ -621,48 +712,6 @@ export class AzureRemediationService {
   }
 
   // --- Self-healing helpers ---
-
-  /**
-   * Pre-flight: check if the token has write access on the subscription.
-   * If not, attempt to self-grant Contributor role.
-   */
-  private async ensureWriteAccess(
-    accessToken: string,
-    subscriptionId: string,
-  ): Promise<void> {
-    try {
-      const resp = await fetch(
-        `https://management.azure.com/subscriptions/${subscriptionId}/providers/Microsoft.Authorization/permissions?api-version=2022-04-01`,
-        { headers: { Authorization: `Bearer ${accessToken}` } },
-      );
-
-      if (!resp.ok) {
-        this.logger.warn('Could not check permissions — proceeding anyway');
-        return;
-      }
-
-      const data = (await resp.json()) as {
-        value: Array<{ actions: string[]; notActions: string[] }>;
-      };
-      const allActions = data.value?.flatMap((p) => p.actions) ?? [];
-      const hasWrite = allActions.some(
-        (a) => a === '*' || a === '*/write' || a.endsWith('/write'),
-      );
-
-      if (hasWrite) {
-        this.logger.log('Pre-flight: write access confirmed');
-        return;
-      }
-
-      this.logger.warn(
-        'Pre-flight: no write access detected — fix may fail. Assign Contributor role to the app registration.',
-      );
-    } catch (err) {
-      this.logger.warn(
-        `Pre-flight permission check failed: ${err instanceof Error ? err.message : String(err)}`,
-      );
-    }
-  }
 
   private extractSubscriptionId(resourceId: string): string | null {
     const match = resourceId.match(/\/subscriptions\/([^/]+)/);
@@ -771,6 +820,8 @@ export class AzureRemediationService {
     }
 
     const evidence = (checkResult.evidence ?? {}) as Record<string, unknown>;
+    const credentials =
+      await this.credentialVaultService.getDecryptedCredentials(connectionId);
 
     return {
       finding: {
@@ -784,6 +835,7 @@ export class AzureRemediationService {
         evidence,
       },
       accessToken,
+      credentials,
     };
   }
 
