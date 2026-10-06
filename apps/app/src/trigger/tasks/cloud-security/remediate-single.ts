@@ -29,9 +29,17 @@ export const remediateSingle = task({
     remediationKey: string;
     userId: string;
     acknowledgment?: string;
+    expectedPlanHash?: string;
   }) => {
-    const { connectionId, organizationId, checkResultId, remediationKey, userId, acknowledgment } =
-      payload;
+    const {
+      connectionId,
+      organizationId,
+      checkResultId,
+      remediationKey,
+      userId,
+      acknowledgment,
+      expectedPlanHash,
+    } = payload;
 
     logger.info(`Single fix: ${remediationKey} on ${checkResultId} (user: ${userId})`);
 
@@ -48,6 +56,7 @@ export const remediateSingle = task({
           checkResultId,
           remediationKey,
           acknowledgment,
+          ...(expectedPlanHash ? { expectedPlanHash } : {}),
         }),
       });
 

@@ -2,6 +2,7 @@ import { Prisma, db } from '@db/server';
 import { metadata } from '@gideon-defender/trigger-local';
 import { postCloudSecurityApi } from './api-response';
 import { classifyExecuteResult } from './execute-result';
+import { expectedPlanHashParam } from './plan-hash';
 
 export type FindingStatus =
   'pending' | 'fixing' | 'fixed' | 'skipped' | 'failed' | 'cancelled' | 'needs_permissions';
@@ -36,6 +37,7 @@ const MAX_PERSIST_PROGRESS_ATTEMPTS = 3;
 interface PreviewResult {
   guidedOnly?: boolean;
   missingPermissions?: string[];
+  planHash?: string;
 }
 
 async function apiPost<T>(
@@ -83,6 +85,7 @@ export async function tryFix(
       checkResultId: finding.id,
       remediationKey: finding.key,
       acknowledgment: 'acknowledged',
+      ...expectedPlanHashParam(preview.data),
     },
     organizationId,
     userId,

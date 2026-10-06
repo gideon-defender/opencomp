@@ -2,6 +2,7 @@
 
 import { serverApi } from '@/lib/api-server';
 import { classifyExecuteResult } from '@/trigger/tasks/cloud-security/execute-result';
+import { expectedPlanHashParam } from '@/trigger/tasks/cloud-security/plan-hash';
 import { classifyRetryPreview } from '@/trigger/tasks/cloud-security/retry-preview';
 import { auth, runs, tasks } from '@gideon-defender/trigger-local';
 
@@ -152,6 +153,7 @@ export async function retryFinding(
     const preview = await serverApi.post<{
       guidedOnly?: boolean;
       missingPermissions?: string[];
+      planHash?: string;
     }>('/v1/cloud-security/remediation/preview', {
       connectionId,
       checkResultId,
@@ -161,7 +163,7 @@ export async function retryFinding(
     if (preview.error) return { status: 'failed', error: String(preview.error) };
 
     const data = preview.data as
-      { guidedOnly?: boolean; missingPermissions?: string[] } | undefined;
+      { guidedOnly?: boolean; missingPermissions?: string[]; planHash?: string } | undefined;
     const previewDecision = classifyRetryPreview(data);
     if (previewDecision.type === 'needs_permissions') {
       return {
@@ -179,6 +181,7 @@ export async function retryFinding(
       checkResultId,
       remediationKey,
       acknowledgment: 'acknowledged',
+      ...expectedPlanHashParam(data),
     });
 
     if (execute.error) {

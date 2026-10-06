@@ -39,8 +39,10 @@ vi.mock('./api-response', () => ({
 }));
 
 import { Prisma, db } from '@db/server';
+import { postCloudSecurityApi } from './api-response';
 import {
   persistProgress,
+  tryFix,
   type BatchProgress,
   type FindingProgress,
 } from './remediate-batch-helpers';
@@ -171,6 +173,39 @@ describe('persistProgress', () => {
         skipped: 1,
         failed: 0,
       }),
+    });
+  });
+});
+
+describe('tryFix', () => {
+  const apiMock = postCloudSecurityApi as unknown as Mock;
+
+  it('echoes the preview plan hash into execute', async () => {
+    apiMock.mockImplementation(({ path }: { path: string }) => {
+      if (path === '/v1/cloud-security/remediation/preview') {
+        return Promise.resolve({ data: { planHash: 'gcp-abc123' } });
+      }
+      return Promise.resolve({
+        data: { status: 'success', actionId: 'act-1' },
+      });
+    });
+
+    const result = await tryFix(
+      finding({ id: 'check-1', key: 'finding-key' }),
+      'conn-1',
+      'org-1',
+      'user-1',
+    );
+
+    expect(result.status).toBe('fixed');
+    expect(apiMock).toHaveBeenCalledWith({
+      path: '/v1/cloud-security/remediation/execute',
+      body: expect.objectContaining({
+        acknowledgment: 'acknowledged',
+        expectedPlanHash: 'gcp-abc123',
+      }),
+      organizationId: 'org-1',
+      userId: 'user-1',
     });
   });
 });

@@ -83,6 +83,29 @@ describe('ExecuteRemediationDto', () => {
     const errors = await validate(dto);
     expect(errors.some((e) => e.property === 'acknowledgment')).toBe(true);
   });
+
+  it('accepts an optional previewed plan hash', async () => {
+    const dto = toDto(ExecuteRemediationDto, {
+      connectionId: 'conn_1',
+      checkResultId: 'chk_1',
+      remediationKey: 's3-encryption',
+      acknowledgment: 'acknowledged',
+      expectedPlanHash: 'gcp-abc123',
+    });
+    expect(await validate(dto)).toHaveLength(0);
+  });
+
+  it('rejects an overlong previewed plan hash', async () => {
+    const dto = toDto(ExecuteRemediationDto, {
+      connectionId: 'conn_1',
+      checkResultId: 'chk_1',
+      remediationKey: 's3-encryption',
+      acknowledgment: 'acknowledged',
+      expectedPlanHash: 'x'.repeat(257),
+    });
+    const errors = await validate(dto);
+    expect(errors.some((e) => e.property === 'expectedPlanHash')).toBe(true);
+  });
 });
 
 describe('CreateBatchDto', () => {
@@ -142,6 +165,50 @@ describe('UpdateBatchDto', () => {
 
   it('accepts a non-empty triggerRunId', async () => {
     const dto = toDto(UpdateBatchDto, { triggerRunId: 'run_1' });
+    expect(await validate(dto)).toHaveLength(0);
+  });
+
+  it('rejects line breaks in triggerRunId (log forgery)', async () => {
+    const dto = toDto(UpdateBatchDto, { triggerRunId: 'run_1\nforged: true' });
+    const errors = await validate(dto);
+    expect(errors.some((e) => e.property === 'triggerRunId')).toBe(true);
+  });
+});
+
+describe('line-break hardening across DTOs', () => {
+  it('rejects line breaks in CreateBatchDto.connectionId', async () => {
+    const dto = toDto(CreateBatchDto, {
+      connectionId: 'conn_1\nX-Injected: true',
+      findings: [],
+    });
+    const errors = await validate(dto);
+    expect(errors.some((e) => e.property === 'connectionId')).toBe(true);
+  });
+
+  it('rejects line breaks in ExecuteRemediationDto free-text fields', async () => {
+    const base = {
+      connectionId: 'conn_1',
+      checkResultId: 'chk_1',
+      remediationKey: 'fix',
+    };
+    for (const extra of [
+      { acknowledgment: 'acknowledged\nforged-log-line' },
+      { expectedPlanHash: 'abc123\nforged-log-line' },
+    ]) {
+      const dto = toDto(ExecuteRemediationDto, { ...base, ...extra });
+      const errors = await validate(dto);
+      expect(errors.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('accepts clean acknowledgment and plan hash values', async () => {
+    const dto = toDto(ExecuteRemediationDto, {
+      connectionId: 'conn_1',
+      checkResultId: 'chk_1',
+      remediationKey: 'fix',
+      acknowledgment: 'acknowledged',
+      expectedPlanHash: 'abc123',
+    });
     expect(await validate(dto)).toHaveLength(0);
   });
 });

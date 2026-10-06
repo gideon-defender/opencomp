@@ -17,6 +17,11 @@ function listJsFiles(dir) {
       if (entry.isDirectory()) {
         walk(full);
       } else if (entry.isFile() && entry.name.endsWith('.js')) {
+        // Never publish test files: tsup compiles `*.test.tsx` sources
+        // into dist (vitest is dev-only, so such entries break at runtime
+        // for consumers). The next run of this script drops any stale
+        // `*.test` entries from the exports map.
+        if (entry.name.endsWith('.test.js')) continue;
         out.push(path.relative(dir, full).split(path.sep).join('/'));
       }
     }

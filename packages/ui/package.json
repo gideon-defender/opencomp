@@ -332,10 +332,6 @@
       "types": "./dist/components/editor/utils/validate-content.d.ts",
       "import": "./dist/components/editor/utils/validate-content.js"
     },
-    "./editor/utils/validate-content.test": {
-      "types": "./dist/components/editor/utils/validate-content.test.d.ts",
-      "import": "./dist/components/editor/utils/validate-content.test.js"
-    },
     "./empty-card": {
       "types": "./dist/components/empty-card.d.ts",
       "import": "./dist/components/empty-card.js"

@@ -1,5 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { createHash } from 'node:crypto';
 import { db, Prisma } from '@db';
+import {
+  stableJsonStringify,
+  type PlanHashBinding,
+} from './remediation-stable-json';
 import { CredentialVaultService } from '../integration-platform/services/credential-vault.service';
 import { parseAwsPermissionError } from './remediation-error.utils';
 import { AWSSecurityService } from './providers/aws-security.service';
@@ -59,6 +64,44 @@ function isStaleRollbackClaim(updatedAt: unknown): boolean {
   return Date.now() - updatedAt.getTime() > ROLLBACK_CLAIM_TIMEOUT_MS;
 }
 
+/**
+ * Stable hash of AWS plan steps for the acknowledgment binding: execute
+ * refuses when the acknowledged hash no longer matches the steps about to
+ * run. Covers fix steps plus rollback steps — rollback runs as real writes
+ * on the failure path, so a regenerated rollback the user never previewed
+ * must fail the check. Only executed fields hash — free-text `purpose`
+ * rewording by refinement or repair must never read as a plan change. Key
+ * order is canonicalized so regenerated plans with reordered params hash
+ * alike. Mirrors `hashGcpPlanSteps` for GCP.
+ *
+ * The finding binding hashes with the steps: without it, a hash previewed
+ * for one finding authorizes a run for another finding with identical
+ * steps.
+ */
+export function hashAwsPlanSteps(
+  fixSteps: AwsCommandStep[] | undefined,
+  rollbackSteps: AwsCommandStep[] | undefined,
+  binding: PlanHashBinding,
+): string {
+  const shape = (steps: AwsCommandStep[]) =>
+    steps.map((s) => ({
+      service: s.service,
+      command: s.command,
+      params: s.params ?? null,
+    }));
+  const input = stableJsonStringify({
+    binding: {
+      organizationId: binding.organizationId,
+      connectionId: binding.connectionId,
+      checkResultId: binding.checkResultId,
+      remediationKey: binding.remediationKey,
+    },
+    fix: shape(fixSteps ?? []),
+    rollback: shape(rollbackSteps ?? []),
+  });
+  return `aws-${createHash('sha256').update(input).digest('hex')}`;
+}
+
 const REMEDIATION_ROLE_MISSING_GUIDANCE =
   'Auto-remediation is not configured for this AWS connection. Add a per-pair remediation role in the connection settings and make sure an External ID is set (reconnect your AWS account if needed) to enable one-click fixes. Until then, follow the AWS console steps for this finding manually.';
 
@@ -84,6 +127,25 @@ export class RemediationService {
   >();
   private readonly PLAN_CACHE_MAX = 100;
   private readonly PLAN_CACHE_TTL = 5 * 60 * 1000;
+
+  /**
+   * Finding scope for the acknowledgment hash. Preview and execute hash
+   * the same binding, so a hash previewed for one finding never
+   * authorizes a run for another.
+   */
+  private planBinding(params: {
+    organizationId: string;
+    connectionId: string;
+    checkResultId: string;
+    remediationKey: string;
+  }): PlanHashBinding {
+    return {
+      organizationId: params.organizationId,
+      connectionId: params.connectionId,
+      checkResultId: params.checkResultId,
+      remediationKey: params.remediationKey,
+    };
+  }
 
   /**
    * A plan is only worth caching/reusing if it can actually be auto-applied.
@@ -316,6 +378,17 @@ export class RemediationService {
       }
 
       const cachedPlan = freshCached?.plan;
+      // Recheck shows the cached plan with fresh permission status — bind
+      // execute to the same steps, or Apply after a recheck always refuses
+      // on the missing hash. Omitted on a cache miss: with no cached plan
+      // there is nothing to bind to and execute must fail closed.
+      const recheckPlanHash = cachedPlan
+        ? hashAwsPlanSteps(
+            cachedPlan.fixSteps,
+            cachedPlan.rollbackSteps,
+            this.planBinding(params),
+          )
+        : undefined;
 
       return {
         currentState: cachedPlan?.currentState ?? {},
@@ -329,6 +402,7 @@ export class RemediationService {
         acknowledgmentMessage:
           'This fix will modify your AWS infrastructure. Please review the changes above before proceeding.',
         allRequiredPermissions: checkablePermissions,
+        ...(recheckPlanHash ? { planHash: recheckPlanHash } : {}),
         ...(cachedBlocked.length > 0 && {
           blockedPermissions: cachedBlocked,
           blockedPermissionsMessage: BLOCKED_PERMISSIONS_MESSAGE,
@@ -592,6 +666,12 @@ export class RemediationService {
             acknowledgmentMessage:
               'This fix will modify your AWS infrastructure. Please review the changes above before proceeding.',
             allRequiredPermissions: permissionsList,
+            // Binds execute to this exact plan: pass back as `expectedPlanHash`.
+            planHash: hashAwsPlanSteps(
+              refined.fixSteps,
+              refined.rollbackSteps,
+              this.planBinding(params),
+            ),
             ...(blockedPerms.length > 0 && {
               blockedPermissions: blockedPerms,
               blockedPermissionsMessage: BLOCKED_PERMISSIONS_MESSAGE,
@@ -649,6 +729,12 @@ export class RemediationService {
       acknowledgmentMessage:
         'This fix will modify your AWS infrastructure. Please review the changes above before proceeding.',
       allRequiredPermissions: fallbackPermissionsList,
+      // Binds execute to this exact plan: pass back as `expectedPlanHash`.
+      planHash: hashAwsPlanSteps(
+        plan.fixSteps,
+        plan.rollbackSteps,
+        this.planBinding(params),
+      ),
       ...(fallbackBlocked.length > 0 && {
         blockedPermissions: fallbackBlocked,
         blockedPermissionsMessage: BLOCKED_PERMISSIONS_MESSAGE,
@@ -663,6 +749,7 @@ export class RemediationService {
     remediationKey: string;
     userId: string;
     acknowledgment?: string;
+    expectedPlanHash?: string;
   }) {
     // Delegate GCP/Azure to dedicated services
     const connection = await this.getConnection(params);
@@ -764,6 +851,24 @@ export class RemediationService {
     if (!plan.fixSteps || plan.fixSteps.length === 0) {
       throw new Error('AI generated an empty fix plan. Cannot proceed.');
     }
+    // Fast-fail on a stale acknowledgment before doing any work: the plan
+    // above is cached or freshly regenerated. The authoritative check runs
+    // again after refinement and repair below, against the steps that
+    // actually execute. A hash for another plan (or none when one is
+    // required by the client) refuses instead of executing a changed plan.
+    if (
+      params.expectedPlanHash &&
+      params.expectedPlanHash !==
+        hashAwsPlanSteps(
+          plan.fixSteps,
+          plan.rollbackSteps,
+          this.planBinding(params),
+        )
+    ) {
+      throw new Error(
+        'The previewed plan changed since you acknowledged it. Preview again and acknowledge the new plan before executing.',
+      );
+    }
     if (!plan.rollbackSteps || plan.rollbackSteps.length === 0) {
       this.logger.warn(
         `No rollback steps for ${params.remediationKey} — fix is irreversible`,
@@ -774,6 +879,16 @@ export class RemediationService {
     if (!params.acknowledgment || params.acknowledgment !== 'acknowledged') {
       throw new Error(
         'Acknowledgment is required before executing any remediation.',
+      );
+    }
+    // The acknowledgment binds to one exact preview: without its hash
+    // there is nothing to compare the executed steps against, so a
+    // regenerated plan would run under a stale acknowledgment. An empty
+    // string reads as absent here — it must never silently disable the
+    // binding the way a wrong hash refuses loudly.
+    if (!params.expectedPlanHash) {
+      throw new Error(
+        'Execute requires the previewed plan hash (expectedPlanHash from the preview response). Preview again and acknowledge the new plan before executing.',
       );
     }
 
@@ -968,6 +1083,27 @@ export class RemediationService {
         findingCtx.evidence,
       );
 
+      // The acknowledged hash must cover the steps that actually run:
+      // refinement and AI repair above rewrote them after the pre-check, so
+      // re-verify against the final plan here. The in-execution repairStep
+      // callback below stays hash-unverified by necessity — the repair
+      // exists to change params — but it is pinned to the acknowledged
+      // target (same service+command) and re-runs the full safety gate,
+      // so recovery cannot smuggle in an unreviewed action.
+      if (
+        params.expectedPlanHash &&
+        params.expectedPlanHash !==
+          hashAwsPlanSteps(
+            plannedFix.fixSteps,
+            plannedFix.rollbackSteps,
+            this.planBinding(params),
+          )
+      ) {
+        throw new Error(
+          'The previewed plan changed since you acknowledged it. Preview again and acknowledge the new plan before executing.',
+        );
+      }
+
       // The catch block below runs outside this scope — capture the
       // validated plan now so a permission failure builds its script from
       // the executed actions, not the stale original plan.
@@ -984,8 +1120,8 @@ export class RemediationService {
         credentials: remediationCreds,
         region,
         autoRollbackSteps: plannedFix.rollbackSteps,
-        repairStep: async ({ step, awsError }) =>
-          this.aiRemediationService.refineStepFromError({
+        repairStep: async ({ step, awsError }) => {
+          const repaired = await this.aiRemediationService.refineStepFromError({
             step,
             awsError,
             finding: findingCtx,
@@ -993,7 +1129,26 @@ export class RemediationService {
               fixSteps: plannedFix.fixSteps,
               readSteps: plannedFix.readSteps,
             },
-          }),
+          });
+          // Pin the repair to the acknowledged target: the prompt asks
+          // for same service+command, but the model is untrusted input —
+          // a repaired step naming a new target would execute outside the
+          // acknowledged plan. Params may change (that is the repair);
+          // the target may not. On a target change, retry the original
+          // step so the run degrades to the normal failure path (with
+          // auto-rollback) instead of running an unreviewed action.
+          if (
+            repaired &&
+            (repaired.service !== step.service ||
+              repaired.command !== step.command)
+          ) {
+            this.logger.warn(
+              `AI repair changed the step target from ${step.service}:${step.command} to ${repaired.service}:${repaired.command} — refusing the repair and retrying the original step`,
+            );
+            return step;
+          }
+          return repaired;
+        },
       });
 
       if (fixResult.error) {

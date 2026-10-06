@@ -23,16 +23,25 @@ export class PreviewRemediationDto {
   @ApiProperty({ description: 'Integration connection ID.' })
   @IsString()
   @MaxLength(256)
+  @Matches(/^[^\r\n]*$/, {
+    message: 'connectionId must not contain line breaks.',
+  })
   connectionId!: string;
 
   @ApiProperty({ description: 'Check result (finding) ID.' })
   @IsString()
   @MaxLength(256)
+  @Matches(/^[^\r\n]*$/, {
+    message: 'checkResultId must not contain line breaks.',
+  })
   checkResultId!: string;
 
   @ApiProperty({ description: 'Remediation key for the finding.' })
   @IsString()
   @MaxLength(256)
+  @Matches(/^[^\r\n]*$/, {
+    message: 'remediationKey must not contain line breaks.',
+  })
   remediationKey!: string;
 
   @ApiPropertyOptional({
@@ -58,16 +67,25 @@ export class ExecuteRemediationDto {
   @ApiProperty({ description: 'Integration connection ID.' })
   @IsString()
   @MaxLength(256)
+  @Matches(/^[^\r\n]*$/, {
+    message: 'connectionId must not contain line breaks.',
+  })
   connectionId!: string;
 
   @ApiProperty({ description: 'Check result (finding) ID.' })
   @IsString()
   @MaxLength(256)
+  @Matches(/^[^\r\n]*$/, {
+    message: 'checkResultId must not contain line breaks.',
+  })
   checkResultId!: string;
 
   @ApiProperty({ description: 'Remediation key for the finding.' })
   @IsString()
   @MaxLength(256)
+  @Matches(/^[^\r\n]*$/, {
+    message: 'remediationKey must not contain line breaks.',
+  })
   remediationKey!: string;
 
   @ApiPropertyOptional({
@@ -76,7 +94,22 @@ export class ExecuteRemediationDto {
   @IsOptional()
   @IsString()
   @MaxLength(5000)
+  @Matches(/^[^\r\n]*$/, {
+    message: 'acknowledgment must not contain line breaks.',
+  })
   acknowledgment?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Hash of the previewed plan being acknowledged (planHash from the preview response). Required for AWS and GCP execute: execute refuses when it is missing or when the plan changed.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(256)
+  @Matches(/^[^\r\n]*$/, {
+    message: 'expectedPlanHash must not contain line breaks.',
+  })
+  expectedPlanHash?: string;
 }
 
 export class BatchFindingDto {
@@ -103,6 +136,9 @@ export class CreateBatchDto {
   @ApiProperty({ description: 'Integration connection ID.' })
   @IsString()
   @MaxLength(256)
+  @Matches(/^[^\r\n]*$/, {
+    message: 'connectionId must not contain line breaks.',
+  })
   connectionId!: string;
 
   @ApiProperty({ description: 'Findings to fix in this batch.' })
@@ -135,6 +171,9 @@ export class UpdateBatchDto {
   @IsString()
   @MinLength(1)
   @MaxLength(256)
+  @Matches(/^[^\r\n]*$/, {
+    message: 'triggerRunId must not contain line breaks.',
+  })
   triggerRunId?: string;
 
   @ApiPropertyOptional({

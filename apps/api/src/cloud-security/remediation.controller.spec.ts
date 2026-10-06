@@ -220,6 +220,52 @@ describe('RemediationController', () => {
       expect(response).toEqual(result);
     });
 
+    it('should pass expectedPlanHash to service when acknowledged', async () => {
+      const bodyWithHash = {
+        ...body,
+        acknowledgment: 'acknowledged',
+        expectedPlanHash: 'gcp-abc123',
+      };
+      const result = {
+        actionId: 'act_003',
+        status: 'success' as const,
+        resourceId: 'my-resource',
+        previousState: {},
+        appliedState: {},
+      };
+      mockService.executeRemediation.mockResolvedValue(result);
+
+      const response = await controller.execute(bodyWithHash, orgId, userId);
+
+      expect(service.executeRemediation).toHaveBeenCalledWith({
+        connectionId: body.connectionId,
+        organizationId: orgId,
+        checkResultId: body.checkResultId,
+        remediationKey: body.remediationKey,
+        userId,
+        acknowledgment: 'acknowledged',
+        expectedPlanHash: 'gcp-abc123',
+      });
+      expect(response).toEqual(result);
+    });
+
+    it('should omit expectedPlanHash when the client sends none', async () => {
+      const result = {
+        actionId: 'act_004',
+        status: 'success' as const,
+        resourceId: 'my-resource',
+        previousState: {},
+        appliedState: {},
+      };
+      mockService.executeRemediation.mockResolvedValue(result);
+
+      await controller.execute(body, orgId, userId);
+
+      const call = mockService.executeRemediation.mock.calls[0]?.[0] as
+        Record<string, unknown> | undefined;
+      expect(call).not.toHaveProperty('expectedPlanHash');
+    });
+
     it('should throw BAD_REQUEST when service throws', async () => {
       mockService.executeRemediation.mockRejectedValue(
         new Error('No credentials found'),
