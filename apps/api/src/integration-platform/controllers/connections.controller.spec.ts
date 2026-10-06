@@ -962,6 +962,288 @@ describe('ConnectionsController', () => {
     });
   });
 
+  describe('Azure remediator-SP bindings', () => {
+    const SUB = '12345678-1234-1234-1234-1234567890ab';
+    const APP_ID = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+    const TENANT = '11111111-2222-3333-4444-555555555555';
+    const MAP = JSON.stringify({ [`Storage:${SUB}`]: APP_ID });
+    const SECRETS = JSON.stringify({ [`Storage:${SUB}`]: 'secret-1' });
+
+    function tokenFor(appid: string, tid: string): string {
+      const encoded = Buffer.from(JSON.stringify({ appid, tid })).toString(
+        'base64url',
+      );
+      return `header.${encoded}.signature`;
+    }
+
+    function okJson(body: unknown, status = 200): Response {
+      return {
+        ok: status >= 200 && status < 300,
+        status,
+        json: async () => body,
+        text: async () => JSON.stringify(body),
+      } as Response;
+    }
+
+    function azureConnection() {
+      mockConnectionService.getConnectionForOrg.mockResolvedValue({
+        id: 'conn_azure',
+        organizationId: 'org_1',
+        status: 'active',
+        metadata: {},
+        provider: { slug: 'azure' },
+      });
+      mockedGetManifest.mockReturnValue({
+        id: 'azure',
+        auth: { type: 'oauth2', config: {} },
+      } as never);
+    }
+
+    function storedCredentials() {
+      mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue({
+        tenantId: TENANT,
+        subscriptionId: SUB,
+      });
+    }
+
+    function trustProbesPass() {
+      jest.spyOn(global, 'fetch').mockImplementation(async (url: string) => {
+        const target = String(url);
+        if (target.includes('oauth2/v2.0/token')) {
+          return okJson({
+            access_token: tokenFor(APP_ID, TENANT),
+            expires_in: 3600,
+          });
+        }
+        if (target.includes('Microsoft.Authorization/permissions')) {
+          return okJson({
+            value: [{ actions: ['Microsoft.Storage/storageAccounts/write'] }],
+          });
+        }
+        throw new Error(`unexpected fetch in test: ${target}`);
+      });
+    }
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('stores a valid pair map plus secrets, mirroring only app IDs to metadata', async () => {
+      azureConnection();
+      storedCredentials();
+      trustProbesPass();
+
+      const result = await controller.updateCredentials('conn_azure', 'org_1', {
+        credentials: {
+          azureRemediation: MAP,
+          azureRemediationSecrets: SECRETS,
+        },
+      });
+
+      expect(result).toEqual({ success: true });
+      expect(
+        mockCredentialVaultService.storeApiKeyCredentials,
+      ).toHaveBeenCalledWith(
+        'conn_azure',
+        expect.objectContaining({
+          azureRemediation: MAP,
+          azureRemediationSecrets: SECRETS,
+        }),
+      );
+      expect(mockConnectionRepository.update).toHaveBeenCalledWith(
+        'conn_azure',
+        expect.objectContaining({
+          metadata: expect.objectContaining({
+            azureRemediation: { [`Storage:${SUB}`]: APP_ID.toLowerCase() },
+          }),
+        }),
+      );
+      const metadata = mockConnectionRepository.update.mock.calls[0][1]
+        .metadata as Record<string, unknown>;
+      expect(metadata).not.toHaveProperty('azureRemediationSecrets');
+      expect(JSON.stringify(metadata)).not.toContain('secret-1');
+      const stored = mockCredentialVaultService.storeApiKeyCredentials.mock
+        .calls[0][1] as Record<string, unknown>;
+      // The vault (and only the vault) holds the secrets.
+      expect(stored.azureRemediationSecrets).toBe(SECRETS);
+    });
+
+    it('refuses a binding when the connection tenant is missing (unprovable trust)', async () => {
+      azureConnection();
+      trustProbesPass();
+      mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue({});
+
+      await expect(
+        controller.updateCredentials('conn_azure', 'org_1', {
+          credentials: {
+            azureRemediation: MAP,
+            azureRemediationSecrets: SECRETS,
+          },
+        }),
+      ).rejects.toThrow(HttpException);
+      expect(
+        mockCredentialVaultService.storeApiKeyCredentials,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('rejects a malformed pair map before any vault write', async () => {
+      azureConnection();
+      storedCredentials();
+
+      await expect(
+        controller.updateCredentials('conn_azure', 'org_1', {
+          credentials: { azureRemediation: 'not-json' },
+        }),
+      ).rejects.toThrow(HttpException);
+      expect(
+        mockCredentialVaultService.storeApiKeyCredentials,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('rejects a pair with no secret and a secret with no pair', async () => {
+      azureConnection();
+      storedCredentials();
+      trustProbesPass();
+
+      await expect(
+        controller.updateCredentials('conn_azure', 'org_1', {
+          credentials: { azureRemediation: MAP },
+        }),
+      ).rejects.toThrow(/missing client secret/);
+
+      await expect(
+        controller.updateCredentials('conn_azure', 'org_1', {
+          credentials: {
+            azureRemediation: MAP,
+            azureRemediationSecrets: JSON.stringify({
+              [`Storage:${SUB}`]: 'secret-1',
+              [`Data:${SUB}`]: 'secret-1',
+            }),
+          },
+        }),
+      ).rejects.toThrow(/no matching azureRemediation binding/);
+      expect(
+        mockCredentialVaultService.storeApiKeyCredentials,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('blocks binding when the SP holds a wildcard grant (open trust)', async () => {
+      azureConnection();
+      storedCredentials();
+      jest.spyOn(global, 'fetch').mockImplementation(async (url: string) => {
+        const target = String(url);
+        if (target.includes('oauth2/v2.0/token')) {
+          return okJson({
+            access_token: tokenFor(APP_ID, TENANT),
+            expires_in: 3600,
+          });
+        }
+        return okJson({ value: [{ actions: ['*'] }] });
+      });
+
+      await expect(
+        controller.updateCredentials('conn_azure', 'org_1', {
+          credentials: {
+            azureRemediation: MAP,
+            azureRemediationSecrets: SECRETS,
+          },
+        }),
+      ).rejects.toThrow(HttpException);
+      expect(
+        mockCredentialVaultService.storeApiKeyCredentials,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('clears the binding (map and secrets) when an empty map is sent', async () => {
+      azureConnection();
+      mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue({
+        tenantId: TENANT,
+        azureRemediation: MAP,
+        azureRemediationSecrets: SECRETS,
+      });
+
+      const result = await controller.updateCredentials('conn_azure', 'org_1', {
+        credentials: { azureRemediation: '{}' },
+      });
+
+      expect(result).toEqual({ success: true });
+      const stored =
+        mockCredentialVaultService.storeApiKeyCredentials.mock.calls[0][1];
+      expect(stored.azureRemediation).toBeUndefined();
+      expect(stored.azureRemediationSecrets).toBeUndefined();
+      expect(mockConnectionRepository.update).toHaveBeenCalledWith(
+        'conn_azure',
+        expect.objectContaining({
+          metadata: expect.not.objectContaining({
+            azureRemediation: expect.anything(),
+          }),
+        }),
+      );
+    });
+
+    it('still rejects other credential keys on OAuth connections', async () => {
+      azureConnection();
+
+      await expect(
+        controller.updateCredentials('conn_azure', 'org_1', {
+          credentials: { token: 'new' },
+        }),
+      ).rejects.toThrow(HttpException);
+      expect(
+        mockCredentialVaultService.storeApiKeyCredentials,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('rejects a binding smuggled with extra keys without a vault write', async () => {
+      // The carve-out exists so token material cannot ride along with the
+      // pair map — a three-key body must hit the OAuth blanket reject.
+      azureConnection();
+      storedCredentials();
+
+      await expect(
+        controller.updateCredentials('conn_azure', 'org_1', {
+          credentials: {
+            azureRemediation: MAP,
+            azureRemediationSecrets: SECRETS,
+            token: 'new',
+          },
+        }),
+      ).rejects.toThrow(HttpException);
+      expect(
+        mockCredentialVaultService.storeApiKeyCredentials,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('restores the vault version when the metadata update fails', async () => {
+      azureConnection();
+      storedCredentials();
+      trustProbesPass();
+      const previous = { tenantId: TENANT, subscriptionId: SUB };
+      mockCredentialVaultService.getDecryptedCredentials.mockResolvedValue(
+        previous,
+      );
+      mockConnectionRepository.update.mockRejectedValueOnce(
+        new Error('db down'),
+      );
+
+      await expect(
+        controller.updateCredentials('conn_azure', 'org_1', {
+          credentials: {
+            azureRemediation: MAP,
+            azureRemediationSecrets: SECRETS,
+          },
+        }),
+      ).rejects.toThrow('db down');
+      // Forward flip, then compensation flip back to the snapshot.
+      expect(
+        mockCredentialVaultService.storeApiKeyCredentials,
+      ).toHaveBeenCalledTimes(2);
+      expect(
+        mockCredentialVaultService.storeApiKeyCredentials,
+      ).toHaveBeenLastCalledWith('conn_azure', previous);
+    });
+  });
+
   describe('AWS server-generated External IDs', () => {
     const stsCtor = STSClient as unknown as jest.Mock;
     const stsSend = jest.fn();

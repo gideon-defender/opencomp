@@ -255,6 +255,39 @@ export type { GcpRemediationAssetClass } from './manifests/gcp/remediation-roles
 export { getGcpRemediationScriptForPair } from './manifests/gcp/remediation-script';
 export type { GcpRemediationScriptPair } from './manifests/gcp/remediation-script';
 
+// Azure remediator roles + allowlist + setup script (Phase A): shared by
+// the API (identity routing, validation, trust probe) and the frontend
+// (per-pair setup UI).
+export {
+  AZURE_FIX_FORWARD_ACTIONS,
+  AZURE_NEVER_ALLOW_ACTIONS,
+  AZURE_NEVER_ALLOW_ROLES,
+  buildAzureCustomRoleDefinition,
+} from './manifests/azure/remediation-allowlist';
+export type { AzureCustomRoleDefinition } from './manifests/azure/remediation-allowlist';
+export {
+  APPROVAL_GATED_AZURE_ASSET_CLASSES,
+  AZURE_REMEDIATION_ASSET_CLASSES,
+  AZURE_REMEDIATOR_SP_APP_ID_PATTERN,
+  AZURE_REMEDIATOR_SP_NAME_PREFIX,
+  MAX_AZURE_REMEDIATION_PAIRS,
+  SAFE_AZURE_SUBSCRIPTION_PATTERN,
+  azureFindingToAssetClass,
+  azureRemediationKey,
+  azureRemediatorSpName,
+  getAzureRemediationMapParseError,
+  isApprovalGatedAzureAssetClass,
+  isAzureRemediationKey,
+  normalizeAzureRemediationKey,
+  parseAzureRemediationKey,
+  parseAzureRemediationMap,
+  parseAzureRemediationSecrets,
+  serializeAzureRemediationMap,
+} from './manifests/azure/remediation-roles';
+export type { AzureRemediationAssetClass } from './manifests/azure/remediation-roles';
+export { getAzureRemediationScriptForPair } from './manifests/azure/remediation-script';
+export type { AzureRemediationScriptPair } from './manifests/azure/remediation-script';
+
 // Shared AWS STS AssumeRole retry (transient / IAM-eventual-consistency safe),
 // reused by the Cloud Tests scanner in apps/api.
 export { isRetryableAssumeError, retryAssume } from './manifests/aws/checks/assume-retry';
