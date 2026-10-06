@@ -97,16 +97,16 @@ describe('validateGcpStorageObjectUrl', () => {
   });
 
   it('does not misfire on buckets literally named o or acl', () => {
-    expect(validateGcpStorageObjectUrl(argsFor('/storage/v1/b/o'))).toEqual(
-      [],
-    );
+    expect(validateGcpStorageObjectUrl(argsFor('/storage/v1/b/o'))).toEqual([]);
     expect(validateGcpStorageObjectUrl(argsFor('/storage/v1/b/acl'))).toEqual(
       [],
     );
   });
 
   it('refuses paths that do not decode', () => {
-    const errors = validateGcpStorageObjectUrl(argsFor('/storage/v1/b/%E0%A4%A'));
+    const errors = validateGcpStorageObjectUrl(
+      argsFor('/storage/v1/b/%E0%A4%A'),
+    );
     expect(errors).toHaveLength(1);
     expect(errors[0]).toContain('not decodable');
   });

@@ -19,12 +19,17 @@ function argsFor(
   };
 }
 
-const policy = (period: string) => ({ retentionPolicy: { retentionPeriod: period } });
+const policy = (period: string) => ({
+  retentionPolicy: { retentionPeriod: period },
+});
 
 describe('validateGcpBucketRetentionPolicy', () => {
   it('refuses clearing the policy via null', () => {
     const errors = validateGcpBucketRetentionPolicy(
-      argsFor({ retentionPolicy: null }, { retentionPolicy: { retentionPeriod: '3600s' } }),
+      argsFor(
+        { retentionPolicy: null },
+        { retentionPolicy: { retentionPeriod: '3600s' } },
+      ),
     );
     expect(errors).toHaveLength(1);
     expect(errors[0]).toContain('clearing the bucket retention policy');

@@ -49,17 +49,17 @@ describe('grant-shape predicates', () => {
   });
 
   it('detects dataset access grants including domain shares', () => {
-    expect(
-      datasetAccessGrantsPublicAccess([{ domain: 'evil.example' }]),
-    ).toBe(true);
+    expect(datasetAccessGrantsPublicAccess([{ domain: 'evil.example' }])).toBe(
+      true,
+    );
     expect(
       datasetAccessGrantsPublicAccess([
         { role: 'READER', userByEmail: 'a@example.com' },
       ]),
     ).toBe(false);
-    expect(
-      datasetAccessGrantsPrivilegedRole([{ role: 'roles/owner' }]),
-    ).toBe(true);
+    expect(datasetAccessGrantsPrivilegedRole([{ role: 'roles/owner' }])).toBe(
+      true,
+    );
   });
 
   it('spots foreign-share entries and nothing else', () => {
@@ -75,7 +75,9 @@ describe('grant-shape predicates', () => {
       bodyGrantsPublicAccessDeep({ a: { b: [{ members: ['allUsers'] }] } }),
     ).toBe(true);
     expect(
-      bodyGrantsPrivilegedRoleDeep({ iam: { bindings: [{ role: 'roles/owner' }] } }),
+      bodyGrantsPrivilegedRoleDeep({
+        iam: { bindings: [{ role: 'roles/owner' }] },
+      }),
     ).toBe(true);
     expect(bodyGrantsPublicAccessDeep({ role: 'roles/viewer' })).toBe(false);
   });

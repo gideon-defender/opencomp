@@ -60,7 +60,10 @@ describe('findPriorPolicy', () => {
 describe('findPriorPolicyForUrl', () => {
   const readSteps = [
     { purpose: 'target', url: `${FIX.url}:getIamPolicy` },
-    { purpose: 'other', url: 'https://storage.googleapis.com/storage/v1/b/other:getIamPolicy' },
+    {
+      purpose: 'other',
+      url: 'https://storage.googleapis.com/storage/v1/b/other:getIamPolicy',
+    },
   ];
 
   it('binds only the covering read', () => {
@@ -75,8 +78,12 @@ describe('findPriorPolicyForUrl', () => {
 
   it('fails closed without a read-step map', () => {
     // A global fallback would bind resource A's policy to B's fix.
-    expect(findPriorPolicyForUrl({ read: { ...POLICY } }, undefined, FIX)).toBeUndefined();
-    expect(findPriorPolicyForUrl({ read: { ...POLICY } }, [], FIX)).toBeUndefined();
+    expect(
+      findPriorPolicyForUrl({ read: { ...POLICY } }, undefined, FIX),
+    ).toBeUndefined();
+    expect(
+      findPriorPolicyForUrl({ read: { ...POLICY } }, [], FIX),
+    ).toBeUndefined();
   });
 
   it('fails closed when no read covers the fix', () => {
