@@ -23,7 +23,9 @@ describe('rangesExposeFullIpSpace', () => {
 
   it('passes narrow ranges', () => {
     expect(rangesExposeFullIpSpace(['10.0.0.0/8'])).toBe(false);
-    expect(rangesExposeFullIpSpace(['10.0.0.0/8', '192.168.0.0/16'])).toBe(false);
+    expect(rangesExposeFullIpSpace(['10.0.0.0/8', '192.168.0.0/16'])).toBe(
+      false,
+    );
     expect(rangesExposeFullIpSpace(['2001:db8::/32'])).toBe(false);
     expect(rangesExposeFullIpSpace([])).toBe(false);
     expect(rangesExposeFullIpSpace('not-an-array')).toBe(false);

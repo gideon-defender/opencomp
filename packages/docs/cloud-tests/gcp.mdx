@@ -98,6 +98,48 @@ Findings are mapped to the controls used by:
 - **IAM-bounded** — access is limited to what the signed-in account's IAM roles permit
 - **Token storage** — refresh tokens are stored in an encrypted vault; they are never returned to the UI
 - **Revocable at any time** — remove the IAM role, revoke the token at [myaccount.google.com/permissions](https://myaccount.google.com/permissions), or delete the connection in OpenComp
+- **Fix-forward allowlist** — when auto-remediation is enabled, fix plans execute only through a per-asset-class URL allowlist, and plans touching never-allow permissions (IAM writes, org-policy mutation, deletions) or privileged roles (`roles/owner`, `roles/editor`, service-admin roles) are refused before execution
+
+## Monitoring auto-remediation
+
+If you bound any `opencomp-remediator@<project>.iam.gserviceaccount.com` service accounts, watch them. OpenComp only mints a remediator token when you explicitly trigger a fix, so every impersonation outside a fix you triggered is worth a look. Three signals matter:
+
+| Signal                                                  | What it means                                                                                              | Severity                                   |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| `GenerateAccessToken` on any `opencomp-remediator@*` SA | A fix ran (or someone probed impersonation — failed mints fire too)                                        | Info — reconcile with fixes you triggered  |
+| `PERMISSION_DENIED` from a remediator SA session        | A fix hit a deny — usually an IAM-denied write the allowlist/guardrails would also have refused            | Low — investigate if repeated              |
+| Remediator write to an approval-gated surface           | IAM, KMS, org policy, DNS, firewall/route, or IAM-policy writes from a remediator SA (never auto-executed) | High — every use needs a human review note |
+
+Subscribe the security on-call email — not an individual inbox. Confirm the notification-channel verification email before expecting alerts. Denied _reads_ only appear when Data Access `DATA_READ` audit logs are enabled; denied writes are always logged. The impersonation signal needs Data Access `ADMIN_READ` logs for the IAM API (`GenerateAccessToken` emits a Data Access log, off by default) — the generated script turns that on; if you wire alerts by hand, enable it first.
+
+<Steps>
+  <Step title="Create the channel, metrics, and alerting policies">
+    Run in Cloud Shell with an owner on the project holding the remediator SAs (or ask support for the generated script):
+
+    ```bash
+    PROJECT="my-proj-123"
+    CHANNEL_ID=$(gcloud beta monitoring channels create --display-name="OpenComp Remediator Alerts" --type=email --channel-labels=email_address="security@example.com" --project="$PROJECT" --format="value(name)")
+    gcloud logging metrics update opencomp-remediator-impersonate --description="OpenComp: remediator service account impersonated" --log-filter='protoPayload.serviceName="iamcredentials.googleapis.com"
+    protoPayload.methodName="GenerateAccessToken"
+    protoPayload.resourceName:"opencomp-remediator@"' --project="$PROJECT"
+    ```
+
+    Repeat `logging metrics update` (update, not create, so reruns converge) for `opencomp-remediator-denied` and `opencomp-remediator-approval-gated` with their filters (see the detector source so alerts and queries cannot drift apart), then create one alerting policy per metric firing on any match and targeting `$CHANNEL_ID`. Enable Data Access `ADMIN_READ` audit logs for the IAM API first — without them the impersonation metric stays empty.
+
+  </Step>
+  <Step title="Triage incoming alerts">
+    - **Impersonation alert**: match it to a fix you triggered in OpenComp. No match → check for failed `GenerateAccessToken` calls (wrong-caller probes) in Logs Explorer and confirm the impersonator allowlist on the SA still names only the backend identity.
+    - **Denied alert**: read `methodName` + `status` in the notification. An IAM `PERMISSION_DENIED` on a routine fix usually means the binding's custom role is missing a fix-forward permission — confirm the action was fix-forward before widening anything.
+    - **Approval-gated alert**: confirm a human approved the action, then write the review note. If nobody did, treat it as an incident: these classes are human-gated by policy.
+  </Step>
+</Steps>
+
+<Note>
+  For forensics, the same three signals exist as saved Logs Explorer queries
+  (`gcp-remediator-impersonations`, `gcp-remediator-denied`, `gcp-remediator-approval-gated`) — set
+  the time range in the picker, since Logging filters take no relative window. The exact filters
+  live with the detector source.
+</Note>
 
 ## Troubleshooting
 
@@ -129,4 +171,4 @@ Findings are mapped to the controls used by:
 ## Support
 
 1. Email [support@gideondefender.com](mailto:support@gideondefender.com)
-2. Join our [Discord community](https://discord.gg/compai)
+2. Open an issue on [GitHub](https://github.com/gideon-defender/opencomp/issues)

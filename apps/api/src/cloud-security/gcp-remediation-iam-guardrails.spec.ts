@@ -44,14 +44,20 @@ describe('validateGcpSetIamPolicy', () => {
       {
         ...PRIOR,
         auditConfigs: [
-          { service: 'allServices', auditLogConfigs: [{ logType: 'DATA_READ' }] },
+          {
+            service: 'allServices',
+            auditLogConfigs: [{ logType: 'DATA_READ' }],
+          },
         ],
       },
       {
         read: {
           ...PRIOR,
           auditConfigs: [
-            { service: 'allServices', auditLogConfigs: [{ logType: 'ADMIN_READ' }] },
+            {
+              service: 'allServices',
+              auditLogConfigs: [{ logType: 'ADMIN_READ' }],
+            },
           ],
         },
       },

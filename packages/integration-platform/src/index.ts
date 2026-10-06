@@ -197,6 +197,30 @@ export type {
   RemediationLakeQuery,
 } from './manifests/aws/remediation-detection';
 
+// Customer-side Cloud Logging detection for the GCP remediator SAs
+// (log-based metric filters, alerting policies, forensics queries, email
+// wiring script) — served to customers via
+// `pnpm run generate:gcp-remediation-detection-script` so the alerts and
+// the queries cannot drift apart. Mirrors the AWS detector above.
+export {
+  GCP_REMEDIATION_DETECTION_CHANNEL_NAME,
+  GCP_REMEDIATION_DETECTION_DESCRIPTIONS,
+  GCP_REMEDIATION_DETECTION_METRICS,
+  GCP_REMEDIATION_DETECTION_RULES,
+  GCP_REMEDIATION_LOG_QUERIES,
+  buildGcpAlertingPolicy,
+  buildGcpApprovalGatedFilter,
+  buildGcpDeniedFilter,
+  buildGcpDetectionFilter,
+  buildGcpImpersonationFilter,
+  getGcpRemediationDetectionScript,
+} from './manifests/gcp/remediation-detection';
+export type {
+  GcpRemediationDetectionRule,
+  GcpRemediationDetectionScriptOptions,
+  GcpRemediationLogQuery,
+} from './manifests/gcp/remediation-detection';
+
 // GCP remediator roles + allowlist + setup script (Phase 1): shared by the
 // API (identity routing, validation) and the frontend (per-pair setup UI).
 export {

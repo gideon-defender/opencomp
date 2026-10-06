@@ -68,14 +68,21 @@ describe('parsedGcpUrl', () => {
 });
 
 describe('sameQueryIdentity', () => {
-  const base = 'https://sqladmin.googleapis.com/v1/projects/p/instances/i/users';
+  const base =
+    'https://sqladmin.googleapis.com/v1/projects/p/instances/i/users';
 
   it('distinguishes ?name= identities', () => {
     expect(
-      sameQueryIdentity({ url: `${base}?name=alice` }, { url: `${base}?name=bob` }),
+      sameQueryIdentity(
+        { url: `${base}?name=alice` },
+        { url: `${base}?name=bob` },
+      ),
     ).toBe(false);
     expect(
-      sameQueryIdentity({ url: `${base}?name=alice` }, { url: `${base}?name=alice` }),
+      sameQueryIdentity(
+        { url: `${base}?name=alice` },
+        { url: `${base}?name=alice` },
+      ),
     ).toBe(true);
   });
 
@@ -106,15 +113,15 @@ describe('stepQueryParamValues', () => {
 
 describe('urlResource', () => {
   it('keeps sibling resources distinct', () => {
-    expect(urlResource('https://storage.googleapis.com/storage/v1/b/a')).not.toBe(
-      urlResource('https://storage.googleapis.com/storage/v1/b/b'),
-    );
+    expect(
+      urlResource('https://storage.googleapis.com/storage/v1/b/a'),
+    ).not.toBe(urlResource('https://storage.googleapis.com/storage/v1/b/b'));
   });
 
   it('decodes before comparing so encoded URLs bind correctly', () => {
-    expect(urlResource('https://storage.googleapis.com/storage/v1/b%2Fmy')).toBe(
-      urlResource('https://storage.googleapis.com/storage/v1/b/my'),
-    );
+    expect(
+      urlResource('https://storage.googleapis.com/storage/v1/b%2Fmy'),
+    ).toBe(urlResource('https://storage.googleapis.com/storage/v1/b/my'));
   });
 });
 

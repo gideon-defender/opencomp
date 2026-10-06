@@ -53,6 +53,7 @@
     "clean": "rm -rf .turbo node_modules dist",
     "dev": "tsc --watch",
     "format": "prettier --write .",
+    "generate:gcp-remediation-detection-script": "tsx scripts/generate-gcp-remediation-detection-script.ts",
     "generate:remediation-detection-script": "tsx scripts/generate-remediation-detection-script.ts",
     "generate:tasks": "tsx scripts/generate-task-types.ts",
     "lint": "prettier --check .",
