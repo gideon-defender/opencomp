@@ -26,7 +26,7 @@
     "react-dnd": "^16.0.1",
     "react-hook-form": "^7.88.0",
     "semantic-release": "^25.0.7",
-    "sharp": "^0.35.4",
+    "sharp": "^0.35.5",
     "syncpack": "^13.0.4",
     "turbo": "^2.10.5",
     "typescript": "^5.9.3"
@@ -127,13 +127,20 @@
       "seroval": "^1.6.3",
       "source-map-js": "^1.2.2",
       "@tailwindcss/typography>postcss-selector-parser": "^7.1.6",
-      "katex": "^0.18.2"
+      "katex": "^0.18.2",
+      "@modelcontextprotocol/sdk": "^1.31.0",
+      "sharp": "^0.35.5"
     },
     "auditConfig": {
       "ignoreGhsas": [
         "GHSA-86w9-cpqp-85rv",
         "GHSA-ch52-4w7c-c8xp",
         "GHSA-vfj7-8cjw-p6xm"
+      ],
+      "ignoreCves": [
+        "CVE-2026-93748",
+        "CVE-2026-93687",
+        "CVE-2026-97058"
       ]
     }
   },

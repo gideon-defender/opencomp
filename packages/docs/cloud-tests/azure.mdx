@@ -150,11 +150,11 @@ If you want OpenComp to apply fixes, bind one remediator service principal per a
 
 If you bound any `opencomp-remediator-*` service principals, watch them. OpenComp only authenticates as a remediator SP when you explicitly trigger a fix, so every write outside a fix you triggered is worth a look. Three signals matter:
 
-| Signal                                                        | What it means                                                                                                             | Severity                                  |
-| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| Succeeded control-plane write by a remediator SP              | A fix ran (one alert per class, e.g. `OpenComp-RemediatorWrite-Storage`)                                                    | Info — reconcile with fixes you triggered |
-| Failed call from a remediator SP session                      | A fix hit a failure — usually an allowlist/guardrail-blocked write that reached the API anyway                              | Low — investigate if repeated             |
-| Remediator write to an approval-gated surface                 | Role-assignment, role-definition, or vault writes from a remediator SP (never auto-executed)                                | High — every use needs a human review note |
+| Signal                                           | What it means                                                                                  | Severity                                   |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| Succeeded control-plane write by a remediator SP | A fix ran (one alert per class, e.g. `OpenComp-RemediatorWrite-Storage`)                       | Info — reconcile with fixes you triggered  |
+| Failed call from a remediator SP session         | A fix hit a failure — usually an allowlist/guardrail-blocked write that reached the API anyway | Low — investigate if repeated              |
+| Remediator write to an approval-gated surface    | Role-assignment, role-definition, or vault writes from a remediator SP (never auto-executed)   | High — every use needs a human review note |
 
 Subscribe the security on-call email — not an individual inbox. Confirm the action-group verification email before expecting alerts. Key Vault data-plane activity is blind to Activity Log (it needs diagnostic settings, not Activity Log) — the vault signal above covers control-plane writes only.
 
