@@ -273,6 +273,33 @@ export type {
   AzureCustomRoleDefinition,
 } from './manifests/azure/remediation-allowlist';
 export {
+  AZURE_APPROVAL_GATED_SURFACES,
+  AZURE_REMEDIATION_DETECTION_DESCRIPTIONS,
+  AZURE_REMEDIATION_DETECTION_RULES,
+  buildAzureApprovalGatedConditions,
+  buildAzureDetectionConditions,
+  buildAzureForensicQueries,
+  buildAzureRemediatorDeniedConditions,
+  buildAzureRemediatorWriteConditions,
+  renderAzureAlertCondition,
+} from './manifests/azure/remediation-detection-filters';
+export type {
+  AzureAlertCondition,
+  AzureApprovalGatedSurfaceCode,
+  AzureForensicQuery,
+  AzureRemediationDetectionRule,
+} from './manifests/azure/remediation-detection-filters';
+export {
+  AZURE_REMEDIATION_DETECTION_ACTION_GROUP_NAME,
+  azureActionGroupId,
+  azureDetectionRuleName,
+  getAzureRemediationDetectionScript,
+} from './manifests/azure/remediation-detection-script';
+export type {
+  AzureRemediationDetectionScriptOptions,
+  AzureRemediationDetectionService,
+} from './manifests/azure/remediation-detection-script';
+export {
   APPROVAL_GATED_AZURE_ASSET_CLASSES,
   AZURE_REMEDIATION_ASSET_CLASSES,
   AZURE_REMEDIATOR_SP_APP_ID_PATTERN,
