@@ -5,13 +5,14 @@ description: 'Connect Microsoft Azure to OpenComp over OAuth (or a service princ
 
 ## About the Azure integration
 
-OpenComp connects to Microsoft Azure to pull security posture, identity, network, and compliance data from **Microsoft Defender for Cloud** and related services. All access is read-only.
+OpenComp connects to Microsoft Azure to pull security posture, identity, network, and compliance data from **Microsoft Defender for Cloud** and related services. All access is scoped to read-only unless you opt in to auto-remediation with separate per-class service principals.
 
 The recommended connection method is **Microsoft OAuth** — you sign in with an Azure AD account that has the required roles, and OpenComp auto-detects your subscription. A **service principal** flow is also supported for customers who prefer to provision a dedicated identity.
 
 <Note>
-  OpenComp only ever issues `GET`/`list` API calls. It does not create, modify, or delete Azure
-  resources, even when connected with a user that has write permissions.
+  Scans are read-only: OpenComp only issues `GET`/`list` API calls with the auditor identity. It
+  creates, modifies, or deletes resources only through a bound remediator service principal, and
+  only when you explicitly trigger a fix.
 </Note>
 
 ## How access works
@@ -19,6 +20,7 @@ The recommended connection method is **Microsoft OAuth** — you sign in with an
 - **Primary flow**: OAuth 2.0 against `login.microsoftonline.com` using the `user_impersonation` scope on Azure Management API. OpenComp acts on behalf of the signed-in user, constrained by their Azure RBAC assignments.
 - **Alternative flow**: An Azure AD App Registration (service principal) with a client secret, assigned the required roles on a subscription.
 - **Scope**: A single Azure subscription per connection. Connect additional subscriptions by adding more connections.
+- **Optional auto-remediation**: Separate per class x subscription service principals (`opencomp-remediator-<class>`, e.g. `opencomp-remediator-storage`) can be bound to enable auto-fix actions — each SP is **only used when you explicitly trigger a fix** for a matching finding. The auditor identity stays read-only.
 
 ## Prerequisites
 
@@ -120,12 +122,69 @@ Findings are mapped to the controls used by:
 - PCI DSS
 - HIPAA (where applicable)
 
+## Set up auto-remediation (optional)
+
+If you want OpenComp to apply fixes, bind one remediator service principal per asset class x subscription pair. Start with the classes you want auto-fix in (`Storage`, `Compute`, `Data`).
+
+<Steps>
+  <Step title="Run the setup script per pair">
+    In the connection settings, open the remediation binding for the class x subscription pair and run the generated script in Cloud Shell with subscription Owner on that subscription. Each script creates a dedicated `opencomp-remediator-<class>` service principal, carves a narrow fix-forward custom role for that class, and assigns it at subscription scope. Safe to re-run: existing principals and role definitions are reused and updated in place.
+  </Step>
+  <Step title="Paste back the binding">
+    The script prints a `Class:subscription` entry holding the SP application (client) ID. Paste it into the matching row of the remediation table and store the shown-once client secret in the connection vault — secrets live vault-only and are never returned to the UI.
+  </Step>
+  <Step title="Leave gated classes human-approved">
+    `Network` and `Security-Global` findings never auto-execute, even with a principal bound. Fixes for those classes stay guided-only until a human approves them.
+  </Step>
+</Steps>
+
 ## Security model
 
-- **Read-only** — OpenComp makes no write calls, regardless of the roles you assign
+- **Read-only by default** — scans use the auditor identity and issue no write calls; fixes authenticate as the bound class service principal only when you trigger them
 - **Scoped to one subscription per connection** — a connection cannot read data outside the subscription it was created for
 - **Secrets stay encrypted** — client secrets and refresh tokens are stored in an encrypted vault and never returned to the UI
 - **Revocable at any time** — remove the role assignments in the Azure portal, or delete the connection in OpenComp
+- **Fix-forward allowlist** — when auto-remediation is enabled, fix plans execute only through a per-class ARM method+prefix allowlist, and plans touching never-allow actions (role-assignment/definition writes, vault deletes, wildcard grants) or privileged roles (`Owner`, `Contributor`, `User Access Administrator`) are refused before execution
+
+## Monitoring auto-remediation
+
+If you bound any `opencomp-remediator-*` service principals, watch them. OpenComp only authenticates as a remediator SP when you explicitly trigger a fix, so every write outside a fix you triggered is worth a look. Three signals matter:
+
+| Signal                                                        | What it means                                                                                                             | Severity                                  |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| Succeeded control-plane write by a remediator SP              | A fix ran (one alert per class, e.g. `OpenComp-RemediatorWrite-Storage`)                                                    | Info — reconcile with fixes you triggered |
+| Failed call from a remediator SP session                      | A fix hit a failure — usually an allowlist/guardrail-blocked write that reached the API anyway                              | Low — investigate if repeated             |
+| Remediator write to an approval-gated surface                 | Role-assignment, role-definition, or vault writes from a remediator SP (never auto-executed)                                | High — every use needs a human review note |
+
+Subscribe the security on-call email — not an individual inbox. Confirm the action-group verification email before expecting alerts. Key Vault data-plane activity is blind to Activity Log (it needs diagnostic settings, not Activity Log) — the vault signal above covers control-plane writes only.
+
+<Steps>
+  <Step title="Create the action group and alert rules">
+    Run in Cloud Shell with subscription Owner on the subscription holding the remediator SPs (or ask support for the generated script):
+
+    ```bash
+    SUBSCRIPTION="12345678-1234-1234-1234-1234567890ab"
+    RESOURCE_GROUP="rg-opencomp"
+    az monitor action-group create --name "OpenComp-Remediator-Alerts" --resource-group "$RESOURCE_GROUP" --short-name "OpenComp" --email-receiver name=NotifySecurity email_address="security@example.com" --query id --output tsv
+    az monitor activity-log alert create --name "OpenComp-RemediatorWrite-Storage" --resource-group "$RESOURCE_GROUP" --scopes "/subscriptions/$SUBSCRIPTION" --condition 'caller="<sp-app-id>" and category="Administrative" and status="Succeeded"' --action-group "<action-group-id>" --description "OpenComp: remediator service principal wrote"
+    ```
+
+    Repeat `activity-log alert create` per bound class (write + failed + one rule per approval-gated surface: role assignments, role definitions, vaults — see the detector source so alerts and queries cannot drift apart). The generated script deletes each rule before creating it, so reruns converge instead of failing.
+
+  </Step>
+  <Step title="Triage incoming alerts">
+    - **Write alert**: match it to a fix you triggered in OpenComp. No match → check the caller app ID against your binding map and rotate that SP's secret.
+    - **Failed alert**: read the operation name in the record. A 403 on a routine fix usually means the binding's custom role is missing a fix-forward permission — confirm the action was fix-forward before widening anything.
+    - **Approval-gated alert**: confirm a human approved the action, then write the review note. If nobody did, treat it as an incident: these surfaces are human-gated by policy.
+  </Step>
+</Steps>
+
+<Note>
+  For forensics, the same three signals exist as KQL queries against the `AzureActivity` table
+  (`azure-remediator-writes-7d`, `azure-remediator-denied-7d`,
+  `azure-remediator-approval-gated-30d`) — route Activity Log to a Log Analytics workspace first,
+  then paste the query. The exact queries live with the detector source.
+</Note>
 
 ## Troubleshooting
 
@@ -152,6 +211,13 @@ For service principal: confirm the client secret has not expired and the app reg
   Check that the service is enabled under the **Services** tab for this connection. Some services
   also require Defender plans beyond the free tier — for example, Defender for Servers, SQL, or
   Containers.
+</Accordion>
+
+<Accordion title="Auto-remediation isn't available" icon="wrench">
+  Auto-remediation requires a bound `opencomp-remediator-<class>` service principal for the finding's asset
+  class and subscription. Run the setup script for that pair, then paste its `Class:subscription`
+  entry into the remediation table in the connection settings. `Network` and `Security-Global`
+  findings stay guided-only by policy, even with a principal bound.
 </Accordion>
 
 ## Support
