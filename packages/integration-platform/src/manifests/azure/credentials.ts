@@ -114,4 +114,4 @@ From the Azure Portal, collect:
 ### Step 5: Enter Credentials
 Paste the Tenant ID, Client ID, Client Secret, and Subscription ID in the fields below.
 
-> **Security Note:** The service principal should have read-only access. Never grant write permissions for compliance monitoring.`;
+> **Security Note:** The service principal should have read-only access (Reader, Security Reader, Monitoring Reader). Grant write permissions only through a bound auto-remediation service principal, never on the auditor identity used for compliance monitoring.`;

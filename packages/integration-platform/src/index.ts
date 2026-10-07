@@ -274,31 +274,27 @@ export type {
 } from './manifests/azure/remediation-allowlist';
 export {
   AZURE_APPROVAL_GATED_SURFACES,
+  AZURE_REMEDIATION_DETECTION_ACTION_GROUP_NAME,
   AZURE_REMEDIATION_DETECTION_DESCRIPTIONS,
   AZURE_REMEDIATION_DETECTION_RULES,
+  azureActionGroupId,
+  azureDetectionRuleName,
   buildAzureApprovalGatedConditions,
   buildAzureDetectionConditions,
   buildAzureForensicQueries,
   buildAzureRemediatorDeniedConditions,
   buildAzureRemediatorWriteConditions,
+  getAzureRemediationDetectionScript,
   renderAzureAlertCondition,
-} from './manifests/azure/remediation-detection-filters';
+} from './manifests/azure/remediation-detection';
 export type {
   AzureAlertCondition,
   AzureApprovalGatedSurfaceCode,
   AzureForensicQuery,
   AzureRemediationDetectionRule,
-} from './manifests/azure/remediation-detection-filters';
-export {
-  AZURE_REMEDIATION_DETECTION_ACTION_GROUP_NAME,
-  azureActionGroupId,
-  azureDetectionRuleName,
-  getAzureRemediationDetectionScript,
-} from './manifests/azure/remediation-detection-script';
-export type {
   AzureRemediationDetectionScriptOptions,
   AzureRemediationDetectionService,
-} from './manifests/azure/remediation-detection-script';
+} from './manifests/azure/remediation-detection';
 export {
   APPROVAL_GATED_AZURE_ASSET_CLASSES,
   AZURE_REMEDIATION_ASSET_CLASSES,
