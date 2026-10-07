@@ -4,11 +4,12 @@
  * Split from `gcp-remediation.service.ts` to respect the 300-line repo
  * limit. Pure functions only — no NestJS, no database.
  */
-import { createHash } from 'node:crypto';
 import {
-  stableJsonStringify,
-  type PlanHashBinding,
-} from './remediation-stable-json';
+  assertRemediationPlanHash,
+  hashRemediationPlanSteps,
+  type HashablePlanStep,
+} from './remediation-plan-hash';
+import type { PlanHashBinding } from './remediation-stable-json';
 import type {
   GcpStepInput,
   GcpStepQueryParams,
@@ -40,98 +41,39 @@ export function extractGcpFindingProjectId(args: {
 }
 
 /**
- * Stable hash of a plan for the acknowledgment binding: execute refuses
- * when the acknowledged hash no longer matches the steps about to run.
- * SHA-256 — a 32-bit digest is brute-forceable, so it cannot bind an
- * acknowledgment to a plan. Only executed fields hash: free-text
- * `purpose` rewording must never read as a plan change.
- *
- * Rollback steps hash with fix steps: rollback executes as writes under
- * the same acknowledgment (auto-rollback on fix failure), so a hash over
- * fix steps alone would let a swapped rollback run unreviewed.
- *
- * The finding binding hashes with the steps: without it, a hash previewed
- * for one finding authorizes a run for another finding with identical
- * steps (same project, same generic fix shape).
+ * Stable hash of a GCP plan for the acknowledgment binding. Thin wrapper
+ * over the shared core — the hash bytes are unchanged.
  */
 export function hashGcpPlanSteps(
-  steps: Array<{
-    method: string;
-    url: string;
-    body?: unknown;
-    queryParams?: unknown;
-  }>,
-  rollbackSteps: Array<{
-    method: string;
-    url: string;
-    body?: unknown;
-    queryParams?: unknown;
-  }> = [],
+  steps: HashablePlanStep[],
+  rollbackSteps: HashablePlanStep[] = [],
   binding: PlanHashBinding,
 ): string {
-  const shape = (
-    entries: Array<{
-      method: string;
-      url: string;
-      body?: unknown;
-      queryParams?: unknown;
-    }>,
-  ) =>
-    entries.map((s) => ({
-      method: s.method,
-      url: s.url,
-      body: s.body ?? null,
-      // Query params change what the API mutates (`updateMask`,
-      // `predefinedAcl`) — omitting them hashes distinct plans alike.
-      queryParams: s.queryParams ?? null,
-    }));
-  const input = stableJsonStringify({
-    binding: {
-      organizationId: binding.organizationId,
-      connectionId: binding.connectionId,
-      checkResultId: binding.checkResultId,
-      remediationKey: binding.remediationKey,
-    },
-    fixSteps: shape(steps),
-    rollbackSteps: shape(rollbackSteps),
+  return hashRemediationPlanSteps({
+    provider: 'gcp',
+    fixSteps: steps,
+    rollbackSteps,
+    binding,
   });
-  return `gcp-${createHash('sha256').update(input).digest('hex')}`;
 }
 
 /**
  * Refuse when the acknowledged preview hash no longer matches the steps
- * about to run. Callers check twice: once for the cached plan, once
- * after refinement — refinement rewrites steps, so a single
- * pre-refinement check is a TOCTOU pass-through. Rollback steps compare
- * too: they run as writes under the same acknowledgment.
+ * about to run. Thin wrapper over the shared core.
  */
 export function assertAcknowledgedPlanHash(args: {
   expectedPlanHash: string | undefined;
   binding: PlanHashBinding;
-  fixSteps: Array<{
-    method: string;
-    url: string;
-    body?: unknown;
-    queryParams?: unknown;
-    purpose?: string;
-  }>;
-  rollbackSteps?: Array<{
-    method: string;
-    url: string;
-    body?: unknown;
-    queryParams?: unknown;
-    purpose?: string;
-  }>;
+  fixSteps: HashablePlanStep[];
+  rollbackSteps?: HashablePlanStep[];
 }): void {
-  if (
-    args.expectedPlanHash &&
-    args.expectedPlanHash !==
-      hashGcpPlanSteps(args.fixSteps, args.rollbackSteps ?? [], args.binding)
-  ) {
-    throw new Error(
-      'The previewed plan changed since you acknowledged it. Preview again and acknowledge the new plan before executing.',
-    );
-  }
+  assertRemediationPlanHash({
+    provider: 'gcp',
+    expectedPlanHash: args.expectedPlanHash,
+    binding: args.binding,
+    fixSteps: args.fixSteps,
+    ...(args.rollbackSteps ? { rollbackSteps: args.rollbackSteps } : {}),
+  });
 }
 
 /**

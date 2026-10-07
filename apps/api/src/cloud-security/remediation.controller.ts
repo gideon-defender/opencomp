@@ -93,7 +93,7 @@ export class RemediationController {
   @ApiOperation({
     summary: 'Execute a remediation',
     description:
-      'Run the approved auto-fix plan for one finding. Pass expectedPlanHash from the preview response (required for AWS/GCP). Fails closed when a step is skipped or invalid.',
+      'Run the approved auto-fix plan for one finding. Pass expectedPlanHash from the preview response (required for AWS/GCP/Azure). Fails closed when a step is skipped or invalid.',
   })
   @ApiBody({ type: ExecuteRemediationDto })
   async execute(

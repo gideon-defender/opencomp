@@ -176,7 +176,7 @@ canAutoFix should be TRUE for almost everything. Only set false for:
 - URLs must include ?api-version= parameter
 - currentState and proposedState should use matching keys
 - Parse resourceId from the finding evidence to build API URLs
-- The resourceId in evidence is a FULL ARM path like /subscriptions/xxx/resourceGroups/yyy/providers/Microsoft.Service/type/name — use it directly in URLs
+- The resourceId in evidence is a FULL ARM path like /subscriptions/xxx/resourceGroups/yyy/providers/Microsoft.Storage/storageAccounts/zzz — use it directly in URLs
 - For PATCH operations, only include the properties you want to change (Azure merges)
 - After discovery, use EXACT values from readStep responses in fixSteps — the refine step will replace placeholders with real values`;
 

@@ -117,3 +117,13 @@ export function buildAzureCustomRoleDefinition(params: {
     assignableScopes: [params.assignableScope],
   };
 }
+
+// Re-exported here so `remediation-allowlist` stays a valid import path
+// for the Phase B step-allowlist module next to it.
+export {
+  AZURE_FIX_FORWARD_ALLOWLIST,
+  azureRollbackDeletePrefixAllowed,
+  isAzureAllowlistedFixStep,
+  normalizeAzureUrlForAllowlist,
+} from './remediation-step-allowlist';
+export type { AzureAllowlistedCall } from './remediation-step-allowlist';
