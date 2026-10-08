@@ -22,6 +22,7 @@ import {
   isValidInviteCode,
 } from './dto/gideon-oidc.dto';
 import { GideonOidcService } from './gideon-oidc.service';
+import { getOidcCallbackDiagnostics } from './gideon-oidc-diagnostics';
 import { getTrustedOrigins } from './origin-policy';
 import { Public } from './public.decorator';
 import {
@@ -174,10 +175,8 @@ export class GideonOidcController {
     @Req() req: Request,
     @Res() res: Response,
   ): Promise<void> {
-    // Peek the stored return target BEFORE the exchange: handleCallback
-    // consumes the single-use state via getdel, so a peek after a
-    // post-exchange failure would always miss and strand portal users on
-    // the app error page.
+    // Peek before handleCallback consumes the single-use state, so a later
+    // failure still redirects portal users back to their original app.
     const storedRedirect = query.state
       ? await this.oidc.peekStoredRedirect(query.state)
       : undefined;
@@ -200,7 +199,11 @@ export class GideonOidcController {
       res.redirect(this.postLoginTarget(result));
     } catch (error) {
       this.logger.warn(
-        `Gideon OIDC callback failed: ${(error as Error).message}`,
+        getOidcCallbackDiagnostics({
+          callbackPath: req.originalUrl,
+          expectedIssuer: process.env.GIDEON_IDENTITY_URL,
+          error,
+        }),
       );
       this.fail({
         res,
@@ -233,15 +236,8 @@ export class GideonOidcController {
   }
 }
 
-/**
- * Env loaders disagree on quotes: dotenv strips surrounding quotes, but
- * `docker run --env-file` and Compose `env_file` pass them through
- * literally (`NEXT_PUBLIC_APP_URL="http://localhost:3000"`). A quoted base
- * makes every `res.redirect()` a relative URL, which the browser resolves
- * against the API origin into a 404 like
- * `/v1/auth/gideon/%22http://localhost:3000%22/`. Strip them here so one
- * copy-paste from `.env.example` cannot break login.
- */
+// Compose/env-file loaders can preserve surrounding quotes, unlike dotenv.
+// Strip them to prevent redirects becoming malformed relative URLs.
 function stripSurroundingQuotes(value: string | undefined): string | undefined {
   if (!value) return undefined;
   const trimmed = value.trim();

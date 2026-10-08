@@ -31,8 +31,8 @@ export const azureManifest: IntegrationManifest = {
   auth: {
     type: 'oauth2',
     config: {
-      authorizeUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
-      tokenUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
+      authorizeUrl: 'https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize',
+      tokenUrl: 'https://login.microsoftonline.com/organizations/oauth2/v2.0/token',
       scopes: [
         'https://management.azure.com/user_impersonation',
         'offline_access',
