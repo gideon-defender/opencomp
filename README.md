@@ -244,6 +244,29 @@ in dev, `http://localhost:3333` locally.)
 | GCP (`gcp`)     | OAuth2                         | Google Cloud Console → **APIs & Services → Credentials** → **OAuth client ID** (Web application), with the callback URL above in **Authorized redirect URIs**. Actual access is limited by IAM roles — connecting users only need read-only roles like `roles/securitycenter.findingsViewer`.                                                                                                   |
 | Azure (`azure`) | OAuth2                         | Azure Portal → **App registrations** → **New registration**, account type **Accounts in any organizational directory** (multitenant), with the callback URL above as a **Web** redirect URI. Then **Certificates & secrets** → new client secret. Actual access is controlled by Azure RBAC — connecting users need at least **Reader** (plus **Security Reader** for Defender for Cloud data). |
 
+##### Azure organizational accounts
+
+Azure OAuth uses Microsoft's `/organizations` authority for both endpoints:
+
+- Authorization: `https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize`
+- Token exchange and refresh: `https://login.microsoftonline.com/organizations/oauth2/v2.0/token`
+
+This supports Microsoft Entra **work or school accounts** across organizational
+directories, not personal Microsoft accounts. Keep the app registration's
+**Supported account types** set to **Accounts in any organizational directory**
+(multitenant). `organizations` is Microsoft's account-type selector, not an
+OpenComp organization ID or a hardcoded Azure tenant ID.
+
+If Microsoft reports `unauthorized_client` with "not enabled for consumers",
+restart the connection using a work or school account and verify that the
+configured client ID is the registration's **Application (client) ID**. Do not
+enable personal accounts solely to work around this error. See
+[Microsoft's authority and account-type documentation](https://learn.microsoft.com/en-us/entra/identity-platform/msal-client-application-configuration).
+
+After changing the OAuth endpoints, rebuild and deploy the OpenComp API, then
+start a fresh Azure connection flow. The endpoint switch alone does not require
+new client credentials or a different callback URL.
+
 #### 3. Store the platform credentials
 
 OAuth credentials are read from the database, not env vars — one row per
@@ -419,7 +442,7 @@ Steps to deploy OpenComp on Docker are coming soon.
 
 Gideon hosted production and dev environments run on AWS
 
-To deploy the `main` branch to dev, run the [Deploy to Dev workflow](.github/workflows/deploy-dev.yml) from the repository's **Actions** tab. The workflow is restricted to repository administrators, applies database migrations, builds in parallel then pushes the ARM64 API, app, trust-center, and migrator images, and rolls the ECS services. It uses the `dev` environment secrets `AWS_ACCOUNT_ID`, `AWS_REGION`, `ECS_CLUSTER`,  `AWS_ROLE_TO_ASSUME`, `MIGRATOR_SUBNETS` and `MIGRATOR_SECURITY_GROUP`.
+To deploy the `main` branch to dev, run the [Deploy to Dev workflow](.github/workflows/deploy-dev.yml) from the repository's **Actions** tab. The workflow is restricted to repository administrators, applies database migrations, builds in parallel then pushes the ARM64 API, app, trust-center, and migrator images, and rolls the ECS services. It uses the `dev` environment secrets `AWS_ACCOUNT_ID`, `AWS_REGION`, `ECS_CLUSTER`, `AWS_ROLE_TO_ASSUME`, `MIGRATOR_SUBNETS` and `MIGRATOR_SECURITY_GROUP`.
 The employee portal is not currently deployed by this workflow.
 
 Dev domains (`*.dev.gideondefender.com`): `opencomp.dev` → app, `trust.dev/{friendlyUrl}` → trust-center, `api.dev` → API.
@@ -438,6 +461,7 @@ LOCAL_TRIGGER_DATABASE_URL=postgresql://...?options=-c%20search_path%3Dopencomp_
 We are not baking secrets into the image!
 
 AWS services used to host OpenComp:
+
 - Bedrock
 - ECS Fargate
 - ElastiCache
