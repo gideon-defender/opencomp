@@ -68,7 +68,7 @@ export class CloudSecurityQueryService {
     const newConnections = await db.integrationConnection.findMany({
       where: {
         organizationId,
-        status: 'active',
+        status: { in: ['active', 'error'] },
         provider: { slug: { in: [...CLOUD_PROVIDER_SLUGS] } },
       },
       include: { provider: true },
@@ -110,6 +110,7 @@ export class CloudSecurityQueryService {
         organizationId: conn.organizationId,
         lastRunAt: conn.lastSyncAt,
         status: conn.status,
+        errorMessage: conn.errorMessage,
         createdAt: conn.createdAt,
         updatedAt: conn.updatedAt,
         reconnectedAt,
@@ -269,7 +270,7 @@ export class CloudSecurityQueryService {
     const connections = await db.integrationConnection.findMany({
       where: {
         organizationId,
-        status: 'active',
+        status: { in: ['active', 'error'] },
         provider: { slug: { in: [...CLOUD_PROVIDER_SLUGS] } },
       },
       include: { provider: true },

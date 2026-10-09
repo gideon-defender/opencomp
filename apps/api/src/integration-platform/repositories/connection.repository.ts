@@ -22,6 +22,26 @@ interface UpdateConnectionDto {
 
 @Injectable()
 export class ConnectionRepository {
+  async findOAuthTarget({
+    connectionId,
+    organizationId,
+    providerSlug,
+  }: {
+    connectionId: string;
+    organizationId: string;
+    providerSlug: string;
+  }): Promise<IntegrationConnection | null> {
+    return db.integrationConnection.findFirst({
+      where: {
+        id: connectionId,
+        organizationId,
+        provider: { slug: providerSlug },
+        authStrategy: 'oauth2',
+        status: { not: 'disconnected' },
+      },
+    });
+  }
+
   async findById(id: string): Promise<IntegrationConnection | null> {
     return db.integrationConnection.findUnique({
       where: { id },

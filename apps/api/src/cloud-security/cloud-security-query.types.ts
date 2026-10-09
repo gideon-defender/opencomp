@@ -30,6 +30,7 @@ export interface CloudProvider {
   lastRunAt: Date | null;
   status: string;
   createdAt: Date;
+  errorMessage?: string | null;
   updatedAt: Date;
   reconnectedAt?: Date;
   isLegacy: boolean;

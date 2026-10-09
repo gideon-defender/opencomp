@@ -17,6 +17,7 @@ import {
   getAwsCloudShellUrl,
   normalizeAwsEnvironment,
 } from '@gideon-defender/integration-platform';
+import { Button } from '@gideon-defender/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -24,7 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@gideon-defender/ui/dialog';
-import { Button, Label } from '@trycompai/design-system';
+import { Label } from '@gideon-defender/ui/label';
 import { ArrowLeft, Loader2, Plus, Settings, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
@@ -34,6 +35,7 @@ import { toast } from 'sonner';
 import { RemediationPairSetup } from '@/components/remediation/RemediationPairSetup';
 import { CloudShellSetup, SectionDivider, getSetupScriptDisabledMessage } from './CloudShellSetup';
 import { CredentialInput } from './CredentialInput';
+import { OAuthReconnect } from './OAuthReconnect';
 
 interface ConnectIntegrationDialogProps {
   open: boolean;
@@ -632,22 +634,27 @@ export function ConnectIntegrationDialog({
                   {!conn.isLegacy && canUpdate && (
                     <Button
                       variant="outline"
-                      size="icon-sm"
+                      size="icon"
                       onClick={() => handleConfigure(conn.id)}
-                      iconLeft={<Settings className="h-4 w-4" />}
-                    />
+                      aria-label="Configure connection"
+                    >
+                      <Settings className="h-4 w-4" />
+                    </Button>
                   )}
                   {canDelete && (
                     <Button
                       variant="destructive"
-                      size="icon-sm"
+                      size="icon"
                       onClick={() => handleDisconnect(conn.id)}
                       disabled={isDisconnecting === conn.id}
-                      loading={isDisconnecting === conn.id}
-                      iconLeft={
-                        isDisconnecting !== conn.id ? <Trash2 className="h-4 w-4" /> : undefined
-                      }
-                    />
+                      aria-label="Disconnect connection"
+                    >
+                      {isDisconnecting === conn.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                    </Button>
                   )}
                 </div>
               </div>
@@ -656,11 +663,8 @@ export function ConnectIntegrationDialog({
         )}
 
         {canCreate && (supportsMultipleConnections || existingConnections.length === 0) && (
-          <Button
-            onClick={() => setView('form')}
-            width="full"
-            iconLeft={<Plus className="h-4 w-4" />}
-          >
+          <Button onClick={() => setView('form')} className="w-full">
+            <Plus className="mr-2 h-4 w-4" />
             {existingConnections.length > 0 ? 'Add Account' : 'Add Connection'}
           </Button>
         )}
@@ -677,12 +681,8 @@ export function ConnectIntegrationDialog({
           <div className="space-y-3">
             {showBackButton && (
               <div className="mb-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setView('list')}
-                  iconLeft={<ArrowLeft className="h-4 w-4" />}
-                >
+                <Button variant="ghost" size="sm" onClick={() => setView('list')}>
+                  <ArrowLeft className="mr-2 h-4 w-4" />
                   Back to connections
                 </Button>
               </div>
@@ -693,9 +693,9 @@ export function ConnectIntegrationDialog({
             <Button
               onClick={handleOAuthConnect}
               disabled={connecting || !canCreate}
-              width="full"
-              loading={connecting}
+              className="w-full"
             >
+              {connecting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {connecting ? 'Connecting...' : `Continue with ${integrationName}`}
             </Button>
           </div>
@@ -717,12 +717,8 @@ export function ConnectIntegrationDialog({
         return (
           <div className="space-y-4">
             {showBackButton && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setView('list')}
-                iconLeft={<ArrowLeft className="h-4 w-4" />}
-              >
+              <Button variant="ghost" size="sm" onClick={() => setView('list')}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to connections
               </Button>
             )}
@@ -744,9 +740,9 @@ export function ConnectIntegrationDialog({
                   <Button
                     onClick={handleCredentialConnect}
                     disabled={connecting || !canCreate}
-                    width="full"
-                    loading={connecting}
+                    className="w-full"
                   >
+                    {connecting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     {connecting ? 'Generating...' : 'Generate External ID'}
                   </Button>
                 )}
@@ -827,9 +823,9 @@ export function ConnectIntegrationDialog({
               <Button
                 onClick={handleCredentialConnect}
                 disabled={connecting || !canCreate}
-                width="full"
-                loading={connecting}
+                className="w-full"
               >
+                {connecting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {connecting ? 'Connecting...' : 'Connect'}
               </Button>
             )}
@@ -839,7 +835,7 @@ export function ConnectIntegrationDialog({
                 size="sm"
                 onClick={clearPendingConnection}
                 disabled={connecting}
-                width="full"
+                className="w-full"
                 title="Discard this pending connection and generate a new External ID"
               >
                 Start over
@@ -862,12 +858,8 @@ export function ConnectIntegrationDialog({
 
     return (
       <div className="space-y-4">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setView('list')}
-          iconLeft={<ArrowLeft className="h-4 w-4" />}
-        >
+        <Button variant="ghost" size="sm" onClick={() => setView('list')}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
           Back to connections
         </Button>
 
@@ -876,37 +868,53 @@ export function ConnectIntegrationDialog({
             Configuring: <strong>{connection?.displayName}</strong>
           </p>
           <p className="text-xs text-muted-foreground mt-1">
-            Current values are pre-filled. Edit any field you want to update.
+            {authType === 'oauth2'
+              ? 'OAuth credentials are renewed by signing in to your provider.'
+              : 'Current values are pre-filled. Edit any field you want to update.'}
           </p>
         </div>
 
-        {allFields
-          // The External ID is server-owned (minted at create, pinned on
-          // update) — the save path strips any client value, so rendering an
-          // editable field would silently discard the user's edit.
-          .filter((field) => field.id !== 'externalId')
-          .map((field) => (
-            <div key={field.id} className="space-y-2">
-              <Label htmlFor={field.id}>{field.label}</Label>
-              <CredentialInput
-                field={field}
-                value={credentials[field.id] || (field.type === 'multi-select' ? [] : '')}
-                onChange={(value) => updateCredential(field.id, value)}
-                optionsOverride={field.id === 'regions' ? filteredRegionOptions : undefined}
-                disabled={field.id === 'regions' && !hasSelectedAwsEnvironment}
-              />
-              {field.helpText && <p className="text-xs text-muted-foreground">{field.helpText}</p>}
-            </div>
-          ))}
+        {authType === 'oauth2' ? (
+          connection && (
+            <OAuthReconnect
+              connectionId={connection.id}
+              providerSlug={integrationId}
+              providerName={integrationName}
+            />
+          )
+        ) : (
+          <>
+            {allFields
+              // The External ID is server-owned (minted at create, pinned on
+              // update) — the save path strips any client value, so rendering an
+              // editable field would silently discard the user's edit.
+              .filter((field) => field.id !== 'externalId')
+              .map((field) => (
+                <div key={field.id} className="space-y-2">
+                  <Label htmlFor={field.id}>{field.label}</Label>
+                  <CredentialInput
+                    field={field}
+                    value={credentials[field.id] || (field.type === 'multi-select' ? [] : '')}
+                    onChange={(value) => updateCredential(field.id, value)}
+                    optionsOverride={field.id === 'regions' ? filteredRegionOptions : undefined}
+                    disabled={field.id === 'regions' && !hasSelectedAwsEnvironment}
+                  />
+                  {field.helpText && (
+                    <p className="text-xs text-muted-foreground">{field.helpText}</p>
+                  )}
+                </div>
+              ))}
 
-        <Button
-          onClick={handleSaveCredentials}
-          disabled={savingCredentials || !canUpdate}
-          width="full"
-          loading={savingCredentials}
-        >
-          {savingCredentials ? 'Saving...' : 'Update Connection'}
-        </Button>
+            <Button
+              onClick={handleSaveCredentials}
+              disabled={savingCredentials || !canUpdate}
+              className="w-full"
+            >
+              {savingCredentials && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {savingCredentials ? 'Saving...' : 'Update Connection'}
+            </Button>
+          </>
+        )}
       </div>
     );
   };

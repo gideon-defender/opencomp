@@ -27,6 +27,7 @@ const dialogMocks = vi.hoisted(() => ({
   updateConnectionCredentials: vi.fn(),
   updateConnectionMetadata: vi.fn(),
   apiPost: vi.fn(),
+  startOAuth: vi.fn(),
 }));
 const mockExistingConnections = [
   {
@@ -120,7 +121,7 @@ vi.mock('@/hooks/use-integration-platform', () => ({
     isLoading: false,
   }),
   useIntegrationMutations: () => ({
-    startOAuth: vi.fn(),
+    startOAuth: dialogMocks.startOAuth,
     createConnection: dialogMocks.createConnection,
     deleteConnection: vi.fn(),
     updateConnectionCredentials: dialogMocks.updateConnectionCredentials,
@@ -246,6 +247,47 @@ const defaultProps = {
 describe('ConnectIntegrationDialog permission gating', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('reauthorizes the selected Google connection instead of submitting empty credentials', async () => {
+    setMockPermissions(ADMIN_PERMISSIONS);
+    mockProviders.push({
+      id: 'gcp',
+      authType: 'oauth2',
+      credentialFields: [],
+      supportsMultipleConnections: false,
+    });
+    mockExistingConnections.push({
+      ...mockExistingConnections[0],
+      id: 'gcp-error',
+      providerSlug: 'gcp',
+      providerName: 'Google Cloud Platform',
+      status: 'error',
+    });
+    try {
+      render(
+        <ConnectIntegrationDialog
+          {...defaultProps}
+          integrationId="gcp"
+          integrationName="Google Cloud Platform"
+        />,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Configure connection' }));
+      expect(screen.getByRole('button', { name: 'Reconnect with Google' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Update Connection' })).not.toBeInTheDocument();
+      dialogMocks.startOAuth.mockResolvedValueOnce({ success: false, error: 'Unavailable' });
+      fireEvent.click(screen.getByRole('button', { name: 'Reconnect with Google' }));
+      await waitFor(() =>
+        expect(dialogMocks.startOAuth).toHaveBeenCalledWith(
+          'gcp',
+          window.location.href,
+          'gcp-error',
+        ),
+      );
+    } finally {
+      mockProviders.pop();
+      mockExistingConnections.pop();
+    }
   });
 
   it('shows configure (Settings) button for admin with integration:update', () => {

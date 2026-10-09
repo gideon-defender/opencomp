@@ -33,6 +33,7 @@ import { MarkExceptionModal } from '@/components/integrations/MarkExceptionModal
 import type { Finding } from '../types';
 import { CheckDefinitionPanel } from './CheckDefinitionPanel';
 import { CheckGroupBlock } from './CheckGroupBlock';
+import { CloudConnectionRecovery } from './CloudConnectionRecovery';
 import { EvidenceJsonViewer } from './EvidenceJsonViewer';
 import { RemediationSection } from './RemediationSection';
 import { buildCheckGroups } from './check-groups';
@@ -479,6 +480,7 @@ export function CloudTestsSection({
 
   return (
     <div className="space-y-5">
+      <CloudConnectionRecovery connectionId={connectionId} />
       {/* Active batch pill — shows when batch is running but dialog is minimized */}
       {activeBatch && !batchDialogOpen && (
         <button
