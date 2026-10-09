@@ -10,7 +10,7 @@ import {
   Logger,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiSecurity, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiSecurity, ApiOperation, ApiBody } from '@nestjs/swagger';
 import { HybridAuthGuard } from '../../auth/hybrid-auth.guard';
 import { PermissionGuard } from '../../auth/permission.guard';
 import { RequirePermission } from '../../auth/require-permission.decorator';
@@ -19,12 +19,7 @@ import { OAuthCredentialsService } from '../services/oauth-credentials.service';
 import { OAuthAppRepository } from '../repositories/oauth-app.repository';
 import { getManifest } from '@gideon-defender/integration-platform';
 
-interface SaveOAuthAppDto {
-  providerSlug: string;
-  clientId: string;
-  clientSecret: string;
-  customScopes?: string[];
-}
+import { SaveOAuthAppDto } from '../dto/save-oauth-app.dto';
 
 @Controller({ path: 'integrations/oauth-apps', version: '1' })
 @ApiTags('Integrations')
@@ -107,13 +102,24 @@ export class OAuthAppsController {
    * Save custom OAuth app credentials for an organization
    */
   @Post()
-  @ApiOperation({ summary: 'Create an OAuth app configuration' })
+  @ApiOperation({
+    summary: 'Create an OAuth app configuration',
+    description:
+      'Save organization OAuth credentials and provider settings. For Azure, set customSettings.tenantId to the directory UUID before starting a connection.',
+  })
+  @ApiBody({ type: SaveOAuthAppDto })
   @RequirePermission('integration', 'create')
   async saveOAuthApp(
     @OrganizationId() organizationId: string,
     @Body() body: SaveOAuthAppDto,
   ) {
-    const { providerSlug, clientId, clientSecret, customScopes } = body;
+    const {
+      providerSlug,
+      clientId,
+      clientSecret,
+      customScopes,
+      customSettings,
+    } = body;
 
     // Validate provider
     const manifest = getManifest(providerSlug);
@@ -145,6 +151,7 @@ export class OAuthAppsController {
       clientId,
       clientSecret,
       customScopes,
+      customSettings,
     );
 
     this.logger.log(

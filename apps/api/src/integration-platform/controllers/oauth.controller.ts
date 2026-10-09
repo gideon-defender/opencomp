@@ -32,6 +32,8 @@ import {
   type OAuthConfig,
 } from '@gideon-defender/integration-platform';
 
+import { azureTenantId, resolveAzureOAuthConfig } from '../utils/azure-oauth';
+
 interface StartOAuthDto {
   providerSlug: string;
   redirectUrl?: string;
@@ -121,7 +123,7 @@ export class OAuthController {
       );
     }
 
-    const oauthConfig = manifest.auth.config;
+    let oauthConfig = manifest.auth.config;
 
     // Get OAuth credentials (org-level or platform-level)
     const credentials = await this.oauthCredentialsService.getCredentials(
@@ -143,6 +145,12 @@ export class OAuthController {
         HttpStatus.PRECONDITION_FAILED,
       );
     }
+
+    oauthConfig = resolveAzureOAuthConfig({
+      providerSlug,
+      config: oauthConfig,
+      customSettings: credentials.customSettings,
+    });
 
     // Ensure provider exists in DB
     await this.providerRepository.upsert({
@@ -321,7 +329,7 @@ export class OAuthController {
         throw new Error(`Invalid provider: ${oauthState.providerSlug}`);
       }
 
-      const oauthConfig = manifest.auth.config;
+      let oauthConfig = manifest.auth.config;
 
       // Get OAuth credentials
       const credentials = await this.oauthCredentialsService.getCredentials(
@@ -332,6 +340,12 @@ export class OAuthController {
       if (!credentials) {
         throw new Error('OAuth credentials no longer available');
       }
+
+      oauthConfig = resolveAzureOAuthConfig({
+        providerSlug: oauthState.providerSlug,
+        config: oauthConfig,
+        customSettings: credentials.customSettings,
+      });
 
       // Exchange code for tokens
       const tokens = await this.exchangeCodeForTokens(
@@ -422,6 +436,9 @@ export class OAuthController {
         connection.id,
         tokens,
         {
+          ...(oauthState.providerSlug === 'azure'
+            ? { azureTenantId: azureTenantId(credentials.customSettings) }
+            : {}),
           preserveExistingRefreshToken:
             oauthState.providerSlug === 'gcp' ||
             oauthState.providerSlug === 'google-workspace',

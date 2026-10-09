@@ -11,6 +11,8 @@ import {
 } from '@gideon-defender/integration-platform';
 import type { Prisma } from '@db';
 
+import { azureTenantId } from '../utils/azure-oauth';
+
 interface OAuthCredentials {
   clientId: string;
   clientSecret: string;
@@ -132,6 +134,7 @@ export class OAuthCredentialsService {
     customScopes?: string[],
     customSettings?: Prisma.InputJsonValue,
   ): Promise<void> {
+    if (providerSlug === 'azure') azureTenantId(customSettings);
     const encryptedClientId =
       await this.credentialVaultService.encrypt(clientId);
     const encryptedClientSecret =
@@ -180,6 +183,7 @@ export class OAuthCredentialsService {
     customSettings?: Record<string, unknown>,
     userId?: string,
   ): Promise<void> {
+    if (providerSlug === 'azure') azureTenantId(customSettings);
     const encryptedClientId =
       await this.credentialVaultService.encrypt(clientId);
     const encryptedClientSecret =

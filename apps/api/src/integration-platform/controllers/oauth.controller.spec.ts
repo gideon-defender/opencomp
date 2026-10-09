@@ -178,6 +178,116 @@ describe('OAuthController', () => {
     });
   });
 
+  describe('Azure tenant routing', () => {
+    const tenant = '55639f13-71b7-432d-b4e7-4efda934446d';
+    beforeEach(() => {
+      mockedGetManifest.mockReturnValue({
+        id: 'azure',
+        name: 'Azure',
+        category: 'Cloud',
+        capabilities: [],
+        isActive: true,
+        auth: {
+          type: 'oauth2',
+          config: {
+            authorizeUrl:
+              'https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize',
+            tokenUrl:
+              'https://login.microsoftonline.com/organizations/oauth2/v2.0/token',
+            pkce: false,
+            clientAuthMethod: 'body',
+            supportsRefreshToken: true,
+            authorizationParams: { prompt: 'consent' },
+          },
+        },
+      } as never);
+      mockOAuthCredentialsService.getCredentials.mockResolvedValue({
+        clientId: 'azure-client',
+        clientSecret: 'secret',
+        scopes: ['openid'],
+        customSettings: { tenantId: tenant },
+        source: 'organization',
+      });
+      mockOAuthStateRepository.create.mockResolvedValue({
+        state: 'server-state',
+      });
+    });
+    it('builds a directory-specific request while retaining server-generated state', async () => {
+      const result = await controller.startOAuth('org_1', 'user_1', {
+        providerSlug: 'azure',
+      });
+      const url = new URL(result.authorizationUrl);
+      expect(url.pathname).toBe(`/${tenant}/oauth2/v2.0/authorize`);
+      expect(url.searchParams.get('state')).toBe('server-state');
+      expect(url.searchParams.get('client_id')).toBe('azure-client');
+      expect(url.searchParams.get('prompt')).toBe('consent');
+    });
+    it('exchanges the callback code in the configured directory and pins refresh routing', async () => {
+      mockOAuthStateRepository.findByState.mockResolvedValue({
+        providerSlug: 'azure',
+        organizationId: 'org_1',
+        userId: 'user_1',
+        expiresAt: new Date(Date.now() + 600000),
+        redirectUrl: null,
+      });
+      mockedGetSession.mockResolvedValue({
+        user: { id: 'user_1' },
+        session: { id: 'session', activeOrganizationId: 'org_1' },
+      } as never);
+      mockProviderRepository.findBySlug.mockResolvedValue({ id: 'provider' });
+      mockConnectionRepository.findByProviderAndOrg.mockResolvedValue({
+        id: 'connection',
+        metadata: {},
+      });
+      mockConnectionRepository.update.mockResolvedValue({ id: 'connection' });
+      const response = { redirect: jest.fn() };
+      const fetchSpy = jest.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            access_token: 'access',
+            refresh_token: 'refresh',
+          }),
+          { status: 200 },
+        ),
+      );
+      try {
+        await controller.oauthCallback(
+          { code: 'code', state: 'state' },
+          { headers: { cookie: 'session' } } as unknown as Request,
+          response as unknown as import('express').Response,
+        );
+        expect(fetchSpy).toHaveBeenCalledWith(
+          `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`,
+          expect.any(Object),
+        );
+        expect(
+          mockCredentialVaultService.storeOAuthTokens,
+        ).toHaveBeenCalledWith(
+          'connection',
+          expect.objectContaining({ access_token: 'access' }),
+          expect.objectContaining({ azureTenantId: tenant }),
+        );
+        expect(response.redirect).toHaveBeenCalledWith(
+          expect.stringContaining('success=true'),
+        );
+      } finally {
+        fetchSpy.mockRestore();
+      }
+    });
+    it('rejects invalid directory settings before creating state', async () => {
+      mockOAuthCredentialsService.getCredentials.mockResolvedValue({
+        clientId: 'azure-client',
+        clientSecret: 'secret',
+        scopes: ['openid'],
+        customSettings: { tenantId: '../consumers' },
+      });
+      await expect(
+        controller.startOAuth('org_1', 'user_1', { providerSlug: 'azure' }),
+      ).rejects.toThrow('must be a UUID');
+      expect(mockOAuthStateRepository.create).not.toHaveBeenCalled();
+    });
+  });
+
   describe('startOAuth', () => {
     it('should throw NOT_FOUND when provider does not exist', async () => {
       mockedGetManifest.mockReturnValue(undefined);
