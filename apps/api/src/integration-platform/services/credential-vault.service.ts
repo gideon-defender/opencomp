@@ -14,6 +14,8 @@ import {
   type OAuthRefreshFailure,
 } from './oauth-refresh-error';
 
+import { AZURE_DEFAULT_TOKEN_URL, azureTokenUrl } from '../utils/azure-oauth';
+
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12;
 const SALT_LENGTH = 16;
@@ -77,6 +79,8 @@ interface TokenRefreshConfig {
 }
 
 interface StoreOAuthTokensOptions {
+  /** Pin the directory chosen at authorization, including across refreshes. */
+  azureTenantId?: string;
   preserveExistingRefreshToken?: boolean;
 }
 
@@ -211,6 +215,14 @@ export class CredentialVaultService {
     }
     if (apiDomain) {
       encryptedPayload.api_domain = apiDomain;
+    }
+
+    if (options.azureTenantId !== undefined) {
+      // Validate before persisting. The value is internal, never token-response data.
+      azureTokenUrl(options.azureTenantId);
+      encryptedPayload.azure_tenant_id = await this.encrypt(
+        options.azureTenantId,
+      );
     }
 
     // Calculate expiration
@@ -442,7 +454,18 @@ export class CredentialVaultService {
       body.set('client_secret', config.clientSecret);
     }
 
-    const refreshEndpoint = config.refreshUrl || config.tokenUrl;
+    let refreshEndpoint = config.refreshUrl || config.tokenUrl;
+    let tenant: string | undefined;
+    if (refreshEndpoint === AZURE_DEFAULT_TOKEN_URL) {
+      const stored = await this.getDecryptedCredentials(connectionId);
+      const pinnedTenant = stored?.azure_tenant_id;
+      if (pinnedTenant !== undefined) {
+        if (typeof pinnedTenant !== 'string')
+          throw new Error('Invalid stored Azure tenant');
+        tenant = pinnedTenant;
+        refreshEndpoint = azureTokenUrl(tenant);
+      }
+    }
     const controller = new AbortController();
     const timeout = setTimeout(
       () => controller.abort(),
@@ -486,7 +509,11 @@ export class CredentialVaultService {
       api_domain: tokens.api_domain,
     };
 
-    await this.storeOAuthTokens(connectionId, tokensToStore);
+    await this.storeOAuthTokens(
+      connectionId,
+      tokensToStore,
+      tenant === undefined ? {} : { azureTenantId: tenant },
+    );
     return { token: tokens.access_token };
   }
 

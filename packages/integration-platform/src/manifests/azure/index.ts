@@ -42,6 +42,17 @@ export const azureManifest: IntegrationManifest = {
       pkce: false,
       clientAuthMethod: 'body',
       supportsRefreshToken: true,
+      additionalOAuthSettings: [
+        {
+          id: 'tenantId',
+          label: 'Directory (tenant) ID',
+          type: 'text',
+          required: false,
+          placeholder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+          helpText:
+            'Find this in Azure → Microsoft Entra ID → Overview. Required for personal Microsoft accounts or guests accessing this directory. Leave blank for work or school accounts using their home directory.',
+        },
+      ],
       authorizationParams: {
         prompt: 'consent',
       },

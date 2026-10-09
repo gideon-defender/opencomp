@@ -263,6 +263,16 @@ configured client ID is the registration's **Application (client) ID**. Do not
 enable personal accounts solely to work around this error. See
 [Microsoft's authority and account-type documentation](https://learn.microsoft.com/en-us/entra/identity-platform/msal-client-application-configuration).
 
+For personal Microsoft identities or guest accounts accessing an Azure directory,
+set **Directory (tenant) ID** alongside Client ID and Client Secret in
+**Admin → Integrations → Microsoft Azure** (organization or platform settings).
+Use the directory UUID from **Microsoft Entra ID → Overview**. OpenComp then uses
+that directory for authorization and token exchange and pins it to the resulting
+connection for refresh. This avoids the account chooser loop / `AADSTS50059`
+when Microsoft cannot infer the directory from a personal identity. Blank retains
+`organizations`; personal accounts must already have access to the target directory.
+The API setting is `customSettings: { "tenantId": "<directory-uuid>" }`.
+
 After changing the OAuth endpoints, rebuild and deploy the OpenComp API, then
 start a fresh Azure connection flow. The endpoint switch alone does not require
 new client credentials or a different callback URL.
