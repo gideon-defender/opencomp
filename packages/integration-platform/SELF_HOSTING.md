@@ -167,9 +167,9 @@ These don't require platform setup - users provide their own credentials:
 
 ## Troubleshooting
 
-### "Coming Soon" Button Shows
+### "OAuth not configured" Button Shows
 
-**Problem:** Integration shows "Coming Soon" instead of "Connect"
+**Problem:** Integration shows "OAuth not configured" instead of "Connect"
 
 **Solution:** OAuth credentials not configured. Go to `/admin/integrations` and configure Client ID/Secret for that provider.
 

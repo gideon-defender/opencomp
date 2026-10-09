@@ -6,7 +6,7 @@ import {
   mockHasPermission,
   setMockPermissions,
 } from '@/test-utils/mocks/permissions';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 mockNextIntl();
@@ -461,6 +461,82 @@ describe('PlatformIntegrations', () => {
 
       expect(integrationTitles[0]).toBe('Slack');
       expect(integrationTitles[1]).toBe('GitHub');
+    });
+  });
+
+  describe('OAuth-not-configured vs Coming Soon', () => {
+    const gcpUnconfigured = {
+      id: 'gcp',
+      name: 'Google Cloud Platform',
+      description: 'Cloud security',
+      category: 'Cloud',
+      logoUrl: '/gcp.png',
+      authType: 'oauth2',
+      oauthConfigured: false,
+      isActive: true,
+      requiredVariables: [],
+      mappedTasks: [],
+      supportsMultipleConnections: true,
+    };
+
+    function renderWithProviders(providers: unknown[]) {
+      mockUseIntegrationProviders.mockReturnValue({ providers, isLoading: false });
+      mockUseIntegrationConnections.mockReturnValue({
+        connections: [],
+        isLoading: false,
+        refresh: vi.fn(),
+      });
+      setMockPermissions(ADMIN_PERMISSIONS);
+      render(<PlatformIntegrations {...defaultProps} />);
+    }
+
+    it('shows "OAuth not configured" instead of "Coming Soon" when an active OAuth provider lacks admin credentials', () => {
+      renderWithProviders([gcpUnconfigured]);
+
+      expect(screen.getByText('oauthNotConfigured')).toBeInTheDocument();
+      expect(screen.queryByText('comingSoon')).not.toBeInTheDocument();
+    });
+
+    it('keeps the card clickable so users can reach admin guidance on the detail page', () => {
+      renderWithProviders([gcpUnconfigured]);
+
+      const card = screen.getByRole('button', { name: /Open Google Cloud Platform/ });
+      expect(card).toBeInTheDocument();
+
+      fireEvent.click(card);
+
+      expect(mockRouterPush).toHaveBeenCalledWith('/org-1/integrations/gcp');
+    });
+
+    it('renders the OAuth state as a disabled button with explanatory title', () => {
+      renderWithProviders([gcpUnconfigured]);
+
+      const badgeButton = screen.getByRole('button', { name: 'oauthNotConfigured' });
+
+      expect(badgeButton).toBeDisabled();
+      expect(badgeButton).toHaveAttribute('title', 'oauthNotConfiguredDescription');
+    });
+
+    it('still shows the OAuth state to users without create permission', () => {
+      mockUseIntegrationProviders.mockReturnValue({ providers: [gcpUnconfigured], isLoading: false });
+      mockUseIntegrationConnections.mockReturnValue({
+        connections: [],
+        isLoading: false,
+        refresh: vi.fn(),
+      });
+      setMockPermissions(AUDITOR_PERMISSIONS);
+      render(<PlatformIntegrations {...defaultProps} />);
+
+      expect(screen.getByText('oauthNotConfigured')).toBeInTheDocument();
+      expect(screen.queryByText('comingSoon')).not.toBeInTheDocument();
+      expect(screen.queryByText('connect')).not.toBeInTheDocument();
+    });
+
+    it('shows Connect once OAuth credentials are configured', () => {
+      renderWithProviders([{ ...gcpUnconfigured, oauthConfigured: true }]);
+
+      expect(screen.getByText('connect')).toBeInTheDocument();
+      expect(screen.queryByText('oauthNotConfigured')).not.toBeInTheDocument();
     });
   });
 });

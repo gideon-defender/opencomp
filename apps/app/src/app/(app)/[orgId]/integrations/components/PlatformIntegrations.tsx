@@ -209,7 +209,9 @@ export function PlatformIntegrations({ className, taskTemplates }: PlatformInteg
   const unifiedIntegrations = useMemo<UnifiedIntegration[]>(() => {
     const platformSortTier = (item: UnifiedIntegration & { type: 'platform' }): 0 | 1 | 2 => {
       const { provider, connection } = item;
-      const isComingSoon = provider.authType === 'oauth2' && provider.oauthConfigured === false;
+      // "Coming Soon" is reserved for non-functional integrations (inactive
+      // manifest). Missing OAuth admin setup is a separate, actionable state.
+      const isComingSoon = provider.isActive === false;
       if (isComingSoon) return 2;
 
       const hasEstablishedConnection =
@@ -543,12 +545,20 @@ export function PlatformIntegrations({ className, taskTemplates }: PlatformInteg
                     connection?.variables as Record<string, unknown> | null,
                   );
 
-                const isComingSoon =
-                  provider.authType === 'oauth2' && provider.oauthConfigured === false;
+                const isComingSoon = provider.isActive === false;
+                const isOAuthNotConfigured =
+                  !isComingSoon &&
+                  provider.authType === 'oauth2' &&
+                  provider.oauthConfigured === false;
 
                 /** Primary CTA is Connect / Set up — card still opens details on click; hide redundant “View details” row */
                 const showConnectOrSetup =
-                  canCreate && !needsConfiguration && !isConnected && !hasError && !isComingSoon;
+                  canCreate &&
+                  !needsConfiguration &&
+                  !isConnected &&
+                  !hasError &&
+                  !isComingSoon &&
+                  !isOAuthNotConfigured;
 
                 return (
                   <div
@@ -762,10 +772,20 @@ export function PlatformIntegrations({ className, taskTemplates }: PlatformInteg
                                 </Button>
                               )}
                             </div>
-                          ) : provider.authType === 'oauth2' &&
-                            provider.oauthConfigured === false ? (
+                          ) : isComingSoon ? (
                             <Button size="sm" variant="outline" className="w-full" disabled>
-                              Coming Soon
+                              {t('comingSoon')}
+                            </Button>
+                          ) : isOAuthNotConfigured ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="w-full border-warning/40 text-warning"
+                              disabled
+                              title={t('oauthNotConfiguredDescription')}
+                            >
+                              <AlertTriangle className="h-3 w-3 mr-2" />
+                              {t('oauthNotConfigured')}
                             </Button>
                           ) : canCreate ? (
                             <Button

@@ -1379,11 +1379,12 @@ function IntegrationEmptyState({
               const checksForIntegration = disconnectedChecks.filter(
                 (c) => c.integrationId === integration.integrationId,
               );
-              // Check if OAuth integration is not yet configured by platform admin
-              const isComingSoon =
+              // OAuth app not yet configured by platform admin — the integration
+              // itself is functional, only admin setup is missing.
+              const isOAuthNotConfigured =
                 integration.authType === 'oauth2' && integration.oauthConfigured === false;
 
-              if (isComingSoon) {
+              if (isOAuthNotConfigured) {
                 return (
                   <div
                     key={integration.integrationId}
@@ -1409,7 +1410,7 @@ function IntegrationEmptyState({
                       </p>
                     </div>
                     <Badge variant="secondary" className="text-[10px] shrink-0">
-                      {t('integrationChecks.comingSoon')}
+                      {t('integrationChecks.oauthNotConfigured')}
                     </Badge>
                   </div>
                 );
