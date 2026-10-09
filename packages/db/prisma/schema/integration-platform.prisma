@@ -260,6 +260,9 @@ model IntegrationOAuthState {
   /// User initiating the OAuth
   userId String
 
+  /// Exact connection being reauthorized; null for a new authorization
+  connectionId String?
+
   /// PKCE code verifier (if using PKCE)
   codeVerifier String?
 

@@ -7,6 +7,7 @@ interface CreateOAuthStateDto {
   providerSlug: string;
   organizationId: string;
   userId: string;
+  connectionId?: string;
   codeVerifier?: string;
   redirectUrl?: string;
   /** Expiration time in minutes (default: 10) */
@@ -34,6 +35,7 @@ export class OAuthStateRepository {
         providerSlug: data.providerSlug,
         organizationId: data.organizationId,
         userId: data.userId,
+        connectionId: data.connectionId,
         codeVerifier: data.codeVerifier,
         redirectUrl: data.redirectUrl,
         expiresAt,

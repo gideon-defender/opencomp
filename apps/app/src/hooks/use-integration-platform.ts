@@ -208,6 +208,7 @@ export function useIntegrationMutations() {
     async (
       providerSlug: string,
       redirectUrl?: string,
+      connectionId?: string,
     ): Promise<{ success: boolean; authorizationUrl?: string; error?: string }> => {
       if (!orgId) {
         return { success: false, error: 'No organization selected' };
@@ -217,6 +218,7 @@ export function useIntegrationMutations() {
         providerSlug,
         organizationId: orgId,
         redirectUrl,
+        connectionId,
       });
 
       if (response.error) {

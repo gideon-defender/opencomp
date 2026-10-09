@@ -233,6 +233,24 @@ describe('CloudSecurityQueryService — latest-run scoping (CS-702)', () => {
     );
   });
 
+  it('keeps errored connections and their historical findings visible', async () => {
+    dbMock.integrationConnection.findMany.mockResolvedValue([
+      { ...awsConnection, status: 'error', errorMessage: 'Reconnect required' },
+    ]);
+    const providers = await service.getProviders(ORG_ID);
+    expect(providers[0]).toMatchObject({
+      status: 'error',
+      errorMessage: 'Reconnect required',
+    });
+    expect(await service.getFindings(ORG_ID)).toHaveLength(3);
+    for (const [query] of dbMock.integrationConnection.findMany.mock.calls) {
+      expect(query.where).toMatchObject({
+        organizationId: ORG_ID,
+        status: { in: ['active', 'error'] },
+      });
+    }
+  });
+
   it('scopes the latest-run lookup to cloud-security scan checkIds', async () => {
     await service.getFindings(ORG_ID);
 

@@ -11,7 +11,7 @@ import {
   Logger,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiSecurity, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiSecurity, ApiOperation, ApiBody } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { randomBytes, createHash } from 'crypto';
 import { auth } from '../../auth/auth.server';
@@ -34,10 +34,8 @@ import {
 
 import { azureTenantId, resolveAzureOAuthConfig } from '../utils/azure-oauth';
 
-interface StartOAuthDto {
-  providerSlug: string;
-  redirectUrl?: string;
-}
+import { StartOAuthDto } from '../dto/start-oauth.dto';
+import { OAuthReconnectGuard } from '../guards/oauth-reconnect.guard';
 
 interface OAuthCallbackQuery {
   code: string;
@@ -93,19 +91,29 @@ export class OAuthController {
    * Start OAuth flow - returns authorization URL
    */
   @Post('start')
-  @ApiOperation({ summary: 'Start an OAuth authorization flow' })
+  @ApiOperation({
+    summary: 'Start an OAuth authorization flow',
+    description:
+      'Returns a provider authorization URL for a signed-in user. Supply connectionId to reauthorize that specific connection without replacing another account.',
+  })
+  @ApiBody({ type: StartOAuthDto })
   // SessionOnlyGuard rejects API-key and service-token callers with a 403
   // before @UserId() is evaluated. The OAuth callback also requires a real
   // session (see checkSessionMatchesState), so non-session auth could never
   // complete the flow anyway.
-  @UseGuards(HybridAuthGuard, SessionOnlyGuard, PermissionGuard)
+  @UseGuards(
+    HybridAuthGuard,
+    SessionOnlyGuard,
+    PermissionGuard,
+    OAuthReconnectGuard,
+  )
   @RequirePermission('integration', 'create')
   async startOAuth(
     @OrganizationId() organizationId: string,
     @UserId() userId: string,
     @Body() body: StartOAuthDto,
   ): Promise<{ authorizationUrl: string }> {
-    const { providerSlug, redirectUrl } = body;
+    const { providerSlug, redirectUrl, connectionId } = body;
 
     // Get manifest and OAuth config
     const manifest = getManifest(providerSlug);
@@ -120,6 +128,20 @@ export class OAuthController {
       throw new HttpException(
         `Provider ${providerSlug} does not use OAuth`,
         HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (
+      connectionId &&
+      !(await this.connectionRepository.findOAuthTarget({
+        connectionId,
+        organizationId,
+        providerSlug,
+      }))
+    ) {
+      throw new HttpException(
+        'OAuth connection not found or no longer eligible for reconnect',
+        HttpStatus.NOT_FOUND,
       );
     }
 
@@ -179,6 +201,7 @@ export class OAuthController {
       userId,
       codeVerifier,
       redirectUrl,
+      connectionId,
     });
 
     // Build authorization URL, replacing any placeholders with additional OAuth settings
@@ -331,6 +354,19 @@ export class OAuthController {
 
       let oauthConfig = manifest.auth.config;
 
+      const targetConnection = oauthState.connectionId
+        ? await this.connectionRepository.findOAuthTarget({
+            connectionId: oauthState.connectionId,
+            organizationId: oauthState.organizationId,
+            providerSlug: oauthState.providerSlug,
+          })
+        : null;
+      if (oauthState.connectionId && !targetConnection) {
+        throw new Error(
+          'OAuth connection not found or no longer eligible for reconnect',
+        );
+      }
+
       // Get OAuth credentials
       const credentials = await this.oauthCredentialsService.getCredentials(
         oauthState.providerSlug,
@@ -379,6 +415,7 @@ export class OAuthController {
             organizationId: oauthState.organizationId,
             userId: oauthState.userId,
             redirectUrl: oauthState.redirectUrl ?? undefined,
+            connectionId: oauthState.connectionId ?? undefined,
           });
           await this.oauthStateRepository.delete(state);
           const installRedirect = new URL(oauthConfig.installUrl);
@@ -418,10 +455,21 @@ export class OAuthController {
       }
 
       // Get or create connection
-      let connection = await this.connectionRepository.findByProviderAndOrg(
-        provider.id,
-        oauthState.organizationId,
-      );
+      let connection = oauthState.connectionId
+        ? await this.connectionRepository.findOAuthTarget({
+            connectionId: oauthState.connectionId,
+            organizationId: oauthState.organizationId,
+            providerSlug: oauthState.providerSlug,
+          })
+        : await this.connectionRepository.findByProviderAndOrg(
+            provider.id,
+            oauthState.organizationId,
+          );
+      if (oauthState.connectionId && !connection) {
+        throw new Error(
+          'OAuth connection not found or no longer eligible for reconnect',
+        );
+      }
 
       if (!connection) {
         connection = await this.connectionService.createConnection({
