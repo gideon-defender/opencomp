@@ -19,9 +19,10 @@ import {
   normalizeAwsEnvironment,
 } from '@gideon-defender/integration-platform';
 import { Button, Label } from '@trycompai/design-system';
-import { ArrowRight, Shield } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Shield } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
@@ -244,11 +245,20 @@ export function EmptyStateOnboarding({
 }: EmptyStateOnboardingProps) {
   const isOAuth = provider.authType === 'oauth2';
   const isCloudProvider = provider.category === 'Cloud';
-  const isComingSoon = isOAuth && provider.oauthConfigured === false;
+  // "Coming Soon" is reserved for non-functional integrations. Missing OAuth
+  // admin setup is a separate, actionable state with admin guidance.
+  const isComingSoon = provider.isActive === false;
+  const isOAuthNotConfigured =
+    !isComingSoon && isOAuth && provider.oauthConfigured === false;
 
-  // Coming soon — show info + notify
+  // Coming soon — integration functionality is missing
   if (isComingSoon) {
     return <ComingSoonState provider={provider} />;
+  }
+
+  // OAuth app not configured by platform admin — show setup guidance
+  if (isOAuthNotConfigured) {
+    return <OAuthNotConfiguredState provider={provider} orgId={orgId} />;
   }
 
   // OAuth providers get a simple connect card
@@ -295,6 +305,61 @@ function ComingSoonState({ provider }: { provider: IntegrationProvider }) {
             <p className="text-xs text-muted-foreground/70 max-w-sm mx-auto">
               {t('onboarding.comingSoonDescription')}
             </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function OAuthNotConfiguredState({
+  provider,
+  orgId,
+}: {
+  provider: IntegrationProvider;
+  orgId: string;
+}) {
+  const t = useTranslations('integrations');
+  const router = useRouter();
+  return (
+    <div className="py-6">
+      <div className="rounded-xl border border-warning/30 bg-warning/5 shadow-sm max-w-2xl">
+        <div className="p-6 space-y-4">
+          <div className="flex items-center gap-3">
+            {provider.logoUrl && (
+              <Image
+                src={provider.logoUrl}
+                alt=""
+                width={36}
+                height={36}
+                className="h-9 w-9 rounded-lg"
+              />
+            )}
+            <div>
+              <h3 className="text-sm font-semibold">{provider.name}</h3>
+              <p className="text-xs text-muted-foreground">{provider.description}</p>
+            </div>
+          </div>
+          <div className="rounded-lg bg-background border px-4 py-5 text-center space-y-2">
+            <p className="flex items-center justify-center gap-2 text-sm font-medium">
+              <AlertTriangle className="h-4 w-4 text-warning" />
+              {t('onboarding.oauthNotConfigured')}
+            </p>
+            <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+              {t('onboarding.oauthNotConfiguredDescription', { name: provider.name })}
+            </p>
+            <div className="pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  router.push(`/${orgId}/admin/integrations`);
+                }}
+              >
+                {t('onboarding.configureOAuth')}
+                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>

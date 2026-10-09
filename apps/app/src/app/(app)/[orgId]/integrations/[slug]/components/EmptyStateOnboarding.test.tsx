@@ -74,6 +74,7 @@ vi.mock('@trycompai/design-system', () => ({
 }));
 
 vi.mock('lucide-react', () => ({
+  AlertTriangle: () => <span data-testid="alert-triangle-icon" />,
   ArrowRight: () => <span data-testid="arrow-right-icon" />,
   Shield: () => <span data-testid="shield-icon" />,
   Cloud: () => <span data-testid="cloud-icon" />,
@@ -104,6 +105,12 @@ vi.mock('sonner', () => ({
     success: (...args: unknown[]) => mockToastSuccess(...args),
     error: (...args: unknown[]) => mockToastError(...args),
   },
+}));
+
+const { mockRouterPush } = vi.hoisted(() => ({ mockRouterPush: vi.fn() }));
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mockRouterPush, replace: vi.fn() }),
 }));
 
 mockNextIntl();
@@ -400,6 +407,80 @@ describe('EmptyStateOnboarding', () => {
       fireEvent.change(screen.getByLabelText('AWS Environment'), { target: { value: 'aws' } });
       fireEvent.change(screen.getByLabelText('Regions'), { target: { value: 'us-east-1' } });
       expect(screen.getByText(/Role: OpenComp-Remediator-Storage-us-east-1/)).toBeInTheDocument();
+    });
+  });
+
+  describe('OAuth setup states', () => {
+    const oauthProvider = (overrides: Record<string, unknown> = {}) =>
+      ({
+        id: 'gcp',
+        slug: 'gcp',
+        name: 'Google Cloud Platform',
+        description: 'Cloud security',
+        category: 'Cloud',
+        logoUrl: '',
+        authType: 'oauth2',
+        capabilities: ['checks'],
+        isActive: true,
+        oauthConfigured: false,
+        ...overrides,
+      }) as unknown as IntegrationProvider;
+
+    it('shows "OAuth not configured" (not "Coming Soon") when an active OAuth provider lacks admin credentials', () => {
+      render(
+        <EmptyStateOnboarding
+          provider={oauthProvider()}
+          orgId="org_1"
+          onConnected={vi.fn()}
+        />,
+      );
+
+      expect(screen.getByText('onboarding.oauthNotConfigured')).toBeInTheDocument();
+      expect(screen.getByText('onboarding.configureOAuth')).toBeInTheDocument();
+      expect(screen.queryByText('onboarding.comingSoon')).not.toBeInTheDocument();
+    });
+
+    it('reserves "Coming Soon" for inactive (non-functional) providers', () => {
+      render(
+        <EmptyStateOnboarding
+          provider={oauthProvider({ isActive: false })}
+          orgId="org_1"
+          onConnected={vi.fn()}
+        />,
+      );
+
+      expect(screen.getByText('onboarding.comingSoon')).toBeInTheDocument();
+      expect(screen.queryByText('onboarding.oauthNotConfigured')).not.toBeInTheDocument();
+    });
+
+    it('shows the OAuth connect card when credentials are configured', () => {
+      render(
+        <EmptyStateOnboarding
+          provider={oauthProvider({ oauthConfigured: true })}
+          orgId="org_1"
+          onConnected={vi.fn()}
+        />,
+      );
+
+      expect(screen.getByText('onboarding.connect')).toBeInTheDocument();
+      expect(screen.queryByText('onboarding.oauthNotConfigured')).not.toBeInTheDocument();
+      expect(screen.queryByText('onboarding.comingSoon')).not.toBeInTheDocument();
+    });
+
+    it('navigates to the admin integrations page when the configure button is clicked', () => {
+      render(
+        <EmptyStateOnboarding
+          provider={oauthProvider()}
+          orgId="org_1"
+          onConnected={vi.fn()}
+        />,
+      );
+
+      fireEvent.click(
+        screen.getByRole('button', { name: 'onboarding.configureOAuth' }),
+      );
+
+      expect(mockRouterPush).toHaveBeenCalledWith('/org_1/admin/integrations');
     });
   });
 });

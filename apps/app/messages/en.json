@@ -1457,6 +1457,8 @@
       "reconnecting": "Reconnecting...",
       "reconnect": "Reconnect",
       "comingSoon": "Coming Soon",
+      "oauthNotConfigured": "OAuth not configured",
+      "oauthNotConfiguredDescription": "An admin needs to configure the OAuth app before you can connect.",
       "connecting": "Connecting...",
       "connect": "Connect",
       "setup": "Set up",
@@ -1725,6 +1727,9 @@
     "onboarding": {
       "comingSoon": "Coming Soon",
       "comingSoonDescription": "This integration is under development. We'll notify you when it's ready.",
+      "oauthNotConfigured": "OAuth not configured",
+      "oauthNotConfiguredDescription": "An admin needs to set up the {name} OAuth app before you can connect. Go to Admin → Integrations to configure it.",
+      "configureOAuth": "How to configure",
       "connectProvider": "Connect {name}",
       "redirectOAuth": "You'll be redirected to authorize access. Takes about 30 seconds.",
       "connect": "Connect",
@@ -3352,6 +3357,7 @@
       "connectIntegrationDescription": "Connect an integration to automatically verify compliance, or build a custom automation",
       "checksAvailable": "{count, plural, =1 {# automated check available} other {# automated checks available}}",
       "comingSoon": "Coming Soon",
+      "oauthNotConfigured": "OAuth not configured",
       "connectIntegration": "Connect {name}",
       "buildCustomAutomation": "Build Custom Automation",
       "buildCustomAutomationDescription": "Use the AI agent to create a tailored automation"

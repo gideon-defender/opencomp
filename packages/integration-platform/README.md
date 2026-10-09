@@ -568,7 +568,7 @@ In the same GCP project, enable:
 
 **For end users:**
 
-- Integration shows **"Coming Soon"** button (disabled)
+- Integration shows **"OAuth not configured"** button (disabled)
 - Can't connect until platform admin configures OAuth
 
 **For platform admins:**
