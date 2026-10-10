@@ -7,8 +7,8 @@ description: The contract every new or modified API endpoint must follow so it i
 
 Every customer-facing endpoint in `apps/api/src/` ends up in three places:
 
-1. **The OpenAPI spec** (`packages/docs/openapi.json`) — regenerated on every dev boot, consumed by Speakeasy.
-2. **The MCP server** (`apps/mcp-server/`, published as `@gideon-defender/mcp-server` on npm) — generated daily from the OpenAPI spec.
+1. **The OpenAPI spec** (`packages/docs/openapi.json`) — exported offline, checked for drift in CI, also exported on dev boot.
+2. **The MCP server** (`apps/mcp-server/`, published as `@gideon-defender/mcp-server` on npm) — the owned compiler bundles the pinned spec; publication is separately gated.
 3. **The runtime ValidationPipe** — accepts/rejects request bodies based on class-validator metadata.
 
 If any one of these three is wrong, the endpoint either silently breaks for agents (Claude Desktop, Cursor, Codex, etc.) or fails validation at runtime. **Follow this contract on every body-accepting endpoint.**
@@ -84,11 +84,11 @@ async createConnection(
 
 ### 5. Use a clean MCP tool name when the auto-derived one is ugly
 
-Tool names are auto-derived from controller method names by `applyMcpToolNames` in `apps/api/src/openapi/public-docs-metadata.ts`. If the auto-name is generic or ugly, override:
+Tool names are derived by the owned loader (`apps/mcp-server/src/openapi/metadata.ts`). During migration, `apps/api/src/openapi/mcp-compat.ts` also exports names and dual-emits legacy metadata for Gram/the existing generator. Author only `x-comp-mcp`; if the auto-name is generic or ugly, override:
 
 ```ts
 @Post(':id/auto-answer')
-@ApiExtension('x-speakeasy-mcp', { name: 'generate-questionnaire-answers' })
+@ApiExtension('x-comp-mcp', { name: 'generate-questionnaire-answers' })
 async triggerAutoAnswer(@Param('id') id: string) { ... }
 ```
 
@@ -99,7 +99,7 @@ Tool name budget: **52 chars max**, kebab-case.
 If your endpoint uses `@UseGuards(HybridAuthGuard, SessionOnlyGuard, PermissionGuard)`, API-key callers get a 403 — meaning the MCP tool exists but fails for every customer call. Either:
 
 - Remove `SessionOnlyGuard` if the endpoint should be agent-callable, OR
-- Disable the MCP tool entirely in `apps/mcp-server/.speakeasy/mcp-uploads-overlay.yaml` with `x-speakeasy-mcp: { disabled: true }`.
+- Disable the MCP tool entirely in `apps/mcp-server/mcp-overlay.yaml` with `metadata: { disabled: true }` under `operations`.
 
 ### 7. Long-running operations: async + poll, never sync wait
 
@@ -141,7 +141,7 @@ const bytes =
   dto.fileData ?? (dto.s3Key ? await uploadsService.readUploadAsBase64(orgId, dto.s3Key) : null);
 ```
 
-The MCP overlay then strips `fileData` from the MCP tool input so agents are forced into the presigned path. Pattern is in `apps/mcp-server/.speakeasy/mcp-uploads-overlay.yaml`.
+The MCP overlay then strips `fileData` from the MCP tool input so agents are forced into the presigned path. Pattern is in `apps/mcp-server/mcp-overlay.yaml`.
 
 ### 9. Sensitive endpoints are deny-listed from public docs — don't fight it
 
@@ -152,11 +152,11 @@ The MCP overlay then strips `fileData` from the MCP tool input so agents are for
 SSE streams (`@ApiProduces('text/event-stream')`) and binary file responses (`@Res() res.send(buffer)`) cannot be consumed by a single JSON-RPC tool call. Disable them for MCP only (HTTP endpoint stays for the web UI):
 
 ```yaml
-# apps/mcp-server/.speakeasy/mcp-uploads-overlay.yaml
-- target: "$.paths['/v1/questionnaire/auto-answer'].post"
-  update:
-    x-speakeasy-mcp:
-      disabled: true
+# apps/mcp-server/mcp-overlay.yaml
+operations:
+  - path: /v1/questionnaire/auto-answer
+    method: post
+    metadata: { disabled: true }
 ```
 
 ### 11. Every endpoint MUST have a meaningful summary + description — it powers MCP discovery
@@ -184,12 +184,12 @@ Write the description for the agent deciding _whether to call this tool_: state 
 
 1. Define a `class` DTO. Two decorator stacks on every field. Add `@ApiBody({ type: DtoClass })` on the endpoint.
 2. Give the endpoint a meaningful `@ApiOperation({ summary, description })` — both required, CI-enforced by `openapi-docs.spec.ts`, and they power MCP dynamic-toolset discovery (Rule 11). Keep the description ≤ 240 chars (Rule 4).
-3. If the auto-derived MCP tool name is ugly, set `@ApiExtension('x-speakeasy-mcp', { name: '...' })`.
+3. If the auto-derived MCP tool name is ugly, set `@ApiExtension('x-comp-mcp', { name: '...' })`.
 4. If the endpoint requires session auth, decide: remove `SessionOnlyGuard`, or disable it for MCP via the overlay.
 5. For long-running work, return a run handle and document the poll target.
 6. For file uploads, accept `s3Key` and read via `UploadsService.readUploadAsBase64`.
-7. **`npm run dev --workspace=@gideon-defender/api`** — your dev server regenerates `packages/docs/openapi.json` on boot.
-8. **`git add packages/docs/openapi.json`** — commit the regenerated spec alongside your API change. The daily Speakeasy CI reads from this file; if it's stale, your new tool never reaches customers.
+7. **`pnpm --filter @gideon-defender/api run openapi:export`** — export `packages/docs/openapi.json` without starting services. Run `openapi:check` to verify drift.
+8. Include the regenerated spec with your API change. Run the owned MCP build and tests; normal CI covers parity and isolated tarball installation. Do not regenerate via Speakeasy. See `apps/mcp-server/RELEASING.md` for approval-gated publication.
 9. Sanity-check the new operation in the spec:
    ```
    node -e 'const o=require("./packages/docs/openapi.json"); console.log(o.paths["/v1/your-path"]?.post?.requestBody?.content?.["application/json"]?.schema)'
@@ -213,3 +213,5 @@ Every bug below was a real customer-visible MCP failure caught during the May 20
 | Agent can't find a tool that exists (dynamic toolsets)                            | Endpoint had a missing/weak description → invisible to semantic search | Rule 11               |
 
 Follow the 10 rules and you avoid every one of these.
+
+Migration note: `x-comp-mcp` is the authoring contract. The API temporarily dual-emits `x-speakeasy-mcp` for existing consumers. Keep the owned overlay and `.speakeasy/mcp-uploads-overlay.yaml` compatibility mirror aligned; owned-contract tests enforce disabled/removal policy parity. Do not remove legacy metadata or Gram configuration before the hosted cutover.

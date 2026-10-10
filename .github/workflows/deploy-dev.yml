@@ -1,6 +1,10 @@
 name: Deploy to Dev
 
 on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -12,14 +16,30 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  IMAGE_TAG: dev-${{ github.sha }}-${{ github.run_id }}
+  DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+  IMAGE_TAG: dev-${{ github.event.workflow_run.head_sha || github.sha }}-${{ github.run_id }}
 
 jobs:
   authorize:
-    name: Check administrator access
+    name: Authorize main deployment
+    if: >-
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' && github.event.workflow_run.head_repository.full_name == github.repository) ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     steps:
+      - name: Require the current main commit
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const { data } = await github.rest.git.getRef({
+              owner: context.repo.owner, repo: context.repo.repo, ref: 'heads/main',
+            });
+            if (data.object.sha !== process.env.DEPLOY_SHA) {
+              core.setFailed('Only the current main commit may deploy.');
+            }
       - name: Require repository administrator
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/github-script@v9
         with:
           script: |
@@ -37,9 +57,34 @@ jobs:
               );
             }
 
+  preflight:
+    name: Check MCP infrastructure is provisioned
+    needs: authorize
+    runs-on: ubuntu-latest
+    environment:
+      name: dev
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-region: ${{ secrets.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-session-name: github-mcp-preflight-${{ github.run_id }}
+      - name: Require the owned MCP service before building or migrating
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          status="$(aws ecs describe-services --region "$AWS_REGION" --cluster "$ECS_CLUSTER" --services gideon-dev-opencomp-mcp --query 'services[0].status' --output text)"
+          if [ "$status" != ACTIVE ]; then
+            echo 'Provision terraform/opencomp MCP infrastructure in everything-as-code before deploying this branch.'
+            exit 1
+          fi
+
   build:
     name: Build and push images
-    needs: authorize
+    needs: [authorize, preflight]
     if: needs.authorize.result == 'success'
     runs-on: ubuntu-latest
     environment:
@@ -68,6 +113,10 @@ jobs:
             args: |
               NEXT_PUBLIC_TRUST_API_URL=https://opencomp-api.dev.gideondefender.com
               NEXT_PUBLIC_API_URL=https://opencomp-api.dev.gideondefender.com
+          - image: gideon-dev-opencomp-mcp
+            file: apps/mcp-server/Dockerfile
+            target: production
+            args: ''
           - image: gideon-dev-opencomp-migrator
             file: Dockerfile
             target: migrator
@@ -79,7 +128,7 @@ jobs:
       - name: Checkout main
         uses: actions/checkout@v5
         with:
-          ref: main
+          ref: ${{ env.DEPLOY_SHA }}
           fetch-depth: 1
 
       - name: Set up QEMU
@@ -106,12 +155,30 @@ jobs:
           file: ${{ matrix.file }}
           target: ${{ matrix.target }}
           platforms: linux/arm64
-          push: true
+          push: ${{ matrix.image != 'gideon-dev-opencomp-mcp' }}
+          load: ${{ matrix.image == 'gideon-dev-opencomp-mcp' }}
           tags: ${{ env.ECR_REGISTRY }}/${{ matrix.image }}:${{ env.IMAGE_TAG }}
           build-args: ${{ matrix.args }}
           # Per-image cache scope so parallel jobs don't clobber each other's layers.
           cache-from: type=gha,scope=${{ matrix.image }}
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+
+      - name: Smoke test hosted MCP image before pushing
+        if: matrix.image == 'gideon-dev-opencomp-mcp'
+        shell: bash
+        run: |
+          set -euo pipefail
+          image="$ECR_REGISTRY/${{ matrix.image }}:$IMAGE_TAG"
+          container="$(docker run -d --read-only --cap-drop ALL --security-opt no-new-privileges "$image" serve --hosted --mode dynamic --server-url https://opencomp-api.dev.gideondefender.com --public-url https://mcp.dev.gideondefender.com)"
+          trap 'docker rm -f "$container" >/dev/null' EXIT
+          for attempt in $(seq 1 30); do
+            state="$(docker inspect --format '{{.State.Health.Status}}' "$container")"
+            if [ "$state" = healthy ]; then break; fi
+            sleep 2
+          done
+          test "$state" = healthy
+          docker exec "$container" node -e "require('http').request('http://127.0.0.1:2718/mcp',{method:'POST',headers:{host:'mcp.dev.gideondefender.com'}},r=>{r.resume();process.exit(r.statusCode===401?0:1)}).on('error',()=>process.exit(1)).end()"
+          docker push "$image"
 
   deploy:
     name: Build and deploy main to dev
@@ -131,7 +198,7 @@ jobs:
       - name: Checkout main
         uses: actions/checkout@v5
         with:
-          ref: main
+          ref: ${{ env.DEPLOY_SHA }}
           fetch-depth: 1
 
       - name: Configure AWS credentials
@@ -145,94 +212,28 @@ jobs:
         id: ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Reject a superseded main commit
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const { data } = await github.rest.git.getRef({
+              owner: context.repo.owner, repo: context.repo.repo, ref: 'heads/main',
+            });
+            if (data.object.sha !== process.env.DEPLOY_SHA) {
+              core.setFailed('Main advanced during this build; deploy the newer successful CI commit.');
+            }
+
       - name: Register task definitions and update ECS services
         shell: bash
         run: |
-          set -euo pipefail
-
-          register_task_definition() {
-            local family="$1"
-            local image="$2"
-            local task_definition_file
-            local registered_arn
-
-            task_definition_file="$(mktemp)"
-            aws ecs describe-task-definition \
-              --region "$AWS_REGION" \
-              --task-definition "$family" \
-              --query taskDefinition \
-              --output json \
-              | jq --arg image "$image" '
-                  del(.taskDefinitionArn, .revision, .status, .requiresAttributes,
-                      .compatibilities, .registeredAt, .registeredBy)
-                  | .containerDefinitions |= map(.image = $image)
-                ' > "$task_definition_file"
-
-            registered_arn="$(aws ecs register-task-definition \
-              --region "$AWS_REGION" \
-              --cli-input-json "file://$task_definition_file" \
-              --query 'taskDefinition.taskDefinitionArn' \
-              --output text)"
-            rm -f "$task_definition_file"
-            printf '%s\n' "$registered_arn"
-          }
-
-          api_image="$ECR_REGISTRY/gideon-dev-opencomp-api:$IMAGE_TAG"
-          app_image="$ECR_REGISTRY/gideon-dev-opencomp-app:$IMAGE_TAG"
-          trust_image="$ECR_REGISTRY/gideon-dev-opencomp-trust-center:$IMAGE_TAG"
-          migrator_image="$ECR_REGISTRY/gideon-dev-opencomp-migrator:$IMAGE_TAG"
-
-          api_task_definition="$(register_task_definition gideon-dev-opencomp-api "$api_image")"
-          app_task_definition="$(register_task_definition gideon-dev-opencomp-app "$app_image")"
-          trust_task_definition="$(register_task_definition gideon-dev-opencomp-trust-center "$trust_image")"
-          email_task_definition="$(register_task_definition gideon-dev-opencomp-email-worker "$api_image")"
-          migrator_task_definition="$(register_task_definition gideon-dev-opencomp-migrator "$migrator_image")"
-
-          migrator_task_arn="$(aws ecs run-task \
-            --region "$AWS_REGION" \
-            --cluster "$ECS_CLUSTER" \
-            --launch-type FARGATE \
-            --task-definition "$migrator_task_definition" \
-            --network-configuration "awsvpcConfiguration={subnets=[$MIGRATOR_SUBNETS],securityGroups=[$MIGRATOR_SECURITY_GROUP],assignPublicIp=ENABLED}" \
-            --query 'tasks[0].taskArn' \
-            --output text)"
-
-          aws ecs wait tasks-stopped \
-            --region "$AWS_REGION" \
-            --cluster "$ECS_CLUSTER" \
-            --tasks "$migrator_task_arn"
-
-          migrator_exit_code="$(aws ecs describe-tasks \
-            --region "$AWS_REGION" \
-            --cluster "$ECS_CLUSTER" \
-            --tasks "$migrator_task_arn" \
-            --query 'tasks[0].containers[0].exitCode' \
-            --output text)"
-          if [ "$migrator_exit_code" != "0" ]; then
-            echo "ECS migrator exited with code $migrator_exit_code"
-            exit 1
-          fi
-
-          for service_definition in \
-            "gideon-dev-opencomp-api|$api_task_definition" \
-            "gideon-dev-opencomp-app|$app_task_definition" \
-            "gideon-dev-opencomp-trust-center|$trust_task_definition" \
-            "gideon-dev-opencomp-email-worker|$email_task_definition"; do
-            IFS='|' read -r service task_definition <<< "$service_definition"
-            aws ecs update-service \
-              --region "$AWS_REGION" \
-              --cluster "$ECS_CLUSTER" \
-              --service "$service" \
-              --task-definition "$task_definition" \
-              --force-new-deployment \
-              >/dev/null
-          done
+          bash .github/scripts/deploy-dev.sh
 
       - name: Wait for ECS services
         shell: bash
         run: |
           set -euo pipefail
           for service in \
+            gideon-dev-opencomp-mcp \
             gideon-dev-opencomp-api \
             gideon-dev-opencomp-app \
             gideon-dev-opencomp-trust-center \
@@ -242,6 +243,21 @@ jobs:
               --cluster "$ECS_CLUSTER" \
               --services "$service"
           done
+          while IFS='|' read -r service expected; do
+            actual="$(aws ecs describe-services --region "$AWS_REGION" --cluster "$ECS_CLUSTER" --services "$service" --query 'services[0].taskDefinition' --output text)"
+            if [ "$actual" != "$expected" ]; then
+              echo "$service rolled back or did not deploy the requested task definition"
+              exit 1
+            fi
+          done < "$RUNNER_TEMP/opencomp-expected-tasks"
+
+      - name: Verify hosted MCP edge
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --retry 5 --retry-delay 5 https://mcp.dev.gideondefender.com/healthz
+          status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' --request POST https://mcp.dev.gideondefender.com/mcp)"
+          test "$status" = 401
 
       - name: Print deployment summary
         run: |
@@ -249,6 +265,7 @@ jobs:
             --region "$AWS_REGION" \
             --cluster "$ECS_CLUSTER" \
             --services \
+              gideon-dev-opencomp-mcp \
               gideon-dev-opencomp-api \
               gideon-dev-opencomp-app \
               gideon-dev-opencomp-trust-center \

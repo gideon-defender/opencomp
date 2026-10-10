@@ -49,6 +49,9 @@ lerna-debug.log*
 
 # Local scripts
 scripts/
+!/scripts/
+/scripts/*
+!/scripts/openapi.mjs
 
 # temp directory
 .temp

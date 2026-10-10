@@ -3,7 +3,7 @@ import type { INestApplication } from '@nestjs/common';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { OpenAPIObject } from '@nestjs/swagger';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { SwaggerModule } from '@nestjs/swagger';
 import * as express from 'express';
 import helmet from 'helmet';
 import path from 'path';
@@ -11,11 +11,7 @@ import { AppModule } from './app.module';
 import { initLocalTriggerRuntime } from './trigger/register-local-triggers';
 import { setTriggerNestContext } from './trigger/nest-context';
 import { initTracing, shutdownTracing } from './inference-tracing';
-import {
-  applyPublicOpenApiMetadata,
-  PUBLIC_OPENAPI_DESCRIPTION,
-  PUBLIC_OPENAPI_TITLE,
-} from './openapi/public-docs-metadata';
+import { createPublicDocument } from './openapi/public-document';
 import { corsOriginMiddleware } from './auth/cors-origin.middleware';
 import { adminAuthRateLimiter } from './auth/admin-rate-limit.middleware';
 import { originCheckMiddleware } from './auth/origin-check.middleware';
@@ -29,37 +25,6 @@ declare module 'express-serve-static-core' {
 }
 
 let app: INestApplication | null = null;
-
-function describeServer(baseUrl: string): string {
-  // Hostname-exact matching (CodeQL js/incomplete-url-substring-sanitization):
-  // substring checks would mislabel hosts like "evil.com/api.staging.…".
-  try {
-    const { hostname } = new URL(baseUrl);
-    if (
-      hostname === 'api.staging.gideondefender.com' ||
-      hostname.endsWith('.api.staging.gideondefender.com')
-    ) {
-      return 'Staging API Server';
-    }
-    if (
-      hostname === 'api.gideondefender.com' ||
-      hostname.endsWith('.api.gideondefender.com')
-    ) {
-      return 'Production API Server';
-    }
-    if (
-      hostname === 'localhost' ||
-      hostname === '127.0.0.1' ||
-      hostname === '[::1]' ||
-      hostname.endsWith('.localhost')
-    ) {
-      return 'Local API Server';
-    }
-  } catch {
-    // Unparseable base URL — fall through to the generic label.
-  }
-  return 'API Server';
-}
 
 async function bootstrap(): Promise<void> {
   await initTracing();
@@ -181,28 +146,8 @@ async function bootstrap(): Promise<void> {
   // Get server configuration from environment variables
   const port = process.env.PORT ?? 3333;
 
-  // Swagger/OpenAPI configuration — single server derived from BASE_URL
-  const baseUrl = process.env.BASE_URL ?? `http://localhost:${port}`;
-  const serverDescription = describeServer(baseUrl);
-
-  const config = new DocumentBuilder()
-    .setTitle(PUBLIC_OPENAPI_TITLE)
-    .setDescription(PUBLIC_OPENAPI_DESCRIPTION)
-    .setVersion('1.0')
-    .addApiKey(
-      {
-        type: 'apiKey',
-        name: 'X-API-Key',
-        in: 'header',
-        description: 'API key for authentication',
-      },
-      'apikey',
-    )
-    .addServer(baseUrl, serverDescription)
-    .build();
-  const document: OpenAPIObject = SwaggerModule.createDocument(app, config);
-
-  applyPublicOpenApiMetadata(document);
+  // Public metadata always uses the production API server, including offline export.
+  const document: OpenAPIObject = createPublicDocument(app);
 
   // Setup Swagger UI at /api/docs
   SwaggerModule.setup('api/docs', app, document, {

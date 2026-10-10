@@ -15,6 +15,9 @@ permissions:
   contents: read
 
 jobs:
+  mcp-check:
+    uses: ./.github/workflows/mcp-check.yml
+
   check-types:
     uses: ./.github/workflows/check-types.yml
 

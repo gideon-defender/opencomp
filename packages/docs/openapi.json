@@ -148,6 +148,9 @@
             "source": "curl --request GET --url \"https://api.gideondefender.com/v1/organization\" --header \"X-API-Key: $COMP_AI_API_KEY\""
           }
         ],
+        "x-comp-mcp": {
+          "name": "get-organization"
+        },
         "x-speakeasy-mcp": {
           "name": "get-organization"
         }
@@ -395,6 +398,9 @@
             "og:description": "Partially updates the authenticated organization. Only provided fields will be updated."
           }
         },
+        "x-comp-mcp": {
+          "name": "update-organization"
+        },
         "x-speakeasy-mcp": {
           "name": "update-organization"
         }
@@ -493,6 +499,9 @@
             "og:description": "Permanently deletes the authenticated organization. This action cannot be undone."
           }
         },
+        "x-comp-mcp": {
+          "name": "delete-organization"
+        },
         "x-speakeasy-mcp": {
           "name": "delete-organization"
         }
@@ -545,6 +554,9 @@
             "og:title": "Get organization onboarding status | OpenComp API",
             "og:description": "Get organization onboarding status in OpenComp. Manage organization profile data, API keys, logos, ownership, role notifications, and access approval."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-onboarding"
         },
         "x-speakeasy-mcp": {
           "name": "get-onboarding"
@@ -750,6 +762,9 @@
             "og:description": "Transfers organization ownership to another member. The current owner will become an admin and keep all other roles. The new owner will receive the owner."
           }
         },
+        "x-comp-mcp": {
+          "name": "transfer-ownership"
+        },
         "x-speakeasy-mcp": {
           "name": "transfer-ownership"
         }
@@ -856,6 +871,9 @@
             "og:description": "Update role notification settings in OpenComp. Manage organization profile data, API keys, logos, ownership, role notifications, and access approval settings."
           }
         },
+        "x-comp-mcp": {
+          "name": "update-role-notifications"
+        },
         "x-speakeasy-mcp": {
           "name": "update-role-notifications"
         }
@@ -906,6 +924,9 @@
             "og:title": "Get role notification settings | OpenComp API",
             "og:description": "Get role notification settings in OpenComp. Manage organization profile data, API keys, logos, ownership, role notifications, and access approval settings."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-role-notifications"
         },
         "x-speakeasy-mcp": {
           "name": "get-role-notifications"
@@ -960,6 +981,9 @@
             "og:description": "List active API keys for an organization so administrators can audit automation access and rotate credentials safely."
           }
         },
+        "x-comp-mcp": {
+          "name": "list-api-keys"
+        },
         "x-speakeasy-mcp": {
           "name": "list-api-keys"
         }
@@ -1010,6 +1034,9 @@
             "og:title": "Create API key | OpenComp API",
             "og:description": "Create a scoped API key for server-side compliance automation such as evidence sync, policy workflows, or security questionnaire tooling."
           }
+        },
+        "x-comp-mcp": {
+          "name": "create-api-key"
         },
         "x-speakeasy-mcp": {
           "name": "create-api-key"
@@ -1063,6 +1090,9 @@
             "og:title": "List API key scopes | OpenComp API",
             "og:description": "Retrieve available API key scopes and permissions before creating credentials for a specific compliance automation workflow."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-available-scopes"
         },
         "x-speakeasy-mcp": {
           "name": "get-available-scopes"
@@ -1160,6 +1190,9 @@
             "og:description": "Retrieve the organization primary brand color used for Trust Center theming, portals, and API-driven embedded experiences."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-primary-color"
+        },
         "x-speakeasy-mcp": {
           "name": "get-primary-color"
         }
@@ -1213,6 +1246,9 @@
             "og:description": "Upload organization logo in OpenComp. Manage organization profile data, API keys, logos, ownership, role notifications, and access approval settings."
           }
         },
+        "x-comp-mcp": {
+          "name": "upload-logo"
+        },
         "x-speakeasy-mcp": {
           "name": "upload-logo"
         }
@@ -1263,6 +1299,9 @@
             "og:title": "Remove organization logo | OpenComp API",
             "og:description": "Remove organization logo in OpenComp. Manage organization profile data, API keys, logos, ownership, role notifications, and access approval settings."
           }
+        },
+        "x-comp-mcp": {
+          "name": "remove-logo"
         },
         "x-speakeasy-mcp": {
           "name": "remove-logo"
@@ -1317,6 +1356,9 @@
             "og:description": "Revoke an organization API key when an integration is retired, credentials rotate, or access should be removed."
           }
         },
+        "x-comp-mcp": {
+          "name": "revoke-api-key"
+        },
         "x-speakeasy-mcp": {
           "name": "revoke-api-key"
         }
@@ -1364,6 +1406,9 @@
             "og:title": "Auto-approve organization access via domain | OpenComp API",
             "og:description": "Grants hasAccess on the active organization if the requesting user is an internal gideondefender.com user, the deployment is self-hosted, or the user email."
           }
+        },
+        "x-comp-mcp": {
+          "name": "auto-approve"
         },
         "x-speakeasy-mcp": {
           "name": "auto-approve"
@@ -1419,7 +1464,7 @@
         "tags": [
           "People"
         ],
-        "x-speakeasy-mcp": {
+        "x-comp-mcp": {
           "name": "invite-members"
         },
         "x-mint": {
@@ -1430,6 +1475,9 @@
             "og:title": "Invite workforce members | OpenComp API",
             "og:description": "Invite employees or contractors to complete portal tasks, training, device setup, and compliance evidence requirements."
           }
+        },
+        "x-speakeasy-mcp": {
+          "name": "invite-members"
         }
       }
     },
@@ -1606,7 +1654,7 @@
         "tags": [
           "People"
         ],
-        "x-speakeasy-mcp": {
+        "x-comp-mcp": {
           "name": "list-members"
         },
         "x-mint": {
@@ -1617,6 +1665,9 @@
             "og:title": "List workforce members | OpenComp API",
             "og:description": "List employees and contractors with onboarding, training, device, and compliance status used for people-security controls."
           }
+        },
+        "x-speakeasy-mcp": {
+          "name": "list-members"
         }
       },
       "post": {
@@ -1725,7 +1776,7 @@
         "tags": [
           "People"
         ],
-        "x-speakeasy-mcp": {
+        "x-comp-mcp": {
           "name": "create-member"
         },
         "x-mint": {
@@ -1736,6 +1787,9 @@
             "og:title": "Create a new member | OpenComp API",
             "og:description": "Adds a new member to the authenticated organization. The user must already exist in the system."
           }
+        },
+        "x-speakeasy-mcp": {
+          "name": "create-member"
         }
       }
     },
@@ -1786,6 +1840,9 @@
             "og:title": "Get all employee devices with fleet | OpenComp API",
             "og:description": "Get all employee devices with fleet compliance data in OpenComp. Invite and manage workforce members, training status, device compliance, email preferences."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-devices"
         },
         "x-speakeasy-mcp": {
           "name": "get-devices"
@@ -1839,6 +1896,9 @@
             "og:title": "Get integration test statistics grouped by | OpenComp API",
             "og:description": "Get integration test statistics grouped by assignee in OpenComp. Invite and manage workforce members, training status, device compliance, email preferences."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-test-stats-by-assignee"
         },
         "x-speakeasy-mcp": {
           "name": "get-test-stats-by-assignee"
@@ -2058,6 +2118,9 @@
             "og:description": "Bulk adds multiple members to the authenticated organization. Each member must have a valid user ID that exists in the system. Members who already exist in."
           }
         },
+        "x-comp-mcp": {
+          "name": "bulk-create-members"
+        },
         "x-speakeasy-mcp": {
           "name": "bulk-create-members"
         }
@@ -2120,6 +2183,9 @@
             "og:description": "Get members who can read a specific resource type in OpenComp. Invite and manage workforce members, training status, device compliance, email preferences."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-mentionable-members"
+        },
         "x-speakeasy-mcp": {
           "name": "get-mentionable-members"
         }
@@ -2174,7 +2240,7 @@
         "tags": [
           "People"
         ],
-        "x-speakeasy-mcp": {
+        "x-comp-mcp": {
           "name": "reactivate-member"
         },
         "description": "Reactivate a deactivated member in OpenComp. Invite and manage workforce members, training status, device compliance, email preferences, and employee evidence records.",
@@ -2186,6 +2252,9 @@
             "og:title": "Reactivate a deactivated member | OpenComp API",
             "og:description": "Reactivate a deactivated member in OpenComp. Invite and manage workforce members, training status, device compliance, email preferences, and employee."
           }
+        },
+        "x-speakeasy-mcp": {
+          "name": "reactivate-member"
         }
       }
     },
@@ -2286,7 +2355,7 @@
         "tags": [
           "People"
         ],
-        "x-speakeasy-mcp": {
+        "x-comp-mcp": {
           "name": "get-member"
         },
         "x-mint": {
@@ -2297,6 +2366,9 @@
             "og:title": "Get person by ID | OpenComp API",
             "og:description": "Returns a specific member by ID for the authenticated organization with their user information."
           }
+        },
+        "x-speakeasy-mcp": {
+          "name": "get-member"
         }
       },
       "patch": {
@@ -2426,7 +2498,7 @@
         "tags": [
           "People"
         ],
-        "x-speakeasy-mcp": {
+        "x-comp-mcp": {
           "name": "update-member"
         },
         "x-mint": {
@@ -2437,6 +2509,9 @@
             "og:title": "Update workforce member | OpenComp API",
             "og:description": "Update a workforce member profile, role, department, or compliance metadata used for people-security controls."
           }
+        },
+        "x-speakeasy-mcp": {
+          "name": "update-member"
         }
       },
       "delete": {
@@ -2558,7 +2633,7 @@
         "tags": [
           "People"
         ],
-        "x-speakeasy-mcp": {
+        "x-comp-mcp": {
           "name": "delete-member"
         },
         "x-mint": {
@@ -2569,6 +2644,9 @@
             "og:title": "Delete member | OpenComp API",
             "og:description": "Permanently removes a member from the organization. This action cannot be undone."
           }
+        },
+        "x-speakeasy-mcp": {
+          "name": "delete-member"
         }
       }
     },
@@ -2630,6 +2708,9 @@
             "og:title": "Member's access across connected integrations | OpenComp API",
             "og:description": "Aggregates the latest Employee Access check results from every connected integration bound to the Employee Access task, matched to the member by email."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-member-access"
         },
         "x-speakeasy-mcp": {
           "name": "get-member-access"
@@ -2695,6 +2776,9 @@
             "og:description": "Get training video completions for a member in OpenComp. Invite and manage workforce members, training status, device compliance, email preferences."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-training-videos"
+        },
         "x-speakeasy-mcp": {
           "name": "get-training-videos"
         }
@@ -2758,6 +2842,9 @@
             "og:title": "Get fleet compliance | OpenComp API",
             "og:description": "Retrieve Fleet device compliance status so endpoint security findings can support people-security controls and audit evidence."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-fleet-compliance"
         },
         "x-speakeasy-mcp": {
           "name": "get-fleet-compliance"
@@ -2875,6 +2962,9 @@
             "og:description": "Removes a single host (device) from FleetDM by host ID. Only organization owners can perform this action. Validates that the organization exists and the."
           }
         },
+        "x-comp-mcp": {
+          "name": "remove-host"
+        },
         "x-speakeasy-mcp": {
           "name": "remove-host"
         }
@@ -2938,6 +3028,9 @@
             "og:title": "Resend portal invite email to a member | OpenComp API",
             "og:description": "Resend portal invite email to a member in OpenComp. Invite and manage workforce members, training status, device compliance, email preferences, and employee."
           }
+        },
+        "x-comp-mcp": {
+          "name": "resend-portal-invite"
         },
         "x-speakeasy-mcp": {
           "name": "resend-portal-invite"
@@ -3060,6 +3153,9 @@
             "og:description": "Resets the fleetDmLabelId for a member, effectively unlinking their device from FleetDM. This will disconnect the device from the organization."
           }
         },
+        "x-comp-mcp": {
+          "name": "unlink-device"
+        },
         "x-speakeasy-mcp": {
           "name": "unlink-device"
         }
@@ -3135,6 +3231,9 @@
             "og:title": "Get employment evidence attachments | OpenComp API",
             "og:description": "Get employment evidence attachments in OpenComp. Invite and manage workforce members, training status, device compliance, email preferences, and employee."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-employment-evidence"
         },
         "x-speakeasy-mcp": {
           "name": "get-employment-evidence"
@@ -3219,6 +3318,9 @@
             "og:title": "Upload employment evidence | OpenComp API",
             "og:description": "Upload employment evidence in OpenComp. Invite and manage workforce members, training status, device compliance, email preferences, and employee evidence."
           }
+        },
+        "x-comp-mcp": {
+          "name": "upload-employment-evidence"
         },
         "x-speakeasy-mcp": {
           "name": "upload-employment-evidence"
@@ -3305,6 +3407,9 @@
             "og:description": "Delete employment evidence in OpenComp. Invite and manage workforce members, training status, device compliance, email preferences, and employee evidence."
           }
         },
+        "x-comp-mcp": {
+          "name": "delete-employment-evidence"
+        },
         "x-speakeasy-mcp": {
           "name": "delete-employment-evidence"
         }
@@ -3357,6 +3462,9 @@
             "og:title": "Get current user email notification | OpenComp API",
             "og:description": "Get current user email notification preferences in OpenComp. Invite and manage workforce members, training status, device compliance, email preferences."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-email-preferences"
         },
         "x-speakeasy-mcp": {
           "name": "get-email-preferences"
@@ -3418,6 +3526,9 @@
             "og:title": "Update current user email notification | OpenComp API",
             "og:description": "Update current user email notification preferences in OpenComp. Invite and manage workforce members, training status, device compliance, email preferences."
           }
+        },
+        "x-comp-mcp": {
+          "name": "update-email-preferences"
         },
         "x-speakeasy-mcp": {
           "name": "update-email-preferences"
@@ -3498,6 +3609,9 @@
             "og:title": "Upload an attachment to any supported entity | OpenComp API",
             "og:description": "Upload a base64-encoded file and attach it to a task, vendor, risk, comment, or other supported entity type. The file is uploaded to S3 and a database."
           }
+        },
+        "x-comp-mcp": {
+          "name": "create-attachment"
         },
         "x-speakeasy-mcp": {
           "name": "create-attachment"
@@ -3582,6 +3696,9 @@
             "og:description": "Generate a signed download URL for a shared attachment linked to comments, evidence records, or compliance workflow reviews."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-attachment-download-url"
+        },
         "x-speakeasy-mcp": {
           "name": "get-attachment-download-url"
         }
@@ -3662,6 +3779,9 @@
             "og:description": "Returns a presigned S3 URL plus the s3Key the file lands at. PUT the raw file bytes to that URL, then call the feature tool (e.g. upload-and-parse) with the."
           }
         },
+        "x-comp-mcp": {
+          "name": "create-upload-url"
+        },
         "x-speakeasy-mcp": {
           "name": "create-upload-url"
         }
@@ -3714,6 +3834,9 @@
             "og:title": "List timelines for the organization | OpenComp API",
             "og:description": "List timelines for the organization in OpenComp. Track audit and compliance readiness timelines, phases, and review milestones for an organization."
           }
+        },
+        "x-comp-mcp": {
+          "name": "find-all"
         },
         "x-speakeasy-mcp": {
           "name": "find-all"
@@ -3776,6 +3899,9 @@
             "og:title": "Get a single timeline instance with phases | OpenComp API",
             "og:description": "Get a single timeline instance with phases in OpenComp. Track audit and compliance readiness timelines, phases, and review milestones for an organization."
           }
+        },
+        "x-comp-mcp": {
+          "name": "find-one"
         },
         "x-speakeasy-mcp": {
           "name": "find-one"
@@ -3847,6 +3973,9 @@
             "og:description": "Mark a phase as ready for review in OpenComp. Track audit and compliance readiness timelines, phases, and review milestones for an organization."
           }
         },
+        "x-comp-mcp": {
+          "name": "mark-ready-for-review"
+        },
         "x-speakeasy-mcp": {
           "name": "mark-ready-for-review"
         }
@@ -3908,6 +4037,9 @@
             "og:title": "List integration providers | OpenComp API",
             "og:description": "List available integration providers that can connect to the organization for automated evidence collection and compliance checks."
           }
+        },
+        "x-comp-mcp": {
+          "name": "list-providers"
         },
         "x-speakeasy-mcp": {
           "name": "list-providers"
@@ -3971,6 +4103,9 @@
             "og:description": "Get an integration provider by slug in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-provider"
+        },
         "x-speakeasy-mcp": {
           "name": "get-provider"
         }
@@ -4023,6 +4158,9 @@
             "og:title": "List integration connections | OpenComp API",
             "og:description": "List integration connections in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables, and collect."
           }
+        },
+        "x-comp-mcp": {
+          "name": "list-connections"
         },
         "x-speakeasy-mcp": {
           "name": "list-connections"
@@ -4084,6 +4222,9 @@
             "og:title": "Create integration connection | OpenComp API",
             "og:description": "Create an integration connection so OpenComp can collect evidence, run checks, or sync data from a connected provider."
           }
+        },
+        "x-comp-mcp": {
+          "name": "create-connection"
         },
         "x-speakeasy-mcp": {
           "name": "create-connection"
@@ -4147,6 +4288,9 @@
             "og:description": "Get an integration connection by ID in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-connection"
+        },
         "x-speakeasy-mcp": {
           "name": "get-connection"
         }
@@ -4206,6 +4350,9 @@
             "og:title": "Delete an integration connection | OpenComp API",
             "og:description": "Delete an integration connection in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables."
           }
+        },
+        "x-comp-mcp": {
+          "name": "delete-connection"
         },
         "x-speakeasy-mcp": {
           "name": "delete-connection"
@@ -4277,6 +4424,9 @@
             "og:description": "Update an integration connection in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables."
           }
         },
+        "x-comp-mcp": {
+          "name": "update-connection"
+        },
         "x-speakeasy-mcp": {
           "name": "update-connection"
         }
@@ -4338,6 +4488,9 @@
             "og:title": "Test an integration connection | OpenComp API",
             "og:description": "Test an integration connection in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables."
           }
+        },
+        "x-comp-mcp": {
+          "name": "test-connection"
         },
         "x-speakeasy-mcp": {
           "name": "test-connection"
@@ -4401,6 +4554,9 @@
             "og:description": "Pause an integration connection in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables."
           }
         },
+        "x-comp-mcp": {
+          "name": "pause-connection"
+        },
         "x-speakeasy-mcp": {
           "name": "pause-connection"
         }
@@ -4463,6 +4619,9 @@
             "og:description": "Resume an integration connection in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables."
           }
         },
+        "x-comp-mcp": {
+          "name": "resume-connection"
+        },
         "x-speakeasy-mcp": {
           "name": "resume-connection"
         }
@@ -4524,6 +4683,9 @@
             "og:title": "Disconnect an integration | OpenComp API",
             "og:description": "Disconnect an integration in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables, and collect."
           }
+        },
+        "x-comp-mcp": {
+          "name": "disconnect-connection"
         },
         "x-speakeasy-mcp": {
           "name": "disconnect-connection"
@@ -4597,6 +4759,9 @@
             "og:description": "Set services enabled on a connection in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables."
           }
         },
+        "x-comp-mcp": {
+          "name": "update-connection-services"
+        },
         "x-speakeasy-mcp": {
           "name": "update-connection-services"
         }
@@ -4656,6 +4821,9 @@
             "og:title": "List services enabled on a connection | OpenComp API",
             "og:description": "List services enabled on a connection in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-connection-services"
         },
         "x-speakeasy-mcp": {
           "name": "get-connection-services"
@@ -4719,6 +4887,9 @@
             "og:description": "List check definitions for a provider in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables."
           }
         },
+        "x-comp-mcp": {
+          "name": "list-provider-checks"
+        },
         "x-speakeasy-mcp": {
           "name": "list-provider-checks"
         }
@@ -4780,6 +4951,9 @@
             "og:title": "List checks for a connection | OpenComp API",
             "og:description": "List checks for a connection in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables, and collect."
           }
+        },
+        "x-comp-mcp": {
+          "name": "list-connection-checks"
         },
         "x-speakeasy-mcp": {
           "name": "list-connection-checks"
@@ -4853,6 +5027,9 @@
             "og:description": "Run all compliance checks for an integration connection and capture results as automated evidence."
           }
         },
+        "x-comp-mcp": {
+          "name": "run-connection-checks"
+        },
         "x-speakeasy-mcp": {
           "name": "run-connection-checks"
         }
@@ -4923,6 +5100,9 @@
             "og:description": "Run a single check on a connection in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables."
           }
         },
+        "x-comp-mcp": {
+          "name": "run-single-check"
+        },
         "x-speakeasy-mcp": {
           "name": "run-single-check"
         }
@@ -4985,6 +5165,9 @@
             "og:description": "List variable definitions for a provider in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-provider-variables"
+        },
         "x-speakeasy-mcp": {
           "name": "get-provider-variables"
         }
@@ -5046,6 +5229,9 @@
             "og:title": "List connection variables | OpenComp API",
             "og:description": "List connection variables in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables, and collect."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-connection-variables"
         },
         "x-speakeasy-mcp": {
           "name": "get-connection-variables"
@@ -5117,6 +5303,9 @@
             "og:description": "Update connection variables in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables, and collect."
           }
         },
+        "x-comp-mcp": {
+          "name": "save-connection-variables"
+        },
         "x-speakeasy-mcp": {
           "name": "save-connection-variables"
         }
@@ -5187,6 +5376,9 @@
             "og:description": "Get options for a connection variable in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables."
           }
         },
+        "x-comp-mcp": {
+          "name": "fetch-variable-options"
+        },
         "x-speakeasy-mcp": {
           "name": "fetch-variable-options"
         }
@@ -5249,6 +5441,9 @@
             "og:description": "List checks for a task template in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-checks-for-task-template"
+        },
         "x-speakeasy-mcp": {
           "name": "get-checks-for-task-template"
         }
@@ -5310,6 +5505,9 @@
             "og:title": "List checks attached to a task | OpenComp API",
             "og:description": "List checks attached to a task in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-checks-for-task"
         },
         "x-speakeasy-mcp": {
           "name": "get-checks-for-task"
@@ -5383,6 +5581,9 @@
             "og:description": "Run a check for a task in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables, and collect."
           }
         },
+        "x-comp-mcp": {
+          "name": "run-check-for-task"
+        },
         "x-speakeasy-mcp": {
           "name": "run-check-for-task"
         }
@@ -5454,6 +5655,9 @@
             "og:title": "Disconnect checks from a task | OpenComp API",
             "og:description": "Disconnect checks from a task in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables."
           }
+        },
+        "x-comp-mcp": {
+          "name": "disconnect-check-from-task"
         },
         "x-speakeasy-mcp": {
           "name": "disconnect-check-from-task"
@@ -5527,6 +5731,9 @@
             "og:description": "Reconnect checks to a task in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables, and collect."
           }
         },
+        "x-comp-mcp": {
+          "name": "reconnect-check-to-task"
+        },
         "x-speakeasy-mcp": {
           "name": "reconnect-check-to-task"
         }
@@ -5597,6 +5804,9 @@
             "og:description": "List check runs for a task in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables, and collect."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-task-check-runs"
+        },
         "x-speakeasy-mcp": {
           "name": "get-task-check-runs"
         }
@@ -5659,6 +5869,9 @@
             "og:description": "Sync Google Workspace employees in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables."
           }
         },
+        "x-comp-mcp": {
+          "name": "sync-google-workspace-employees"
+        },
         "x-speakeasy-mcp": {
           "name": "sync-google-workspace-employees"
         }
@@ -5711,6 +5924,9 @@
             "og:title": "Get Google Workspace sync status | OpenComp API",
             "og:description": "Get Google Workspace sync status in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-google-workspace-status"
         },
         "x-speakeasy-mcp": {
           "name": "get-google-workspace-status"
@@ -5774,6 +5990,9 @@
             "og:description": "Sync Rippling employees in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables, and collect."
           }
         },
+        "x-comp-mcp": {
+          "name": "sync-rippling-employees"
+        },
         "x-speakeasy-mcp": {
           "name": "sync-rippling-employees"
         }
@@ -5826,6 +6045,9 @@
             "og:title": "Get Rippling sync status | OpenComp API",
             "og:description": "Get Rippling sync status in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables, and collect."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-rippling-status"
         },
         "x-speakeasy-mcp": {
           "name": "get-rippling-status"
@@ -5889,6 +6111,9 @@
             "og:description": "Sync JumpCloud employees in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables, and collect."
           }
         },
+        "x-comp-mcp": {
+          "name": "sync-jump-cloud-employees"
+        },
         "x-speakeasy-mcp": {
           "name": "sync-jump-cloud-employees"
         }
@@ -5942,6 +6167,9 @@
             "og:description": "Get JumpCloud sync status in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables, and collect."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-jump-cloud-status"
+        },
         "x-speakeasy-mcp": {
           "name": "get-jump-cloud-status"
         }
@@ -5994,6 +6222,9 @@
             "og:title": "Get the currently configured employee sync | OpenComp API",
             "og:description": "Get the currently configured employee sync provider in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-employee-sync-provider"
         },
         "x-speakeasy-mcp": {
           "name": "get-employee-sync-provider"
@@ -6056,6 +6287,9 @@
             "og:description": "Set the employee sync provider in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables."
           }
         },
+        "x-comp-mcp": {
+          "name": "set-employee-sync-provider"
+        },
         "x-speakeasy-mcp": {
           "name": "set-employee-sync-provider"
         }
@@ -6109,6 +6343,9 @@
             "og:description": "Get the currently configured device sync provider in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-device-sync-provider"
+        },
         "x-speakeasy-mcp": {
           "name": "get-device-sync-provider"
         }
@@ -6159,6 +6396,9 @@
             "og:title": "Set the device sync provider | OpenComp API",
             "og:description": "Set the device sync provider in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables, and collect."
           }
+        },
+        "x-comp-mcp": {
+          "name": "set-device-sync-provider"
         },
         "x-speakeasy-mcp": {
           "name": "set-device-sync-provider"
@@ -6221,6 +6461,9 @@
             "og:title": "List sync providers available to the org | OpenComp API",
             "og:description": "List sync providers available to the org in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-available-sync-providers"
         },
         "x-speakeasy-mcp": {
           "name": "get-available-sync-providers"
@@ -6292,6 +6535,9 @@
             "og:description": "Sync employees for a dynamic provider in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables."
           }
         },
+        "x-comp-mcp": {
+          "name": "sync-dynamic-provider-employees"
+        },
         "x-speakeasy-mcp": {
           "name": "sync-dynamic-provider-employees"
         }
@@ -6362,6 +6608,9 @@
             "og:description": "Sync devices for a dynamic provider in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables."
           }
         },
+        "x-comp-mcp": {
+          "name": "sync-dynamic-provider-devices"
+        },
         "x-speakeasy-mcp": {
           "name": "sync-dynamic-provider-devices"
         }
@@ -6414,6 +6663,9 @@
             "og:title": "Get the configured 2FA source provider | OpenComp API",
             "og:description": "Get the configured 2FA source provider in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-two-factor-source"
         },
         "x-speakeasy-mcp": {
           "name": "get-two-factor-source"
@@ -6476,6 +6728,9 @@
             "og:description": "Set the 2FA source provider in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage variables, and collect."
           }
         },
+        "x-comp-mcp": {
+          "name": "set-two-factor-source"
+        },
         "x-speakeasy-mcp": {
           "name": "set-two-factor-source"
         }
@@ -6529,6 +6784,9 @@
             "og:description": "List integrations that can supply per-user 2FA status in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-available-two-factor-sources"
+        },
         "x-speakeasy-mcp": {
           "name": "get-available-two-factor-sources"
         }
@@ -6581,6 +6839,9 @@
             "og:title": "Per-user 2FA status from the configured | OpenComp API",
             "og:description": "Per-user 2FA status from the configured source in OpenComp. Connect vendor systems, configure OAuth apps, run compliance checks, sync employees, manage."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-two-factor-statuses"
         },
         "x-speakeasy-mcp": {
           "name": "get-two-factor-statuses"
@@ -6639,6 +6900,9 @@
             "og:description": "List recent cloud security activity in OpenComp. Run AWS, Azure, and GCP cloud security scans, detect enabled services, review findings, and connect cloud."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-activity"
+        },
         "x-speakeasy-mcp": {
           "name": "get-activity"
         }
@@ -6687,6 +6951,9 @@
             "og:description": "List supported cloud providers in OpenComp. Run AWS, Azure, and GCP cloud security scans, detect enabled services, review findings, and connect cloud."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-providers"
+        },
         "x-speakeasy-mcp": {
           "name": "get-providers"
         }
@@ -6734,6 +7001,9 @@
             "og:title": "List cloud security findings | OpenComp API",
             "og:description": "List cloud security findings discovered by scans so teams can prioritize remediation before issues become audit findings."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-findings"
         },
         "x-speakeasy-mcp": {
           "name": "get-findings"
@@ -6802,6 +7072,9 @@
             "og:description": "Accepts session, API key, or service token auth. For API key / service token callers without an explicit user attribution, the action is attributed to the."
           }
         },
+        "x-comp-mcp": {
+          "name": "mark-finding-as-exception"
+        },
         "x-speakeasy-mcp": {
           "name": "mark-finding-as-exception"
         }
@@ -6869,6 +7142,9 @@
             "og:description": "Accepts session, API key, or service token auth. For API key / service token callers without an explicit user attribution, the action is attributed to the."
           }
         },
+        "x-comp-mcp": {
+          "name": "update-aws-scan-mode"
+        },
         "x-speakeasy-mcp": {
           "name": "update-aws-scan-mode"
         }
@@ -6925,6 +7201,9 @@
             "og:title": "Revoke an exception, reopening the finding | OpenComp API",
             "og:description": "Accepts session, API key, or service token auth. For API key / service token callers without an explicit user attribution, the action is attributed to the."
           }
+        },
+        "x-comp-mcp": {
+          "name": "revoke-exception"
         },
         "x-speakeasy-mcp": {
           "name": "revoke-exception"
@@ -6983,6 +7262,9 @@
             "og:description": "List resolution, exception, and regression history for a connection in OpenComp. Run AWS, Azure, and GCP cloud security scans, detect enabled services."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-history"
+        },
         "x-speakeasy-mcp": {
           "name": "get-history"
         }
@@ -7039,6 +7321,9 @@
             "og:title": "Resolve the \"About this check\" description | OpenComp API",
             "og:description": "Resolve the \"About this check\" description for a finding (AI-cached for AWS; provider-derived for GCP/Azure) in OpenComp. Run AWS, Azure, and GCP cloud."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-check-definition"
         },
         "x-speakeasy-mcp": {
           "name": "get-check-definition"
@@ -7097,6 +7382,9 @@
             "og:description": "Resolve short-lived AWS credentials for a connection (internal only) in OpenComp. Run AWS, Azure, and GCP cloud security scans, detect enabled services."
           }
         },
+        "x-comp-mcp": {
+          "name": "resolve-session"
+        },
         "x-speakeasy-mcp": {
           "name": "resolve-session"
         }
@@ -7153,6 +7441,9 @@
             "og:title": "Run cloud security scan | OpenComp API",
             "og:description": "Trigger a cloud security scan for a connected AWS, Azure, or GCP account and collect findings for compliance remediation."
           }
+        },
+        "x-comp-mcp": {
+          "name": "scan"
         },
         "x-speakeasy-mcp": {
           "name": "scan"
@@ -7211,6 +7502,9 @@
             "og:description": "Detect available cloud services for a connection in OpenComp. Run AWS, Azure, and GCP cloud security scans, detect enabled services, review findings."
           }
         },
+        "x-comp-mcp": {
+          "name": "detect-services"
+        },
         "x-speakeasy-mcp": {
           "name": "detect-services"
         }
@@ -7267,6 +7561,9 @@
             "og:title": "Detect the GCP organization for a connection | OpenComp API",
             "og:description": "Detect the GCP organization for a connection in OpenComp. Run AWS, Azure, and GCP cloud security scans, detect enabled services, review findings."
           }
+        },
+        "x-comp-mcp": {
+          "name": "detect-gcp-org"
         },
         "x-speakeasy-mcp": {
           "name": "detect-gcp-org"
@@ -7325,6 +7622,9 @@
             "og:description": "Select GCP projects for a connection in OpenComp. Run AWS, Azure, and GCP cloud security scans, detect enabled services, review findings, and connect cloud."
           }
         },
+        "x-comp-mcp": {
+          "name": "select-gcp-projects"
+        },
         "x-speakeasy-mcp": {
           "name": "select-gcp-projects"
         }
@@ -7381,6 +7681,9 @@
             "og:title": "Set up GCP for a connection | OpenComp API",
             "og:description": "Set up GCP for a connection in OpenComp. Run AWS, Azure, and GCP cloud security scans, detect enabled services, review findings, and connect cloud posture."
           }
+        },
+        "x-comp-mcp": {
+          "name": "setup-gcp"
         },
         "x-speakeasy-mcp": {
           "name": "setup-gcp"
@@ -7439,6 +7742,9 @@
             "og:description": "Resolve a GCP setup step in OpenComp. Run AWS, Azure, and GCP cloud security scans, detect enabled services, review findings, and connect cloud posture."
           }
         },
+        "x-comp-mcp": {
+          "name": "resolve-gcp-setup-step"
+        },
         "x-speakeasy-mcp": {
           "name": "resolve-gcp-setup-step"
         }
@@ -7495,6 +7801,9 @@
             "og:title": "Set up Azure for a connection | OpenComp API",
             "og:description": "Set up Azure for a connection in OpenComp. Run AWS, Azure, and GCP cloud security scans, detect enabled services, review findings, and connect cloud posture."
           }
+        },
+        "x-comp-mcp": {
+          "name": "setup-azure"
         },
         "x-speakeasy-mcp": {
           "name": "setup-azure"
@@ -7553,6 +7862,9 @@
             "og:description": "Validate Azure credentials for a connection in OpenComp. Run AWS, Azure, and GCP cloud security scans, detect enabled services, review findings, and connect."
           }
         },
+        "x-comp-mcp": {
+          "name": "validate-azure"
+        },
         "x-speakeasy-mcp": {
           "name": "validate-azure"
         }
@@ -7609,6 +7921,9 @@
             "og:title": "Trigger a cloud security run for a connection | OpenComp API",
             "og:description": "Trigger a cloud security run for a connection in OpenComp. Run AWS, Azure, and GCP cloud security scans, detect enabled services, review findings."
           }
+        },
+        "x-comp-mcp": {
+          "name": "trigger-scan"
         },
         "x-speakeasy-mcp": {
           "name": "trigger-scan"
@@ -7674,6 +7989,9 @@
             "og:title": "Get a cloud security scan run by ID | OpenComp API",
             "og:description": "Get a cloud security scan run by ID in OpenComp. Run AWS, Azure, and GCP cloud security scans, detect enabled services, review findings, and connect cloud."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-run-status"
         },
         "x-speakeasy-mcp": {
           "name": "get-run-status"
@@ -8005,6 +8323,9 @@
             "og:description": "List organization risks with owners, departments, severity, mitigation status, and evidence for risk management reporting."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-all-risks"
+        },
         "x-speakeasy-mcp": {
           "name": "get-all-risks"
         }
@@ -8283,6 +8604,9 @@
             "og:description": "Create a risk record with ownership and context so compliance teams can track mitigation and remediation work."
           }
         },
+        "x-comp-mcp": {
+          "name": "create-risk"
+        },
         "x-speakeasy-mcp": {
           "name": "create-risk"
         }
@@ -8336,6 +8660,9 @@
             "og:description": "Get risk statistics grouped by assignee in OpenComp. Create, update, and report on organizational risks with ownership, departments, and compliance."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-stats-by-assignee"
+        },
         "x-speakeasy-mcp": {
           "name": "get-stats-by-assignee"
         }
@@ -8388,6 +8715,9 @@
             "og:title": "Get risk counts grouped by department | OpenComp API",
             "og:description": "Get risk counts grouped by department in OpenComp. Create, update, and report on organizational risks with ownership, departments, and compliance."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-stats-by-department"
         },
         "x-speakeasy-mcp": {
           "name": "get-stats-by-department"
@@ -8637,6 +8967,9 @@
             "og:title": "Get organization risk | OpenComp API",
             "og:description": "Retrieve one organization risk with owner, department, likelihood, impact, mitigation, and remediation context."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-risk-by-id"
         },
         "x-speakeasy-mcp": {
           "name": "get-risk-by-id"
@@ -8927,6 +9260,9 @@
             "og:description": "Update a risk record as mitigation work progresses so compliance reports reflect the current risk posture."
           }
         },
+        "x-comp-mcp": {
+          "name": "update-risk"
+        },
         "x-speakeasy-mcp": {
           "name": "update-risk"
         }
@@ -9058,6 +9394,9 @@
             "og:title": "Delete organization risk | OpenComp API",
             "og:description": "Delete an organization risk that no longer needs active tracking in the risk register or compliance program."
           }
+        },
+        "x-comp-mcp": {
+          "name": "delete-risk"
         },
         "x-speakeasy-mcp": {
           "name": "delete-risk"
@@ -9254,6 +9593,9 @@
             "og:title": "List risk-owner acceptance events | OpenComp API",
             "og:description": "Returns the residual-risk acceptance history for a risk, newest first. Each event freezes the residual rating at acceptance and carries a stale flag set."
           }
+        },
+        "x-comp-mcp": {
+          "name": "list-risk-acceptances"
         },
         "x-speakeasy-mcp": {
           "name": "list-risk-acceptances"
@@ -9462,6 +9804,9 @@
             "og:description": "Records an immutable, timestamped acceptance of a risk's current residual risk by the risk owner (or a chosen member). Re-record after the residual rating."
           }
         },
+        "x-comp-mcp": {
+          "name": "record-risk-acceptance"
+        },
         "x-speakeasy-mcp": {
           "name": "record-risk-acceptance"
         }
@@ -9524,6 +9869,9 @@
             "og:title": "Search global vendors | OpenComp API",
             "og:description": "Search global vendor records to prefill vendor profiles and speed up third-party risk assessment workflows."
           }
+        },
+        "x-comp-mcp": {
+          "name": "search-global-vendors"
         },
         "x-speakeasy-mcp": {
           "name": "search-global-vendors"
@@ -9744,6 +10092,9 @@
             "og:title": "List vendors | OpenComp API",
             "og:description": "List third-party vendors with risk level, owner, assessment status, and Trust Center visibility for vendor risk management."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-all-vendors"
         },
         "x-speakeasy-mcp": {
           "name": "get-all-vendors"
@@ -9997,6 +10348,9 @@
             "og:description": "Create a vendor record so teams can track third-party risk, assessment evidence, owner, category, and compliance status."
           }
         },
+        "x-comp-mcp": {
+          "name": "create-vendor"
+        },
         "x-speakeasy-mcp": {
           "name": "create-vendor"
         }
@@ -10218,6 +10572,9 @@
             "og:title": "Get vendor details | OpenComp API",
             "og:description": "Retrieve one vendor record with ownership, review status, risk context, and third-party compliance metadata."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-vendor-by-id"
         },
         "x-speakeasy-mcp": {
           "name": "get-vendor-by-id"
@@ -10482,6 +10839,9 @@
             "og:description": "Update vendor ownership, risk attributes, review metadata, and third-party compliance context for an organization."
           }
         },
+        "x-comp-mcp": {
+          "name": "update-vendor"
+        },
         "x-speakeasy-mcp": {
           "name": "update-vendor"
         }
@@ -10614,6 +10974,9 @@
             "og:description": "Permanently removes a vendor from the organization. This action cannot be undone."
           }
         },
+        "x-comp-mcp": {
+          "name": "delete-vendor"
+        },
         "x-speakeasy-mcp": {
           "name": "delete-vendor"
         }
@@ -10677,6 +11040,9 @@
             "og:title": "Trigger vendor risk assessment | OpenComp API",
             "og:description": "Trigger a vendor risk assessment so OpenComp can update third-party risk evidence and vendor security review status."
           }
+        },
+        "x-comp-mcp": {
+          "name": "trigger-assessment"
         },
         "x-speakeasy-mcp": {
           "name": "trigger-assessment"
@@ -10873,6 +11239,9 @@
             "og:title": "List vendor risk acceptance events | OpenComp API",
             "og:description": "Returns the residual-risk acceptance history for a vendor, newest first. Each event freezes the residual rating at acceptance and carries a stale flag set."
           }
+        },
+        "x-comp-mcp": {
+          "name": "list-vendor-acceptances"
         },
         "x-speakeasy-mcp": {
           "name": "list-vendor-acceptances"
@@ -11081,6 +11450,9 @@
             "og:description": "Records an immutable, timestamped acceptance of a vendor's current residual risk by the vendor owner (or a chosen member). Re-record after the residual."
           }
         },
+        "x-comp-mcp": {
+          "name": "record-vendor-acceptance"
+        },
         "x-speakeasy-mcp": {
           "name": "record-vendor-acceptance"
         }
@@ -11268,6 +11640,9 @@
             "og:title": "List organization context | OpenComp API",
             "og:description": "List organization context entries used as approved source material for evidence, questionnaires, policies, and AI workflows."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-all-context"
         },
         "x-speakeasy-mcp": {
           "name": "get-all-context"
@@ -11466,6 +11841,9 @@
             "og:description": "Creates a new context entry for the authenticated organization. All required fields must be provided."
           }
         },
+        "x-comp-mcp": {
+          "name": "create-context"
+        },
         "x-speakeasy-mcp": {
           "name": "create-context"
         }
@@ -11613,6 +11991,9 @@
             "og:description": "Retrieve one organization context entry with source details and approved content for compliance automation workflows."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-context-by-id"
+        },
         "x-speakeasy-mcp": {
           "name": "get-context-by-id"
         }
@@ -11758,6 +12139,9 @@
             "og:description": "Update an organization context entry so approved business details stay current for evidence and questionnaire automation."
           }
         },
+        "x-comp-mcp": {
+          "name": "update-context"
+        },
         "x-speakeasy-mcp": {
           "name": "update-context"
         }
@@ -11878,6 +12262,9 @@
             "og:description": "Permanently removes a context entry from the organization. This action cannot be undone."
           }
         },
+        "x-comp-mcp": {
+          "name": "delete-context"
+        },
         "x-speakeasy-mcp": {
           "name": "delete-context"
         }
@@ -11994,6 +12381,9 @@
             "og:description": "List managed employee devices with endpoint compliance status, ownership, and security check results for workforce controls."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-all-devices"
+        },
         "x-speakeasy-mcp": {
           "name": "get-all-devices"
         }
@@ -12078,6 +12468,9 @@
             "og:description": "Returns all devices assigned to a specific member within the authenticated organization. Devices are fetched from FleetDM using the member's dedicated."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-devices-by-member"
+        },
         "x-speakeasy-mcp": {
           "name": "get-devices-by-member"
         }
@@ -12137,6 +12530,9 @@
             "og:title": "Delete device | OpenComp API",
             "og:description": "Delete device in OpenComp. Read and manage employee device inventory and Fleet compliance data used for endpoint security controls."
           }
+        },
+        "x-comp-mcp": {
+          "name": "delete-device"
         },
         "x-speakeasy-mcp": {
           "name": "delete-device"
@@ -12298,7 +12694,7 @@
         "tags": [
           "Policies"
         ],
-        "x-speakeasy-mcp": {
+        "x-comp-mcp": {
           "name": "list-policies"
         },
         "x-mint": {
@@ -12326,7 +12722,10 @@
             "label": "List policies including archived",
             "source": "curl --request GET --url \"https://api.gideondefender.com/v1/policies?includeArchived=true\" --header \"X-API-Key: $COMP_AI_API_KEY\""
           }
-        ]
+        ],
+        "x-speakeasy-mcp": {
+          "name": "list-policies"
+        }
       },
       "post": {
         "description": "Create a policy record that can be reviewed, versioned, published, linked to controls, and used as source evidence for questionnaires.",
@@ -12441,6 +12840,9 @@
             "og:description": "Create a policy record that can be reviewed, versioned, published, linked to controls, and used as source evidence for questionnaires."
           }
         },
+        "x-comp-mcp": {
+          "name": "create-policy"
+        },
         "x-speakeasy-mcp": {
           "name": "create-policy"
         }
@@ -12503,6 +12905,9 @@
             "og:title": "Publish all draft policies | OpenComp API",
             "og:description": "Publish draft policies in bulk so approved policy content can power Trust Center sharing, questionnaire answers, and audit evidence."
           }
+        },
+        "x-comp-mcp": {
+          "name": "publish-all-policies"
         },
         "x-speakeasy-mcp": {
           "name": "publish-all-policies"
@@ -12569,6 +12974,9 @@
             "og:title": "Download all published policies | OpenComp API",
             "og:description": "Generate a single PDF bundle of published compliance policies for auditors, customer security reviews, and Trust Center workflows."
           }
+        },
+        "x-comp-mcp": {
+          "name": "download-all-policies"
         },
         "x-speakeasy-mcp": {
           "name": "download-all-policies"
@@ -12643,6 +13051,9 @@
             "og:description": "Get mapped and all controls for a policy in OpenComp. Create, version, publish, export, map, and improve compliance policies with AI-assisted drafting."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-policy-controls"
+        },
         "x-speakeasy-mcp": {
           "name": "get-policy-controls"
         }
@@ -12713,6 +13124,9 @@
             "og:title": "Map controls to a policy | OpenComp API",
             "og:description": "Map controls to a policy in OpenComp. Create, version, publish, export, map, and improve compliance policies with AI-assisted drafting and approval workflows."
           }
+        },
+        "x-comp-mcp": {
+          "name": "add-policy-controls"
         },
         "x-speakeasy-mcp": {
           "name": "add-policy-controls"
@@ -12787,6 +13201,9 @@
             "og:description": "Get tasks that serve as evidence for a policy, grouped by control in OpenComp. Create, version, publish, export, map, and improve compliance policies."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-policy-evidence-tasks"
+        },
         "x-speakeasy-mcp": {
           "name": "get-policy-evidence-tasks"
         }
@@ -12859,6 +13276,9 @@
             "og:title": "Regenerate policy with AI | OpenComp API",
             "og:description": "Regenerate policy content using OpenComp while keeping the result reviewable before it is published or used as compliance evidence."
           }
+        },
+        "x-comp-mcp": {
+          "name": "regenerate-policy"
         },
         "x-speakeasy-mcp": {
           "name": "regenerate-policy"
@@ -12940,6 +13360,9 @@
             "og:title": "Get a signed URL for the policy PDF | OpenComp API",
             "og:description": "Get a signed URL for the policy PDF in OpenComp. Create, version, publish, export, map, and improve compliance policies with AI-assisted drafting."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-pdf-signed-url"
         },
         "x-speakeasy-mcp": {
           "name": "get-pdf-signed-url"
@@ -13106,7 +13529,7 @@
         "tags": [
           "Policies"
         ],
-        "x-speakeasy-mcp": {
+        "x-comp-mcp": {
           "disabled": true
         },
         "x-mint": {
@@ -13117,6 +13540,9 @@
             "og:title": "Upload a PDF to a policy version (UI-only) | OpenComp API",
             "og:description": "Uploads a PDF via multipart `file` or base64 `fileData` JSON. Defaults to the latest draft if no `versionId`; 400 if no draft is available. UI-only — AI."
           }
+        },
+        "x-speakeasy-mcp": {
+          "disabled": true
         }
       },
       "delete": {
@@ -13194,6 +13620,9 @@
             "og:title": "Delete a policy version PDF | OpenComp API",
             "og:description": "Deletes the PDF from a specific policy version. If no versionId is provided, deletes from the latest draft version. Cannot delete PDFs from published."
           }
+        },
+        "x-comp-mcp": {
+          "name": "delete-policy-pdf"
         },
         "x-speakeasy-mcp": {
           "name": "delete-policy-pdf"
@@ -13276,7 +13705,7 @@
         "tags": [
           "Policies"
         ],
-        "x-speakeasy-mcp": {
+        "x-comp-mcp": {
           "name": "request-policy-pdf-upload-url"
         },
         "x-mint": {
@@ -13287,6 +13716,9 @@
             "og:title": "Request a presigned URL to upload a policy | OpenComp API",
             "og:description": "Generates a presigned S3 URL for uploading a policy PDF directly to storage. Use this when attaching a PDF to a compliance policy — the file bytes are."
           }
+        },
+        "x-speakeasy-mcp": {
+          "name": "request-policy-pdf-upload-url"
         }
       }
     },
@@ -13359,7 +13791,7 @@
         "tags": [
           "Policies"
         ],
-        "x-speakeasy-mcp": {
+        "x-comp-mcp": {
           "name": "confirm-policy-pdf-uploaded"
         },
         "x-mint": {
@@ -13370,6 +13802,9 @@
             "og:title": "Confirm a policy PDF upload completed | OpenComp API",
             "og:description": "Links an uploaded PDF to a compliance policy after the file has been PUT to a presigned S3 URL. Call this after request-policy-pdf-upload-url returned an."
           }
+        },
+        "x-speakeasy-mcp": {
+          "name": "confirm-policy-pdf-uploaded"
         }
       }
     },
@@ -13448,6 +13883,9 @@
             "og:title": "Get signed URL for policy PDF (alternate | OpenComp API",
             "og:description": "Get signed URL for policy PDF (alternate path) in OpenComp. Create, version, publish, export, map, and improve compliance policies with AI-assisted drafting."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-pdf-url"
         },
         "x-speakeasy-mcp": {
           "name": "get-pdf-url"
@@ -13529,6 +13967,9 @@
             "og:title": "Remove a control mapping from a policy | OpenComp API",
             "og:description": "Remove a control mapping from a policy in OpenComp. Create, version, publish, export, map, and improve compliance policies with AI-assisted drafting."
           }
+        },
+        "x-comp-mcp": {
+          "name": "remove-policy-control"
         },
         "x-speakeasy-mcp": {
           "name": "remove-policy-control"
@@ -13632,7 +14073,7 @@
         "tags": [
           "Policies"
         ],
-        "x-speakeasy-mcp": {
+        "x-comp-mcp": {
           "name": "get-policy"
         },
         "x-mint": {
@@ -13643,6 +14084,9 @@
             "og:title": "Get compliance policy | OpenComp API",
             "og:description": "Retrieve a single compliance policy by its ID, including current content, draft content, review status, framework links, and audit metadata. Use this."
           }
+        },
+        "x-speakeasy-mcp": {
+          "name": "get-policy"
         }
       },
       "patch": {
@@ -13783,6 +14227,9 @@
             "og:description": "Update compliance policy details or content while keeping policy workflows connected to controls, tasks, and approvals."
           }
         },
+        "x-comp-mcp": {
+          "name": "update-policy"
+        },
         "x-speakeasy-mcp": {
           "name": "update-policy"
         }
@@ -13901,6 +14348,9 @@
             "og:description": "Delete a compliance policy that is no longer part of the organization evidence library or control program."
           }
         },
+        "x-comp-mcp": {
+          "name": "delete-policy"
+        },
         "x-speakeasy-mcp": {
           "name": "delete-policy"
         }
@@ -13998,7 +14448,7 @@
         "tags": [
           "Policies"
         ],
-        "x-speakeasy-mcp": {
+        "x-comp-mcp": {
           "name": "list-policy-versions"
         },
         "x-mint": {
@@ -14009,6 +14459,9 @@
             "og:title": "Get policy versions | OpenComp API",
             "og:description": "Get policy versions in OpenComp. Create, version, publish, export, map, and improve compliance policies with AI-assisted drafting and approval workflows."
           }
+        },
+        "x-speakeasy-mcp": {
+          "name": "list-policy-versions"
         }
       },
       "post": {
@@ -14115,7 +14568,7 @@
         "tags": [
           "Policies"
         ],
-        "x-speakeasy-mcp": {
+        "x-comp-mcp": {
           "name": "create-policy-version"
         },
         "x-mint": {
@@ -14126,6 +14579,9 @@
             "og:title": "Create policy version | OpenComp API",
             "og:description": "Creates a new draft version of a policy, cloned from the current published version (or a specified source version). Use this when you need to make any."
           }
+        },
+        "x-speakeasy-mcp": {
+          "name": "create-policy-version"
         }
       }
     },
@@ -14228,7 +14684,7 @@
         "tags": [
           "Policies"
         ],
-        "x-speakeasy-mcp": {
+        "x-comp-mcp": {
           "name": "get-policy-version"
         },
         "x-mint": {
@@ -14239,6 +14695,9 @@
             "og:title": "Get policy version by ID | OpenComp API",
             "og:description": "Get policy version by ID in OpenComp. Create, version, publish, export, map, and improve compliance policies with AI-assisted drafting and approval workflows."
           }
+        },
+        "x-speakeasy-mcp": {
+          "name": "get-policy-version"
         }
       },
       "patch": {
@@ -14352,7 +14811,7 @@
         "tags": [
           "Policies"
         ],
-        "x-speakeasy-mcp": {
+        "x-comp-mcp": {
           "name": "update-policy-version-content"
         },
         "x-mint": {
@@ -14363,6 +14822,9 @@
             "og:title": "Update version content | OpenComp API",
             "og:description": "Update version content in OpenComp. Create, version, publish, export, map, and improve compliance policies with AI-assisted drafting and approval workflows."
           }
+        },
+        "x-speakeasy-mcp": {
+          "name": "update-policy-version-content"
         }
       },
       "delete": {
@@ -14474,6 +14936,9 @@
             "og:description": "Delete policy version in OpenComp. Create, version, publish, export, map, and improve compliance policies with AI-assisted drafting and approval workflows."
           }
         },
+        "x-comp-mcp": {
+          "name": "delete-policy-version"
+        },
         "x-speakeasy-mcp": {
           "name": "delete-policy-version"
         }
@@ -14584,7 +15049,7 @@
         "tags": [
           "Policies"
         ],
-        "x-speakeasy-mcp": {
+        "x-comp-mcp": {
           "name": "publish-policy-version"
         },
         "x-mint": {
@@ -14595,6 +15060,9 @@
             "og:title": "Publish policy version | OpenComp API",
             "og:description": "Publishes a draft policy version, making it the active/current version of the policy. Pass the versionId of the draft you want to publish — for example one."
           }
+        },
+        "x-speakeasy-mcp": {
+          "name": "publish-policy-version"
         }
       }
     },
@@ -14710,6 +15178,9 @@
             "og:title": "Set active policy version | OpenComp API",
             "og:description": "Set active policy version in OpenComp. Create, version, publish, export, map, and improve compliance policies with AI-assisted drafting and approval."
           }
+        },
+        "x-comp-mcp": {
+          "name": "set-active-policy-version"
         },
         "x-speakeasy-mcp": {
           "name": "set-active-policy-version"
@@ -14831,7 +15302,7 @@
         "tags": [
           "Policies"
         ],
-        "x-speakeasy-mcp": {
+        "x-comp-mcp": {
           "name": "submit-policy-version-for-approval"
         },
         "x-mint": {
@@ -14842,6 +15313,9 @@
             "og:title": "Submit version for approval | OpenComp API",
             "og:description": "Submit version for approval in OpenComp. Create, version, publish, export, map, and improve compliance policies with AI-assisted drafting and approval."
           }
+        },
+        "x-speakeasy-mcp": {
+          "name": "submit-policy-version-for-approval"
         }
       }
     },
@@ -14903,7 +15377,7 @@
         "tags": [
           "Policies"
         ],
-        "x-speakeasy-mcp": {
+        "x-comp-mcp": {
           "name": "accept-policy-changes"
         },
         "description": "Accept pending policy changes and publish the version in OpenComp. Create, version, publish, export, map, and improve compliance policies with AI-assisted drafting and approval workflows.",
@@ -14915,6 +15389,9 @@
             "og:title": "Accept pending policy changes and publish | OpenComp API",
             "og:description": "Accept pending policy changes and publish the version in OpenComp. Create, version, publish, export, map, and improve compliance policies with AI-assisted."
           }
+        },
+        "x-speakeasy-mcp": {
+          "name": "accept-policy-changes"
         }
       }
     },
@@ -14985,6 +15462,9 @@
             "og:title": "Deny pending policy changes | OpenComp API",
             "og:description": "Deny pending policy changes in OpenComp. Create, version, publish, export, map, and improve compliance policies with AI-assisted drafting and approval."
           }
+        },
+        "x-comp-mcp": {
+          "name": "deny-policy-changes"
         },
         "x-speakeasy-mcp": {
           "name": "deny-policy-changes"
@@ -15072,6 +15552,9 @@
             "og:description": "Ask policy-specific questions and request draft improvements while preserving human review before policy changes are applied."
           }
         },
+        "x-comp-mcp": {
+          "name": "ai-chat-policy"
+        },
         "x-speakeasy-mcp": {
           "name": "ai-chat-policy"
         }
@@ -15109,6 +15592,9 @@
             "og:title": "Exchange an auth code for device credentials | OpenComp API",
             "og:description": "Exchange an auth code for device credentials in OpenComp. Register employee devices, submit device compliance check-ins, download agent builds, and manage."
           }
+        },
+        "x-comp-mcp": {
+          "name": "exchange-code"
         },
         "x-speakeasy-mcp": {
           "name": "exchange-code"
@@ -15157,6 +15643,9 @@
             "og:description": "Download a device-agent update in OpenComp. Register employee devices, submit device compliance check-ins, download agent builds, and manage endpoint."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-update-file"
+        },
         "x-speakeasy-mcp": {
           "name": "get-update-file"
         }
@@ -15201,6 +15690,9 @@
             "og:title": "Check a device-agent update's metadata | OpenComp API",
             "og:description": "Check a device-agent update's metadata in OpenComp. Register employee devices, submit device compliance check-ins, download agent builds, and manage."
           }
+        },
+        "x-comp-mcp": {
+          "name": "head-update-file"
         },
         "x-speakeasy-mcp": {
           "name": "head-update-file"
@@ -15250,6 +15742,9 @@
             "og:description": "Create a device-agent auth code in OpenComp. Register employee devices, submit device compliance check-ins, download agent builds, and manage endpoint."
           }
         },
+        "x-comp-mcp": {
+          "name": "generate-auth-code"
+        },
         "x-speakeasy-mcp": {
           "name": "generate-auth-code"
         }
@@ -15287,6 +15782,9 @@
             "og:title": "List organizations for the current device | OpenComp API",
             "og:description": "List organizations for the current device in OpenComp. Register employee devices, submit device compliance check-ins, download agent builds, and manage."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-my-organizations"
         },
         "x-speakeasy-mcp": {
           "name": "get-my-organizations"
@@ -15336,6 +15834,9 @@
             "og:description": "Register a OpenComp Device Agent installation so employee endpoint checks can report into compliance tasks and device inventory."
           }
         },
+        "x-comp-mcp": {
+          "name": "register-device"
+        },
         "x-speakeasy-mcp": {
           "name": "register-device"
         }
@@ -15383,6 +15884,9 @@
             "og:title": "Submit device compliance check-in | OpenComp API",
             "og:description": "Submit device security check results for encryption, antivirus, password policy, screen lock, and other endpoint controls."
           }
+        },
+        "x-comp-mcp": {
+          "name": "check-in"
         },
         "x-speakeasy-mcp": {
           "name": "check-in"
@@ -15438,6 +15942,9 @@
             "og:title": "Get device-agent status | OpenComp API",
             "og:description": "Get device-agent status in OpenComp. Register employee devices, submit device compliance check-ins, download agent builds, and manage endpoint security."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-device-status"
         },
         "x-speakeasy-mcp": {
           "name": "get-device-status"
@@ -15537,6 +16044,9 @@
             "og:description": "Downloads the OpenComp Device Agent installer for macOS as a DMG file. The agent helps monitor device compliance and security policies."
           }
         },
+        "x-comp-mcp": {
+          "name": "download-mac-agent"
+        },
         "x-speakeasy-mcp": {
           "name": "download-mac-agent"
         }
@@ -15635,6 +16145,9 @@
             "og:description": "Downloads a ZIP package containing the OpenComp Device Agent installer for Windows, along with setup scripts and instructions. The package includes an MSI."
           }
         },
+        "x-comp-mcp": {
+          "name": "download-windows-agent"
+        },
         "x-speakeasy-mcp": {
           "name": "download-windows-agent"
         }
@@ -15691,6 +16204,9 @@
             "og:title": "Revoke a device agent session | OpenComp API",
             "og:description": "Revoke a device agent session in OpenComp. Register employee devices, submit device compliance check-ins, download agent builds, and manage endpoint."
           }
+        },
+        "x-comp-mcp": {
+          "name": "revoke-agent-access"
         },
         "x-speakeasy-mcp": {
           "name": "revoke-agent-access"
@@ -15782,6 +16298,9 @@
             "source": "curl --request GET --url \"https://api.gideondefender.com/v1/tasks\" --header \"X-API-Key: $COMP_AI_API_KEY\""
           }
         ],
+        "x-comp-mcp": {
+          "name": "get-tasks"
+        },
         "x-speakeasy-mcp": {
           "name": "get-tasks"
         }
@@ -15911,6 +16430,9 @@
             "og:description": "Create a compliance task for evidence collection, remediation, review, or recurring control work inside an organization."
           }
         },
+        "x-comp-mcp": {
+          "name": "create-task"
+        },
         "x-speakeasy-mcp": {
           "name": "create-task"
         }
@@ -15973,6 +16495,9 @@
             "og:title": "Get task templates | OpenComp API",
             "og:description": "Get task templates in OpenComp. Manage compliance task lifecycle, assignments, review approvals, evidence uploads, policy links, and activity history."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-task-templates"
         },
         "x-speakeasy-mcp": {
           "name": "get-task-templates"
@@ -16092,6 +16617,9 @@
             "og:description": "Update status for multiple tasks in OpenComp. Manage compliance task lifecycle, assignments, review approvals, evidence uploads, policy links, and activity."
           }
         },
+        "x-comp-mcp": {
+          "name": "update-tasks-status"
+        },
         "x-speakeasy-mcp": {
           "name": "update-tasks-status"
         }
@@ -16183,6 +16711,9 @@
             "og:title": "Delete multiple tasks | OpenComp API",
             "og:description": "Delete multiple tasks in OpenComp. Manage compliance task lifecycle, assignments, review approvals, evidence uploads, policy links, and activity history."
           }
+        },
+        "x-comp-mcp": {
+          "name": "delete-tasks"
         },
         "x-speakeasy-mcp": {
           "name": "delete-tasks"
@@ -16283,6 +16814,9 @@
             "og:title": "Update assignee for multiple tasks | OpenComp API",
             "og:description": "Update assignee for multiple tasks in OpenComp. Manage compliance task lifecycle, assignments, review approvals, evidence uploads, policy links."
           }
+        },
+        "x-comp-mcp": {
+          "name": "update-tasks-assignee"
         },
         "x-speakeasy-mcp": {
           "name": "update-tasks-assignee"
@@ -16385,6 +16919,9 @@
             "og:description": "Reorder tasks in OpenComp. Manage compliance task lifecycle, assignments, review approvals, evidence uploads, policy links, and activity history."
           }
         },
+        "x-comp-mcp": {
+          "name": "reorder-tasks"
+        },
         "x-speakeasy-mcp": {
           "name": "reorder-tasks"
         }
@@ -16472,6 +17009,9 @@
             "og:description": "Bulk submit tasks for review in OpenComp. Manage compliance task lifecycle, assignments, review approvals, evidence uploads, policy links, and activity."
           }
         },
+        "x-comp-mcp": {
+          "name": "bulk-submit-for-review"
+        },
         "x-speakeasy-mcp": {
           "name": "bulk-submit-for-review"
         }
@@ -16524,6 +17064,9 @@
             "og:title": "Get page options for tasks overview | OpenComp API",
             "og:description": "Get page options for tasks overview in OpenComp. Manage compliance task lifecycle, assignments, review approvals, evidence uploads, policy links."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-task-options"
         },
         "x-speakeasy-mcp": {
           "name": "get-task-options"
@@ -16606,6 +17149,9 @@
             "og:title": "Get task by ID | OpenComp API",
             "og:description": "Get task by ID in OpenComp. Manage compliance task lifecycle, assignments, review approvals, evidence uploads, policy links, and activity history."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-task"
         },
         "x-speakeasy-mcp": {
           "name": "get-task"
@@ -16767,6 +17313,9 @@
             "og:description": "Update a task in OpenComp. Manage compliance task lifecycle, assignments, review approvals, evidence uploads, policy links, and activity history."
           }
         },
+        "x-comp-mcp": {
+          "name": "update-task"
+        },
         "x-speakeasy-mcp": {
           "name": "update-task"
         }
@@ -16849,6 +17398,9 @@
             "og:description": "Delete a task in OpenComp. Manage compliance task lifecycle, assignments, review approvals, evidence uploads, policy links, and activity history."
           }
         },
+        "x-comp-mcp": {
+          "name": "delete-task"
+        },
         "x-speakeasy-mcp": {
           "name": "delete-task"
         }
@@ -16912,6 +17464,9 @@
             "og:title": "Get policies that reference a task via | OpenComp API",
             "og:description": "Get policies that reference a task via shared controls in OpenComp. Manage compliance task lifecycle, assignments, review approvals, evidence uploads."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-task-policies"
         },
         "x-speakeasy-mcp": {
           "name": "get-task-policies"
@@ -16996,6 +17551,9 @@
             "og:description": "Get task activity in OpenComp. Manage compliance task lifecycle, assignments, review approvals, evidence uploads, policy links, and activity history."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-task-activity"
+        },
         "x-speakeasy-mcp": {
           "name": "get-task-activity"
         }
@@ -17065,6 +17623,9 @@
             "og:title": "Regenerate task from template | OpenComp API",
             "og:description": "Regenerate task from template in OpenComp. Manage compliance task lifecycle, assignments, review approvals, evidence uploads, policy links, and activity."
           }
+        },
+        "x-comp-mcp": {
+          "name": "regenerate-task"
         },
         "x-speakeasy-mcp": {
           "name": "regenerate-task"
@@ -17153,6 +17714,9 @@
             "og:description": "Submit task for review in OpenComp. Manage compliance task lifecycle, assignments, review approvals, evidence uploads, policy links, and activity history."
           }
         },
+        "x-comp-mcp": {
+          "name": "submit-for-review"
+        },
         "x-speakeasy-mcp": {
           "name": "submit-for-review"
         }
@@ -17213,6 +17777,9 @@
             "og:description": "Approve a task that is in review. Only the assigned approver can approve. Moves status to done and creates an audit comment."
           }
         },
+        "x-comp-mcp": {
+          "name": "approve-task"
+        },
         "x-speakeasy-mcp": {
           "name": "approve-task"
         }
@@ -17272,6 +17839,9 @@
             "og:title": "Reject a task review | OpenComp API",
             "og:description": "Reject a task that is in review. Only the assigned approver can reject. Reverts status to the previous status and creates an audit comment."
           }
+        },
+        "x-comp-mcp": {
+          "name": "reject-task"
         },
         "x-speakeasy-mcp": {
           "name": "reject-task"
@@ -17366,6 +17936,9 @@
             "og:title": "Get task attachments | OpenComp API",
             "og:description": "Get task attachments in OpenComp. Manage compliance task lifecycle, assignments, review approvals, evidence uploads, policy links, and activity history."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-task-attachments"
         },
         "x-speakeasy-mcp": {
           "name": "get-task-attachments"
@@ -17476,6 +18049,9 @@
             "og:description": "Upload an evidence attachment to a task so auditors and reviewers can trace completion back to source documentation."
           }
         },
+        "x-comp-mcp": {
+          "name": "upload-task-attachment"
+        },
         "x-speakeasy-mcp": {
           "name": "upload-task-attachment"
         }
@@ -17578,6 +18154,9 @@
             "og:title": "Get task attachment download URL | OpenComp API",
             "og:description": "Generate a signed download URL for an attachment on a compliance task so reviewers can access uploaded evidence."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-task-attachment-download-url"
         },
         "x-speakeasy-mcp": {
           "name": "get-task-attachment-download-url"
@@ -17684,6 +18263,9 @@
             "og:description": "Delete task attachment in OpenComp. Manage compliance task lifecycle, assignments, review approvals, evidence uploads, policy links, and activity history."
           }
         },
+        "x-comp-mcp": {
+          "name": "delete-task-attachment"
+        },
         "x-speakeasy-mcp": {
           "name": "delete-task-attachment"
         }
@@ -17747,6 +18329,9 @@
             "og:title": "Get all automations for a task | OpenComp API",
             "og:description": "Get all automations for a task in OpenComp. Create, version, run, and inspect automated evidence collection workflows attached to compliance tasks."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-task-automations"
         },
         "x-speakeasy-mcp": {
           "name": "get-task-automations"
@@ -17856,6 +18441,9 @@
             "og:description": "Create an automated evidence workflow attached to a task so OpenComp can collect recurring proof from connected systems."
           }
         },
+        "x-comp-mcp": {
+          "name": "create-automation"
+        },
         "x-speakeasy-mcp": {
           "name": "create-automation"
         }
@@ -17929,6 +18517,9 @@
             "og:title": "Get automation details | OpenComp API",
             "og:description": "Get automation details in OpenComp. Create, version, run, and inspect automated evidence collection workflows attached to compliance tasks."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-automation"
         },
         "x-speakeasy-mcp": {
           "name": "get-automation"
@@ -18062,6 +18653,9 @@
             "og:description": "Update an existing automation in OpenComp. Create, version, run, and inspect automated evidence collection workflows attached to compliance tasks."
           }
         },
+        "x-comp-mcp": {
+          "name": "update-automation"
+        },
         "x-speakeasy-mcp": {
           "name": "update-automation"
         }
@@ -18134,6 +18728,9 @@
             "og:description": "Delete an automation in OpenComp. Create, version, run, and inspect automated evidence collection workflows attached to compliance tasks."
           }
         },
+        "x-comp-mcp": {
+          "name": "delete-automation"
+        },
         "x-speakeasy-mcp": {
           "name": "delete-automation"
         }
@@ -18205,6 +18802,9 @@
             "og:title": "Get all runs for a specific automation | OpenComp API",
             "og:description": "Get all runs for a specific automation in OpenComp. Create, version, run, and inspect automated evidence collection workflows attached to compliance tasks."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-automation-runs"
         },
         "x-speakeasy-mcp": {
           "name": "get-automation-runs"
@@ -18335,6 +18935,9 @@
             "og:description": "Get all versions for an automation in OpenComp. Create, version, run, and inspect automated evidence collection workflows attached to compliance tasks."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-automation-versions"
+        },
         "x-speakeasy-mcp": {
           "name": "get-automation-versions"
         }
@@ -18414,6 +19017,9 @@
             "og:title": "Create a published version record for an | OpenComp API",
             "og:description": "Create a published version record for an automation in OpenComp. Create, version, run, and inspect automated evidence collection workflows attached."
           }
+        },
+        "x-comp-mcp": {
+          "name": "create-version"
         },
         "x-speakeasy-mcp": {
           "name": "create-version"
@@ -18525,6 +19131,9 @@
             "og:description": "Get all automation runs for a task in OpenComp. Create, version, run, and inspect automated evidence collection workflows attached to compliance tasks."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-task-automation-runs"
+        },
         "x-speakeasy-mcp": {
           "name": "get-task-automation-runs"
         }
@@ -18591,6 +19200,9 @@
             "og:title": "Get task evidence summary | OpenComp API",
             "og:description": "Get task evidence summary in OpenComp. Export task evidence, automation evidence, and reviewer-ready evidence bundles as PDF or ZIP files."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-task-evidence-summary"
         },
         "x-speakeasy-mcp": {
           "name": "get-task-evidence-summary"
@@ -18670,6 +19282,9 @@
             "og:description": "Export automation evidence as PDF in OpenComp. Export task evidence, automation evidence, and reviewer-ready evidence bundles as PDF or ZIP files."
           }
         },
+        "x-comp-mcp": {
+          "name": "export-automation-pdf"
+        },
         "x-speakeasy-mcp": {
           "name": "export-automation-pdf"
         }
@@ -18748,6 +19363,9 @@
             "og:description": "Download a ZIP package containing task evidence and automation results for auditor review or customer security requests."
           }
         },
+        "x-comp-mcp": {
+          "name": "export-task-evidence-zip"
+        },
         "x-speakeasy-mcp": {
           "name": "export-task-evidence-zip"
         }
@@ -18810,6 +19428,9 @@
             "og:title": "Trigger bulk evidence export (Auditor only) | OpenComp API",
             "og:description": "Trigger bulk evidence export (Auditor only) in OpenComp. Export all organization evidence for an auditor review package."
           }
+        },
+        "x-comp-mcp": {
+          "name": "export-all-evidence"
         },
         "x-speakeasy-mcp": {
           "name": "export-all-evidence"
@@ -18901,6 +19522,9 @@
             "og:description": "Get comments for an entity in OpenComp. Create and manage collaboration comments on compliance entities such as tasks, policies, risks, vendors, and findings."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-comments"
+        },
         "x-speakeasy-mcp": {
           "name": "get-comments"
         }
@@ -18968,6 +19592,9 @@
             "og:title": "Create a new comment | OpenComp API",
             "og:description": "Create a new comment in OpenComp. Create and manage collaboration comments on compliance entities such as tasks, policies, risks, vendors, and findings."
           }
+        },
+        "x-comp-mcp": {
+          "name": "create-comment"
         },
         "x-speakeasy-mcp": {
           "name": "create-comment"
@@ -19049,6 +19676,9 @@
             "og:title": "Update a comment | OpenComp API",
             "og:description": "Update a comment in OpenComp. Create and manage collaboration comments on compliance entities such as tasks, policies, risks, vendors, and findings."
           }
+        },
+        "x-comp-mcp": {
+          "name": "update-comment"
         },
         "x-speakeasy-mcp": {
           "name": "update-comment"
@@ -19161,6 +19791,9 @@
             "og:description": "Delete a comment in OpenComp. Create and manage collaboration comments on compliance entities such as tasks, policies, risks, vendors, and findings."
           }
         },
+        "x-comp-mcp": {
+          "name": "delete-comment"
+        },
         "x-speakeasy-mcp": {
           "name": "delete-comment"
         }
@@ -19213,6 +19846,9 @@
             "og:title": "Get Trust Center settings | OpenComp API",
             "og:description": "Retrieve Trust Center settings used to configure public status, custom domains, framework visibility, resources, FAQs, and access rules."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-settings"
         },
         "x-speakeasy-mcp": {
           "name": "get-settings"
@@ -19267,6 +19903,9 @@
             "og:description": "Upload a favicon for the trust portal in OpenComp. Configure the live Trust Center, custom domain, public overview, FAQs, compliance resources, documents."
           }
         },
+        "x-comp-mcp": {
+          "name": "upload-favicon"
+        },
         "x-speakeasy-mcp": {
           "name": "upload-favicon"
         }
@@ -19317,6 +19956,9 @@
             "og:title": "Remove the trust portal favicon | OpenComp API",
             "og:description": "Remove the trust portal favicon in OpenComp. Configure the live Trust Center, custom domain, public overview, FAQs, compliance resources, documents, links."
           }
+        },
+        "x-comp-mcp": {
+          "name": "remove-favicon"
         },
         "x-speakeasy-mcp": {
           "name": "remove-favicon"
@@ -19384,6 +20026,9 @@
             "og:title": "Get domain verification status | OpenComp API",
             "og:description": "Get domain verification status in OpenComp. Configure the live Trust Center, custom domain, public overview, FAQs, compliance resources, documents, links."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-domain-status"
         },
         "x-speakeasy-mcp": {
           "name": "get-domain-status"
@@ -19458,6 +20103,9 @@
             "og:description": "Upload or replace a compliance certificate PDF such as SOC 2, ISO 27001, HIPAA, or GDPR evidence for Trust Center sharing."
           }
         },
+        "x-comp-mcp": {
+          "name": "upload-compliance-resource"
+        },
         "x-speakeasy-mcp": {
           "name": "upload-compliance-resource"
         }
@@ -19527,6 +20175,9 @@
             "og:title": "Generate a temporary signed URL for a | OpenComp API",
             "og:description": "Generate a temporary signed URL for a compliance certificate in OpenComp. Configure the live Trust Center, custom domain, public overview, FAQs, compliance."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-compliance-resource-url"
         },
         "x-speakeasy-mcp": {
           "name": "get-compliance-resource-url"
@@ -19601,6 +20252,9 @@
             "og:description": "List uploaded compliance certificates for the organization in OpenComp. Configure the live Trust Center, custom domain, public overview, FAQs, compliance."
           }
         },
+        "x-comp-mcp": {
+          "name": "list-compliance-resources"
+        },
         "x-speakeasy-mcp": {
           "name": "list-compliance-resources"
         }
@@ -19670,6 +20324,9 @@
             "og:title": "Upload an additional trust portal document | OpenComp API",
             "og:description": "Upload an additional trust portal document in OpenComp. Configure the live Trust Center, custom domain, public overview, FAQs, compliance resources."
           }
+        },
+        "x-comp-mcp": {
+          "name": "upload-trust-document"
         },
         "x-speakeasy-mcp": {
           "name": "upload-trust-document"
@@ -19743,6 +20400,9 @@
             "og:title": "List additional trust portal documents for | OpenComp API",
             "og:description": "List additional trust portal documents for the organization in OpenComp. Configure the live Trust Center, custom domain, public overview, FAQs, compliance."
           }
+        },
+        "x-comp-mcp": {
+          "name": "list-trust-documents"
         },
         "x-speakeasy-mcp": {
           "name": "list-trust-documents"
@@ -19822,6 +20482,9 @@
             "og:title": "Generate a temporary signed URL for a trust | OpenComp API",
             "og:description": "Generate a temporary signed URL for a trust portal document in OpenComp. Configure the live Trust Center, custom domain, public overview, FAQs, compliance."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-trust-document-url"
         },
         "x-speakeasy-mcp": {
           "name": "get-trust-document-url"
@@ -19907,6 +20570,9 @@
             "og:description": "Delete (deactivate) a trust portal document in OpenComp. Configure the live Trust Center, custom domain, public overview, FAQs, compliance resources."
           }
         },
+        "x-comp-mcp": {
+          "name": "delete-trust-document"
+        },
         "x-speakeasy-mcp": {
           "name": "delete-trust-document"
         }
@@ -19959,6 +20625,9 @@
             "og:title": "Enable or disable the trust portal | OpenComp API",
             "og:description": "Enable or disable the trust portal in OpenComp. Configure the live Trust Center, custom domain, public overview, FAQs, compliance resources, documents."
           }
+        },
+        "x-comp-mcp": {
+          "name": "toggle-portal"
         },
         "x-speakeasy-mcp": {
           "name": "toggle-portal"
@@ -20013,6 +20682,9 @@
             "og:description": "Add or update a custom domain for the trust portal in OpenComp. Configure the live Trust Center, custom domain, public overview, FAQs, compliance resources."
           }
         },
+        "x-comp-mcp": {
+          "name": "add-custom-domain"
+        },
         "x-speakeasy-mcp": {
           "name": "add-custom-domain"
         }
@@ -20065,6 +20737,9 @@
             "og:title": "Check DNS records for a custom domain | OpenComp API",
             "og:description": "Check DNS records for a custom domain in OpenComp. Configure the live Trust Center, custom domain, public overview, FAQs, compliance resources, documents."
           }
+        },
+        "x-comp-mcp": {
+          "name": "check-dns-records"
         },
         "x-speakeasy-mcp": {
           "name": "check-dns-records"
@@ -20152,6 +20827,9 @@
             "og:description": "Update trust portal FAQs in OpenComp. Configure the live Trust Center, custom domain, public overview, FAQs, compliance resources, documents, links."
           }
         },
+        "x-comp-mcp": {
+          "name": "update-faqs"
+        },
         "x-speakeasy-mcp": {
           "name": "update-faqs"
         }
@@ -20204,6 +20882,9 @@
             "og:title": "Update allowed domains for the trust portal | OpenComp API",
             "og:description": "Update allowed domains for the trust portal in OpenComp. Configure the live Trust Center, custom domain, public overview, FAQs, compliance resources."
           }
+        },
+        "x-comp-mcp": {
+          "name": "update-allowed-domains"
         },
         "x-speakeasy-mcp": {
           "name": "update-allowed-domains"
@@ -20268,6 +20949,9 @@
             "og:description": "Update allowed emails for the trust portal in OpenComp. Configure the live Trust Center, custom domain, public overview, FAQs, compliance resources."
           }
         },
+        "x-comp-mcp": {
+          "name": "update-allowed-emails"
+        },
         "x-speakeasy-mcp": {
           "name": "update-allowed-emails"
         }
@@ -20320,6 +21004,9 @@
             "og:title": "Update trust portal framework settings | OpenComp API",
             "og:description": "Update trust portal framework settings in OpenComp. Configure the live Trust Center, custom domain, public overview, FAQs, compliance resources, documents."
           }
+        },
+        "x-comp-mcp": {
+          "name": "update-frameworks"
         },
         "x-speakeasy-mcp": {
           "name": "update-frameworks"
@@ -20393,6 +21080,9 @@
             "og:description": "Show or hide the Security Questionnaire on the public trust portal in OpenComp. Configure the live Trust Center, custom domain, public overview, FAQs."
           }
         },
+        "x-comp-mcp": {
+          "name": "update-security-questionnaire"
+        },
         "x-speakeasy-mcp": {
           "name": "update-security-questionnaire"
         }
@@ -20445,6 +21135,9 @@
             "og:title": "List org-authored custom frameworks with | OpenComp API",
             "og:description": "List org-authored custom frameworks with their trust portal selection in OpenComp. Configure the live Trust Center, custom domain, public overview, FAQs."
           }
+        },
+        "x-comp-mcp": {
+          "name": "list-custom-frameworks"
         },
         "x-speakeasy-mcp": {
           "name": "list-custom-frameworks"
@@ -20540,6 +21233,9 @@
             "og:description": "Enable/disable a custom framework on the trust portal and set its status in OpenComp. Configure the live Trust Center, custom domain, public overview, FAQs."
           }
         },
+        "x-comp-mcp": {
+          "name": "update-custom-framework"
+        },
         "x-speakeasy-mcp": {
           "name": "update-custom-framework"
         }
@@ -20610,6 +21306,9 @@
             "og:description": "Stores a PNG/JPEG/WebP badge (max 256KB) in the organization assets bucket. Does not change the framework's portal visibility."
           }
         },
+        "x-comp-mcp": {
+          "name": "upload-custom-framework-badge"
+        },
         "x-speakeasy-mcp": {
           "name": "upload-custom-framework-badge"
         }
@@ -20671,6 +21370,9 @@
             "og:title": "Remove a custom framework's Trust Portal | OpenComp API",
             "og:description": "Remove a custom framework's Trust Portal badge image in OpenComp. Configure the live Trust Center, custom domain, public overview, FAQs, compliance."
           }
+        },
+        "x-comp-mcp": {
+          "name": "remove-custom-framework-badge"
         },
         "x-speakeasy-mcp": {
           "name": "remove-custom-framework-badge"
@@ -20758,6 +21460,9 @@
             "og:description": "Update the public Trust Center overview content that explains security posture and compliance status to prospects and customers."
           }
         },
+        "x-comp-mcp": {
+          "name": "update-overview"
+        },
         "x-speakeasy-mcp": {
           "name": "update-overview"
         }
@@ -20817,6 +21522,9 @@
             "og:title": "Get trust portal overview | OpenComp API",
             "og:description": "Get trust portal overview in OpenComp. Configure the live Trust Center, custom domain, public overview, FAQs, compliance resources, documents, links."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-overview"
         },
         "x-speakeasy-mcp": {
           "name": "get-overview"
@@ -20908,6 +21616,9 @@
             "og:description": "Create a custom link for trust portal in OpenComp. Configure the live Trust Center, custom domain, public overview, FAQs, compliance resources, documents."
           }
         },
+        "x-comp-mcp": {
+          "name": "create-custom-link"
+        },
         "x-speakeasy-mcp": {
           "name": "create-custom-link"
         }
@@ -20967,6 +21678,9 @@
             "og:title": "List custom links for trust portal | OpenComp API",
             "og:description": "List custom links for trust portal in OpenComp. Configure the live Trust Center, custom domain, public overview, FAQs, compliance resources, documents."
           }
+        },
+        "x-comp-mcp": {
+          "name": "list-custom-links"
         },
         "x-speakeasy-mcp": {
           "name": "list-custom-links"
@@ -21030,6 +21744,9 @@
             "og:description": "Update a custom link in OpenComp. Configure the live Trust Center, custom domain, public overview, FAQs, compliance resources, documents, links, and vendor."
           }
         },
+        "x-comp-mcp": {
+          "name": "update-custom-link"
+        },
         "x-speakeasy-mcp": {
           "name": "update-custom-link"
         }
@@ -21091,6 +21808,9 @@
             "og:title": "Delete a custom link | OpenComp API",
             "og:description": "Delete a custom link in OpenComp. Configure the live Trust Center, custom domain, public overview, FAQs, compliance resources, documents, links, and vendor."
           }
+        },
+        "x-comp-mcp": {
+          "name": "delete-custom-link"
         },
         "x-speakeasy-mcp": {
           "name": "delete-custom-link"
@@ -21173,6 +21893,9 @@
             "og:description": "Reorder custom links in OpenComp. Configure the live Trust Center, custom domain, public overview, FAQs, compliance resources, documents, links, and vendor."
           }
         },
+        "x-comp-mcp": {
+          "name": "reorder-custom-links"
+        },
         "x-speakeasy-mcp": {
           "name": "reorder-custom-links"
         }
@@ -21234,6 +21957,9 @@
             "og:title": "Update vendor trust portal settings | OpenComp API",
             "og:description": "Update vendor trust portal settings in OpenComp. Configure the live Trust Center, custom domain, public overview, FAQs, compliance resources, documents."
           }
+        },
+        "x-comp-mcp": {
+          "name": "update-vendor-trust-settings"
         },
         "x-speakeasy-mcp": {
           "name": "update-vendor-trust-settings"
@@ -21298,6 +22024,9 @@
             "og:description": "List vendors configured for trust portal in OpenComp. Configure the live Trust Center, custom domain, public overview, FAQs, compliance resources."
           }
         },
+        "x-comp-mcp": {
+          "name": "list-vendors"
+        },
         "x-speakeasy-mcp": {
           "name": "list-vendors"
         }
@@ -21355,6 +22084,9 @@
             "og:title": "Submit Trust Access request | OpenComp API",
             "og:description": "Submit a Trust Center access request with requester details, company context, and review reason for administrator approval."
           }
+        },
+        "x-comp-mcp": {
+          "name": "create-access-request"
         },
         "x-speakeasy-mcp": {
           "name": "create-access-request"
@@ -21424,6 +22156,9 @@
             "og:description": "List pending and completed Trust Center access requests so teams can review customer security inquiries through the API."
           }
         },
+        "x-comp-mcp": {
+          "name": "list-access-requests"
+        },
         "x-speakeasy-mcp": {
           "name": "list-access-requests"
         }
@@ -21485,6 +22220,9 @@
             "og:title": "Get Trust Access request | OpenComp API",
             "og:description": "Retrieve one Trust Center access request with requester context, status, review metadata, and audit details."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-access-request"
         },
         "x-speakeasy-mcp": {
           "name": "get-access-request"
@@ -21558,6 +22296,9 @@
             "og:description": "Approve a Trust Center access request, configure the grant window, and start the NDA or access email workflow."
           }
         },
+        "x-comp-mcp": {
+          "name": "approve-request"
+        },
         "x-speakeasy-mcp": {
           "name": "approve-request"
         }
@@ -21630,6 +22371,9 @@
             "og:description": "Reject a Trust Center access request with a review reason so customer security access decisions stay auditable."
           }
         },
+        "x-comp-mcp": {
+          "name": "deny-request"
+        },
         "x-speakeasy-mcp": {
           "name": "deny-request"
         }
@@ -21682,6 +22426,9 @@
             "og:title": "List Trust Access grants | OpenComp API",
             "og:description": "List active, expired, and revoked Trust Access grants for customer security reviews and shared compliance resources."
           }
+        },
+        "x-comp-mcp": {
+          "name": "list-grants"
         },
         "x-speakeasy-mcp": {
           "name": "list-grants"
@@ -21755,6 +22502,9 @@
             "og:description": "Immediately revoke a Trust Access grant when a customer review ends or shared compliance access should be removed."
           }
         },
+        "x-comp-mcp": {
+          "name": "revoke-grant"
+        },
         "x-speakeasy-mcp": {
           "name": "revoke-grant"
         }
@@ -21817,6 +22567,9 @@
             "og:description": "Resend an NDA signing email for a Trust Access request that still requires reviewer signature."
           }
         },
+        "x-comp-mcp": {
+          "name": "resend-nda"
+        },
         "x-speakeasy-mcp": {
           "name": "resend-nda"
         }
@@ -21878,6 +22631,9 @@
             "og:title": "Preview Trust Access NDA | OpenComp API",
             "og:description": "Generate a preview NDA PDF for a Trust Access request before the reviewer signs and receives access."
           }
+        },
+        "x-comp-mcp": {
+          "name": "preview-nda"
         },
         "x-speakeasy-mcp": {
           "name": "preview-nda"
@@ -21944,6 +22700,9 @@
             "og:title": "Stream Trust Access NDA preview | OpenComp API",
             "og:description": "Stream the watermarked NDA preview PDF inline for browser viewing, generating it on first view for a Trust Access request."
           }
+        },
+        "x-comp-mcp": {
+          "name": "stream-preview-nda"
         },
         "x-speakeasy-mcp": {
           "name": "stream-preview-nda"
@@ -22013,6 +22772,9 @@
             "og:description": "Request a fresh Trust Access link for a reviewer who already has an active grant on a published Trust Center."
           }
         },
+        "x-comp-mcp": {
+          "name": "reclaim-access"
+        },
         "x-speakeasy-mcp": {
           "name": "reclaim-access"
         }
@@ -22074,6 +22836,9 @@
             "og:title": "Resend Trust Access email | OpenComp API",
             "og:description": "Resend the access email for an active Trust Access grant so approved reviewers can reopen shared resources."
           }
+        },
+        "x-comp-mcp": {
+          "name": "resend-access-email"
         },
         "x-speakeasy-mcp": {
           "name": "resend-access-email"
@@ -22146,6 +22911,9 @@
             "og:description": "Retrieve published Trust Center FAQs for an organization so public trust pages can show customer security answers."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-faqs"
+        },
         "x-speakeasy-mcp": {
           "name": "get-faqs"
         }
@@ -22193,6 +22961,9 @@
             "og:title": "Get Trust Center overview | OpenComp API",
             "og:description": "Retrieve the published Trust Center overview for an organization, including public security posture messaging."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-public-overview"
         },
         "x-speakeasy-mcp": {
           "name": "get-public-overview"
@@ -22254,6 +23025,9 @@
             "og:description": "Whether the org offers the AI-assisted Security Questionnaire on its public trust portal. Defaults to enabled when the portal can't be resolved."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-public-security-questionnaire"
+        },
         "x-speakeasy-mcp": {
           "name": "get-public-security-questionnaire"
         }
@@ -22301,6 +23075,9 @@
             "og:title": "List Trust Center custom links | OpenComp API",
             "og:description": "List published custom links shown on an organization Trust Center for customer security and compliance reviews."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-public-custom-links"
         },
         "x-speakeasy-mcp": {
           "name": "get-public-custom-links"
@@ -22364,6 +23141,9 @@
             "og:description": "Retrieve the favicon URL used by a published Trust Center so embedded or mirrored experiences can match branding."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-public-favicon"
+        },
         "x-speakeasy-mcp": {
           "name": "get-public-favicon"
         }
@@ -22411,6 +23191,9 @@
             "og:title": "List Trust Center vendors | OpenComp API",
             "og:description": "List published vendors and subprocessors for an organization Trust Center so reviewers can inspect third-party posture."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-public-vendors"
         },
         "x-speakeasy-mcp": {
           "name": "get-public-vendors"
@@ -22460,6 +23243,9 @@
             "og:description": "Get org-authored custom frameworks shown on a trust portal in OpenComp. Manage external Trust Center access requests, NDA signing, grants, tokenized."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-public-custom-frameworks"
+        },
         "x-speakeasy-mcp": {
           "name": "get-public-custom-frameworks"
         }
@@ -22507,6 +23293,9 @@
             "og:title": "Get public trust portal header data | OpenComp API",
             "og:description": "Get public trust portal header data in OpenComp. Manage external Trust Center access requests, NDA signing, grants, tokenized document downloads, public."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-public-profile"
         },
         "x-speakeasy-mcp": {
           "name": "get-public-profile"
@@ -22556,6 +23345,9 @@
             "og:description": "Lists the native frameworks an org displays as compliant, with status and certificate presence. Powers the public compliance rail."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-public-frameworks"
+        },
         "x-speakeasy-mcp": {
           "name": "get-public-frameworks"
         }
@@ -22604,6 +23396,9 @@
             "og:description": "Get published policy names for a trust portal in OpenComp. Manage external Trust Center access requests, NDA signing, grants, tokenized document downloads."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-public-policies"
+        },
         "x-speakeasy-mcp": {
           "name": "get-public-policies"
         }
@@ -22651,6 +23446,9 @@
             "og:title": "Get control names for a trust portal | OpenComp API",
             "og:description": "Get control names for a trust portal in OpenComp. Manage external Trust Center access requests, NDA signing, grants, tokenized document downloads, public."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-public-controls"
         },
         "x-speakeasy-mcp": {
           "name": "get-public-controls"
@@ -22830,6 +23628,9 @@
             "og:description": "List audit findings with status, severity, owner, history, and remediation context for compliance review workflows."
           }
         },
+        "x-comp-mcp": {
+          "name": "list-findings"
+        },
         "x-speakeasy-mcp": {
           "name": "list-findings"
         }
@@ -22890,6 +23691,9 @@
             "og:title": "Create audit finding | OpenComp API",
             "og:description": "Create an audit finding so teams can track issue ownership, remediation activity, severity, and supporting evidence."
           }
+        },
+        "x-comp-mcp": {
+          "name": "create-finding"
         },
         "x-speakeasy-mcp": {
           "name": "create-finding"
@@ -22959,6 +23763,9 @@
             "og:description": "List all findings for the organization in OpenComp. Create, review, update, and track audit findings, remediation activity, and finding history for an."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-organization-findings"
+        },
         "x-speakeasy-mcp": {
           "name": "get-organization-findings"
         }
@@ -23021,6 +23828,9 @@
             "og:title": "Get finding by ID | OpenComp API",
             "og:description": "Get finding by ID in OpenComp. Create, review, update, and track audit findings, remediation activity, and finding history for an organization."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-finding-by-id"
         },
         "x-speakeasy-mcp": {
           "name": "get-finding-by-id"
@@ -23093,6 +23903,9 @@
             "og:description": "Update a finding (status transition rules apply) in OpenComp. Create, review, update, and track audit findings, remediation activity, and finding history."
           }
         },
+        "x-comp-mcp": {
+          "name": "update-finding"
+        },
         "x-speakeasy-mcp": {
           "name": "update-finding"
         }
@@ -23153,6 +23966,9 @@
             "og:title": "Delete a finding (auditor or platform admin | OpenComp API",
             "og:description": "Delete a finding (auditor or platform admin only) in OpenComp. Create, review, update, and track audit findings, remediation activity, and finding history."
           }
+        },
+        "x-comp-mcp": {
+          "name": "delete-finding"
         },
         "x-speakeasy-mcp": {
           "name": "delete-finding"
@@ -23216,6 +24032,9 @@
             "og:title": "Get activity history for a finding | OpenComp API",
             "og:description": "Get activity history for a finding in OpenComp. Create, review, update, and track audit findings, remediation activity, and finding history for an."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-finding-history"
         },
         "x-speakeasy-mcp": {
           "name": "get-finding-history"
@@ -23306,6 +24125,9 @@
             "og:title": "Create a custom role | OpenComp API",
             "og:description": "Create a custom role in OpenComp. Create custom roles and resolve permission sets for organization-level access control."
           }
+        },
+        "x-comp-mcp": {
+          "name": "create-role"
         },
         "x-speakeasy-mcp": {
           "name": "create-role"
@@ -23405,6 +24227,9 @@
             "og:description": "List all roles in OpenComp. Create custom roles and resolve permission sets for organization-level access control."
           }
         },
+        "x-comp-mcp": {
+          "name": "list-roles"
+        },
         "x-speakeasy-mcp": {
           "name": "list-roles"
         }
@@ -23477,6 +24302,9 @@
             "og:title": "Resolve permissions for custom roles | OpenComp API",
             "og:description": "Returns the merged permissions for the given custom role names. Used by the frontend to resolve effective permissions for users with custom roles."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-permissions-for-roles"
         },
         "x-speakeasy-mcp": {
           "name": "get-permissions-for-roles"
@@ -23561,6 +24389,9 @@
             "og:title": "Get obligations for a built-in role | OpenComp API",
             "og:description": "Returns the effective obligations for a built-in role (owner, admin, auditor, employee, contractor) — DB override if present, else the hardcoded default."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-built-in-obligations"
         },
         "x-speakeasy-mcp": {
           "name": "get-built-in-obligations"
@@ -23657,6 +24488,9 @@
             "og:description": "Override the obligations for a built-in role (e.g., turn off the compliance obligation for owners). Permissions stay sourced from the hardcoded defaults."
           }
         },
+        "x-comp-mcp": {
+          "name": "update-built-in-obligations"
+        },
         "x-speakeasy-mcp": {
           "name": "update-built-in-obligations"
         }
@@ -23745,6 +24579,9 @@
             "og:title": "Get a role by ID | OpenComp API",
             "og:description": "Get a role by ID in OpenComp. Create custom roles and resolve permission sets for organization-level access control."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-role"
         },
         "x-speakeasy-mcp": {
           "name": "get-role"
@@ -23842,6 +24679,9 @@
             "og:description": "Update a custom role in OpenComp. Create custom roles and resolve permission sets for organization-level access control."
           }
         },
+        "x-comp-mcp": {
+          "name": "update-role"
+        },
         "x-speakeasy-mcp": {
           "name": "update-role"
         }
@@ -23918,6 +24758,9 @@
             "og:description": "Delete a custom role in OpenComp. Create custom roles and resolve permission sets for organization-level access control."
           }
         },
+        "x-comp-mcp": {
+          "name": "delete-role"
+        },
         "x-speakeasy-mcp": {
           "name": "delete-role"
         }
@@ -23971,6 +24814,9 @@
             "og:title": "List security questionnaires | OpenComp API",
             "og:description": "List saved security questionnaires for an organization so teams can track customer reviews, answer status, and response history."
           }
+        },
+        "x-comp-mcp": {
+          "name": "questionnaire-find-all"
         },
         "x-speakeasy-mcp": {
           "name": "questionnaire-find-all"
@@ -24035,6 +24881,9 @@
             "og:description": "Retrieve one saved security questionnaire, including extracted questions, generated answers, and review context for the requesting client."
           }
         },
+        "x-comp-mcp": {
+          "name": "find-by-id"
+        },
         "x-speakeasy-mcp": {
           "name": "find-by-id"
         }
@@ -24096,6 +24945,9 @@
             "og:description": "Delete a saved security questionnaire when a customer review or vendor assessment no longer needs to be retained."
           }
         },
+        "x-comp-mcp": {
+          "name": "delete-by-id"
+        },
         "x-speakeasy-mcp": {
           "name": "delete-by-id"
         }
@@ -24156,7 +25008,7 @@
         "tags": [
           "Questionnaire"
         ],
-        "x-speakeasy-mcp": {
+        "x-comp-mcp": {
           "name": "generate-questionnaire-answers"
         },
         "x-mint": {
@@ -24167,6 +25019,9 @@
             "og:title": "Generate answers for a questionnaire | OpenComp API",
             "og:description": "Starts background answer generation for an already-parsed questionnaire and returns a run handle immediately. Poll GET /v1/questionnaire/:id until."
           }
+        },
+        "x-speakeasy-mcp": {
+          "name": "generate-questionnaire-answers"
         }
       }
     },
@@ -24235,6 +25090,9 @@
             "og:title": "Parse questionnaire content | OpenComp API",
             "og:description": "Parse questionnaire content from a submitted payload so teams can extract security questions before generating or reviewing answers."
           }
+        },
+        "x-comp-mcp": {
+          "name": "parse-questionnaire"
         },
         "x-speakeasy-mcp": {
           "name": "parse-questionnaire"
@@ -24337,6 +25195,9 @@
             "og:description": "Generate an answer for one security questionnaire item using the organization evidence library and return source references for review."
           }
         },
+        "x-comp-mcp": {
+          "name": "answer-single-question"
+        },
         "x-speakeasy-mcp": {
           "name": "answer-single-question"
         }
@@ -24417,6 +25278,9 @@
             "og:description": "Save a manual or AI-generated security questionnaire answer for later review, export, and audit tracking."
           }
         },
+        "x-comp-mcp": {
+          "name": "save-answer"
+        },
         "x-speakeasy-mcp": {
           "name": "save-answer"
         }
@@ -24496,6 +25360,9 @@
             "og:title": "Delete questionnaire answer | OpenComp API",
             "og:description": "Delete a stored questionnaire answer when it should be removed from the active response set."
           }
+        },
+        "x-comp-mcp": {
+          "name": "delete-answer"
         },
         "x-speakeasy-mcp": {
           "name": "delete-answer"
@@ -24581,6 +25448,9 @@
             "og:description": "Export a saved security questionnaire response package as PDF, CSV, or XLSX for customer and vendor security reviews."
           }
         },
+        "x-comp-mcp": {
+          "name": "export-by-id"
+        },
         "x-speakeasy-mcp": {
           "name": "export-by-id"
         }
@@ -24659,6 +25529,9 @@
             "og:title": "Start questionnaire parsing | OpenComp API",
             "og:description": "Upload a questionnaire payload and start asynchronous parsing, returning a run ID for real-time progress tracking."
           }
+        },
+        "x-comp-mcp": {
+          "name": "upload-and-parse"
         },
         "x-speakeasy-mcp": {
           "name": "upload-and-parse"
@@ -24762,6 +25635,9 @@
             "og:title": "Upload and parse questionnaire file | OpenComp API",
             "og:description": "Upload a security questionnaire file, extract questions, save the parsed questionnaire, and return its identifier and question count."
           }
+        },
+        "x-comp-mcp": {
+          "name": "upload-and-parse-upload"
         },
         "x-speakeasy-mcp": {
           "name": "upload-and-parse-upload"
@@ -24881,6 +25757,9 @@
             "og:description": "Upload a questionnaire file and generate answer exports from approved organization evidence in PDF, CSV, or XLSX format."
           }
         },
+        "x-comp-mcp": {
+          "name": "parse-questionnaire-upload"
+        },
         "x-speakeasy-mcp": {
           "name": "parse-questionnaire-upload"
         }
@@ -24964,6 +25843,9 @@
             "og:title": "Export generated questionnaire answers | OpenComp API",
             "og:description": "Generate and export questionnaire answers from a submitted payload using approved organization evidence."
           }
+        },
+        "x-comp-mcp": {
+          "name": "auto-answer-and-export"
         },
         "x-speakeasy-mcp": {
           "name": "auto-answer-and-export"
@@ -25074,6 +25956,9 @@
             "og:description": "Upload a questionnaire file and return generated answer exports in PDF, CSV, or XLSX format."
           }
         },
+        "x-comp-mcp": {
+          "name": "auto-answer-and-export-upload"
+        },
         "x-speakeasy-mcp": {
           "name": "auto-answer-and-export-upload"
         }
@@ -25135,6 +26020,9 @@
             "og:description": "Stream generated questionnaire answers over server-sent events so clients can show progress while answers are produced."
           }
         },
+        "x-comp-mcp": {
+          "name": "auto-answer"
+        },
         "x-speakeasy-mcp": {
           "name": "auto-answer"
         }
@@ -25188,6 +26076,9 @@
             "og:description": "List uploaded knowledge base documents that OpenComp can use as approved source material for answers, policies, and reviews."
           }
         },
+        "x-comp-mcp": {
+          "name": "list-documents"
+        },
         "x-speakeasy-mcp": {
           "name": "list-documents"
         }
@@ -25240,6 +26131,9 @@
             "og:title": "List all manual answers for an organization | OpenComp API",
             "og:description": "List all manual answers for an organization in OpenComp. Upload source documents, process them for retrieval, and manage reusable manual answers that power."
           }
+        },
+        "x-comp-mcp": {
+          "name": "list-manual-answers"
         },
         "x-speakeasy-mcp": {
           "name": "list-manual-answers"
@@ -25301,6 +26195,9 @@
             "og:title": "Save reusable manual answer | OpenComp API",
             "og:description": "Save or update a reusable manual answer for security questionnaires that need approved, consistent response language."
           }
+        },
+        "x-comp-mcp": {
+          "name": "save-manual-answer"
         },
         "x-speakeasy-mcp": {
           "name": "save-manual-answer"
@@ -25365,6 +26262,9 @@
             "og:description": "Upload supporting documentation so OpenComp can process approved source material for questionnaire answers and policy workflows."
           }
         },
+        "x-comp-mcp": {
+          "name": "upload-document"
+        },
         "x-speakeasy-mcp": {
           "name": "upload-document"
         }
@@ -25426,6 +26326,9 @@
             "og:title": "Get a signed download URL for a document | OpenComp API",
             "og:description": "Get a signed download URL for a document in OpenComp. Upload source documents, process them for retrieval, and manage reusable manual answers that power."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-download-url"
         },
         "x-speakeasy-mcp": {
           "name": "get-download-url"
@@ -25489,6 +26392,9 @@
             "og:description": "Get a signed view URL for a document in OpenComp. Upload source documents, process them for retrieval, and manage reusable manual answers that power."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-view-url"
+        },
         "x-speakeasy-mcp": {
           "name": "get-view-url"
         }
@@ -25550,6 +26456,9 @@
             "og:title": "Delete a knowledge base document | OpenComp API",
             "og:description": "Delete a knowledge base document in OpenComp. Upload source documents, process them for retrieval, and manage reusable manual answers that power."
           }
+        },
+        "x-comp-mcp": {
+          "name": "delete-document"
         },
         "x-speakeasy-mcp": {
           "name": "delete-document"
@@ -25613,6 +26522,9 @@
             "og:title": "Process knowledge base documents | OpenComp API",
             "og:description": "Start document processing so uploaded knowledge base files become searchable source material for AI-assisted compliance workflows."
           }
+        },
+        "x-comp-mcp": {
+          "name": "process-documents"
         },
         "x-speakeasy-mcp": {
           "name": "process-documents"
@@ -25686,6 +26598,9 @@
             "og:description": "Delete a manual answer in OpenComp. Upload source documents, process them for retrieval, and manage reusable manual answers that power questionnaires and AI."
           }
         },
+        "x-comp-mcp": {
+          "name": "delete-manual-answer"
+        },
         "x-speakeasy-mcp": {
           "name": "delete-manual-answer"
         }
@@ -25748,6 +26663,9 @@
             "og:title": "Delete all manual answers for an organization | OpenComp API",
             "og:description": "Delete all manual answers for an organization in OpenComp. Upload source documents, process them for retrieval, and manage reusable manual answers that."
           }
+        },
+        "x-comp-mcp": {
+          "name": "delete-all-manual-answers"
         },
         "x-speakeasy-mcp": {
           "name": "delete-all-manual-answers"
@@ -25824,6 +26742,9 @@
             "og:description": "Save a SOA answer in OpenComp. Create, auto-fill, review, approve, and export ISO 27001 Statement of Applicability documents."
           }
         },
+        "x-comp-mcp": {
+          "name": "soa-save-answer"
+        },
         "x-speakeasy-mcp": {
           "name": "soa-save-answer"
         }
@@ -25886,6 +26807,9 @@
             "og:title": "Auto-fill ISO 27001 SOA | OpenComp API",
             "og:description": "Auto-fill a Statement of Applicability draft using organization context and framework mappings for ISO 27001 review."
           }
+        },
+        "x-comp-mcp": {
+          "name": "auto-fill"
         },
         "x-speakeasy-mcp": {
           "name": "auto-fill"
@@ -25950,6 +26874,9 @@
             "og:description": "Create a new SOA document in OpenComp. Create, auto-fill, review, approve, and export ISO 27001 Statement of Applicability documents."
           }
         },
+        "x-comp-mcp": {
+          "name": "create-document"
+        },
         "x-speakeasy-mcp": {
           "name": "create-document"
         }
@@ -26012,6 +26939,9 @@
             "og:title": "Ensure SOA configuration and document exist | OpenComp API",
             "og:description": "Ensure SOA configuration and document exist in OpenComp. Create, auto-fill, review, approve, and export ISO 27001 Statement of Applicability documents."
           }
+        },
+        "x-comp-mcp": {
+          "name": "ensure-setup"
         },
         "x-speakeasy-mcp": {
           "name": "ensure-setup"
@@ -26076,6 +27006,9 @@
             "og:description": "Read SOA configuration and document without creating either in OpenComp. Create, auto-fill, review, approve, and export ISO 27001 Statement of Applicability."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-setup"
+        },
         "x-speakeasy-mcp": {
           "name": "get-setup"
         }
@@ -26138,6 +27071,9 @@
             "og:title": "Approve a SOA document | OpenComp API",
             "og:description": "Approve a SOA document in OpenComp. Create, auto-fill, review, approve, and export ISO 27001 Statement of Applicability documents."
           }
+        },
+        "x-comp-mcp": {
+          "name": "approve-document"
         },
         "x-speakeasy-mcp": {
           "name": "approve-document"
@@ -26202,6 +27138,9 @@
             "og:description": "Decline a SOA document in OpenComp. Create, auto-fill, review, approve, and export ISO 27001 Statement of Applicability documents."
           }
         },
+        "x-comp-mcp": {
+          "name": "decline-document"
+        },
         "x-speakeasy-mcp": {
           "name": "decline-document"
         }
@@ -26264,6 +27203,9 @@
             "og:title": "Submit SOA document for approval | OpenComp API",
             "og:description": "Submit SOA document for approval in OpenComp. Create, auto-fill, review, approve, and export ISO 27001 Statement of Applicability documents."
           }
+        },
+        "x-comp-mcp": {
+          "name": "submit-for-approval"
         },
         "x-speakeasy-mcp": {
           "name": "submit-for-approval"
@@ -26328,6 +27270,9 @@
             "og:description": "Export the approved Statement of Applicability document for ISO 27001 auditors, customer reviews, and internal records."
           }
         },
+        "x-comp-mcp": {
+          "name": "export-document"
+        },
         "x-speakeasy-mcp": {
           "name": "export-document"
         }
@@ -26391,6 +27336,9 @@
             "og:description": "Ensure ISMS foundational documents exist in OpenComp. Create and manage ISO 27001 ISMS documents, control mappings, register rows, and narratives, and run."
           }
         },
+        "x-comp-mcp": {
+          "name": "isms-ensure-setup"
+        },
         "x-speakeasy-mcp": {
           "name": "isms-ensure-setup"
         }
@@ -26452,6 +27400,9 @@
             "og:title": "Get an ISMS document with its latest version | OpenComp API",
             "og:description": "Get an ISMS document with its latest version in OpenComp. Create and manage ISO 27001 ISMS documents, control mappings, register rows, and narratives."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-document"
         },
         "x-speakeasy-mcp": {
           "name": "get-document"
@@ -26525,6 +27476,9 @@
             "og:description": "Map organization controls to an ISMS document in OpenComp. Create and manage ISO 27001 ISMS documents, control mappings, register rows, and narratives."
           }
         },
+        "x-comp-mcp": {
+          "name": "add-controls"
+        },
         "x-speakeasy-mcp": {
           "name": "add-controls"
         }
@@ -26595,6 +27549,9 @@
             "og:description": "Remove a control mapping from an ISMS document in OpenComp. Create and manage ISO 27001 ISMS documents, control mappings, register rows, and narratives."
           }
         },
+        "x-comp-mcp": {
+          "name": "remove-control"
+        },
         "x-speakeasy-mcp": {
           "name": "remove-control"
         }
@@ -26656,6 +27613,9 @@
             "og:title": "Derive Context-of-the-Organization issues | OpenComp API",
             "og:description": "Derive Context-of-the-Organization issues in OpenComp. Create and manage ISO 27001 ISMS documents, control mappings, register rows, and narratives, and run."
           }
+        },
+        "x-comp-mcp": {
+          "name": "generate"
         },
         "x-speakeasy-mcp": {
           "name": "generate"
@@ -26729,6 +27689,9 @@
             "og:description": "Submit an ISMS document for approval in OpenComp. Create and manage ISO 27001 ISMS documents, control mappings, register rows, and narratives, and run."
           }
         },
+        "x-comp-mcp": {
+          "name": "isms-submit-for-approval"
+        },
         "x-speakeasy-mcp": {
           "name": "isms-submit-for-approval"
         }
@@ -26790,6 +27753,9 @@
             "og:title": "Approve an ISMS document | OpenComp API",
             "og:description": "Approve an ISMS document in OpenComp. Create and manage ISO 27001 ISMS documents, control mappings, register rows, and narratives, and run wizard-based."
           }
+        },
+        "x-comp-mcp": {
+          "name": "approve"
         },
         "x-speakeasy-mcp": {
           "name": "approve"
@@ -26853,6 +27819,9 @@
             "og:description": "Decline an ISMS document in OpenComp. Create and manage ISO 27001 ISMS documents, control mappings, register rows, and narratives, and run wizard-based."
           }
         },
+        "x-comp-mcp": {
+          "name": "decline"
+        },
         "x-speakeasy-mcp": {
           "name": "decline"
         }
@@ -26914,6 +27883,9 @@
             "og:title": "Detect drift against the approved snapshot | OpenComp API",
             "og:description": "Detect drift against the approved snapshot in OpenComp. Create and manage ISO 27001 ISMS documents, control mappings, register rows, and narratives, and run."
           }
+        },
+        "x-comp-mcp": {
+          "name": "drift"
         },
         "x-speakeasy-mcp": {
           "name": "drift"
@@ -26977,6 +27949,9 @@
             "og:description": "Returns the organisational and supplier risk rows the Risk Treatment Plan renders (from the Risk Register and Vendors, with acceptance state per row) plus."
           }
         },
+        "x-comp-mcp": {
+          "name": "risk-treatment"
+        },
         "x-speakeasy-mcp": {
           "name": "risk-treatment"
         }
@@ -27038,6 +28013,9 @@
             "og:title": "List an ISMS document's published version | OpenComp API",
             "og:description": "List an ISMS document's published version history in OpenComp. Create and manage ISO 27001 ISMS documents, control mappings, register rows, and narratives."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-versions"
         },
         "x-speakeasy-mcp": {
           "name": "get-versions"
@@ -27110,6 +28088,9 @@
             "og:title": "Export an ISMS document as PDF or DOCX | OpenComp API",
             "og:description": "Export an ISMS document as PDF or DOCX in OpenComp. Create and manage ISO 27001 ISMS documents, control mappings, register rows, and narratives, and run."
           }
+        },
+        "x-comp-mcp": {
+          "name": "isms-export-document"
         },
         "x-speakeasy-mcp": {
           "name": "isms-export-document"
@@ -27540,6 +28521,9 @@
             "og:description": "Create a row in an ISMS register in OpenComp. Create and manage ISO 27001 ISMS documents, control mappings, register rows, and narratives, and run."
           }
         },
+        "x-comp-mcp": {
+          "name": "create-row"
+        },
         "x-speakeasy-mcp": {
           "name": "create-row"
         }
@@ -27969,6 +28953,9 @@
             "og:description": "Update a row in an ISMS register in OpenComp. Create and manage ISO 27001 ISMS documents, control mappings, register rows, and narratives, and run."
           }
         },
+        "x-comp-mcp": {
+          "name": "update-row"
+        },
         "x-speakeasy-mcp": {
           "name": "update-row"
         }
@@ -28036,6 +29023,9 @@
             "og:title": "Delete a row in an ISMS register | OpenComp API",
             "og:description": "Delete a row in an ISMS register in OpenComp. Create and manage ISO 27001 ISMS documents, control mappings, register rows, and narratives, and run."
           }
+        },
+        "x-comp-mcp": {
+          "name": "delete-row"
         },
         "x-speakeasy-mcp": {
           "name": "delete-row"
@@ -28143,6 +29133,9 @@
             "og:description": "Record measurements for several metrics/periods in one save (Metrics due / backfill) in OpenComp. Create and manage ISO 27001 ISMS documents, control."
           }
         },
+        "x-comp-mcp": {
+          "name": "bulk-create-measurements"
+        },
         "x-speakeasy-mcp": {
           "name": "bulk-create-measurements"
         }
@@ -28226,6 +29219,9 @@
             "og:description": "Save a singleton document narrative in OpenComp. Create and manage ISO 27001 ISMS documents, control mappings, register rows, and narratives, and run."
           }
         },
+        "x-comp-mcp": {
+          "name": "save-narrative"
+        },
         "x-speakeasy-mcp": {
           "name": "save-narrative"
         }
@@ -28287,6 +29283,9 @@
             "og:title": "Get the ISMS wizard profile, defaults and | OpenComp API",
             "og:description": "Get the ISMS wizard profile, defaults and members in OpenComp. Create and manage ISO 27001 ISMS documents, control mappings, register rows, and narratives."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-profile"
         },
         "x-speakeasy-mcp": {
           "name": "get-profile"
@@ -28368,6 +29367,9 @@
             "og:description": "Save (partial) ISMS wizard answers in OpenComp. Create and manage ISO 27001 ISMS documents, control mappings, register rows, and narratives, and run."
           }
         },
+        "x-comp-mcp": {
+          "name": "save-profile"
+        },
         "x-speakeasy-mcp": {
           "name": "save-profile"
         }
@@ -28430,6 +29432,9 @@
             "og:title": "Ensure and regenerate all ISMS documents | OpenComp API",
             "og:description": "Ensure and regenerate all ISMS documents in OpenComp. Create and manage ISO 27001 ISMS documents, control mappings, register rows, and narratives, and run."
           }
+        },
+        "x-comp-mcp": {
+          "name": "generate-all"
         },
         "x-speakeasy-mcp": {
           "name": "generate-all"
@@ -28539,6 +29544,9 @@
             "og:title": "Get task items statistics for an entity | OpenComp API",
             "og:description": "Get task items statistics for an entity in OpenComp. Manage task items and attachments linked to operational entities such as risks and vendors."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-task-items-stats"
         },
         "x-speakeasy-mcp": {
           "name": "get-task-items-stats"
@@ -28726,6 +29734,9 @@
             "og:description": "Get task items for an entity in OpenComp. Manage task items and attachments linked to operational entities such as risks and vendors."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-task-items"
+        },
         "x-speakeasy-mcp": {
           "name": "get-task-items"
         }
@@ -28793,6 +29804,9 @@
             "og:title": "Create a new task item | OpenComp API",
             "og:description": "Create a new task item in OpenComp. Manage task items and attachments linked to operational entities such as risks and vendors."
           }
+        },
+        "x-comp-mcp": {
+          "name": "create-task-item"
         },
         "x-speakeasy-mcp": {
           "name": "create-task-item"
@@ -28875,6 +29889,9 @@
             "og:description": "Update a task item in OpenComp. Manage task items and attachments linked to operational entities such as risks and vendors."
           }
         },
+        "x-comp-mcp": {
+          "name": "update-task-item"
+        },
         "x-speakeasy-mcp": {
           "name": "update-task-item"
         }
@@ -28936,6 +29953,9 @@
             "og:title": "Delete a task item | OpenComp API",
             "og:description": "Delete a task item in OpenComp. Manage task items and attachments linked to operational entities such as risks and vendors."
           }
+        },
+        "x-comp-mcp": {
+          "name": "delete-task-item"
         },
         "x-speakeasy-mcp": {
           "name": "delete-task-item"
@@ -29007,6 +30027,9 @@
             "og:description": "Upload a file attachment for a task item with proper S3 path structure: org_{orgId}/attachments/task-item/{entityType}/{entityId}/files."
           }
         },
+        "x-comp-mcp": {
+          "name": "upload-task-item-attachment"
+        },
         "x-speakeasy-mcp": {
           "name": "upload-task-item-attachment"
         }
@@ -29070,6 +30093,9 @@
             "og:title": "Delete attachment from task item | OpenComp API",
             "og:description": "Delete attachment from task item in OpenComp. Manage task items and attachments linked to operational entities such as risks and vendors."
           }
+        },
+        "x-comp-mcp": {
+          "name": "delete-task-item-attachment"
         },
         "x-speakeasy-mcp": {
           "name": "delete-task-item-attachment"
@@ -29135,6 +30161,9 @@
             "og:description": "Get task item activity log in OpenComp. Manage task items and attachments linked to operational entities such as risks and vendors."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-task-item-activity"
+        },
         "x-speakeasy-mcp": {
           "name": "get-task-item-activity"
         }
@@ -29187,6 +30216,9 @@
             "og:title": "List training completions | OpenComp API",
             "og:description": "List security awareness and HIPAA training completion records for workforce compliance tracking and audit evidence."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-completions"
         },
         "x-speakeasy-mcp": {
           "name": "get-completions"
@@ -29249,6 +30281,9 @@
             "og:title": "Mark a training video as complete | OpenComp API",
             "og:description": "Marks a specific training video as completed for the authenticated member. Triggers completion email if all training is now done."
           }
+        },
+        "x-comp-mcp": {
+          "name": "mark-video-complete"
         },
         "x-speakeasy-mcp": {
           "name": "mark-video-complete"
@@ -29320,6 +30355,9 @@
             "og:description": "Send training completion email with certificate in OpenComp. Record security awareness and HIPAA training completion status and generate completion."
           }
         },
+        "x-comp-mcp": {
+          "name": "send-training-completion-email"
+        },
         "x-speakeasy-mcp": {
           "name": "send-training-completion-email"
         }
@@ -29390,6 +30428,9 @@
             "og:description": "Checks if the member has completed the HIPAA Security Awareness Training. If so, sends an email with the HIPAA training certificate attached."
           }
         },
+        "x-comp-mcp": {
+          "name": "send-hipaa-training-completion-email"
+        },
         "x-speakeasy-mcp": {
           "name": "send-hipaa-training-completion-email"
         }
@@ -29455,6 +30496,9 @@
             "og:title": "Generate training certificate | OpenComp API",
             "og:description": "Generate a training completion certificate that can be shared with auditors or attached as workforce security evidence."
           }
+        },
+        "x-comp-mcp": {
+          "name": "generate-certificate"
         },
         "x-speakeasy-mcp": {
           "name": "generate-certificate"
@@ -29522,6 +30566,9 @@
             "og:description": "Generate HIPAA training certificate PDF in OpenComp. Record security awareness and HIPAA training completion status and generate completion certificates."
           }
         },
+        "x-comp-mcp": {
+          "name": "generate-hipaa-certificate"
+        },
         "x-speakeasy-mcp": {
           "name": "generate-hipaa-certificate"
         }
@@ -29585,6 +30632,9 @@
             "og:description": "Get the organization chart in OpenComp. Manage organization chart metadata and evidence used for governance, accountability, and audit readiness."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-org-chart"
+        },
         "x-speakeasy-mcp": {
           "name": "get-org-chart"
         }
@@ -29646,6 +30696,9 @@
             "og:description": "Create or update an interactive organization chart in OpenComp. Manage organization chart metadata and evidence used for governance, accountability."
           }
         },
+        "x-comp-mcp": {
+          "name": "upsert-org-chart"
+        },
         "x-speakeasy-mcp": {
           "name": "upsert-org-chart"
         }
@@ -29706,6 +30759,9 @@
             "og:title": "Delete the organization chart | OpenComp API",
             "og:description": "Delete the organization chart in OpenComp. Manage organization chart metadata and evidence used for governance, accountability, and audit readiness."
           }
+        },
+        "x-comp-mcp": {
+          "name": "delete-org-chart"
         },
         "x-speakeasy-mcp": {
           "name": "delete-org-chart"
@@ -29780,6 +30836,9 @@
             "og:description": "Upload an image as the organization chart in OpenComp. Manage organization chart metadata and evidence used for governance, accountability, and audit."
           }
         },
+        "x-comp-mcp": {
+          "name": "upload-org-chart"
+        },
         "x-speakeasy-mcp": {
           "name": "upload-org-chart"
         }
@@ -29842,6 +30901,9 @@
             "og:title": "List evidence forms | OpenComp API",
             "og:description": "List structured evidence forms that collect recurring submissions for security, HR, IT, finance, and compliance workflows."
           }
+        },
+        "x-comp-mcp": {
+          "name": "list-forms"
         },
         "x-speakeasy-mcp": {
           "name": "list-forms"
@@ -29906,6 +30968,9 @@
             "og:description": "Get submission statuses for all forms in OpenComp. Collect, review, upload, and export structured evidence submissions for compliance tasks and document."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-form-statuses"
+        },
         "x-speakeasy-mcp": {
           "name": "get-form-statuses"
         }
@@ -29968,6 +31033,9 @@
             "og:title": "Get document relevance settings | OpenComp API",
             "og:description": "Get document relevance settings in OpenComp. Collect, review, upload, and export structured evidence submissions for compliance tasks and document."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-form-settings"
         },
         "x-speakeasy-mcp": {
           "name": "get-form-settings"
@@ -30040,6 +31108,9 @@
             "og:description": "Update document relevance setting in OpenComp. Collect, review, upload, and export structured evidence submissions for compliance tasks and document."
           }
         },
+        "x-comp-mcp": {
+          "name": "update-form-setting"
+        },
         "x-speakeasy-mcp": {
           "name": "update-form-setting"
         }
@@ -30111,6 +31182,9 @@
             "og:description": "Get current user submissions in OpenComp. Collect, review, upload, and export structured evidence submissions for compliance tasks and document requirements."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-my-submissions"
+        },
         "x-speakeasy-mcp": {
           "name": "get-my-submissions"
         }
@@ -30173,6 +31247,9 @@
             "og:title": "Get pending submission count for current user | OpenComp API",
             "og:description": "Get pending submission count for current user in OpenComp. Collect, review, upload, and export structured evidence submissions for compliance tasks."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-pending-submission-count"
         },
         "x-speakeasy-mcp": {
           "name": "get-pending-submission-count"
@@ -30269,6 +31346,9 @@
             "og:description": "Get form definition and submissions in OpenComp. Collect, review, upload, and export structured evidence submissions for compliance tasks and document."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-form-with-submissions"
+        },
         "x-speakeasy-mcp": {
           "name": "get-form-with-submissions"
         }
@@ -30348,6 +31428,9 @@
             "og:description": "Get a single submission in OpenComp. Collect, review, upload, and export structured evidence submissions for compliance tasks and document requirements."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-submission"
+        },
         "x-speakeasy-mcp": {
           "name": "get-submission"
         }
@@ -30425,6 +31508,9 @@
             "og:description": "Delete a submission in OpenComp. Collect, review, upload, and export structured evidence submissions for compliance tasks and document requirements."
           }
         },
+        "x-comp-mcp": {
+          "name": "delete-submission"
+        },
         "x-speakeasy-mcp": {
           "name": "delete-submission"
         }
@@ -30496,6 +31582,9 @@
             "og:description": "Submit structured evidence responses and attachments for review against a compliance task or document requirement."
           }
         },
+        "x-comp-mcp": {
+          "name": "submit-form"
+        },
         "x-speakeasy-mcp": {
           "name": "submit-form"
         }
@@ -30566,6 +31655,9 @@
             "og:title": "Upload a file as an evidence submission | OpenComp API",
             "og:description": "Upload a PDF or image file and create a submission for the given form type, bypassing form-specific validation. Accepts session, API key, or service token."
           }
+        },
+        "x-comp-mcp": {
+          "name": "upload-submission"
         },
         "x-speakeasy-mcp": {
           "name": "upload-submission"
@@ -30646,6 +31738,9 @@
             "og:description": "Approve or reject a submitted evidence form so task status and audit readiness reflect the latest review decision."
           }
         },
+        "x-comp-mcp": {
+          "name": "review-submission"
+        },
         "x-speakeasy-mcp": {
           "name": "review-submission"
         }
@@ -30708,6 +31803,9 @@
             "og:title": "Upload evidence form file | OpenComp API",
             "og:description": "Upload evidence form file in OpenComp. Collect, review, upload, and export structured evidence submissions for compliance tasks and document requirements."
           }
+        },
+        "x-comp-mcp": {
+          "name": "upload-file"
         },
         "x-speakeasy-mcp": {
           "name": "upload-file"
@@ -30780,6 +31878,9 @@
             "og:description": "Export evidence form submissions as CSV for auditor requests, offline review, or internal compliance reporting."
           }
         },
+        "x-comp-mcp": {
+          "name": "export-csv"
+        },
         "x-speakeasy-mcp": {
           "name": "export-csv"
         }
@@ -30850,6 +31951,9 @@
             "og:description": "List active SOC 2, ISO 27001, HIPAA, GDPR, and custom compliance frameworks with implementation status and progress data."
           }
         },
+        "x-comp-mcp": {
+          "name": "frameworks-find-all"
+        },
         "x-speakeasy-mcp": {
           "name": "frameworks-find-all"
         }
@@ -30911,6 +32015,9 @@
             "og:description": "Add one or more compliance frameworks to an organization so tasks, controls, evidence, and readiness tracking can be generated."
           }
         },
+        "x-comp-mcp": {
+          "name": "add-frameworks"
+        },
         "x-speakeasy-mcp": {
           "name": "add-frameworks"
         }
@@ -30963,6 +32070,9 @@
             "og:title": "List available frameworks | OpenComp API",
             "og:description": "List frameworks available for activation before starting a new compliance program or expanding into another standard."
           }
+        },
+        "x-comp-mcp": {
+          "name": "find-available"
         },
         "x-speakeasy-mcp": {
           "name": "find-available"
@@ -31017,6 +32127,9 @@
             "og:description": "Retrieve framework readiness scores so teams can report progress toward audit readiness across active compliance standards."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-scores"
+        },
         "x-speakeasy-mcp": {
           "name": "get-scores"
         }
@@ -31069,6 +32182,9 @@
             "og:title": "Get update statuses for all framework | OpenComp API",
             "og:description": "Get update statuses for all framework instances in OpenComp. Manage SOC 2, ISO 27001, HIPAA, GDPR, and custom framework instances, requirements, scores."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-all-update-statuses"
         },
         "x-speakeasy-mcp": {
           "name": "get-all-update-statuses"
@@ -31132,6 +32248,9 @@
             "og:description": "Get a single framework instance with full detail in OpenComp. Manage SOC 2, ISO 27001, HIPAA, GDPR, and custom framework instances, requirements, scores."
           }
         },
+        "x-comp-mcp": {
+          "name": "frameworks-find-one"
+        },
         "x-speakeasy-mcp": {
           "name": "frameworks-find-one"
         }
@@ -31191,6 +32310,9 @@
             "og:title": "Delete a framework instance | OpenComp API",
             "og:description": "Delete a framework instance in OpenComp. Manage SOC 2, ISO 27001, HIPAA, GDPR, and custom framework instances, requirements, scores, and sync history."
           }
+        },
+        "x-comp-mcp": {
+          "name": "delete"
         },
         "x-speakeasy-mcp": {
           "name": "delete"
@@ -31262,6 +32384,9 @@
             "og:description": "Get a specific requirement with related controls in OpenComp. Manage SOC 2, ISO 27001, HIPAA, GDPR, and custom framework instances, requirements, scores."
           }
         },
+        "x-comp-mcp": {
+          "name": "find-requirement"
+        },
         "x-speakeasy-mcp": {
           "name": "find-requirement"
         }
@@ -31324,6 +32449,9 @@
             "og:title": "Create a custom framework for this | OpenComp API",
             "og:description": "Create a custom framework for this organization in OpenComp. Manage SOC 2, ISO 27001, HIPAA, GDPR, and custom framework instances, requirements, scores."
           }
+        },
+        "x-comp-mcp": {
+          "name": "create-custom"
         },
         "x-speakeasy-mcp": {
           "name": "create-custom"
@@ -31397,6 +32525,9 @@
             "og:description": "Update the name and/or description of an organization's custom framework. Only custom frameworks are editable; platform frameworks return 400."
           }
         },
+        "x-comp-mcp": {
+          "name": "update-custom"
+        },
         "x-speakeasy-mcp": {
           "name": "update-custom"
         }
@@ -31469,6 +32600,9 @@
             "og:description": "Add a custom requirement to a framework instance in OpenComp. Manage SOC 2, ISO 27001, HIPAA, GDPR, and custom framework instances, requirements, scores."
           }
         },
+        "x-comp-mcp": {
+          "name": "create-requirement"
+        },
         "x-speakeasy-mcp": {
           "name": "create-requirement"
         }
@@ -31540,6 +32674,9 @@
             "og:title": "Link (clone) existing requirements from | OpenComp API",
             "og:description": "Link (clone) existing requirements from another framework into this one in OpenComp. Manage SOC 2, ISO 27001, HIPAA, GDPR, and custom framework instances."
           }
+        },
+        "x-comp-mcp": {
+          "name": "link-requirements"
         },
         "x-speakeasy-mcp": {
           "name": "link-requirements"
@@ -31621,6 +32758,9 @@
             "og:description": "Link existing org controls to a requirement in OpenComp. Manage SOC 2, ISO 27001, HIPAA, GDPR, and custom framework instances, requirements, scores."
           }
         },
+        "x-comp-mcp": {
+          "name": "link-controls"
+        },
         "x-speakeasy-mcp": {
           "name": "link-controls"
         }
@@ -31683,6 +32823,9 @@
             "og:description": "Get the update status for a framework instance in OpenComp. Manage SOC 2, ISO 27001, HIPAA, GDPR, and custom framework instances, requirements, scores."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-update-status"
+        },
         "x-speakeasy-mcp": {
           "name": "get-update-status"
         }
@@ -31744,6 +32887,9 @@
             "og:title": "Preview changes from updating a framework | OpenComp API",
             "og:description": "Preview changes from updating a framework instance in OpenComp. Manage SOC 2, ISO 27001, HIPAA, GDPR, and custom framework instances, requirements, scores."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-update-preview"
         },
         "x-speakeasy-mcp": {
           "name": "get-update-preview"
@@ -31817,6 +32963,9 @@
             "og:description": "Sync framework requirements, controls, and tasks after framework content changes so compliance tracking remains current."
           }
         },
+        "x-comp-mcp": {
+          "name": "sync-framework"
+        },
         "x-speakeasy-mcp": {
           "name": "sync-framework"
         }
@@ -31889,6 +33038,9 @@
             "og:description": "Roll back a framework sync operation in OpenComp. Manage SOC 2, ISO 27001, HIPAA, GDPR, and custom framework instances, requirements, scores, and sync."
           }
         },
+        "x-comp-mcp": {
+          "name": "rollback-framework"
+        },
         "x-speakeasy-mcp": {
           "name": "rollback-framework"
         }
@@ -31950,6 +33102,9 @@
             "og:title": "Get sync history for a framework instance | OpenComp API",
             "og:description": "Get sync history for a framework instance in OpenComp. Manage SOC 2, ISO 27001, HIPAA, GDPR, and custom framework instances, requirements, scores, and sync."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-sync-history"
         },
         "x-speakeasy-mcp": {
           "name": "get-sync-history"
@@ -32050,6 +33205,9 @@
             "og:description": "List organization audit logs for compliance activity, access changes, evidence updates, and customer-facing review events."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-audit-logs"
+        },
         "x-speakeasy-mcp": {
           "name": "get-audit-logs"
         }
@@ -32147,6 +33305,9 @@
             "og:description": "List controls with linked policies, tasks, requirements, and document types for SOC 2, ISO 27001, HIPAA, and GDPR programs."
           }
         },
+        "x-comp-mcp": {
+          "name": "controls-find-all"
+        },
         "x-speakeasy-mcp": {
           "name": "controls-find-all"
         }
@@ -32208,6 +33369,9 @@
             "og:description": "Create a custom compliance control and connect it to framework requirements, policies, tasks, and evidence expectations."
           }
         },
+        "x-comp-mcp": {
+          "name": "create"
+        },
         "x-speakeasy-mcp": {
           "name": "create"
         }
@@ -32260,6 +33424,9 @@
             "og:title": "Get dropdown options for creating controls | OpenComp API",
             "og:description": "Get dropdown options for creating controls in OpenComp. Manage controls, map them to policies, tasks, framework requirements, and evidence document types."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-options"
         },
         "x-speakeasy-mcp": {
           "name": "get-options"
@@ -32331,6 +33498,9 @@
             "og:description": "Get control detail with progress in OpenComp. Manage controls, map them to policies, tasks, framework requirements, and evidence document types, and track."
           }
         },
+        "x-comp-mcp": {
+          "name": "controls-find-one"
+        },
         "x-speakeasy-mcp": {
           "name": "controls-find-one"
         }
@@ -32390,6 +33560,9 @@
             "og:title": "Delete a control | OpenComp API",
             "og:description": "Delete a control in OpenComp. Manage controls, map them to policies, tasks, framework requirements, and evidence document types, and track implementation."
           }
+        },
+        "x-comp-mcp": {
+          "name": "controls-delete"
         },
         "x-speakeasy-mcp": {
           "name": "controls-delete"
@@ -32471,6 +33644,9 @@
             "og:description": "Link policies to a control so auditors and reviewers can trace control implementation back to approved policy evidence."
           }
         },
+        "x-comp-mcp": {
+          "name": "link-policies"
+        },
         "x-speakeasy-mcp": {
           "name": "link-policies"
         }
@@ -32551,6 +33727,9 @@
             "og:description": "Link compliance tasks to a control so implementation work, evidence collection, and review status stay connected."
           }
         },
+        "x-comp-mcp": {
+          "name": "link-tasks"
+        },
         "x-speakeasy-mcp": {
           "name": "link-tasks"
         }
@@ -32622,6 +33801,9 @@
             "og:title": "Link existing requirements to a control | OpenComp API",
             "og:description": "Link existing requirements to a control in OpenComp. Manage controls, map them to policies, tasks, framework requirements, and evidence document types."
           }
+        },
+        "x-comp-mcp": {
+          "name": "controls-link-requirements"
         },
         "x-speakeasy-mcp": {
           "name": "controls-link-requirements"
@@ -32702,6 +33884,9 @@
             "og:title": "Link required document types to a control | OpenComp API",
             "og:description": "Link required document types to a control in OpenComp. Manage controls, map them to policies, tasks, framework requirements, and evidence document types."
           }
+        },
+        "x-comp-mcp": {
+          "name": "link-document-types"
         },
         "x-speakeasy-mcp": {
           "name": "link-document-types"
@@ -32799,6 +33984,9 @@
             "og:description": "Remove a required document type from a control in OpenComp. Manage controls, map them to policies, tasks, framework requirements, and evidence document."
           }
         },
+        "x-comp-mcp": {
+          "name": "unlink-document-type"
+        },
         "x-speakeasy-mcp": {
           "name": "unlink-document-type"
         }
@@ -32861,6 +34049,9 @@
             "og:title": "List penetration test runs | OpenComp API",
             "og:description": "List penetration test runs in OpenComp. Create AI-powered penetration test runs, track progress, inspect findings and events, and download markdown or PDF."
           }
+        },
+        "x-comp-mcp": {
+          "name": "list"
         },
         "x-speakeasy-mcp": {
           "name": "list"
@@ -32936,6 +34127,9 @@
             "og:description": "Create an AI-powered penetration test run for an approved target and track the resulting findings and report artifacts."
           }
         },
+        "x-comp-mcp": {
+          "name": "security-penetration-tests-create"
+        },
         "x-speakeasy-mcp": {
           "name": "security-penetration-tests-create"
         }
@@ -33010,6 +34204,9 @@
             "og:description": "Get penetration test status in OpenComp. Create AI-powered penetration test runs, track progress, inspect findings and events, and download markdown or PDF."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-by-id"
+        },
         "x-speakeasy-mcp": {
           "name": "get-by-id"
         }
@@ -33080,6 +34277,9 @@
             "og:title": "Get penetration test progress | OpenComp API",
             "og:description": "Get penetration test progress in OpenComp. Create AI-powered penetration test runs, track progress, inspect findings and events, and download markdown."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-progress"
         },
         "x-speakeasy-mcp": {
           "name": "get-progress"
@@ -33152,6 +34352,9 @@
             "og:description": "Returns the structured findings discovered during the run. Grows over time during a live scan as agents discover more issues."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-issues"
+        },
         "x-speakeasy-mcp": {
           "name": "get-issues"
         }
@@ -33222,6 +34425,9 @@
             "og:title": "Get penetration test agent events | OpenComp API",
             "og:description": "Returns the real-time agent activity log emitted during a run (tool calls, observations, etc.). Noisy — meant for activity feeds and debugging."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-events"
         },
         "x-speakeasy-mcp": {
           "name": "get-events"
@@ -33294,6 +34500,9 @@
             "og:description": "Get penetration test output in OpenComp. Create AI-powered penetration test runs, track progress, inspect findings and events, and download markdown or PDF."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-report"
+        },
         "x-speakeasy-mcp": {
           "name": "get-report"
         }
@@ -33365,6 +34574,9 @@
             "og:description": "Get penetration test PDF in OpenComp. Create AI-powered penetration test runs, track progress, inspect findings and events, and download markdown or PDF."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-pdf"
+        },
         "x-speakeasy-mcp": {
           "name": "get-pdf"
         }
@@ -33428,7 +34640,7 @@
         "tags": [
           "Security Penetration Tests"
         ],
-        "x-speakeasy-mcp": {
+        "x-comp-mcp": {
           "name": "list-pentest-finding-contexts"
         },
         "x-mint": {
@@ -33439,6 +34651,9 @@
             "og:title": "List pentest finding context notes | OpenComp API",
             "og:description": "Returns the customer-written context notes attached to pentest findings for a target URL. These notes are shared with the testing agent on future scans of."
           }
+        },
+        "x-speakeasy-mcp": {
+          "name": "list-pentest-finding-contexts"
         }
       }
     },
@@ -33512,7 +34727,7 @@
         "tags": [
           "Security Penetration Tests"
         ],
-        "x-speakeasy-mcp": {
+        "x-comp-mcp": {
           "name": "set-pentest-finding-context"
         },
         "x-mint": {
@@ -33523,6 +34738,9 @@
             "og:title": "Add context to a pentest finding | OpenComp API",
             "og:description": "Saves a customer context note on a pentest finding, e.g. an accepted-by-design rationale or remediation details. Future scans of the same target pass the."
           }
+        },
+        "x-speakeasy-mcp": {
+          "name": "set-pentest-finding-context"
         }
       },
       "delete": {
@@ -33584,7 +34802,7 @@
         "tags": [
           "Security Penetration Tests"
         ],
-        "x-speakeasy-mcp": {
+        "x-comp-mcp": {
           "name": "delete-pentest-finding-context"
         },
         "x-mint": {
@@ -33595,6 +34813,9 @@
             "og:title": "Remove context from a pentest finding | OpenComp API",
             "og:description": "Deletes the customer context note attached to a pentest finding so future scans of the target no longer receive it from the testing agent briefing."
           }
+        },
+        "x-speakeasy-mcp": {
+          "name": "delete-pentest-finding-context"
         }
       }
     },
@@ -33645,6 +34866,9 @@
             "og:title": "Get members with pending offboarding | OpenComp API",
             "og:description": "Lists members whose offboarding checklist is still incomplete, with their outstanding items, so you can track and finish departing-employee offboarding."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-pending-offboardings"
         },
         "x-speakeasy-mcp": {
           "name": "get-pending-offboardings"
@@ -33698,6 +34922,9 @@
             "og:title": "Get the offboarding checklist template | OpenComp API",
             "og:description": "Returns the organization's offboarding checklist template: the ordered set of items every departing member must complete during their offboarding."
           }
+        },
+        "x-comp-mcp": {
+          "name": "get-template"
         },
         "x-speakeasy-mcp": {
           "name": "get-template"
@@ -33759,6 +34986,9 @@
             "og:title": "Add an offboarding checklist template item | OpenComp API",
             "og:description": "Creates a new item in the organization's offboarding checklist template so it appears on every member's offboarding checklist from now on."
           }
+        },
+        "x-comp-mcp": {
+          "name": "create-template-item"
         },
         "x-speakeasy-mcp": {
           "name": "create-template-item"
@@ -33832,6 +35062,9 @@
             "og:description": "Updates an existing offboarding checklist template item by id, changing its label, description, or settings on the organization's offboarding template."
           }
         },
+        "x-comp-mcp": {
+          "name": "update-template-item"
+        },
         "x-speakeasy-mcp": {
           "name": "update-template-item"
         }
@@ -33891,6 +35124,9 @@
             "og:title": "Delete an offboarding checklist template item | OpenComp API",
             "og:description": "Removes an item from the organization's offboarding checklist template by id so it no longer appears on members' offboarding checklists."
           }
+        },
+        "x-comp-mcp": {
+          "name": "delete-template-item"
         },
         "x-speakeasy-mcp": {
           "name": "delete-template-item"
@@ -33954,6 +35190,9 @@
             "og:description": "Returns the offboarding checklist for a specific member, including each item and whether it has been completed, to track that person's offboarding progress."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-member-checklist"
+        },
         "x-speakeasy-mcp": {
           "name": "get-member-checklist"
         }
@@ -34006,6 +35245,9 @@
             "og:title": "Export all offboarding evidence as a zip file | OpenComp API",
             "og:description": "Exports a zip archive containing the offboarding checklist evidence for every member in the organization, for audits, handovers, or record-keeping."
           }
+        },
+        "x-comp-mcp": {
+          "name": "offboarding-checklist-export-all-evidence"
         },
         "x-speakeasy-mcp": {
           "name": "offboarding-checklist-export-all-evidence"
@@ -34069,6 +35311,9 @@
             "og:title": "Export offboarding evidence as a zip file | OpenComp API",
             "og:description": "Exports a zip archive of the offboarding checklist evidence collected for a single member, for audit, handover, or record-keeping purposes."
           }
+        },
+        "x-comp-mcp": {
+          "name": "export-evidence"
         },
         "x-speakeasy-mcp": {
           "name": "export-evidence"
@@ -34150,6 +35395,9 @@
             "og:description": "Marks a specific offboarding checklist item complete for a member, recording who completed it and when, as part of finishing that member's offboarding."
           }
         },
+        "x-comp-mcp": {
+          "name": "complete-item"
+        },
         "x-speakeasy-mcp": {
           "name": "complete-item"
         }
@@ -34217,6 +35465,9 @@
             "og:title": "Reopen an offboarding checklist item | OpenComp API",
             "og:description": "Reverts a previously completed offboarding checklist item back to incomplete for a member, in case the step was marked done by mistake."
           }
+        },
+        "x-comp-mcp": {
+          "name": "uncomplete-item"
         },
         "x-speakeasy-mcp": {
           "name": "uncomplete-item"
@@ -34298,6 +35549,9 @@
             "og:description": "Attaches a supporting evidence file to a member's completed offboarding checklist item, documenting that the offboarding step was actually carried out."
           }
         },
+        "x-comp-mcp": {
+          "name": "upload-evidence"
+        },
         "x-speakeasy-mcp": {
           "name": "upload-evidence"
         }
@@ -34361,6 +35615,9 @@
             "og:description": "Lists the vendors a departing member had access to and whether each has been revoked, so you can confirm all vendor access is removed during offboarding."
           }
         },
+        "x-comp-mcp": {
+          "name": "get-access-revocations"
+        },
         "x-speakeasy-mcp": {
           "name": "get-access-revocations"
         }
@@ -34423,6 +35680,9 @@
             "og:title": "Confirm all vendor access as revoked | OpenComp API",
             "og:description": "Marks every vendor access record for a departing member as revoked in one step, recording who confirmed it, to complete access removal during offboarding."
           }
+        },
+        "x-comp-mcp": {
+          "name": "revoke-all-vendor-access"
         },
         "x-speakeasy-mcp": {
           "name": "revoke-all-vendor-access"
@@ -34496,6 +35756,9 @@
             "og:description": "Marks a single vendor's access for a departing member as revoked, optionally attaching evidence and notes, as part of offboarding access removal."
           }
         },
+        "x-comp-mcp": {
+          "name": "revoke-vendor-access"
+        },
         "x-speakeasy-mcp": {
           "name": "revoke-vendor-access"
         }
@@ -34565,6 +35828,9 @@
             "og:title": "Undo vendor access revocation | OpenComp API",
             "og:description": "Reverses a vendor access revocation for a member, marking that vendor's access as not revoked again, in case it was confirmed by mistake during offboarding."
           }
+        },
+        "x-comp-mcp": {
+          "name": "undo-vendor-revocation"
         },
         "x-speakeasy-mcp": {
           "name": "undo-vendor-revocation"

@@ -3,11 +3,11 @@
   "version": "0.3.0",
   "author": "OpenComp",
   "bin": {
-    "@gideon-defender/mcp-server": "bin/mcp-server.js",
-    "mcp": "bin/mcp-server.js"
+    "@gideon-defender/mcp-server": "dist-owned/bin/mcp-server.js",
+    "mcp": "dist-owned/bin/mcp-server.js"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "1.26.0",
+    "@modelcontextprotocol/sdk": "^1.31.0",
     "@stricli/core": "^1.1.2",
     "express": "^5.1.0",
     "zod": "^4.6.5"
@@ -22,31 +22,29 @@
     "globals": "^17.3.0",
     "tsx": "^4.19.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.31.1"
-  },
-  "pnpm": {
-    "overrides": {
-      "@modelcontextprotocol/sdk": "1.26.0",
-      "hono": ">=4.12.34",
-      "fast-uri": ">=4.1.2 <5.0.0",
-      "js-yaml": ">=4.3.1 <5.0.0",
-      "ip-address": ">=10.3.1 <11.0.0",
-      "nanoid@^5.0.0": ">=5.1.16 <6.0.0",
-      "brace-expansion@^2.0.0": ">=2.1.4 <3.0.0",
-      "body-parser": ">=2.3.0 <3.0.0"
-    }
+    "typescript-eslint": "^8.31.1",
+    "yaml": "^2.9.1"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/trycompai/comp.git",
+    "url": "https://github.com/gideon-defender/opencomp.git",
     "directory": "apps/mcp-server"
   },
   "scripts": {
-    "build": "pnpm install --ignore-workspace && tsx ./src/mcp-server/build.mts && tsc",
+    "build": "pnpm run build:owned",
+    "build:owned": "node --import tsx scripts/build-owned.mjs",
     "check": "pnpm run lint",
-    "lint": "eslint --cache --max-warnings=0 src",
-    "mcpb:build": "pnpm install --ignore-workspace && tsx ./src/mcp-server/build.mts --pack && tsc",
-    "prepublishOnly": "pnpm run build"
+    "lint": "eslint --cache --max-warnings=0 src scripts/build-owned.mjs scripts/release-*.mjs tests/runtime tests/compatibility tests/integration tests/release",
+    "mcpb:build": "pnpm run mcpb:owned",
+    "mcpb:owned": "node --import tsx scripts/build-owned.mjs --pack",
+    "prepublishOnly": "node scripts/release-guard.mjs",
+    "test": "pnpm run test:contract && pnpm run test:runtime && pnpm run test:parity && pnpm run test:integration && pnpm run test:package",
+    "test:contract": "node --import tsx --test tests/owned-contract.test.mjs",
+    "test:integration": "node --test tests/integration/*.test.mjs",
+    "test:package": "pnpm run build:owned && node --import tsx --test tests/release/*.test.mjs",
+    "test:parity": "pnpm run build:owned && node --import tsx --test tests/compatibility/*.test.mjs",
+    "test:runtime": "node --import tsx --test tests/runtime/*.test.mjs",
+    "typecheck": "tsc --noEmit --incremental false"
   },
   "sideEffects": false,
   "type": "module"

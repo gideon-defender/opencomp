@@ -202,6 +202,8 @@
     "dev:no-trigger": "nest start --watch",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "openapi:check": "node scripts/openapi.mjs check",
+    "openapi:export": "node scripts/openapi.mjs write",
     "prebuild": "pnpm run db:generate",
     "start": "nest start",
     "start:debug": "nest start --debug --watch",

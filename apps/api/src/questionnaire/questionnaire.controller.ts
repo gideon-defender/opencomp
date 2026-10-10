@@ -129,7 +129,7 @@ export class QuestionnaireController {
     description:
       'Starts background answer generation for an already-parsed questionnaire and returns a run handle immediately. Poll GET /v1/questionnaire/:id until answeredQuestions equals totalQuestions, then read the answers from its questions.',
   })
-  @ApiExtension('x-speakeasy-mcp', { name: 'generate-questionnaire-answers' })
+  @ApiExtension('x-comp-mcp', { name: 'generate-questionnaire-answers' })
   @ApiCreatedResponse({
     description: 'Answers for a questionnaire generated successfully',
     type: TriggerAutoAnswerResponseDto,

@@ -31,7 +31,7 @@ class CreateConnectionDto {
 
 ### 2. Every DTO property carries BOTH decorator stacks
 
-The global `ValidationPipe` runs with `whitelist: true, forbidNonWhitelisted: true`. `@ApiProperty` alone → ValidationPipe rejects every field with *"property X should not exist"*. `class-validator` alone → empty MCP schema. **You always need both.**
+The global `ValidationPipe` runs with `whitelist: true, forbidNonWhitelisted: true`. `@ApiProperty` alone → ValidationPipe rejects every field with _"property X should not exist"_. `class-validator` alone → empty MCP schema. **You always need both.**
 
 ```ts
 class FooDto {
@@ -62,14 +62,14 @@ class FooDto {
 ### 5. Use a clean MCP tool name when the auto-derived one is ugly
 
 ```ts
-@ApiExtension('x-speakeasy-mcp', { name: 'generate-questionnaire-answers' })
+@ApiExtension('x-comp-mcp', { name: 'generate-questionnaire-answers' })
 ```
 
 Tool name budget: 52 chars max, kebab-case.
 
 ### 6. Agent-callable endpoints must NOT be behind `SessionOnlyGuard`
 
-Session-only endpoints return 403 to API-key callers — the MCP tool generates but fails. Either remove `SessionOnlyGuard` or disable the tool in `apps/mcp-server/.speakeasy/mcp-uploads-overlay.yaml`.
+Session-only endpoints return 403 to API-key callers — the MCP tool generates but fails. Either remove `SessionOnlyGuard` or disable the tool in `apps/mcp-server/mcp-overlay.yaml`.
 
 ### 7. Long-running operations: async + poll
 
@@ -93,11 +93,11 @@ Base64-through-LLM is catastrophically slow and overflows the context window. Ad
 SSE streams (`@ApiProduces('text/event-stream')`) and binary file responses cannot be consumed by JSON-RPC tool calls. Disable them for MCP only (HTTP endpoint stays for the web UI):
 
 ```yaml
-# apps/mcp-server/.speakeasy/mcp-uploads-overlay.yaml
-- target: "$.paths['/v1/questionnaire/auto-answer'].post"
-  update:
-    x-speakeasy-mcp:
-      disabled: true
+# apps/mcp-server/mcp-overlay.yaml
+operations:
+  - path: /v1/questionnaire/auto-answer
+    method: post
+    metadata: { disabled: true }
 ```
 
 ### 11. Every endpoint MUST have a meaningful summary + description — it powers MCP discovery
@@ -114,9 +114,11 @@ The hosted MCP (Gram) uses **dynamic toolsets**: with 300+ tools the agent seman
 4. No `SessionOnlyGuard` on agent-callable endpoints.
 5. Long-running → run handle + poll target.
 6. File input → `s3Key` field + `UploadsService.readUploadAsBase64`.
-7. Run dev (`pnpm --filter '@gideon-defender/api' run dev`) → openapi.json regenerates on boot.
-8. **`git add packages/docs/openapi.json`** — commit the regenerated spec with your API change.
+7. Export offline (`pnpm --filter @gideon-defender/api run openapi:export`), then verify with `openapi:check`.
+8. Include the spec with your API change and run the owned MCP build/tests. Speakeasy generation is retired; release approval gates are in `apps/mcp-server/RELEASING.md`.
 9. Verify the new schema isn't empty:
    ```
    node -e 'const o=require("./packages/docs/openapi.json"); console.log(o.paths["/v1/your-path"]?.post?.requestBody?.content?.["application/json"]?.schema)'
    ```
+
+Migration note: `x-comp-mcp` is the authoring contract. The API temporarily dual-emits `x-speakeasy-mcp` for existing consumers. Keep the owned overlay and `.speakeasy/mcp-uploads-overlay.yaml` compatibility mirror aligned; owned-contract tests enforce disabled/removal policy parity. Do not remove legacy metadata or Gram configuration before the hosted cutover.

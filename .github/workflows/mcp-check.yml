@@ -1,0 +1,22 @@
+name: MCP checks
+on:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  mcp:
+    name: MCP contracts, transports and packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/pnpm-install
+      - name: Verify fresh offline public OpenAPI export
+        run: pnpm --filter @gideon-defender/api run openapi:check
+      - name: Build owned candidate
+        run: pnpm --filter @gideon-defender/mcp-server run build
+      - name: Typecheck
+        run: pnpm --filter @gideon-defender/mcp-server run typecheck
+      - name: Lint
+        run: pnpm --filter @gideon-defender/mcp-server run lint
+      - name: Contract, runtime, exhaustive wire, transports and package tests
+        run: pnpm --filter @gideon-defender/mcp-server run test
