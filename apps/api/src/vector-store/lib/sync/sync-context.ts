@@ -54,7 +54,7 @@ async function syncSingleContext(
   const contextUpdatedAt = context.updatedAt.toISOString();
 
   // Check if context needs update
-  if (!needsUpdate(existingEmbeddings, contextUpdatedAt)) {
+  if (!needsUpdate({ existingEmbeddings, updatedAt: contextUpdatedAt })) {
     return { status: 'skipped', lastEmbeddingId: null };
   }
 

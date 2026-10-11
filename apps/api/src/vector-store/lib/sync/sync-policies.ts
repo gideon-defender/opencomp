@@ -78,7 +78,7 @@ async function syncSinglePolicy(
   const policyUpdatedAt = policy.updatedAt.toISOString();
 
   // Check if policy needs update
-  if (!needsUpdate(existingEmbeddings, policyUpdatedAt)) {
+  if (!needsUpdate({ existingEmbeddings, updatedAt: policyUpdatedAt })) {
     return { status: 'skipped', lastEmbeddingId: null };
   }
 

@@ -182,7 +182,10 @@ function filterDocumentsToProcess(
     return (
       document.processingStatus === 'pending' ||
       document.processingStatus === 'failed' ||
-      needsUpdate(documentEmbeddings, documentUpdatedAt)
+      needsUpdate({
+        existingEmbeddings: documentEmbeddings,
+        updatedAt: documentUpdatedAt,
+      })
     );
   });
 }

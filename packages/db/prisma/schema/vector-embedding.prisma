@@ -1,6 +1,7 @@
 model VectorEmbedding {
-  id                   String   @id
+  id                   String                       @id
   embedding            Unsupported("vector(1024)")?
+  embeddingModel       String?
   organizationId       String
   sourceType           String
   sourceId             String
@@ -11,12 +12,11 @@ model VectorEmbedding {
   manualAnswerQuestion String?
   department           String?
   updatedAt            DateTime?
-  createdAt            DateTime @default(now())
+  createdAt            DateTime                     @default(now())
 
   @@index([organizationId, sourceType])
   @@index([sourceId])
   @@index([sourceType, sourceId])
   @@index([organizationId])
-
   @@map("vector_embedding")
 }

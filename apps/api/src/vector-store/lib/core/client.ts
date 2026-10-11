@@ -5,6 +5,7 @@ import {
   listVectorsByOrganization,
   listVectorsByOrganizationAndType,
   countVectorsByOrganization,
+  upsertVectors,
 } from '@gideon-defender/db';
 
 export const vectorIndex = pgVectorIndex;
@@ -14,4 +15,5 @@ export {
   listVectorsByOrganization,
   listVectorsByOrganizationAndType,
   countVectorsByOrganization,
+  upsertVectors,
 };

@@ -1,4 +1,4 @@
-import { vectorIndex } from './client';
+import { vectorIndex, upsertVectors } from './client';
 import { generateEmbedding } from './generate-embedding';
 import { logger } from '../../logger';
 
@@ -119,7 +119,7 @@ export async function upsertEmbedding(
 }
 
 /**
- * Batch upsert embeddings: generates embeddings in parallel, then upserts in parallel
+ * Generate a batch of embeddings, then commit all document chunks atomically.
  * Much faster than sequential upsertEmbedding calls
  * @param items - Array of items to upsert
  */
@@ -153,45 +153,16 @@ export async function batchUpsertEmbeddings(
       validItems.map((item) => generateEmbedding(item.text)),
     );
 
-    // Step 2: Upsert all embeddings in parallel
-    // Check vectorIndex before using it (TypeScript safety)
-    if (!vectorIndex) {
-      throw new Error('Vector store is not configured');
-    }
-
-    // Store reference to avoid null check issues in map
-    const index = vectorIndex;
-
-    await Promise.all(
-      validItems.map((item, idx) => {
-        const embedding = embeddings[idx];
-        return index.upsert({
-          id: item.id,
-          vector: embedding,
-          metadata: {
-            organizationId: item.metadata.organizationId,
-            sourceType: item.metadata.sourceType,
-            sourceId: item.metadata.sourceId,
-            content: item.text.substring(0, 1000), // Store first 1000 chars for reference
-            ...(item.metadata.policyName && {
-              policyName: item.metadata.policyName,
-            }),
-            ...(item.metadata.contextQuestion && {
-              contextQuestion: item.metadata.contextQuestion,
-            }),
-            ...(item.metadata.manualAnswerQuestion && {
-              manualAnswerQuestion: item.metadata.manualAnswerQuestion,
-            }),
-            ...(item.metadata.documentName && {
-              documentName: item.metadata.documentName,
-            }),
-            ...(item.metadata.updatedAt && {
-              updatedAt: item.metadata.updatedAt,
-            }),
-          },
-        });
-      }),
-    );
+    // Commit all chunks together; a partial write must not mark a document as fresh.
+    const organizationId = validItems[0].metadata.organizationId;
+    await upsertVectors({
+      organizationId,
+      records: validItems.map((item, idx) => ({
+        id: item.id,
+        vector: embeddings[idx],
+        metadata: { ...item.metadata, content: item.text.substring(0, 1000) },
+      })),
+    });
   } catch (error) {
     logger.error('Failed to batch upsert embeddings', {
       itemCount: validItems.length,

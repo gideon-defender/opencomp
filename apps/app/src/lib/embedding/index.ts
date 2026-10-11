@@ -1,14 +1,17 @@
 import 'server-only';
 
-import {
-  EMBEDDING_DIMENSIONS,
-  EMBEDDING_MODEL,
-  embedTexts,
-  vectorIndex as pgVectorIndex,
-  type VectorIndex,
-  type VectorRangeResult,
-} from '@gideon-defender/db';
+import { EMBEDDING_IDENTITY, embedTexts, type VectorRangeResult } from '@gideon-defender/db';
 import { createHash } from 'node:crypto';
+import {
+  embeddingId,
+  embeddingIdPrefix,
+  getIndex,
+  sourceIdFromEmbeddingId,
+  TASK_VECTOR_MAX_PAGES,
+  TASK_VECTOR_PAGE_SIZE,
+} from './embedding-store';
+export { pruneOrphanTaskVectors } from './prune-orphan-task-vectors';
+export { waitForIndexed } from './wait-for-indexed';
 
 type EntityKind = 'risk' | 'vendor' | 'task';
 
@@ -54,45 +57,7 @@ interface SimilarTaskResult {
   department?: string;
 }
 
-// Self-hosted BAAI/bge-m3 (1024 dims) via Ollama; model + dims imported from
-// @gideon-defender/db so the content hash and the serving client stay in lockstep.
 const DEFAULT_TOP_K = 25;
-// Pagination for enumerating an org's task vectors by their shared id prefix —
-// used by both `findSimilarTasks` (exact in-process ranking) and
-// `pruneOrphanTaskVectors` (orphan sweep). Prefix enumeration has no top-K
-// ceiling; page size only controls how many vectors come back per round trip.
-const TASK_VECTOR_PAGE_SIZE = 1000;
-// Backstop so a misbehaving cursor can't loop forever. 500 pages × 1000 = 500k
-// task vectors, far beyond any real org — hitting it signals a bug, not scale.
-const TASK_VECTOR_MAX_PAGES = 500;
-
-function getIndex(): VectorIndex {
-  if (!pgVectorIndex) {
-    throw new Error('Vector store is not configured (DATABASE_URL)');
-  }
-  return pgVectorIndex;
-}
-
-function embeddingIdPrefix(kind: EntityKind, organizationId: string): string {
-  return `${kind}_${organizationId}_`;
-}
-
-function embeddingId(kind: EntityKind, organizationId: string, sourceId: string): string {
-  return `${embeddingIdPrefix(kind, organizationId)}${sourceId}`;
-}
-
-/**
- * Inverse of `embeddingId`: recover the raw source id from a prefixed embedding
- * id. Used only as a fallback for vectors written before `metadata.sourceId`
- * existed — treating the prefixed id as a raw source id would misidentify the
- * entity, so `pruneOrphanTaskVectors` could delete a live task's vector (its
- * prefixed id never matches the raw-id `liveTaskIds` set) and clear the hash of
- * a row that doesn't exist.
- */
-function sourceIdFromEmbeddingId(kind: EntityKind, organizationId: string, id: string): string {
-  const prefix = embeddingIdPrefix(kind, organizationId);
-  return id.startsWith(prefix) ? id.slice(prefix.length) : id;
-}
 
 /**
  * Stable hash of everything that determines the stored embedding: the text
@@ -111,7 +76,7 @@ function computeEntityContentHash({
   department?: string;
 }): string {
   return createHash('sha256')
-    .update(`${EMBEDDING_MODEL}:${EMBEDDING_DIMENSIONS}:${department ?? ''}:${text}`)
+    .update(`${EMBEDDING_IDENTITY}:${department ?? ''}:${text}`)
     .digest('hex');
 }
 
@@ -201,11 +166,12 @@ async function fetchOrgTaskVectors(organizationId: string): Promise<OrgTaskVecto
     });
     for (const r of vectors) {
       if (!r.vector) continue; // defensive: skip any vector row missing embeddings
-      const meta = (r.metadata ?? {}) as { sourceId?: string; department?: string };
+      const meta = r.metadata;
+      if (meta?.embeddingModel !== EMBEDDING_IDENTITY) continue;
       out.push({
-        sourceId: meta.sourceId ?? sourceIdFromEmbeddingId('task', organizationId, String(r.id)),
+        sourceId: meta?.sourceId ?? sourceIdFromEmbeddingId('task', organizationId, String(r.id)),
         vector: r.vector as number[],
-        department: meta.department ?? undefined,
+        department: meta?.department ?? undefined,
       });
     }
     if (!nextCursor) {
@@ -273,160 +239,4 @@ export async function findSimilarTasks({
     }))
     .sort((a, b) => b.score - a.score)
     .slice(0, topK);
-}
-
-interface PruneOrphanTaskVectorsResult {
-  /** sourceIds of the task vectors that were deleted from the vector store. */
-  deletedSourceIds: string[];
-  /** How many of the org's task vectors were examined. */
-  scanned: number;
-}
-
-/**
- * Delete an org's task vectors whose `sourceId` is no longer in the live task
- * scope. `lib/embedding` only ever UPSERTS task vectors — it has no other
- * delete path — so tasks that are deleted, or whose controls all get archived
- * (dropping them from `runLinkage`'s scope query), leave orphan vectors behind
- * indefinitely. Those orphans are still returned by `findSimilarTasks` (which
- * filters on organizationId + sourceType only) and, being embedded from real
- * compliance work, sit cosine-near the live tasks — crowding them out of the
- * top-K recall entirely and starving risks/vendors of suggestions (CS-681).
- *
- * Every task vector is keyed `task_${organizationId}_${sourceId}` (see
- * `embeddingId`), so a cursor-paginated `range` over that id prefix enumerates
- * exactly this org's task vectors with no top-K ceiling — a bounded `query`
- * would silently miss any orphans past its window on a large org. The returned
- * `deletedSourceIds` let the caller clear each task's stored `embeddingHash`,
- * keeping "no vector" consistent with "no hash" so a task that later re-enters
- * scope re-embeds instead of being skipped by the dedup guard. Only sourceIds
- * whose vector was actually deleted are returned, so a transient delete failure
- * never desynchronizes that pairing.
- */
-export async function pruneOrphanTaskVectors({
-  organizationId,
-  liveTaskIds,
-}: {
-  organizationId: string;
-  /** sourceIds of the tasks currently in the linkage scope. */
-  liveTaskIds: Set<string>;
-}): Promise<PruneOrphanTaskVectorsResult> {
-  const index = getIndex();
-  const prefix = embeddingIdPrefix('task', organizationId);
-
-  // Enumerate the org's task vectors page by page over their shared id prefix.
-  // A drained page reports a falsy `nextCursor`; the page cap is a runaway
-  // backstop (a healthy cursor always terminates first).
-  const orphans: Array<{ vectorId: string; sourceId: string }> = [];
-  let scanned = 0;
-  let cursor: string | number = '0';
-  let enumeratedFully = false;
-  for (let page = 0; page < TASK_VECTOR_MAX_PAGES; page++) {
-    // Annotate the result explicitly: `cursor = nextCursor` would otherwise make
-    // TS infer `nextCursor`'s type from a binding that depends on it (TS7022).
-    const { vectors, nextCursor }: VectorRangeResult = await index.range({
-      cursor,
-      limit: TASK_VECTOR_PAGE_SIZE,
-      prefix,
-      organizationId,
-      includeMetadata: true,
-    });
-    scanned += vectors.length;
-    for (const r of vectors) {
-      const meta = (r.metadata ?? {}) as { sourceId?: string };
-      const sourceId =
-        meta.sourceId ?? sourceIdFromEmbeddingId('task', organizationId, String(r.id));
-      if (liveTaskIds.has(sourceId)) continue;
-      orphans.push({ vectorId: String(r.id), sourceId });
-    }
-    if (!nextCursor) {
-      enumeratedFully = true;
-      break;
-    }
-    cursor = nextCursor;
-  }
-  if (!enumeratedFully) {
-    console.warn(
-      `[embedding] orphan sweep hit the ${TASK_VECTOR_MAX_PAGES}-page cap for org ${organizationId} after scanning ${scanned} vector(s); enumeration may be incomplete`,
-    );
-  }
-
-  if (orphans.length === 0) {
-    return { deletedSourceIds: [], scanned };
-  }
-
-  // Delete in batches, resilient to transient failures: a failing batch is
-  // logged and skipped so later batches still run, and only the sourceIds whose
-  // vector was actually deleted are returned. That keeps hash-clearing aligned
-  // with real deletions — clearing a hash whose vector survived would leave a
-  // task that re-embeds needlessly, but never one with a cached hash and no
-  // vector (which would be skipped by the dedup guard and never re-embed).
-  const deletedSourceIds: string[] = [];
-  const BATCH = 100;
-  for (let i = 0; i < orphans.length; i += BATCH) {
-    const batch = orphans.slice(i, i + BATCH);
-    try {
-      await index.delete(
-        batch.map((o) => o.vectorId),
-        organizationId,
-      );
-      deletedSourceIds.push(...batch.map((o) => o.sourceId));
-    } catch (err) {
-      console.error(
-        `[embedding] orphan vector delete batch failed for org ${organizationId} (${batch.length} id(s)); continuing`,
-        err,
-      );
-    }
-  }
-
-  return { deletedSourceIds, scanned };
-}
-
-interface WaitForIndexedOptions {
-  /** Hard ceiling. Resolves with `pendingAtTimeout` set if exceeded. */
-  maxWaitMs?: number;
-  /** Poll cadence. */
-  intervalMs?: number;
-}
-
-interface WaitForIndexedResult {
-  waitedMs: number;
-  polls: number;
-  /** Defined only when we hit `maxWaitMs` without reaching pending=0. */
-  pendingAtTimeout?: number;
-}
-
-/**
- * pgvector HNSW indexing is synchronous — once `upsert` returns, the vector is
- * immediately queryable, so `info().pendingVectorCount` is always 0 here. This
- * is a no-op that resolves on the first poll.
- *
- * Kept as a no-op gate so callers (`runLinkage`) can keep the same phase
- * ordering regardless of backend: it guarantees that anything written before
- * this call is searchable before matching begins.
- *
- * Call this AFTER `upsertEntityEmbeddings` and BEFORE any query that depends
- * on the just-written vectors being searchable.
- */
-export async function waitForIndexed({
-  maxWaitMs = 30_000,
-  intervalMs = 250,
-}: WaitForIndexedOptions = {}): Promise<WaitForIndexedResult> {
-  const index = getIndex();
-  const start = Date.now();
-  let polls = 0;
-  while (Date.now() - start < maxWaitMs) {
-    polls += 1;
-    const info = await index.info();
-    if (info.pendingVectorCount === 0) {
-      return { waitedMs: Date.now() - start, polls };
-    }
-    await new Promise((resolve) => setTimeout(resolve, intervalMs));
-  }
-  // Timed out — fetch one more time so the caller can log how far behind we are.
-  const final = await index.info().catch(() => null);
-  return {
-    waitedMs: Date.now() - start,
-    polls,
-    pendingAtTimeout: final?.pendingVectorCount,
-  };
 }

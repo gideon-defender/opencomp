@@ -96,18 +96,7 @@ export async function extractContentFromS3Document(
   return extractContentFromFile(base64Data, detectedFileType);
 }
 
-/**
- * Check if embeddings need to be updated based on updatedAt timestamp
- */
-export function needsUpdate(
-  existingEmbeddings: ExistingEmbedding[],
-  updatedAt: string,
-): boolean {
-  return (
-    existingEmbeddings.length === 0 ||
-    existingEmbeddings.some((e) => !e.updatedAt || e.updatedAt < updatedAt)
-  );
-}
+export { needsUpdate } from './embedding-freshness';
 
 /**
  * Delete old embeddings by IDs
