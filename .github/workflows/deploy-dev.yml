@@ -1,10 +1,6 @@
 name: Deploy to Dev
 
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -16,16 +12,13 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
-  IMAGE_TAG: dev-${{ github.event.workflow_run.head_sha || github.sha }}-${{ github.run_id }}
+  DEPLOY_SHA: ${{ github.sha }}
+  IMAGE_TAG: dev-${{ github.sha }}-${{ github.run_id }}
 
 jobs:
   authorize:
     name: Authorize main deployment
-    if: >-
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.event == 'push' && github.event.workflow_run.head_repository.full_name == github.repository) ||
-      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Require the current main commit
@@ -39,7 +32,6 @@ jobs:
               core.setFailed('Only the current main commit may deploy.');
             }
       - name: Require repository administrator
-        if: github.event_name == 'workflow_dispatch'
         uses: actions/github-script@v9
         with:
           script: |

@@ -5,8 +5,8 @@
 -- Promotion: copy this directory to prisma/migrations/<timestamp>_drop_platform_role_storage/
 -- and run `prisma migrate deploy` in staging first.
 -- NOTE: IntegrationPlatformCredential is NOT dropped here — the
--- integration-platform repository still reads/writes it. Drop that table
--- only once the credential store is retired.
+-- shared Gideon GCP/Azure OAuth apps use it at runtime. Removing global
+-- admin roles does not retire shared application credentials.
 -- Revoke surviving impersonation sessions BEFORE dropping the marker
 -- column. Nothing reads impersonatedBy anymore, so these rows authenticate
 -- as their victims with no audit marker. The API also deletes them once at

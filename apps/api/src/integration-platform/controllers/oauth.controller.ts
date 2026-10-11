@@ -34,6 +34,8 @@ import {
 
 import { azureTenantId, resolveAzureOAuthConfig } from '../utils/azure-oauth';
 
+import { githubAppInstallUrl } from '../utils/github-app-oauth';
+
 import { StartOAuthDto } from '../dto/start-oauth.dto';
 import { OAuthReconnectGuard } from '../guards/oauth-reconnect.guard';
 
@@ -406,6 +408,12 @@ export class OAuthController {
         // First pass (came from plain authorize, no installation_id): send the
         // user to install the App, then they return here via install-time OAuth.
         if (!query.installation_id && oauthConfig.installUrl) {
+          const installRedirect = new URL(
+            githubAppInstallUrl({
+              customSettings: credentials.customSettings,
+              fallback: oauthConfig.installUrl,
+            }) ?? oauthConfig.installUrl,
+          );
           // Create the install-handoff state BEFORE deleting the original one.
           // If creation fails, the original state survives so the outer catch can
           // clean it up and still emit an error redirect — deleting first would
@@ -418,7 +426,6 @@ export class OAuthController {
             connectionId: oauthState.connectionId ?? undefined,
           });
           await this.oauthStateRepository.delete(state);
-          const installRedirect = new URL(oauthConfig.installUrl);
           installRedirect.searchParams.set('state', installState.state);
           this.logger.log(
             `GitHub App authorized but not installed; redirecting org ${oauthState.organizationId} to install`,

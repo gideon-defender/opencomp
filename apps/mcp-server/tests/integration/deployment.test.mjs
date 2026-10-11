@@ -7,21 +7,27 @@ import { parse } from 'yaml';
 
 const root = new URL('../../../../', import.meta.url);
 const read = (path) => readFileSync(new URL(path, root), 'utf8');
-test('main deploy consumes successful push CI, pins its SHA and requires provisioned MCP infrastructure', () => {
+test('dev deploy is manual-only, pins the current main SHA and requires an administrator and MCP infrastructure', () => {
   const workflow = parse(read('.github/workflows/deploy-dev.yml'));
-  assert.deepEqual(workflow.on.workflow_run, {
-    workflows: ['CI'],
-    types: ['completed'],
-    branches: ['main'],
-  });
-  for (const condition of [
-    "conclusion == 'success'",
-    "event == 'push'",
-    'head_repository.full_name == github.repository',
-    "github.ref == 'refs/heads/main'",
-  ])
-    assert(workflow.jobs.authorize.if.includes(condition));
-  assert(workflow.env.DEPLOY_SHA.includes('github.event.workflow_run.head_sha'));
+  assert.deepEqual(Object.keys(workflow.on), ['workflow_dispatch']);
+  assert.equal(
+    workflow.jobs.authorize.if,
+    "github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'",
+  );
+  assert.equal(workflow.env.DEPLOY_SHA, '${{ github.sha }}');
+  const authorizationSteps = workflow.jobs.authorize.steps;
+  assert(
+    authorizationSteps.some((step) =>
+      step.with?.script?.includes('data.object.sha !== process.env.DEPLOY_SHA'),
+    ),
+  );
+  const administratorCheck = authorizationSteps.find((step) =>
+    step.with?.script?.includes('getCollaboratorPermissionLevel'),
+  );
+  assert(administratorCheck);
+  assert.equal(administratorCheck.if, undefined);
+  assert(administratorCheck.with.script.includes('GITHUB_TRIGGERING_ACTOR'));
+  assert(administratorCheck.with.script.includes("data.permission !== 'admin'"));
   assert.deepEqual(workflow.jobs.build.needs, ['authorize', 'preflight']);
   for (const name of ['build', 'deploy']) {
     const checkout = workflow.jobs[name].steps.find((step) =>

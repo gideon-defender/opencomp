@@ -65,8 +65,8 @@ import { CheckResultsService } from './services/check-results.service';
     OAuthCredentialsService,
     // Phase 0 (remove-cross-tenant-roles): automation-owned credential
     // lifecycle (backfill/provision/rotation). No HTTP surface; consumed by
-    // the future IAM-run rotation job. The legacy platform store stays
-    // readable through PlatformCredentialRepository until Release B.
+    // future IAM-run credential jobs. PlatformCredentialRepository also
+    // supplies the shared Gideon OAuth app identities at runtime.
     AutomationCredentialService,
     AutoCheckRunnerService,
     OAuthTokenRevocationService,

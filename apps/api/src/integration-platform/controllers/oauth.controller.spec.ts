@@ -222,58 +222,70 @@ describe('OAuthController', () => {
       expect(url.searchParams.get('client_id')).toBe('azure-client');
       expect(url.searchParams.get('prompt')).toBe('consent');
     });
-    it('exchanges the callback code in the configured directory and pins refresh routing', async () => {
-      mockOAuthStateRepository.findByState.mockResolvedValue({
-        providerSlug: 'azure',
-        organizationId: 'org_1',
-        userId: 'user_1',
-        expiresAt: new Date(Date.now() + 600000),
-        redirectUrl: null,
-      });
-      mockedGetSession.mockResolvedValue({
-        user: { id: 'user_1' },
-        session: { id: 'session', activeOrganizationId: 'org_1' },
-      } as never);
-      mockProviderRepository.findBySlug.mockResolvedValue({ id: 'provider' });
-      mockConnectionRepository.findByProviderAndOrg.mockResolvedValue({
-        id: 'connection',
-        metadata: {},
-      });
-      mockConnectionRepository.update.mockResolvedValue({ id: 'connection' });
-      const response = { redirect: jest.fn() };
-      const fetchSpy = jest.spyOn(globalThis, 'fetch').mockResolvedValue(
-        new Response(
-          JSON.stringify({
-            access_token: 'access',
-            refresh_token: 'refresh',
-          }),
-          { status: 200 },
-        ),
-      );
-      try {
-        await controller.oauthCallback(
-          { code: 'code', state: 'state' },
-          { headers: { cookie: 'session' } } as unknown as Request,
-          response as unknown as import('express').Response,
+    it.each(['organization', 'platform'] as const)(
+      'exchanges %s app codes and preserves refresh routing',
+      async (source) => {
+        const directory = source === 'platform' ? 'organizations' : tenant;
+        if (source === 'platform')
+          mockOAuthCredentialsService.getCredentials.mockResolvedValue({
+            clientId: 'azure-client',
+            clientSecret: 'secret',
+            scopes: ['openid'],
+            source: 'platform',
+            customSettings: {},
+          });
+        mockOAuthStateRepository.findByState.mockResolvedValue({
+          providerSlug: 'azure',
+          organizationId: 'org_1',
+          userId: 'user_1',
+          expiresAt: new Date(Date.now() + 600000),
+          redirectUrl: null,
+        });
+        mockedGetSession.mockResolvedValue({
+          user: { id: 'user_1' },
+          session: { id: 'session', activeOrganizationId: 'org_1' },
+        } as never);
+        mockProviderRepository.findBySlug.mockResolvedValue({ id: 'provider' });
+        mockConnectionRepository.findByProviderAndOrg.mockResolvedValue({
+          id: 'connection',
+          metadata: {},
+        });
+        mockConnectionRepository.update.mockResolvedValue({ id: 'connection' });
+        const response = { redirect: jest.fn() };
+        const fetchSpy = jest.spyOn(globalThis, 'fetch').mockResolvedValue(
+          new Response(
+            JSON.stringify({
+              access_token: 'access',
+              refresh_token: 'refresh',
+            }),
+            { status: 200 },
+          ),
         );
-        expect(fetchSpy).toHaveBeenCalledWith(
-          `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`,
-          expect.any(Object),
-        );
-        expect(
-          mockCredentialVaultService.storeOAuthTokens,
-        ).toHaveBeenCalledWith(
-          'connection',
-          expect.objectContaining({ access_token: 'access' }),
-          expect.objectContaining({ azureTenantId: tenant }),
-        );
-        expect(response.redirect).toHaveBeenCalledWith(
-          expect.stringContaining('success=true'),
-        );
-      } finally {
-        fetchSpy.mockRestore();
-      }
-    });
+        try {
+          await controller.oauthCallback(
+            { code: 'code', state: 'state' },
+            { headers: { cookie: 'session' } } as unknown as Request,
+            response as unknown as import('express').Response,
+          );
+          expect(fetchSpy).toHaveBeenCalledWith(
+            `https://login.microsoftonline.com/${directory}/oauth2/v2.0/token`,
+            expect.any(Object),
+          );
+          expect(
+            mockCredentialVaultService.storeOAuthTokens,
+          ).toHaveBeenCalledWith(
+            'connection',
+            expect.objectContaining({ access_token: 'access' }),
+            expect.objectContaining({ azureTenantId: directory }),
+          );
+          expect(response.redirect).toHaveBeenCalledWith(
+            expect.stringContaining('success=true'),
+          );
+        } finally {
+          fetchSpy.mockRestore();
+        }
+      },
+    );
     it('rejects invalid directory settings before creating state', async () => {
       mockOAuthCredentialsService.getCredentials.mockResolvedValue({
         clientId: 'azure-client',
@@ -750,55 +762,60 @@ describe('OAuthController', () => {
           text: () => Promise.resolve(''),
         } as unknown as Response);
 
-    it('redirects to the install URL when the App is not installed (first pass)', async () => {
-      const futureDate = new Date(Date.now() + 600000);
-      mockOAuthStateRepository.findByState.mockResolvedValue({
-        state: 'gh_state',
-        providerSlug: 'github-app',
-        organizationId: 'org_1',
-        userId: 'user_1',
-        codeVerifier: null,
-        redirectUrl: null,
-        expiresAt: futureDate,
-      });
-      mockedGetManifest.mockReturnValue(githubAppManifest as never);
-      mockOAuthCredentialsService.getCredentials.mockResolvedValue({
-        clientId: 'c',
-        clientSecret: 's',
-        scopes: [],
-        source: 'platform',
-      });
-      mockOAuthStateRepository.create.mockResolvedValue({
-        state: 'install_state',
-      });
+    it.each([undefined, 'gideon-dev'])(
+      'redirects to the configured install URL (%s) when the App is not installed',
+      async (slug) => {
+        const futureDate = new Date(Date.now() + 600000);
+        mockOAuthStateRepository.findByState.mockResolvedValue({
+          state: 'gh_state',
+          providerSlug: 'github-app',
+          organizationId: 'org_1',
+          userId: 'user_1',
+          codeVerifier: null,
+          redirectUrl: null,
+          expiresAt: futureDate,
+        });
+        mockedGetManifest.mockReturnValue(githubAppManifest as never);
+        mockOAuthCredentialsService.getCredentials.mockResolvedValue({
+          clientId: 'c',
+          clientSecret: 's',
+          scopes: [],
+          source: 'platform',
+          customSettings: slug ? { githubAppSlug: slug } : {},
+        });
+        mockOAuthStateRepository.create.mockResolvedValue({
+          state: 'install_state',
+        });
 
-      const fetchSpy = notInstalledFetch();
+        const fetchSpy = notInstalledFetch();
 
-      await controller.oauthCallback(
-        { code: 'auth_code', state: 'gh_state' },
-        mockRequest,
-        mockResponse,
-      );
+        await controller.oauthCallback(
+          { code: 'auth_code', state: 'gh_state' },
+          mockRequest,
+          mockResponse,
+        );
 
-      // No installation yet → send them to install, don't finalize.
-      expect(mockConnectionService.activateConnection).not.toHaveBeenCalled();
-      const redirectUrl = (mockResponse.redirect as jest.Mock).mock.calls[0][0];
-      expect(redirectUrl).toContain(
-        'https://github.com/apps/comp-ai-compliance/installations/new',
-      );
-      expect(redirectUrl).toContain('state=install_state');
+        // No installation yet → send them to install, don't finalize.
+        expect(mockConnectionService.activateConnection).not.toHaveBeenCalled();
+        const redirectUrl = (mockResponse.redirect as jest.Mock).mock
+          .calls[0][0];
+        expect(redirectUrl).toContain(
+          `https://github.com/apps/${slug ?? 'comp-ai-compliance'}/installations/new`,
+        );
+        expect(redirectUrl).toContain('state=install_state');
 
-      // The install-handoff state must be created BEFORE the original state is
-      // deleted, so a create failure can't leave the outer catch double-deleting
-      // an already-removed record (which would hang the request).
-      const createOrder =
-        mockOAuthStateRepository.create.mock.invocationCallOrder[0];
-      const deleteOrder =
-        mockOAuthStateRepository.delete.mock.invocationCallOrder[0];
-      expect(createOrder).toBeLessThan(deleteOrder);
+        // The install-handoff state must be created BEFORE the original state is
+        // deleted, so a create failure can't leave the outer catch double-deleting
+        // an already-removed record (which would hang the request).
+        const createOrder =
+          mockOAuthStateRepository.create.mock.invocationCallOrder[0];
+        const deleteOrder =
+          mockOAuthStateRepository.delete.mock.invocationCallOrder[0];
+        expect(createOrder).toBeLessThan(deleteOrder);
 
-      fetchSpy.mockRestore();
-    });
+        fetchSpy.mockRestore();
+      },
+    );
 
     it('still emits an error redirect if creating the install-handoff state fails', async () => {
       const futureDate = new Date(Date.now() + 600000);

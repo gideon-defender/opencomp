@@ -1,4 +1,5 @@
 import { Test } from '@nestjs/testing';
+import { PlatformCredentialRepository } from '../repositories/platform-credential.repository';
 import { OAuthAppRepository } from '../repositories/oauth-app.repository';
 import {
   CredentialVaultService,
@@ -37,7 +38,7 @@ const row = ({
   organizationId: string;
   isActive?: boolean;
 }) => ({
-  providerSlug: 'github',
+  providerSlug: 'slack',
   organizationId,
   isActive,
   encryptedClientId: encrypted('client'),
@@ -78,6 +79,7 @@ describe('OAuthCredentialsService organization isolation', () => {
       providers: [
         OAuthCredentialsService,
         OAuthAppRepository,
+        PlatformCredentialRepository,
         { provide: CredentialVaultService, useValue: { decrypt } },
       ],
     }).compile();
@@ -91,15 +93,15 @@ describe('OAuthCredentialsService organization isolation', () => {
         rows.push(row({ organizationId: 'org_1', isActive: false }));
       if (scenario === 'other organization')
         rows.push(row({ organizationId: 'org_2' }));
-      expect(await service.getCredentials('github', 'org_1')).toBeNull();
-      expect(await service.checkAvailability('github', 'org_1')).toMatchObject({
+      expect(await service.getCredentials('slack', 'org_1')).toBeNull();
+      expect(await service.checkAvailability('slack', 'org_1')).toMatchObject({
         available: false,
         hasOrgCredentials: false,
         hasPlatformCredentials: false,
       });
       expect(mockFindFirst).toHaveBeenCalledWith({
         where: {
-          providerSlug: 'github',
+          providerSlug: 'slack',
           organizationId: 'org_1',
           isActive: true,
         },
@@ -114,13 +116,13 @@ describe('OAuthCredentialsService organization isolation', () => {
       row({ organizationId: 'org_2' }),
       row({ organizationId: 'org_1' }),
     );
-    expect(await service.getCredentials('github', 'org_1')).toMatchObject({
+    expect(await service.getCredentials('slack', 'org_1')).toMatchObject({
       clientId: 'client',
       clientSecret: 'secret',
       scopes: ['read:user'],
       source: 'organization',
     });
-    expect(await service.checkAvailability('github', 'org_1')).toMatchObject({
+    expect(await service.checkAvailability('slack', 'org_1')).toMatchObject({
       available: true,
       hasOrgCredentials: true,
       hasPlatformCredentials: false,
@@ -131,7 +133,7 @@ describe('OAuthCredentialsService organization isolation', () => {
   it('fails closed when organization credentials cannot be decrypted', async () => {
     rows.push(row({ organizationId: 'org_1' }));
     decrypt.mockRejectedValue(new Error('invalid ciphertext'));
-    expect(await service.getCredentials('github', 'org_1')).toBeNull();
+    expect(await service.getCredentials('slack', 'org_1')).toBeNull();
     expect(mockPlatformRead).not.toHaveBeenCalled();
   });
 });

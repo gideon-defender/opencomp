@@ -218,31 +218,48 @@ full-access (`comp_service`) Redis role for BullMQ, falling back to
 
 ---
 
-### Cloud Tests Configuration
+### Integration OAuth Configuration
 
-Cloud tests collect security posture from AWS, GCP, and Azure. Each cloud
-connects differently, and OAuth-based clouds (GCP, Azure) need platform-level
-OAuth app credentials before any connection works.
+OpenComp supports one shared OAuth app per provider and environment for GCP,
+Azure, GitHub App, GitHub OAuth App, Aikido Security, Google Workspace, Rippling,
+and Vercel. Customers authorize separately; their tokens and account selections
+remain isolated in organization-scoped connections. AWS uses IAM role assumption
+and does not require an OAuth app.
 
 #### 1. Callback URL
 
-GCP and Azure OAuth both redirect back to the API. Register this URL in each
-provider's app registration (type **Web**):
+Register the API callback URL in each provider's app registration:
 
 ```
 {BASE_URL}/v1/integrations/oauth/callback
 ```
 
-(`BASE_URL` is the API's public URL, e.g. `https://api.dev.gideondefender.com`
-in dev, `http://localhost:3333` locally.)
+`BASE_URL` is the API's public URL. The dev callback is:
 
-#### 2. Per-cloud setup
+```text
+https://opencomp-api.dev.gideondefender.com/v1/integrations/oauth/callback
+```
+
+Locally, use `http://localhost:3333/v1/integrations/oauth/callback`. The
+organization-scoped `GET /v1/integrations/oauth-apps/setup/:providerSlug` endpoint
+returns the configured callback URL, required scopes, and setup instructions.
+
+#### 2. Provider setup
 
 | Cloud           | Auth                           | What to configure                                                                                                                                                                                                                                                                                                                                                                               |
 | --------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | AWS (`aws`)     | IAM role assumption (no OAuth) | Nothing platform-wide. Each connection renders its own CloudShell script with a per-connection external ID — run it in the target account.                                                                                                                                                                                                                                                      |
 | GCP (`gcp`)     | OAuth2                         | Google Cloud Console → **APIs & Services → Credentials** → **OAuth client ID** (Web application), with the callback URL above in **Authorized redirect URIs**. Actual access is limited by IAM roles — connecting users only need read-only roles like `roles/securitycenter.findingsViewer`.                                                                                                   |
 | Azure (`azure`) | OAuth2                         | Azure Portal → **App registrations** → **New registration**, account type **Accounts in any organizational directory** (multitenant), with the callback URL above as a **Web** redirect URI. Then **Certificates & secrets** → new client secret. Actual access is controlled by Azure RBAC — connecting users need at least **Reader** (plus **Security Reader** for Defender for Cloud data). |
+
+| Additional provider                   | Shared app setup                                                                                                                                                                                                                                                                                                                                                               |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| GitHub App (`github-app`)             | Create a GitHub App installable on **Any account**. Enable OAuth during installation, configure read-only permissions from the manifest, and disable webhooks if unused. Store its **Client ID** and **Client Secret**, with `customSettings.githubAppSlug` set to the app's public slug. Current token handling requires **Expire user authorization tokens** to be disabled. |
+| GitHub OAuth App (`github`)           | Register an OAuth App with the callback URL. Use its own client credentials, separate from `github-app`. The integration requests `read:org`, `repo`, and `read:user`.                                                                                                                                                                                                         |
+| Aikido Security (`aikido`)            | Create a **Public** OAuth app with the callback URI for customer workspace consent. Private workspace client credentials are not a shared customer-consent app.                                                                                                                                                                                                                |
+| Google Workspace (`google-workspace`) | Configure an **External** Google OAuth app, enable Admin SDK, and approve the manifest's directory read scopes. Each customer's Workspace admin authorizes it. This provider has its own credential row, separate from `gcp`.                                                                                                                                                  |
+| Rippling (`rippling`)                 | Register a partner OAuth app, enable worker read access, and set `customSettings.appName` to the app's URL name.                                                                                                                                                                                                                                                               |
+| Vercel (`vercel`)                     | Register a Vercel integration and set `customSettings.appSlug` to its integration slug. Each installation has its own account/team context.                                                                                                                                                                                                                                    |
 
 ##### Azure organizational accounts
 
@@ -263,45 +280,51 @@ configured client ID is the registration's **Application (client) ID**. Do not
 enable personal accounts solely to work around this error. See
 [Microsoft's authority and account-type documentation](https://learn.microsoft.com/en-us/entra/identity-platform/msal-client-application-configuration).
 
-For personal Microsoft identities or guest accounts accessing an Azure directory,
-set **Directory (tenant) ID** alongside Client ID and Client Secret in
-**Admin → Integrations → Microsoft Azure** (organization or platform settings).
-Use the directory UUID from **Microsoft Entra ID → Overview**. OpenComp then uses
-that directory for authorization and token exchange and pins it to the resulting
-connection for refresh. This avoids the account chooser loop / `AADSTS50059`
-when Microsoft cannot infer the directory from a personal identity. Blank retains
-`organizations`; personal accounts must already have access to the target directory.
-The API setting is `customSettings: { "tenantId": "<directory-uuid>" }`.
-
+For a connection that needs an explicit Azure directory, configure an
+organization-owned app override with
+`customSettings: { "tenantId": "<directory-uuid>" }` through
+`POST /v1/integrations/oauth-apps`. Use the directory UUID from **Microsoft Entra
+ID → Overview**. Authorization and token exchange use that directory, and the
+connection retains its directory for refresh. The shared app ignores a stored
+home-directory tenant ID and uses `/organizations`.
 After changing the OAuth endpoints, rebuild and deploy the OpenComp API, then
 start a fresh Azure connection flow. The endpoint switch alone does not require
 new client credentials or a different callback URL.
 
-#### 3. Store the platform credentials
+#### 3. Store and verify credentials
 
-OAuth credentials are read from the database, not env vars — one row per
-provider (org-level rows take precedence, platform rows are the fallback).
-Save them via the admin endpoint (same call per provider, different slug and
-values):
+Provision one `IntegrationPlatformCredential` row per shared provider using
+operator/IAM tooling. Encrypt the client ID and client secret with the API's
+`CredentialVaultService` and store provider settings in `customSettings`.
+Keep `ENCRYPTION_KEY` persistent across deployments. The former global admin
+credentials endpoint has been removed.
+
+Credentials are read from the database. Adding a secret to `.env` alone does not
+configure a shared integration; it must be provisioned into the encrypted store.
+Missing, inactive, unreadable, or incomplete shared credentials are unavailable.
+Rippling requires `appName`; Vercel requires `appSlug`; GitHub App requires
+`githubAppSlug`.
+
+An explicit organization-owned configuration takes precedence within that
+organization. Disabled or unreadable overrides do not fall back to the shared app,
+since existing tokens belong to the override's client identity. Organization
+credentials can be saved through `POST /v1/integrations/oauth-apps` with
+`integration:create` permission. Providers outside the shared allowlist continue
+to use organization-owned credentials.
+
+Verify availability using an organization-scoped API key with `integration:read`
+permission:
 
 ```sh
-curl -X POST "$BASE_URL/v1/admin/integrations/credentials" \
-  -H "Authorization: Bearer <admin-session-or-service-token>" \
-  -H "Content-Type: application/json" \
-  -d '{"providerSlug": "azure", "clientId": "<app-id>", "clientSecret": "<secret>"}'
+curl "$BASE_URL/v1/integrations/oauth/availability?providerSlug=github-app" \
+  -H "x-api-key: $API_KEY"
+# Without an org override: available=true, hasPlatformCredentials=true,
+# hasOrgCredentials=false
 ```
 
-Verify with the availability check:
-
-```sh
-curl "$BASE_URL/v1/integrations/oauth/availability?providerSlug=azure"
-# {"available": true, "hasPlatformCredentials": true, ...}
-```
-
-> ⚠️ `No OAuth credentials available for <provider>` means neither an
-> org-level nor a platform-level credential row exists for that exact slug
-> (`gcp`, `azure`). Creating the GCP row does not cover Azure — repeat step 3
-> per cloud.
+Shared lookup does not copy app credentials into organization rows or register
+provider apps automatically. See the [shared OAuth runbook](docs/shared-cloud-oauth.md)
+for provider requirements and provisioning behavior.
 
 ---
 
@@ -452,10 +475,10 @@ Steps to deploy OpenComp on Docker are coming soon.
 
 Gideon hosted production and dev environments run on AWS
 
-To deploy the `main` branch to dev, run the [Deploy to Dev workflow](.github/workflows/deploy-dev.yml) from the repository's **Actions** tab. The workflow is restricted to repository administrators, applies database migrations, builds in parallel then pushes the ARM64 API, app, trust-center, and migrator images, and rolls the ECS services. It uses the `dev` environment secrets `AWS_ACCOUNT_ID`, `AWS_REGION`, `ECS_CLUSTER`, `AWS_ROLE_TO_ASSUME`, `MIGRATOR_SUBNETS` and `MIGRATOR_SECURITY_GROUP`.
+Dev deployment is manual; merging to `main` does not deploy automatically. To deploy the `main` branch to dev, run the [Deploy to Dev workflow](.github/workflows/deploy-dev.yml) from the repository's **Actions** tab. The workflow is restricted to repository administrators, applies database migrations, builds in parallel then pushes the ARM64 API, app, trust-center, and migrator images, and rolls the ECS services. It uses the `dev` environment secrets `AWS_ACCOUNT_ID`, `AWS_REGION`, `ECS_CLUSTER`, `AWS_ROLE_TO_ASSUME`, `MIGRATOR_SUBNETS` and `MIGRATOR_SECURITY_GROUP`.
 The employee portal is not currently deployed by this workflow.
 
-Dev domains (`*.dev.gideondefender.com`): `opencomp.dev` → app, `trust.dev/{friendlyUrl}` → trust-center, `api.dev` → API.
+Dev domains (`*.dev.gideondefender.com`): `opencomp.dev` → app, `trust.dev/{friendlyUrl}` → trust-center, `opencomp-api.dev` → API.
 
 Key env/config for a `dev` deploy:
 

@@ -1,5 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OAuthAppRepository } from '../repositories/oauth-app.repository';
+import { PlatformCredentialRepository } from '../repositories/platform-credential.repository';
+import {
+  getSharedOAuthCredentials,
+  isSharedOAuthProvider,
+} from './shared-oauth';
 import {
   CredentialVaultService,
   EncryptedData,
@@ -12,7 +17,7 @@ import type { Prisma } from '@db';
 
 import { azureTenantId } from '../utils/azure-oauth';
 
-interface OAuthCredentials {
+export interface OAuthCredentials {
   clientId: string;
   clientSecret: string;
   scopes: string[];
@@ -42,14 +47,10 @@ export class OAuthCredentialsService {
   constructor(
     private readonly oauthAppRepository: OAuthAppRepository,
     private readonly credentialVaultService: CredentialVaultService,
+    private readonly platformCredentialRepository: PlatformCredentialRepository,
   ) {}
 
-  /**
-   * Get OAuth credentials for a provider — org-level only. There is no
-   * platform fallback: missing org credentials fail closed (Phase 1).
-   * The legacy platform store remains readable for backfill/rotation via
-   * AutomationCredentialService until the Release B contract migration.
-   */
+  /** Use shared Gideon apps unless an org has its own explicit override. */
   async getCredentials(
     providerSlug: string,
     organizationId: string,
@@ -57,6 +58,21 @@ export class OAuthCredentialsService {
     const manifest = getManifest(providerSlug);
     if (!manifest || manifest.auth.type !== 'oauth2') {
       return null;
+    }
+
+    if (isSharedOAuthProvider(providerSlug)) {
+      const override = await this.oauthAppRepository.findByProviderAndOrg(
+        providerSlug,
+        organizationId,
+      );
+      // Do not silently change app identity for an existing disabled/broken
+      // override: its refresh tokens belong to that app, not the shared app.
+      if (!override)
+        return this.getSharedCredentials({
+          providerSlug,
+          oauthConfig: manifest.auth.config,
+        });
+      if (!override.isActive) return null;
     }
 
     return this.getOrgCredentials(
@@ -84,22 +100,44 @@ export class OAuthCredentialsService {
 
     const oauthConfig = manifest.auth.config;
 
-    // Check org credentials
-    const orgApp = await this.oauthAppRepository.findActiveByProviderAndOrg(
-      providerSlug,
-      organizationId,
-    );
-    const hasOrgCredentials = !!orgApp;
+    const sharedProvider = isSharedOAuthProvider(providerSlug);
+    const orgApp = sharedProvider
+      ? await this.oauthAppRepository.findByProviderAndOrg(
+          providerSlug,
+          organizationId,
+        )
+      : await this.oauthAppRepository.findActiveByProviderAndOrg(
+          providerSlug,
+          organizationId,
+        );
+    const hasOrgCredentials = !!orgApp?.isActive;
+    const hasPlatformCredentials =
+      sharedProvider && !orgApp
+        ? !!(await this.getSharedCredentials({ providerSlug, oauthConfig }))
+        : false;
 
-    // No platform fallback (Phase 1). The field stays during compatibility
-    // for older clients; it is always false.
     return {
-      available: hasOrgCredentials,
+      available: hasOrgCredentials || hasPlatformCredentials,
       hasOrgCredentials,
-      hasPlatformCredentials: false,
+      hasPlatformCredentials,
       setupInstructions: oauthConfig.setupInstructions,
       createAppUrl: oauthConfig.createAppUrl,
     };
+  }
+
+  private getSharedCredentials({
+    providerSlug,
+    oauthConfig,
+  }: {
+    providerSlug: string;
+    oauthConfig: OAuthConfig;
+  }): Promise<OAuthCredentials | null> {
+    return getSharedOAuthCredentials({
+      providerSlug,
+      oauthConfig,
+      repository: this.platformCredentialRepository,
+      vault: this.credentialVaultService,
+    });
   }
 
   /**
