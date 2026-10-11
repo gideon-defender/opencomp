@@ -146,7 +146,7 @@ export class PoliciesController {
     description:
       'When true, includes user-archived and framework-sync-archived policies in the response. Defaults to false.',
   })
-  @ApiExtension('x-speakeasy-mcp', { name: 'list-policies' })
+  @ApiExtension('x-comp-mcp', { name: 'list-policies' })
   @ApiResponse(GET_ALL_POLICIES_RESPONSES[200])
   @ApiResponse(GET_ALL_POLICIES_RESPONSES[401])
   @ApiForbiddenError()
@@ -610,7 +610,7 @@ export class PoliciesController {
   })
   // Hidden from MCP so AI clients use the presigned /pdf/upload-url + /pdf/confirm flow.
   // The HTTP endpoint stays live for the web UI / direct API callers.
-  @ApiExtension('x-speakeasy-mcp', { disabled: true })
+  @ApiExtension('x-comp-mcp', { disabled: true })
   @ApiCreatedResponse({
     description: 'A PDF to a policy version (UI-only) uploaded successfully',
   })
@@ -766,7 +766,7 @@ export class PoliciesController {
   })
   @ApiParam(POLICY_PARAMS.policyId)
   @ApiBody({ type: RequestPolicyPdfUploadUrlDto })
-  @ApiExtension('x-speakeasy-mcp', { name: 'request-policy-pdf-upload-url' })
+  @ApiExtension('x-comp-mcp', { name: 'request-policy-pdf-upload-url' })
   @ApiResponse({ status: 201, type: PolicyPdfUploadUrlResponseDto })
   @ApiCreatedResponse({
     description:
@@ -801,7 +801,7 @@ export class PoliciesController {
   })
   @ApiParam(POLICY_PARAMS.policyId)
   @ApiBody({ type: ConfirmPolicyPdfUploadedDto })
-  @ApiExtension('x-speakeasy-mcp', { name: 'confirm-policy-pdf-uploaded' })
+  @ApiExtension('x-comp-mcp', { name: 'confirm-policy-pdf-uploaded' })
   @ApiCreatedResponse({
     description: 'Confirm a policy PDF upload completed successfully',
   })
@@ -1077,7 +1077,7 @@ export class PoliciesController {
   @RequirePermission('policy', 'read')
   @ApiOperation(POLICY_OPERATIONS.getPolicyById)
   @ApiParam(POLICY_PARAMS.policyId)
-  @ApiExtension('x-speakeasy-mcp', { name: 'get-policy' })
+  @ApiExtension('x-comp-mcp', { name: 'get-policy' })
   @ApiResponse(GET_POLICY_BY_ID_RESPONSES[200])
   @ApiResponse(GET_POLICY_BY_ID_RESPONSES[401])
   @ApiResponse(GET_POLICY_BY_ID_RESPONSES[404])
@@ -1172,7 +1172,7 @@ export class PoliciesController {
   @RequirePermission('policy', 'read')
   @ApiOperation(VERSION_OPERATIONS.getPolicyVersions)
   @ApiParam(VERSION_PARAMS.policyId)
-  @ApiExtension('x-speakeasy-mcp', { name: 'list-policy-versions' })
+  @ApiExtension('x-comp-mcp', { name: 'list-policy-versions' })
   @ApiResponse(GET_POLICY_VERSIONS_RESPONSES[200])
   @ApiResponse(GET_POLICY_VERSIONS_RESPONSES[401])
   @ApiResponse(GET_POLICY_VERSIONS_RESPONSES[404])
@@ -1195,7 +1195,7 @@ export class PoliciesController {
   @ApiOperation(VERSION_OPERATIONS.getPolicyVersionById)
   @ApiParam(VERSION_PARAMS.policyId)
   @ApiParam(VERSION_PARAMS.versionId)
-  @ApiExtension('x-speakeasy-mcp', { name: 'get-policy-version' })
+  @ApiExtension('x-comp-mcp', { name: 'get-policy-version' })
   @ApiResponse(GET_POLICY_VERSION_BY_ID_RESPONSES[200])
   @ApiResponse(GET_POLICY_VERSION_BY_ID_RESPONSES[401])
   @ApiResponse(GET_POLICY_VERSION_BY_ID_RESPONSES[404])
@@ -1223,7 +1223,7 @@ export class PoliciesController {
   @ApiOperation(VERSION_OPERATIONS.createPolicyVersion)
   @ApiParam(VERSION_PARAMS.policyId)
   @ApiBody(VERSION_BODIES.createVersion)
-  @ApiExtension('x-speakeasy-mcp', { name: 'create-policy-version' })
+  @ApiExtension('x-comp-mcp', { name: 'create-policy-version' })
   @ApiResponse(CREATE_POLICY_VERSION_RESPONSES[201])
   @ApiResponse(CREATE_POLICY_VERSION_RESPONSES[400])
   @ApiResponse(CREATE_POLICY_VERSION_RESPONSES[401])
@@ -1254,7 +1254,7 @@ export class PoliciesController {
   @ApiParam(VERSION_PARAMS.policyId)
   @ApiParam(VERSION_PARAMS.versionId)
   @ApiBody(VERSION_BODIES.updateVersionContent)
-  @ApiExtension('x-speakeasy-mcp', { name: 'update-policy-version-content' })
+  @ApiExtension('x-comp-mcp', { name: 'update-policy-version-content' })
   @ApiResponse(UPDATE_VERSION_CONTENT_RESPONSES[200])
   @ApiResponse(UPDATE_VERSION_CONTENT_RESPONSES[400])
   @ApiResponse(UPDATE_VERSION_CONTENT_RESPONSES[401])
@@ -1314,7 +1314,7 @@ export class PoliciesController {
   @ApiOperation(VERSION_OPERATIONS.publishPolicyVersion)
   @ApiParam(VERSION_PARAMS.policyId)
   @ApiBody(VERSION_BODIES.publishVersion)
-  @ApiExtension('x-speakeasy-mcp', { name: 'publish-policy-version' })
+  @ApiExtension('x-comp-mcp', { name: 'publish-policy-version' })
   @ApiResponse(PUBLISH_VERSION_RESPONSES[200])
   @ApiResponse(PUBLISH_VERSION_RESPONSES[400])
   @ApiResponse(PUBLISH_VERSION_RESPONSES[401])
@@ -1373,7 +1373,7 @@ export class PoliciesController {
   @ApiParam(VERSION_PARAMS.policyId)
   @ApiParam(VERSION_PARAMS.versionId)
   @ApiBody(VERSION_BODIES.submitForApproval)
-  @ApiExtension('x-speakeasy-mcp', {
+  @ApiExtension('x-comp-mcp', {
     name: 'submit-policy-version-for-approval',
   })
   @ApiResponse(SUBMIT_VERSION_FOR_APPROVAL_RESPONSES[200])
@@ -1407,7 +1407,7 @@ export class PoliciesController {
     summary: 'Accept pending policy changes and publish the version',
   })
   @ApiParam(POLICY_PARAMS.policyId)
-  @ApiExtension('x-speakeasy-mcp', { name: 'accept-policy-changes' })
+  @ApiExtension('x-comp-mcp', { name: 'accept-policy-changes' })
   @ApiCreatedResponse({
     description:
       'Accept pending policy changes and publish the version completed successfully',

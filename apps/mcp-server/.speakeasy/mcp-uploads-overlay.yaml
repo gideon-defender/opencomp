@@ -27,6 +27,12 @@ info:
 # remove its inline-file field here and add an `s3Key` to its DTO instead.
 # =============================================================================
 actions:
+  # Compatibility mirror: the generator already omits this SSE operation.
+  # Keep the exclusion explicit and in sync with ../mcp-overlay.yaml.
+  - target: "$.paths['/v1/soa/auto-fill'].post"
+    update:
+      x-speakeasy-mcp:
+        disabled: true
   # 1. Drop the base64 `fileData` field from the questionnaire JSON upload tool,
   #    leaving `s3Key` as the only way an MCP client can supply a file.
   - target: '$.components.schemas.UploadAndParseDto.properties.fileData'

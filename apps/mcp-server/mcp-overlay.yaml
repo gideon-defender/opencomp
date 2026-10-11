@@ -1,0 +1,49 @@
+# Owned MCP policy. Applied to a clone BEFORE reference resolution.
+# HTTP/public docs retain browser upload fields and disabled HTTP routes.
+version: 1
+schemas:
+  - name: UploadAndParseDto
+    removeProperties: [fileData]
+    properties:
+      s3Key:
+        description: >-
+          The questionnaire file to parse. First call create-upload-url with
+          purpose=questionnaire to get a presigned URL and s3Key, PUT the raw file
+          bytes to that URL, then pass the returned s3Key here. This is the only
+          way to supply a file — never send file contents inline.
+  - name: UploadAttachmentDto
+    removeProperties: [fileData]
+  - name: UploadDocumentDto
+    removeProperties: [fileData]
+  - name: CompleteChecklistItemDto
+    removeProperties: [fileData]
+operations:
+  # The old generator implicitly omitted this SSE operation. Preserve that
+  # exclusion explicitly rather than adding an unusable 413th tool.
+  - path: /v1/soa/auto-fill
+    method: post
+    metadata: { disabled: true }
+  - path: /v1/questionnaire/upload-and-parse/upload
+    method: post
+    metadata: { disabled: true }
+  - path: /v1/questionnaire/parse/upload
+    method: post
+    metadata: { disabled: true }
+  - path: /v1/questionnaire/answers/export/upload
+    method: post
+    metadata: { disabled: true }
+  - path: /v1/questionnaire/auto-answer
+    method: post
+    metadata: { disabled: true }
+  - path: /v1/questionnaire/answers/export
+    method: post
+    metadata: { disabled: true }
+  - path: /v1/tasks/{taskId}/automations
+    method: post
+    metadata: { disabled: true }
+  - path: /v1/tasks/{taskId}/automations/{automationId}/versions
+    method: post
+    metadata: { disabled: true }
+  - path: /v1/trust-access/admin/requests/{id}/preview-nda
+    method: get
+    metadata: { disabled: true }

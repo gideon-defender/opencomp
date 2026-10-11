@@ -7,7 +7,7 @@
 - **Run workspace scripts**: `pnpm --filter <name> run <script>` (never `npm --workspace=`). Inside a package dir, `pnpm run <script>` works.
 - **Binaries**: `pnpm exec <bin>` (never `npx`). One-off downloads: `pnpm dlx <pkg>`.
 - **Overrides**: `pnpm.overrides` in root `package.json` (parent-scoped: `"parent>child": "range"`). Never npm `overrides`.
-- **`apps/mcp-server` is the exception**: standalone Speakeasy project, excluded from workspaces, keeps its own pnpm + `pnpm-lock.yaml` (run pnpm with `--ignore-workspace` inside that dir). Its build script bundles with esbuild and runs under tsx — no bun, no npm.
+- **`apps/mcp-server` is a workspace member**: uses the root pnpm lockfile and overrides. Build the owned candidate with `pnpm --filter @gideon-defender/mcp-server run build`; builds never install dependencies. Local bins use the owned bundle. Publish only verified staging packages under the release approval gates (`apps/mcp-server/RELEASING.md`); generation is retired. Retain generated sources as the rollback/parity oracle through live acceptance and the agreed observation window.
 - **Build**: `pnpm run build` (uses turbo). Filter: `pnpm --filter=@gideon-defender/app run build`
 - **Typecheck**: `pnpm run typecheck` or `pnpm exec turbo run typecheck --filter=@gideon-defender/api`
 - **Tests (app)**: `cd apps/app && pnpm exec vitest run`
@@ -33,7 +33,7 @@ apps/
   portal/             # Employee portal (:3002)
   browser-extension/  # Browser extension
   framework-editor/   # Framework editor (:3004)
-  mcp-server/         # Speakeasy-generated MCP server, standalone (excluded from pnpm workspaces, own lockfile)
+  mcp-server/         # Owned OpenAPI-to-MCP compiler; retained generated rollback oracle
 packages/
   auth/               # RBAC definitions (permissions.ts) — single source of truth
   db/                 # Prisma schema + client
@@ -92,15 +92,15 @@ Every customer-facing endpoint in `apps/api/src/` flows into three systems: the 
 2. **Two decorator stacks per field** — `@ApiProperty` (or `@ApiPropertyOptional`) for the OpenAPI/MCP schema **and** class-validator (`@IsString`, `@IsOptional`, `@IsObject`, `@IsArray`, etc.) for the ValidationPipe. With only one stack, requests are rejected with _"property X should not exist"_ or the MCP tool ships with empty input.
 3. **Add `@ApiBody({ type: DtoClass })`** on the endpoint — `@nestjs/swagger` does not reliably infer it from `@Body()` alone.
 4. **`@ApiOperation.description` ≤ 240 chars** — `apps/api/src/openapi/seo-text.ts` truncates at a word boundary; longer text loses its actionable instruction.
-5. **Override the MCP tool name** when the auto-derived name is ugly: `@ApiExtension('x-speakeasy-mcp', { name: 'kebab-name' })`.
+5. **Override the MCP tool name** when the auto-derived name is ugly: `@ApiExtension('x-comp-mcp', { name: 'kebab-name' })`.
 6. **No `SessionOnlyGuard`** on agent-callable endpoints — API-key callers get 403 and the MCP tool fails for customers.
 7. **Long-running ops are async** — return a run handle (`runId`, status, counts) and tell the agent the poll target in the description.
 8. **File uploads from agents use presigned URLs** — accept an `s3Key` field (read via `UploadsService.readUploadAsBase64`); never accept inline base64 from the MCP tool.
 9. **Sensitive paths (e.g. `/credentials`)** are deny-listed from public docs in `apps/api/src/openapi/public-docs-quality.ts` — that's intentional, don't fight it.
-10. **SSE / binary responses** can't be consumed by MCP — disable the tool in `apps/mcp-server/.speakeasy/mcp-uploads-overlay.yaml` while keeping the HTTP endpoint for the web UI.
+10. **SSE / binary responses** can't be consumed by MCP — disable the tool in `apps/mcp-server/mcp-overlay.yaml` while keeping the HTTP endpoint for the web UI.
 11. **Every endpoint needs a meaningful `@ApiOperation({ summary, description })`** — required and **CI-enforced** (`openapi-docs.spec.ts` fails the build if a public op is missing one). The hosted MCP uses **dynamic toolsets**: the agent finds a tool by semantic-searching names + descriptions, so a missing/weak description makes the tool effectively undiscoverable. Write the description for the agent deciding whether to call the tool — what it does + when to use it.
 
-After adding an endpoint: `pnpm --filter=@gideon-defender/api run dev` regenerates `packages/docs/openapi.json` on boot — **commit it with your PR**. The daily Speakeasy CI reads from that file; if it's stale, your endpoint never reaches MCP customers.
+After adding an endpoint: `pnpm --filter @gideon-defender/api run openapi:export` regenerates `packages/docs/openapi.json` offline without starting services. `openapi:check` compares a fresh export to that file in CI. Include the spec with the endpoint change; stale specs fail the MCP gate. Runtime API startup still exports in development.
 
 ## RBAC
 
@@ -193,3 +193,5 @@ Every customer-facing API endpoint MUST have:
 - Define Zod schema first, infer type with `z.infer<typeof schema>`
 - Use `Controller` for complex components (Select, Combobox)
 - Never use `useState` for form field values
+
+Migration note: `x-comp-mcp` is the authoring contract. The API temporarily dual-emits `x-speakeasy-mcp` for existing consumers. Keep the owned overlay and `.speakeasy/mcp-uploads-overlay.yaml` compatibility mirror aligned; owned-contract tests enforce disabled/removal policy parity. Do not remove legacy metadata or Gram configuration before the hosted cutover.

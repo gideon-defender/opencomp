@@ -64,6 +64,33 @@
   ],
   "ui": "tui",
   "tasks": {
+    "@gideon-defender/mcp-server#build": {
+      "dependsOn": [],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/packages/docs/openapi.json",
+        "$TURBO_ROOT$/pnpm-lock.yaml",
+        "$TURBO_ROOT$/package.json",
+        "$TURBO_ROOT$/pnpm-workspace.yaml",
+        "$TURBO_ROOT$/.github/workflows/mcp-check.yml",
+        "$TURBO_ROOT$/.github/workflows/sdk_publish.yaml"
+      ],
+      "outputs": ["dist-owned/**"]
+    },
+    "@gideon-defender/mcp-server#typecheck": {
+      "dependsOn": [],
+      "outputs": []
+    },
+    "@gideon-defender/mcp-server#test": {
+      "dependsOn": ["build"],
+      "cache": false,
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/packages/docs/openapi.json"],
+      "outputs": []
+    },
+    "@gideon-defender/mcp-server#lint": {
+      "dependsOn": [],
+      "outputs": []
+    },
     "db:generate": {
       "dependsOn": ["^db:generate"],
       "cache": false,

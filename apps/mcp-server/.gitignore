@@ -5,6 +5,7 @@
 /.tsbuildinfo
 /bin
 /esm
+/dist-owned
 /node_modules
 .DS_Store
 .env

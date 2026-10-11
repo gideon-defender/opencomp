@@ -1,5 +1,4 @@
 packages:
   - 'apps/*'
   - 'apps/browser-extension/*'
-  - '!apps/mcp-server'
   - 'packages/*'
