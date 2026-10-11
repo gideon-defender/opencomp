@@ -4,7 +4,7 @@ import { useParams } from 'next/navigation';
 import useSWR from 'swr';
 
 export type ActivityLog = AuditLog & {
-  user: Pick<User, 'id' | 'name' | 'email' | 'image' | 'role'> | null;
+  user: Pick<User, 'id' | 'name' | 'email' | 'image'> | null;
 };
 
 interface ActivityResponse {

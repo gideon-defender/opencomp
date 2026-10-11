@@ -4,7 +4,7 @@ import type { AuditLogWithRelations } from '@/hooks/use-audit-logs';
 import { getInitials } from '@/lib/utils';
 import type { AuditLog } from '@db';
 import { Avatar, AvatarFallback, AvatarImage } from '@gideon-defender/ui/avatar';
-import { Badge, Button, HStack, Section, Spinner, Stack, Text } from '@trycompai/design-system';
+import { Button, HStack, Section, Spinner, Stack, Text } from '@trycompai/design-system';
 import { ChevronLeft, ChevronRight } from '@trycompai/design-system/icons';
 import { formatDistanceToNow } from 'date-fns';
 import { ActivityIcon, ChevronDownIcon, ChevronRightIcon } from 'lucide-react';
@@ -83,13 +83,7 @@ function LogRow({ log }: { log: AuditLogWithRelations }) {
         <Text size="sm" as="span">
           <Text as="span" size="sm" weight="medium">
             {userName}
-          </Text>
-          {log.user?.role === 'admin' && (
-            <>
-              {' '}
-              <Badge>OpenComp</Badge>
-            </>
-          )}{' '}
+          </Text>{' '}
           <Text as="span" size="sm" variant="muted">
             {log.description || 'made a change'}
           </Text>

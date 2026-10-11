@@ -108,9 +108,7 @@ describe('AutomationCredentialService', () => {
       });
 
       expect(result.status).toBe('already-present');
-      expect(
-        t.oauthAppRepository.createIfAbsent,
-      ).not.toHaveBeenCalled();
+      expect(t.oauthAppRepository.createIfAbsent).not.toHaveBeenCalled();
     });
 
     it('treats a lost create race as already-present', async () => {
@@ -137,9 +135,7 @@ describe('AutomationCredentialService', () => {
     it('reports a missing platform source without writing', async () => {
       const t = setup();
       t.oauthAppRepository.findByProviderAndOrg.mockResolvedValue(null);
-      t.platformCredentialRepository.findByProviderSlug.mockResolvedValue(
-        null,
-      );
+      t.platformCredentialRepository.findByProviderSlug.mockResolvedValue(null);
 
       const result = await t.service.backfillOrgCredentials({
         providerSlug: 'github',
@@ -148,9 +144,7 @@ describe('AutomationCredentialService', () => {
       });
 
       expect(result.status).toBe('no-platform-source');
-      expect(
-        t.oauthAppRepository.createIfAbsent,
-      ).not.toHaveBeenCalled();
+      expect(t.oauthAppRepository.createIfAbsent).not.toHaveBeenCalled();
     });
 
     it('never copies a disabled platform source', async () => {
@@ -167,9 +161,7 @@ describe('AutomationCredentialService', () => {
       });
 
       expect(result.status).toBe('source-inactive');
-      expect(
-        t.oauthAppRepository.createIfAbsent,
-      ).not.toHaveBeenCalled();
+      expect(t.oauthAppRepository.createIfAbsent).not.toHaveBeenCalled();
     });
 
     it('never copies an undecryptable platform source', async () => {
@@ -178,9 +170,7 @@ describe('AutomationCredentialService', () => {
       t.platformCredentialRepository.findByProviderSlug.mockResolvedValue(
         platformRow(),
       );
-      t.credentialVaultService.decrypt.mockRejectedValue(
-        new Error('bad tag'),
-      );
+      t.credentialVaultService.decrypt.mockRejectedValue(new Error('bad tag'));
 
       const result = await t.service.backfillOrgCredentials({
         providerSlug: 'github',
@@ -189,9 +179,7 @@ describe('AutomationCredentialService', () => {
       });
 
       expect(result.status).toBe('source-undecryptable');
-      expect(
-        t.oauthAppRepository.createIfAbsent,
-      ).not.toHaveBeenCalled();
+      expect(t.oauthAppRepository.createIfAbsent).not.toHaveBeenCalled();
     });
   });
 
@@ -241,9 +229,7 @@ describe('AutomationCredentialService', () => {
       await expect(
         t.service.rotateAutomationCredentials(rotateArgs),
       ).rejects.toBeInstanceOf(ForbiddenException);
-      expect(
-        t.oauthAppRepository.updateAutomationRow,
-      ).not.toHaveBeenCalled();
+      expect(t.oauthAppRepository.updateAutomationRow).not.toHaveBeenCalled();
     });
 
     it('rejects a stale version', async () => {
@@ -267,6 +253,35 @@ describe('AutomationCredentialService', () => {
       await expect(
         t.service.rotateAutomationCredentials(rotateArgs),
       ).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('rejects (never fabricates) when the row is unreadable after a committed write', async () => {
+      const t = setup();
+      t.oauthAppRepository.findByProviderAndOrg
+        .mockResolvedValueOnce(orgRow())
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null);
+      t.oauthAppRepository.updateAutomationRow.mockResolvedValue(1);
+
+      await expect(
+        t.service.rotateAutomationCredentials(rotateArgs),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(t.oauthAppRepository.updateAutomationRow).toHaveBeenCalledTimes(1);
+    });
+
+    it('recovers when the post-write re-read blips transiently', async () => {
+      const t = setup();
+      t.oauthAppRepository.findByProviderAndOrg
+        .mockResolvedValueOnce(orgRow())
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(orgRow({ automationVersion: 'v2' }));
+      t.oauthAppRepository.updateAutomationRow.mockResolvedValue(1);
+
+      const row = await t.service.rotateAutomationCredentials(rotateArgs);
+
+      expect(row.automationVersion).toBe('v2');
+      expect(t.oauthAppRepository.updateAutomationRow).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -299,6 +314,32 @@ describe('AutomationCredentialService', () => {
         { organizationId: 'org_b', reason: 'stale' },
       ]);
     });
+
+    it('reports a skip (not updated) when the post-write re-read stays unreadable', async () => {
+      const t = setup();
+      t.oauthAppRepository.findAutomationByProvider.mockResolvedValue([
+        orgRow({ organizationId: 'org_a', automationVersion: 'v1' }),
+      ]);
+      t.oauthAppRepository.findByProviderAndOrg
+        .mockResolvedValueOnce(orgRow({ organizationId: 'org_a' }))
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null);
+      t.oauthAppRepository.updateAutomationRow.mockResolvedValue(1);
+
+      const result = await t.service.rotateProviderCredentials({
+        providerSlug: 'github',
+        expectedVersion: 'v1',
+        newVersion: 'v2',
+        clientId: 'id',
+        clientSecret: 'secret',
+      });
+
+      expect(result.updated).toEqual([]);
+      expect(result.skipped).toHaveLength(1);
+      expect(result.skipped[0].organizationId).toBe('org_a');
+      expect(t.oauthAppRepository.updateAutomationRow).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('provisionOrgCredentials', () => {
@@ -310,8 +351,7 @@ describe('AutomationCredentialService', () => {
       ]);
       t.oauthAppRepository.findByProviderAndOrg.mockResolvedValue(null);
       t.platformCredentialRepository.findByProviderSlug.mockImplementation(
-        async (slug: string) =>
-          slug === 'github' ? platformRow() : null,
+        async (slug: string) => (slug === 'github' ? platformRow() : null),
       );
       t.oauthAppRepository.createIfAbsent.mockResolvedValue({
         created: true,
@@ -337,7 +377,6 @@ describe('OAuthCredentialsService.saveOrgCredentials provenance', () => {
     const oauthAppRepository = { upsert: jest.fn() };
     const service = new OAuthCredentialsService(
       oauthAppRepository as never,
-      {} as never,
       {
         encrypt: async (text: string) => blob(`enc:${text}`),
       } as never,

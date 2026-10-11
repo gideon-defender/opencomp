@@ -518,7 +518,10 @@ describe('PlatformIntegrations', () => {
     });
 
     it('still shows the OAuth state to users without create permission', () => {
-      mockUseIntegrationProviders.mockReturnValue({ providers: [gcpUnconfigured], isLoading: false });
+      mockUseIntegrationProviders.mockReturnValue({
+        providers: [gcpUnconfigured],
+        isLoading: false,
+      });
       mockUseIntegrationConnections.mockReturnValue({
         connections: [],
         isLoading: false,

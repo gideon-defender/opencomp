@@ -100,20 +100,6 @@ interface CreateFindingSheetProps {
   organizationId: string;
   /** Pre-select a target (e.g. when opening from a specific page). */
   defaultTarget?: { kind: TargetKind; id?: string };
-  /** Optional submit override (admin uses this to post to the admin org-scoped endpoint). */
-  createFn?: (payload: CreateFindingData) => Promise<void>;
-  /**
-   * Optional override of the picker data endpoints. Used by the platform-admin
-   * surface so the pickers fetch from `/v1/admin/organizations/<orgId>/...`
-   * instead of the current session's org. A `null` override disables the
-   * picker for that kind (e.g. when no admin endpoint exists).
-   */
-  endpointOverrides?: Partial<Record<TargetKind, string | null>>;
-  /**
-   * Target kinds to hide from the dropdown entirely. Used by the admin surface
-   * to disable target types that have no admin-scoped data endpoint.
-   */
-  disabledTargetKinds?: TargetKind[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
@@ -121,9 +107,6 @@ interface CreateFindingSheetProps {
 
 export function CreateFindingSheet({
   defaultTarget,
-  createFn,
-  endpointOverrides,
-  disabledTargetKinds,
   open,
   onOpenChange,
   onSuccess,
@@ -204,13 +187,7 @@ export function CreateFindingSheet({
     [t],
   );
 
-  const availableTargetOptions = useMemo(
-    () =>
-      disabledTargetKinds && disabledTargetKinds.length > 0
-        ? targetOptions.filter((o) => !disabledTargetKinds.includes(o.value))
-        : targetOptions,
-    [disabledTargetKinds, targetOptions],
-  );
+  const availableTargetOptions = targetOptions;
 
   const apiTemplates: FindingTemplate[] = templatesData?.data || [];
   const templates: FindingTemplate[] =
@@ -265,11 +242,7 @@ export function CreateFindingSheet({
           return;
         }
 
-        if (createFn) {
-          await createFn(payload);
-        } else {
-          await createFinding(payload);
-        }
+        await createFinding(payload);
         toast.success(t('findings.createdSuccess'));
         onOpenChange(false);
         form.reset();
@@ -280,7 +253,7 @@ export function CreateFindingSheet({
         setIsSubmitting(false);
       }
     },
-    [createFinding, createFn, form, onOpenChange, onSuccess, t],
+    [createFinding, form, onOpenChange, onSuccess, t],
   );
 
   const groupedTemplates = useMemo<Record<string, FindingTemplate[]>>(() => {
@@ -327,7 +300,6 @@ export function CreateFindingSheet({
           kind={targetKind}
           value={form.watch('targetId') ?? ''}
           onChange={(v) => form.setValue('targetId', v)}
-          endpointOverrides={endpointOverrides}
         />
 
         <FormField
@@ -488,12 +460,10 @@ function TargetPicker({
   kind,
   value,
   onChange,
-  endpointOverrides,
 }: {
   kind: TargetKind;
   value: string;
   onChange: (value: string) => void;
-  endpointOverrides?: Partial<Record<TargetKind, string | null>>;
 }) {
   const t = useTranslations('overview');
   if (kind === 'area') {
@@ -524,36 +494,20 @@ function TargetPicker({
     );
   }
 
-  return (
-    <EntityPicker
-      kind={kind}
-      value={value}
-      onChange={onChange}
-      endpointOverrides={endpointOverrides}
-    />
-  );
+  return <EntityPicker kind={kind} value={value} onChange={onChange} />;
 }
 
 function EntityPicker({
   kind,
   value,
   onChange,
-  endpointOverrides,
 }: {
   kind: Exclude<TargetKind, 'area'>;
   value: string;
   onChange: (value: string) => void;
-  endpointOverrides?: Partial<Record<TargetKind, string | null>>;
 }) {
   const t = useTranslations('overview');
-  const endpoint = useMemo(() => {
-    // An explicit override (including `null`) wins over the default. `null`
-    // means "no admin endpoint exists for this kind", so skip fetching.
-    if (endpointOverrides && kind in endpointOverrides) {
-      return endpointOverrides[kind] ?? null;
-    }
-    return endpointForKind(kind);
-  }, [kind, endpointOverrides]);
+  const endpoint = endpointForKind(kind);
   const { data } = useApiSWR<unknown>(endpoint, { refreshInterval: 0 });
   const options = useMemo<Option[]>(() => extractOptions(kind, data), [kind, data]);
 

@@ -1,5 +1,4 @@
 import { db } from '@db';
-import { orgParticipantMemberWhereForFlag } from '../utils/org-participation';
 import { Injectable, Logger } from '@nestjs/common';
 import { TaskStatus } from '@db';
 import { isUserUnsubscribed } from '@gideon-defender/email';
@@ -1163,11 +1162,8 @@ export class TaskNotifierService {
     try {
       const organization = await db.organization.findUnique({
         where: { id: organizationId },
-        select: { name: true, isInternal: true },
+        select: { name: true },
       });
-      const participantWhere = orgParticipantMemberWhereForFlag(
-        organization?.isInternal ?? false,
-      );
       const [task, allMembers] = await Promise.all([
         db.task.findUnique({
           where: { id: taskId },
@@ -1189,7 +1185,6 @@ export class TaskNotifierService {
           where: {
             organizationId,
             deactivated: false,
-            ...participantWhere,
           },
           select: {
             id: true,
@@ -1372,11 +1367,8 @@ export class TaskNotifierService {
       const taskIds = failedTasks.map((t) => t.taskId);
       const organization = await db.organization.findUnique({
         where: { id: organizationId },
-        select: { name: true, isInternal: true },
+        select: { name: true },
       });
-      const participantWhere = orgParticipantMemberWhereForFlag(
-        organization?.isInternal ?? false,
-      );
 
       const [tasks, allMembers] = await Promise.all([
         db.task.findMany({
@@ -1403,7 +1395,6 @@ export class TaskNotifierService {
           where: {
             organizationId,
             deactivated: false,
-            ...participantWhere,
           },
           select: {
             id: true,

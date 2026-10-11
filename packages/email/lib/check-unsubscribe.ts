@@ -69,14 +69,12 @@ export async function getUnsubscribedEmails(
           email: boolean;
           emailNotificationsUnsubscribed: boolean;
           emailPreferences: boolean;
-          role: boolean;
         };
       }) => Promise<
         Array<{
           email: string;
           emailNotificationsUnsubscribed: boolean;
           emailPreferences: unknown;
-          role: string | null;
         }>
       >;
     };
@@ -109,16 +107,15 @@ export async function getUnsubscribedEmails(
         email: true,
         emailNotificationsUnsubscribed: true,
         emailPreferences: true,
-        role: true,
       },
     });
 
     const unsubscribed = new Set<string>();
 
-    // Step 1: filter out platform admins and legacy all-or-nothing unsubscribes
+    // Step 1: filter out legacy all-or-nothing unsubscribes
     const survivingUsers: typeof users = [];
     for (const user of users) {
-      if (user.role === 'admin' || user.emailNotificationsUnsubscribed) {
+      if (user.emailNotificationsUnsubscribed) {
         unsubscribed.add(user.email);
       } else {
         survivingUsers.push(user);
@@ -234,12 +231,10 @@ export async function isUserUnsubscribed(
         select: {
           emailNotificationsUnsubscribed: boolean;
           emailPreferences: boolean;
-          role: boolean;
         };
       }) => Promise<{
         emailNotificationsUnsubscribed: boolean;
         emailPreferences: unknown;
-        role: string | null;
       } | null>;
     };
     member?: {
@@ -268,17 +263,11 @@ export async function isUserUnsubscribed(
       select: {
         emailNotificationsUnsubscribed: true,
         emailPreferences: true,
-        role: true,
       },
     });
 
     if (!user) {
       return false;
-    }
-
-    // Platform admins never receive email notifications
-    if (user.role === 'admin') {
-      return true;
     }
 
     // If legacy all-or-nothing flag is set, user is unsubscribed from everything

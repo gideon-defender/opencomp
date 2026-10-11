@@ -38,7 +38,6 @@ describe('DeviceAgentController', () => {
     organizationId: 'org_1',
     authType: 'session',
     isApiKey: false,
-    isPlatformAdmin: false,
     userId: 'user_1',
     userEmail: 'test@example.com',
     userRoles: ['admin'],

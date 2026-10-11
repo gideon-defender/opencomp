@@ -1,5 +1,3 @@
-import { useOrgIsInternal } from '@/components/org-internal-context';
-import { isOrgParticipant } from '@/lib/org-participation-rule';
 import { authClient } from '@/utils/auth-client';
 import { Member, User } from '@db';
 import { Avatar, AvatarFallback, AvatarImage } from '@gideon-defender/ui/avatar';
@@ -22,15 +20,12 @@ export const SelectAssignee = ({
   withTitle = true,
 }: SelectAssigneeProps) => {
   const { data: activeMember } = authClient.useActiveMember();
-  const orgIsInternal = useOrgIsInternal();
-  // Exclude platform admins from assignee selection — except in internal
-  // (platform-operated) orgs, where they are real members. Uses the shared
-  // participation rule so the UI stays in sync with the backend.
-  const assignees = rawAssignees
-    .filter((a) => isOrgParticipant(a.user.role, { orgIsInternal }))
-    .sort((a, b) =>
-      (a.user.name || a.user.email || '').localeCompare(b.user.name || b.user.email || ''),
-    );
+  // Every org member is a genuine participant (authorization is org-scoped),
+  // so the picker lists all assignees sorted by name. Copy before sorting:
+  // sort() mutates in place and must never mutate the parent-owned prop.
+  const assignees = [...rawAssignees].sort((a, b) =>
+    (a.user.name || a.user.email || '').localeCompare(b.user.name || b.user.email || ''),
+  );
   // Derived directly from the assigneeId prop so the trigger always reflects
   // the controlled value without a syncing effect.
   const selectedAssignee = assignees.find((a) => a.id === assigneeId) ?? null;

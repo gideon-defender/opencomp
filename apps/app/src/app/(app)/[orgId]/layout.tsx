@@ -1,6 +1,5 @@
 import { getFeatureFlags } from '@/app/posthog';
 import { APP_AWS_ORG_ASSETS_BUCKET, s3Client } from '@/app/s3';
-import { OrgInternalProvider } from '@/components/org-internal-context';
 import { TriggerTokenProvider } from '@/components/trigger-token-provider';
 import { canAccessApp, canAccessAuditorView, parseRolesString } from '@/lib/permissions';
 import { resolveCustomRolePermissions, resolveUserPermissions } from '@/lib/permissions.server';
@@ -101,16 +100,12 @@ export default async function Layout({
   // Parse roles for UI display purposes (auditor-specific UI)
   const roles = parseRolesString(member.role);
 
-  const isUserAdmin = session.user.role === 'admin';
+  if (!organization.hasAccess) {
+    return redirect(`/upgrade/${organization.id}`);
+  }
 
-  if (!isUserAdmin) {
-    if (!organization.hasAccess) {
-      return redirect(`/upgrade/${organization.id}`);
-    }
-
-    if (!organization.onboardingCompleted) {
-      return redirect(`/onboarding/${organization.id}`);
-    }
+  if (!organization.onboardingCompleted) {
+    return redirect(`/onboarding/${organization.id}`);
   }
 
   const onboarding = await db.onboarding.findFirst({
@@ -178,26 +173,23 @@ export default async function Layout({
     >
       <OrganizationIdentifier orgId={organization.id} orgName={organization.name} />
       <ServerFeatureFlagsProvider flags={featureFlags}>
-        <OrgInternalProvider isInternal={organization.isInternal}>
-          <AppShellWrapper
-            organization={organization}
-            logoUrl={logoUrl}
-            onboarding={onboarding}
-            isCollapsed={isCollapsed}
-            isQuestionnaireEnabled={isQuestionnaireEnabled}
-            isTrustNdaEnabled={isTrustNdaEnabled}
-            isWebAutomationsEnabled={isWebAutomationsEnabled}
-            isSecurityEnabled={isSecurityEnabled}
-            hasAuditorRole={hasAuditorRole}
-            isOnlyAuditor={isOnlyAuditor}
-            canAccessAuditorView={auditorViewVisible}
-            permissions={permissions}
-            user={user}
-            isAdmin={isUserAdmin}
-          >
-            {children}
-          </AppShellWrapper>
-        </OrgInternalProvider>
+        <AppShellWrapper
+          organization={organization}
+          logoUrl={logoUrl}
+          onboarding={onboarding}
+          isCollapsed={isCollapsed}
+          isQuestionnaireEnabled={isQuestionnaireEnabled}
+          isTrustNdaEnabled={isTrustNdaEnabled}
+          isWebAutomationsEnabled={isWebAutomationsEnabled}
+          isSecurityEnabled={isSecurityEnabled}
+          hasAuditorRole={hasAuditorRole}
+          isOnlyAuditor={isOnlyAuditor}
+          canAccessAuditorView={auditorViewVisible}
+          permissions={permissions}
+          user={user}
+        >
+          {children}
+        </AppShellWrapper>
       </ServerFeatureFlagsProvider>
       <HotKeys />
     </TriggerTokenProvider>

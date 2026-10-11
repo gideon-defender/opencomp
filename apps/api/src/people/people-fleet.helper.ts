@@ -1,6 +1,5 @@
 import { Logger } from '@nestjs/common';
 import { db } from '@db';
-import { orgParticipantMemberWhere } from '../utils/org-participation';
 import { FleetService } from '../lib/fleet.service';
 
 const MDM_POLICY_ID = -9999;
@@ -154,12 +153,10 @@ export async function getAllEmployeeDevices(
   organizationId: string,
 ) {
   try {
-    const participantWhere = await orgParticipantMemberWhere(organizationId);
     const employees = await db.member.findMany({
       where: {
         organizationId,
         deactivated: false,
-        ...participantWhere,
       },
       include: { user: true },
     });

@@ -151,13 +151,12 @@ export function MemberRow({
 
   const isOwner = currentRoles.includes('owner');
   const isAuditorOnly = currentRoles.length > 0 && currentRoles.every((role) => role === 'auditor');
-  const isPlatformAdmin = member.user.role === 'admin';
   const canRemove = !isOwner;
   const isDeactivated = member.deactivated || !member.isActive;
   const profileHref = `/${orgId}/people/${memberId}`;
   const hasCompletedBackgroundCheck = isBackgroundCheckComplete(backgroundCheckStatus);
   const memberExempt = member.backgroundCheckExempt === true;
-  const shouldShowTaskRequirements = !isPlatformAdmin && !isDeactivated;
+  const shouldShowTaskRequirements = !isDeactivated;
   // One cell per requirement column. A muted dash = the requirement doesn't
   // apply to this member (org flag off, exempt, auditor-only, admin, 0 total).
   const renderRequirementCell = (key: RequirementColumnKey) => {
@@ -349,7 +348,6 @@ export function MemberRow({
         <TableCell>
           <div className="w-[160px]">
             <div className="flex flex-wrap gap-1">
-              {member.user.role === 'admin' && <Badge>OpenComp</Badge>}
               {currentRoles.map((role) => (
                 <Badge key={role} variant="outline">
                   {getRoleLabel(role)}
@@ -484,14 +482,6 @@ export function MemberRow({
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor={`role-${memberId}`}>Roles</Label>
-              {isPlatformAdmin && (
-                <div className="flex items-center gap-2 rounded-md border px-3 py-2">
-                  <Badge>OpenComp</Badge>
-                  <span className="text-muted-foreground text-xs">
-                    This role is managed by the platform and cannot be removed.
-                  </span>
-                </div>
-              )}
               <MultiRoleCombobox
                 selectedRoles={selectedRoles}
                 onSelectedRolesChange={setSelectedRoles}

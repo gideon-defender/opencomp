@@ -1,5 +1,4 @@
 import { db } from '@db';
-import { isOrgParticipant } from '../utils/org-participation-rule';
 import { Injectable, Logger } from '@nestjs/common';
 import { isUserUnsubscribed } from '@gideon-defender/email';
 import { triggerEmail } from '../email/trigger-email';
@@ -59,7 +58,7 @@ export class TaskItemAssignmentNotifierService {
       const [organization, assigneeMember, assignedByUser] = await Promise.all([
         db.organization.findUnique({
           where: { id: organizationId },
-          select: { name: true, isInternal: true },
+          select: { name: true },
         }),
         db.member.findUnique({
           where: { id: assigneeMemberId },
@@ -70,7 +69,6 @@ export class TaskItemAssignmentNotifierService {
                 id: true,
                 name: true,
                 email: true,
-                role: true,
               },
             },
           },
@@ -91,19 +89,6 @@ export class TaskItemAssignmentNotifierService {
       if (!assigneeMember || !assigneeUser?.id || !assigneeUser.email) {
         this.logger.warn(
           `Skipping assignment notification: assignee member ${assigneeMemberId} has no user/email`,
-        );
-        return;
-      }
-
-      // Skip notifications for platform admins unless this is an internal org
-      // (where platform admins are real members) — the single participation rule.
-      if (
-        !isOrgParticipant(assigneeUser.role, {
-          orgIsInternal: organization?.isInternal ?? false,
-        })
-      ) {
-        this.logger.log(
-          `Skipping assignment notification: assignee ${assigneeUser.email} is a platform admin`,
         );
         return;
       }

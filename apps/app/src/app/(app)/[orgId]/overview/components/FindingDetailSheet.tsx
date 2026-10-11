@@ -8,7 +8,6 @@ import {
 } from '@/hooks/use-findings-api';
 
 import { Comments } from '@/components/comments/Comments';
-import { useAuthMe } from '@/hooks/use-auth-me';
 import { usePermissions } from '@/hooks/use-permissions';
 import { FindingSeverity, FindingStatus } from '@db';
 import {
@@ -61,14 +60,12 @@ interface FindingDetailSheetProps {
 function allowedStatusOptions({
   current,
   canCreateFindings,
-  isPlatformAdmin,
 }: {
   current: FindingStatus;
   canCreateFindings: boolean;
-  isPlatformAdmin: boolean;
 }): FindingStatus[] {
   const options: FindingStatus[] = [FindingStatus.open, FindingStatus.ready_for_review];
-  if (canCreateFindings || isPlatformAdmin) {
+  if (canCreateFindings) {
     options.push(FindingStatus.needs_revision, FindingStatus.closed);
   }
   if (!options.includes(current)) options.push(current);
@@ -163,11 +160,9 @@ export function FindingDetailSheet({
 }: FindingDetailSheetProps) {
   const t = useTranslations('overview');
   const { hasPermission } = usePermissions();
-  const { user } = useAuthMe();
   const canUpdate = hasPermission('finding', 'update');
   const canDelete = hasPermission('finding', 'delete');
   const canCreateFindings = hasPermission('finding', 'create');
-  const isPlatformAdmin = user?.role === 'admin';
   const canEditContent = canUpdate && canCreateFindings;
   const { updateFinding, deleteFinding } = useFindingActions();
   const { data: historyData } = useFindingHistory(finding?.id ?? null);
@@ -368,7 +363,6 @@ export function FindingDetailSheet({
                       {allowedStatusOptions({
                         current: status,
                         canCreateFindings,
-                        isPlatformAdmin,
                       }).map((s) => (
                         <SelectItem key={s} value={s}>
                           {t(STATUS_LABEL_KEYS[s])}

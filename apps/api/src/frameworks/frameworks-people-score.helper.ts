@@ -35,7 +35,6 @@ interface ScoreMember {
   id: string;
   userId?: string | null;
   role: string;
-  user?: { role?: string | null } | null;
 }
 
 interface ComputePeopleScoreParams {

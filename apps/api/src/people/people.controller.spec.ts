@@ -101,7 +101,6 @@ describe('PeopleController', () => {
     organizationId: 'org_123',
     authType: 'session',
     isApiKey: false,
-    isPlatformAdmin: false,
     userId: 'usr_123',
     userEmail: 'test@example.com',
     userRoles: ['owner'],

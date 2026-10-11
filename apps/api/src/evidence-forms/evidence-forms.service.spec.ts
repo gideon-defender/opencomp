@@ -70,7 +70,6 @@ describe('EvidenceFormsService', () => {
     organizationId: 'org_123',
     authType: 'session',
     isApiKey: false,
-    isPlatformAdmin: false,
     userRoles: ['admin'],
     userId: 'usr_reviewer',
     userEmail: 'reviewer@example.com',

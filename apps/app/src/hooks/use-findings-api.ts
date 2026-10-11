@@ -6,6 +6,7 @@ import type { FindingArea, FindingSeverity, FindingStatus } from '@db';
 import { FindingType } from '@db';
 import type { EvidenceFormType } from '@gideon-defender/company';
 import { useCallback } from 'react';
+import { useSWRConfig } from 'swr';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -70,8 +71,25 @@ export interface FindingTemplate {
   title: string;
   content: string;
   order: number;
+  /** Null = global template shared by every org; set = per-org template. */
+  organizationId: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+/** Payload for creating a per-org finding template (org comes from session). */
+export interface CreateFindingTemplateData {
+  category: string;
+  title: string;
+  content: string;
+  order?: number;
+}
+
+export interface UpdateFindingTemplateData {
+  category?: string;
+  title?: string;
+  content?: string;
+  order?: number;
 }
 
 /** Payload for creating a finding — exactly one target (or area) must be set. */
@@ -174,6 +192,59 @@ export function useFindingTemplates(options: UseApiSWROptions<FindingTemplate[]>
   return useApiSWR<FindingTemplate[]>('/v1/finding-template', options);
 }
 
+function isFindingTemplateCacheKey(key: unknown): boolean {
+  if (Array.isArray(key) && typeof key[0] === 'string') {
+    return key[0] === '/v1/finding-template';
+  }
+  return key === '/v1/finding-template';
+}
+
+/** Mutations for per-org finding templates (member admins). */
+export function useFindingTemplateActions() {
+  const api = useApi();
+  const { mutate: globalMutate } = useSWRConfig();
+
+  const invalidateTemplates = useCallback(async () => {
+    await globalMutate(isFindingTemplateCacheKey, undefined, {
+      revalidate: true,
+    });
+  }, [globalMutate]);
+
+  const createTemplate = useCallback(
+    async (data: CreateFindingTemplateData) => {
+      const response = await api.post<FindingTemplate>('/v1/finding-template', data);
+      if (response.error) throw new Error(response.error);
+      if (!response.data) throw new Error('Create template returned no data');
+      await invalidateTemplates();
+      return response.data;
+    },
+    [api, invalidateTemplates],
+  );
+
+  const updateTemplate = useCallback(
+    async (templateId: string, data: UpdateFindingTemplateData) => {
+      const response = await api.patch<FindingTemplate>(`/v1/finding-template/${templateId}`, data);
+      if (response.error) throw new Error(response.error);
+      if (!response.data) throw new Error('Update template returned no data');
+      await invalidateTemplates();
+      return response.data;
+    },
+    [api, invalidateTemplates],
+  );
+
+  const deleteTemplate = useCallback(
+    async (templateId: string) => {
+      const response = await api.delete(`/v1/finding-template/${templateId}`);
+      if (response.error) throw new Error(response.error);
+      await invalidateTemplates();
+      return { success: true };
+    },
+    [api, invalidateTemplates],
+  );
+
+  return { createTemplate, updateTemplate, deleteTemplate };
+}
+
 export function useFindingHistory(
   findingId: string | null,
   options: UseApiSWROptions<FindingHistoryEntry[]> = {},
@@ -193,7 +264,8 @@ export function useFindingActions() {
     async (data: CreateFindingData) => {
       const response = await api.post<Finding>('/v1/findings', data);
       if (response.error) throw new Error(response.error);
-      return response.data!;
+      if (!response.data) throw new Error('Create finding returned no data');
+      return response.data;
     },
     [api],
   );
@@ -202,7 +274,8 @@ export function useFindingActions() {
     async (findingId: string, data: UpdateFindingData) => {
       const response = await api.patch<Finding>(`/v1/findings/${findingId}`, data);
       if (response.error) throw new Error(response.error);
-      return response.data!;
+      if (!response.data) throw new Error('Update finding returned no data');
+      return response.data;
     },
     [api],
   );
@@ -297,6 +370,7 @@ export const DEFAULT_FINDING_TEMPLATES: FindingTemplate[] = [
     content:
       'The uploaded evidence does not clearly show the Organization Name or URL. Please provide a screenshot showing the context.',
     order: 1,
+    organizationId: null,
     createdAt: '',
     updatedAt: '',
   },
@@ -307,6 +381,7 @@ export const DEFAULT_FINDING_TEMPLATES: FindingTemplate[] = [
     content:
       'The evidence date falls outside the currently active audit observation window. Please ensure evidence is relevant to the current period.',
     order: 2,
+    organizationId: null,
     createdAt: '',
     updatedAt: '',
   },
@@ -317,6 +392,7 @@ export const DEFAULT_FINDING_TEMPLATES: FindingTemplate[] = [
     content:
       'The auditor could not open or read the file due to low resolution or corruption. Please re-upload a clear copy.',
     order: 3,
+    organizationId: null,
     createdAt: '',
     updatedAt: '',
   },
@@ -327,6 +403,7 @@ export const DEFAULT_FINDING_TEMPLATES: FindingTemplate[] = [
     content:
       'The attached document(s) is a statement of intent. This control requires Evidence of Operation (proof of action). Please upload specific logs, screenshots, system configs, or tickets that demonstrate this policy is currently being enforced.',
     order: 1,
+    organizationId: null,
     createdAt: '',
     updatedAt: '',
   },
@@ -337,6 +414,7 @@ export const DEFAULT_FINDING_TEMPLATES: FindingTemplate[] = [
     content:
       "This task was marked as 'Done', but no file was attached. For an external audit, every completed task requires proof of execution. Please upload the specific evidence (screenshot, PDF, or export) and re-submit.",
     order: 2,
+    organizationId: null,
     createdAt: '',
     updatedAt: '',
   },
@@ -347,6 +425,7 @@ export const DEFAULT_FINDING_TEMPLATES: FindingTemplate[] = [
     content:
       'Please upload a sample of recently merged Pull Requests (5 examples). The evidence must clearly show: 1. The Author, 2. The Approver (must be different from the author), and 3. The Build/Test Status checks.',
     order: 1,
+    organizationId: null,
     createdAt: '',
     updatedAt: '',
   },
@@ -357,6 +436,7 @@ export const DEFAULT_FINDING_TEMPLATES: FindingTemplate[] = [
     content:
       'Please upload a screenshot of an actual triggered alert (e.g., a notification from PagerDuty, Slack, or Email). The evidence must clearly show: 1. The Alert Name, 2. The Timestamp, and 3. The Severity Level.',
     order: 2,
+    organizationId: null,
     createdAt: '',
     updatedAt: '',
   },
@@ -367,6 +447,7 @@ export const DEFAULT_FINDING_TEMPLATES: FindingTemplate[] = [
     content:
       'Please provide a sample of System or Infrastructure Logs (e.g., AWS CloudWatch, Google Cloud Logging, Datadog). The sample must clearly show headers including: Timestamp, Event/Error Message, and Source/User.',
     order: 3,
+    organizationId: null,
     createdAt: '',
     updatedAt: '',
   },
@@ -377,6 +458,7 @@ export const DEFAULT_FINDING_TEMPLATES: FindingTemplate[] = [
     content:
       'This control is required for SOC 2 compliance, regardless of company size. However, the evidence can be scaled down to fit your stage. Please see the guidance documentation for acceptable lightweight evidence.',
     order: 1,
+    organizationId: null,
     createdAt: '',
     updatedAt: '',
   },

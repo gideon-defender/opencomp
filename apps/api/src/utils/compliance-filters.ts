@@ -1,12 +1,9 @@
 import {
   BUILT_IN_ROLE_OBLIGATIONS,
-  PLATFORM_ADMIN_ROLE,
   type RoleObligations,
   allRoles,
-  isOrgParticipant,
 } from '@gideon-defender/auth';
 import { db } from '@db';
-import { getOrgIsInternal } from './org-participation';
 
 /**
  * Check if any of the given role names have the compliance obligation,
@@ -29,13 +26,13 @@ function hasComplianceObligation(
 
 interface MemberWithRole {
   role: string;
-  user?: { role?: string | null } | null;
 }
 
 /**
  * Filter members to only those with the compliance obligation.
- * Excludes platform admins — they join customer orgs to debug,
- * not to be counted toward compliance progress.
+ * Membership is org-scoped: every member of the organization is a genuine
+ * participant (there is no cross-tenant role), so filtering is purely a
+ * function of the member's org roles (built-in + custom obligations).
  * Resolves built-in role obligations in-memory and fetches custom role
  * obligations with a single DB query.
  */
@@ -44,15 +41,6 @@ export async function filterComplianceMembers<T extends MemberWithRole>(
   organizationId: string,
 ): Promise<T[]> {
   if (members.length === 0) return [];
-
-  // The internal flag only changes a platform admin's participation, so skip the
-  // extra query entirely when the list has no platform admins (the common case).
-  const hasPlatformAdmin = members.some(
-    (m) => m.user?.role === PLATFORM_ADMIN_ROLE,
-  );
-  const orgIsInternal = hasPlatformAdmin
-    ? await getOrgIsInternal(organizationId)
-    : false;
 
   // Collect all custom role names
   const allCustomRoleNames = new Set<string>();
@@ -86,11 +74,8 @@ export async function filterComplianceMembers<T extends MemberWithRole>(
   }
 
   return memberRoles
-    .filter(({ member, roleNames }) => {
-      // Platform admins are excluded — they join customer orgs to debug — unless
-      // this is an internal (platform-operated) org where they are real members.
-      if (!isOrgParticipant(member.user?.role, { orgIsInternal })) return false;
-      return hasComplianceObligation(roleNames, customObligationMap);
-    })
+    .filter(({ roleNames }) =>
+      hasComplianceObligation(roleNames, customObligationMap),
+    )
     .map(({ member }) => member);
 }

@@ -171,7 +171,6 @@ export function CompanyFormPageClient({
 }: {
   organizationId: string;
   formType: EvidenceFormType;
-  isPlatformAdmin?: boolean;
 }) {
   const t = useTranslations('documents');
   const tIsms = useTranslations('isms');

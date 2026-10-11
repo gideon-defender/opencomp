@@ -23,7 +23,6 @@ function makeAuth(overrides: Partial<AuthContextType> = {}): AuthContextType {
     organizationId: 'org_active',
     authType: 'session',
     isApiKey: false,
-    isPlatformAdmin: false,
     userId: 'usr_1',
     userRoles: ['admin'],
     ...overrides,

@@ -119,7 +119,6 @@ describe('createServiceTriggerRequest', () => {
       isApiKey: false,
       isServiceToken: true,
       serviceName: 'Local trigger Workers',
-      isPlatformAdmin: false,
       userRoles: null,
     });
   });

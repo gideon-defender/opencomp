@@ -19,7 +19,6 @@ function makeReq(
     authType: 'session',
     isApiKey: false,
     isServiceToken: false,
-    isPlatformAdmin: false,
     userRoles: null,
     ...overrides,
   } as unknown as AuthenticatedRequest;

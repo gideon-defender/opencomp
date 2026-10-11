@@ -12,7 +12,9 @@ jest.mock('@db', () => ({
     needs_revision: 'needs_revision',
     closed: 'closed',
   },
-  db: { finding: { findFirst: (...args: unknown[]) => mockFindFirst(...args) } },
+  db: {
+    finding: { findFirst: (...args: unknown[]) => mockFindFirst(...args) },
+  },
 }));
 
 jest.mock('@gideon-defender/auth', () => ({
@@ -22,7 +24,9 @@ jest.mock('@gideon-defender/auth', () => ({
 
 const mockHasPermission = jest.fn();
 jest.mock('./auth.server', () => ({
-  auth: { api: { hasPermission: (...args: unknown[]) => mockHasPermission(...args) } },
+  auth: {
+    api: { hasPermission: (...args: unknown[]) => mockHasPermission(...args) },
+  },
 }));
 
 const mockRolesGrant = jest.fn();
@@ -56,9 +60,6 @@ import { PermissionGuard } from './permission.guard';
 import { CommentsPermissionGuard } from '../comments/comments-permission.guard';
 import { OAuthReconnectGuard } from '../integration-platform/guards/oauth-reconnect.guard';
 import { FindingsService } from '../findings/findings.service';
-
-// Reason attached to every Phase-1-gated skip so CI output explains itself.
-const PHASE_1 = 'Phase 1: unskip after platform-role removal';
 
 function mockContext(request: Record<string, unknown>): ExecutionContext {
   return {
@@ -95,13 +96,10 @@ describe('cross-tenant isolation (Phase 2 validation)', () => {
     const required = [{ resource: 'control', actions: ['read'] }];
 
     it('denies a session user with no membership roles in the org', async () => {
-      const guard = new PermissionGuard(
-        reflectorWith(required) as never,
-      );
+      const guard = new PermissionGuard(reflectorWith(required));
       mockRolesGrant.mockResolvedValue(false);
       const ctx = mockContext({
         userRoles: [],
-        isPlatformAdmin: false,
         organizationId: 'org_b',
       });
       await expect(guard.canActivate(ctx)).rejects.toBeInstanceOf(
@@ -110,9 +108,7 @@ describe('cross-tenant isolation (Phase 2 validation)', () => {
     });
 
     it('denies an API key missing the required scope', async () => {
-      const guard = new PermissionGuard(
-        reflectorWith(required) as never,
-      );
+      const guard = new PermissionGuard(reflectorWith(required));
       const ctx = mockContext({
         isApiKey: true,
         apiKeyScopes: ['vendor:read'],
@@ -123,40 +119,41 @@ describe('cross-tenant isolation (Phase 2 validation)', () => {
       );
     });
 
-    it.skip(
-      `${PHASE_1} — denies a platform admin with no membership in the org`,
-      async () => {
-        const guard = new PermissionGuard(
-          reflectorWith(required) as never,
-        );
-        const ctx = mockContext({
-          isPlatformAdmin: true,
-          userRoles: null,
-          organizationId: 'org_b',
-        });
-        await expect(guard.canActivate(ctx)).rejects.toBeInstanceOf(
-          ForbiddenException,
-        );
-      },
-    );
+    it('denies a session user with null roles (no bypass without membership)', async () => {
+      const guard = new PermissionGuard(reflectorWith(required));
+      const ctx = mockContext({
+        userRoles: null,
+        organizationId: 'org_b',
+      });
+      await expect(guard.canActivate(ctx)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+    });
 
-    it.skip(
-      `${PHASE_1} — denies a platform admin whose membership lacks the permission`,
-      async () => {
-        const guard = new PermissionGuard(
-          reflectorWith(required) as never,
-        );
-        mockRolesGrant.mockResolvedValue(false);
-        const ctx = mockContext({
-          isPlatformAdmin: true,
-          userRoles: ['employee'],
-          organizationId: 'org_b',
-        });
-        await expect(guard.canActivate(ctx)).rejects.toBeInstanceOf(
-          ForbiddenException,
-        );
-      },
-    );
+    it('denies a member whose role lacks the permission', async () => {
+      const guard = new PermissionGuard(reflectorWith(required));
+      mockRolesGrant.mockResolvedValue(false);
+      const ctx = mockContext({
+        userRoles: ['employee'],
+        organizationId: 'org_b',
+      });
+      await expect(guard.canActivate(ctx)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+    });
+
+    it('denies a legacy platform-admin flag without org permission', async () => {
+      const guard = new PermissionGuard(reflectorWith(required));
+      mockRolesGrant.mockResolvedValue(false);
+      const ctx = mockContext({
+        isPlatformAdmin: true,
+        userRoles: ['employee'],
+        organizationId: 'org_b',
+      });
+      await expect(guard.canActivate(ctx)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+    });
   });
 
   describe('CommentsPermissionGuard', () => {
@@ -169,7 +166,6 @@ describe('cross-tenant isolation (Phase 2 validation)', () => {
         method: 'GET',
         query: { entityType: 'task' },
         userRoles: [],
-        isPlatformAdmin: false,
         organizationId: 'org_b',
       });
       await expect(guard.canActivate(ctx)).rejects.toBeInstanceOf(
@@ -177,24 +173,20 @@ describe('cross-tenant isolation (Phase 2 validation)', () => {
       );
     });
 
-    it.skip(
-      `${PHASE_1} — denies a platform admin with no membership in the org`,
-      async () => {
-        const guard = new CommentsPermissionGuard(
-          reflectorWith([{ resource: 'task', actions: ['update'] }]),
-        );
-        const ctx = mockContext({
-          method: 'GET',
-          query: { entityType: 'task' },
-          isPlatformAdmin: true,
-          userRoles: null,
-          organizationId: 'org_b',
-        });
-        await expect(guard.canActivate(ctx)).rejects.toBeInstanceOf(
-          ForbiddenException,
-        );
-      },
-    );
+    it('denies a user with null roles and no bypass', async () => {
+      const guard = new CommentsPermissionGuard(
+        reflectorWith([{ resource: 'task', actions: ['update'] }]),
+      );
+      const ctx = mockContext({
+        method: 'GET',
+        query: { entityType: 'task' },
+        userRoles: null,
+        organizationId: 'org_b',
+      });
+      await expect(guard.canActivate(ctx)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+    });
   });
 
   describe('OAuthReconnectGuard', () => {
@@ -205,7 +197,6 @@ describe('cross-tenant isolation (Phase 2 validation)', () => {
       const ctx = mockContext({
         body: { connectionId: 'conn_1' },
         userRoles: ['employee'],
-        isPlatformAdmin: false,
         organizationId: 'org_b',
       });
       await expect(guard.canActivate(ctx)).rejects.toThrow(
@@ -217,26 +208,22 @@ describe('cross-tenant isolation (Phase 2 validation)', () => {
       const ctx = mockContext({
         body: {},
         userRoles: [],
-        isPlatformAdmin: false,
         organizationId: 'org_b',
       });
       await expect(guard.canActivate(ctx)).resolves.toBe(true);
     });
 
-    it.skip(
-      `${PHASE_1} — denies a platform admin reconnecting a foreign connection`,
-      async () => {
-        const ctx = mockContext({
-          body: { connectionId: 'conn_1' },
-          isPlatformAdmin: true,
-          userRoles: null,
-          organizationId: 'org_b',
-        });
-        await expect(guard.canActivate(ctx)).rejects.toBeInstanceOf(
-          ForbiddenException,
-        );
-      },
-    );
+    it('denies a reconnect on a foreign connection without the permission (no bypass)', async () => {
+      mockRolesGrant.mockResolvedValue(false);
+      const ctx = mockContext({
+        body: { connectionId: 'conn_1' },
+        userRoles: null,
+        organizationId: 'org_b',
+      });
+      await expect(guard.canActivate(ctx)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+    });
   });
 
   describe('findings update gate', () => {
@@ -259,28 +246,10 @@ describe('cross-tenant isolation (Phase 2 validation)', () => {
           'fnd_1',
           { status: 'closed' } as never,
           false,
-          false,
           'usr_1',
           null,
         ),
-      ).rejects.toThrow(/Only auditors or platform admins/);
+      ).rejects.toThrow(/Only auditors can/);
     });
-
-    it.skip(
-      `${PHASE_1} — denies a platform admin closing a foreign finding`,
-      async () => {
-        await expect(
-          service.update(
-            'org_b',
-            'fnd_1',
-            { status: 'closed' } as never,
-            false,
-            true,
-            'usr_admin',
-            null,
-          ),
-        ).rejects.toBeInstanceOf(ForbiddenException);
-      },
-    );
   });
 });

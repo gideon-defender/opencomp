@@ -13,8 +13,8 @@ import { TaskNotifierService } from './task-notifier.service';
 import { checkAutoCompletePhases } from '../frameworks/frameworks-timeline.helper';
 import { TimelinesService } from '../timelines/timelines.service';
 import {
-  validateApproverNotPlatformAdmin,
-  validateAssigneeNotPlatformAdmin,
+  validateApproverMembership,
+  validateAssigneeMembership,
 } from '../utils/assignee-validation';
 
 function computeNextTaskReviewDate(
@@ -278,7 +278,6 @@ export class TasksService {
               name: true,
               email: true,
               image: true,
-              role: true,
             },
           },
         },
@@ -471,7 +470,7 @@ export class TasksService {
     changedByUserId: string,
   ): Promise<{ updatedCount: number }> {
     try {
-      await validateAssigneeNotPlatformAdmin(assigneeId, organizationId);
+      await validateAssigneeMembership(assigneeId, organizationId);
 
       const result = await db.task.updateMany({
         where: {
@@ -664,10 +663,7 @@ export class TasksService {
         }
       }
       if (updateData.assigneeId !== undefined) {
-        await validateAssigneeNotPlatformAdmin(
-          updateData.assigneeId,
-          organizationId,
-        );
+        await validateAssigneeMembership(updateData.assigneeId, organizationId);
         dataToUpdate.assigneeId =
           updateData.assigneeId === null ? null : updateData.assigneeId;
       }
@@ -1032,7 +1028,7 @@ export class TasksService {
       throw new BadRequestException('Task is already done');
     }
 
-    const approver = await validateApproverNotPlatformAdmin(
+    const approver = await validateApproverMembership(
       approverId,
       organizationId,
     );
@@ -1100,7 +1096,7 @@ export class TasksService {
     userId: string,
     approverId: string,
   ): Promise<{ submittedCount: number }> {
-    const approver = await validateApproverNotPlatformAdmin(
+    const approver = await validateApproverMembership(
       approverId,
       organizationId,
     );

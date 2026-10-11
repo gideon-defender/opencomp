@@ -6,19 +6,12 @@ jest.mock('../../auth/app-access', () => ({
   rolesGrantPermissions: jest.fn(),
 }));
 const checkPermissions = jest.mocked(rolesGrantPermissions);
-const context = ({
-  connectionId,
-  isPlatformAdmin = false,
-}: {
-  connectionId?: string;
-  isPlatformAdmin?: boolean;
-}) =>
+const context = ({ connectionId }: { connectionId?: string }) =>
   ({
     switchToHttp: () => ({
       getRequest: () => ({
         organizationId: 'org_1',
         userRoles: ['custom-role'],
-        isPlatformAdmin,
         body: { providerSlug: 'azure', connectionId },
       }),
     }),
@@ -45,19 +38,13 @@ describe('OAuthReconnectGuard', () => {
       required: { integration: ['update'] },
     });
   });
-  it('allows permitted reconnects and platform admins', async () => {
+  it('allows permitted reconnects', async () => {
     checkPermissions.mockResolvedValue(true);
     await expect(
       new OAuthReconnectGuard().canActivate(
         context({ connectionId: 'conn_1' }),
       ),
     ).resolves.toBe(true);
-    checkPermissions.mockClear();
-    await expect(
-      new OAuthReconnectGuard().canActivate(
-        context({ connectionId: 'conn_1', isPlatformAdmin: true }),
-      ),
-    ).resolves.toBe(true);
-    expect(checkPermissions).not.toHaveBeenCalled();
+    expect(checkPermissions).toHaveBeenCalled();
   });
 });

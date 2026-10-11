@@ -7,7 +7,6 @@ export interface AuthenticatedRequest extends Request {
   isServiceToken?: boolean;
   serviceName?: string;
   isGideonJwt?: boolean;
-  isPlatformAdmin: boolean;
   userId?: string;
   userEmail?: string;
   userRoles: string[] | null;
@@ -17,7 +16,6 @@ export interface AuthenticatedRequest extends Request {
   apiKeyId?: string; // ApiKey row id — only set for API key auth. Used by ActingUserResolver / audit log attribution.
   apiKeyName?: string; // Human-readable API key name (e.g. "CI Pipeline") — only set for API key auth.
   apiKeyCreatedByMemberId?: string | null; // Member (org membership) that created the key — only set for API key auth. Lets ActingUserResolver attribute mutations to the real creator instead of the org owner.
-  impersonatedBy?: string; // User ID of the admin who initiated impersonation (only set during impersonation sessions)
   sessionId?: string; // Session ID (only set for session auth)
   sessionDeviceAgent?: boolean; // Whether the session is a device-agent session (only set for session auth)
   isMcpOAuth?: boolean; // True when authenticated via a hosted-MCP OAuth token (no real session). PermissionGuard checks RBAC from userRoles instead of better-auth's session-based hasPermission.
@@ -31,12 +29,10 @@ export interface AuthContext {
   isServiceToken?: boolean;
   isGideonJwt?: boolean;
   serviceName?: string;
-  isPlatformAdmin: boolean;
   userId?: string; // Only available for session auth
   userEmail?: string; // Only available for session auth
   userRoles: string[] | null;
   memberId?: string; // Member ID for assignment filtering (only available for session auth)
   memberDepartment?: string; // Member department for visibility filtering (only available for session auth)
   apiKeyScopes?: string[]; // Scopes for API key auth (empty = legacy full access)
-  impersonatedBy?: string; // User ID of the admin who initiated impersonation (only set during impersonation sessions)
 }

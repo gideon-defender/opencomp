@@ -2,13 +2,11 @@ import { Module } from '@nestjs/common';
 import { AuthModule as BetterAuthModule } from '@thallesp/nestjs-better-auth';
 import { auth } from './auth.server';
 import { ActingUserResolver } from './acting-user.service';
-import { AdminController } from './admin.controller';
 import { ApiKeyGuard } from './api-key.guard';
 import { ApiKeyService } from './api-key.service';
 import { AuthController } from './auth.controller';
 import { HybridAuthGuard } from './hybrid-auth.guard';
 import { PermissionGuard } from './permission.guard';
-import { PlatformAdminGuard } from './platform-admin.guard';
 import { GideonJwtService } from './gideon-jwt.service';
 import { GideonOidcController } from './gideon-oidc.controller';
 import { GideonOidcService } from './gideon-oidc.service';
@@ -31,13 +29,12 @@ import { GideonShadowService } from '../gideon/gideon-shadow.service';
       disableBodyParser: true,
     }),
   ],
-  controllers: [AuthController, AdminController, GideonOidcController],
+  controllers: [AuthController, GideonOidcController],
   providers: [
     ApiKeyService,
     ApiKeyGuard,
     HybridAuthGuard,
     PermissionGuard,
-    PlatformAdminGuard,
     ActingUserResolver,
     GideonJwtService,
     GideonOidcService,
@@ -49,7 +46,6 @@ import { GideonShadowService } from '../gideon/gideon-shadow.service';
     ApiKeyGuard,
     HybridAuthGuard,
     PermissionGuard,
-    PlatformAdminGuard,
     ActingUserResolver,
     GideonJwtService,
     GideonOidcService,

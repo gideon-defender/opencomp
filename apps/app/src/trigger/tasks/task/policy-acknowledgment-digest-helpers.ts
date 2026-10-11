@@ -2,7 +2,6 @@
  * Helper types and pure filter function for the policy acknowledgment digest.
  * Extracted from the scheduled task for testability.
  */
-import { isOrgParticipant } from '@/lib/org-participation-rule';
 import type { PolicyVisibility } from '@db';
 
 // Inlined from @gideon-defender/auth to avoid pulling that package into the Local trigger bundle.
@@ -35,7 +34,6 @@ export async function filterDigestMembersByCompliance<T extends DigestMember>(
   db: ComplianceFilterDb,
   members: T[],
   organizationId: string,
-  orgIsInternal = false,
 ): Promise<T[]> {
   if (members.length === 0) return [];
 
@@ -67,10 +65,7 @@ export async function filterDigestMembersByCompliance<T extends DigestMember>(
   }
 
   return parsed
-    .filter(({ member, roleNames }) => {
-      // Platform admins are excluded — matches the @/lib/compliance behavior —
-      // unless this is an internal (platform-operated) org.
-      if (!isOrgParticipant(member.user?.role, { orgIsInternal })) return false;
+    .filter(({ roleNames }) => {
       for (const name of roleNames) {
         // DB override wins, but only if `compliance` is explicitly set —
         // otherwise fall back to the hardcoded built-in default.
@@ -101,7 +96,7 @@ export interface DigestMember {
   id: string;
   role: string;
   department: string | null;
-  user: { id: string; name: string | null; email: string; role?: string | null };
+  user: { id: string; name: string | null; email: string };
 }
 
 export function computePendingPolicies(

@@ -3,10 +3,11 @@ import { mockNextIntl } from '@/test-utils/mocks/next-intl';
 import {
   ADMIN_PERMISSIONS,
   AUDITOR_PERMISSIONS,
+  NO_PERMISSIONS,
   mockHasPermission,
   setMockPermissions,
 } from '@/test-utils/mocks/permissions';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 mockNextIntl();
@@ -42,6 +43,12 @@ vi.mock('./CreateFindingSheet', () => ({
 vi.mock('./FindingDetailSheet', () => ({
   FindingDetailSheet: ({ open }: { open: boolean }) => (
     <div data-testid="detail-sheet" data-open={open} />
+  ),
+}));
+
+vi.mock('./FindingTemplateManager', () => ({
+  FindingTemplateManager: ({ open }: { open: boolean }) => (
+    <div data-testid="template-manager" data-open={open} />
   ),
 }));
 
@@ -98,6 +105,8 @@ describe('FindingsTab', () => {
     render(<FindingsTab organizationId="org_1" />);
 
     expect(screen.getByText('findings.emptyTitle')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'findings.manageTemplates' }));
+    expect(screen.getByTestId('template-manager')).toHaveAttribute('data-open', 'true');
   });
 
   it('renders the linked item title', () => {
@@ -136,5 +145,30 @@ describe('FindingsTab', () => {
     render(<FindingsTab organizationId="org_1" />);
 
     expect(screen.getByTestId('create-sheet')).toBeInTheDocument();
+  });
+
+  it('shows the template manager button for member admins', () => {
+    // Admins hold finding:update — they manage per-org templates.
+    setMockPermissions(ADMIN_PERMISSIONS);
+    mockUseOrganizationFindings.mockReturnValue({
+      data: { data: [makeFinding()], status: 200 },
+      mutate: vi.fn(),
+    });
+
+    render(<FindingsTab organizationId="org_1" />);
+
+    expect(screen.getByText('findings.manageTemplates')).toBeInTheDocument();
+  });
+
+  it('hides the template manager button without finding:update', () => {
+    setMockPermissions(NO_PERMISSIONS);
+    mockUseOrganizationFindings.mockReturnValue({
+      data: { data: [], status: 200 },
+      mutate: vi.fn(),
+    });
+
+    render(<FindingsTab organizationId="org_1" />);
+
+    expect(screen.queryByText('findings.manageTemplates')).not.toBeInTheDocument();
   });
 });

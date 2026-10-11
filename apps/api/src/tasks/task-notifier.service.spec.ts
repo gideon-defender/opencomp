@@ -398,45 +398,16 @@ describe('TaskNotifierService', () => {
     });
   });
 
-  // Regression: the automation-failure recipient query must apply the
-  // internal-org participant filter (orgParticipantMemberWhereForFlag) so
-  // platform admins are excluded from customer orgs but included in internal
-  // ones. A change to that helper must not silently reroute these notifications.
-  const CUSTOMER_PARTICIPANT_WHERE = {
-    AND: [{ user: { OR: [{ role: { not: 'admin' } }, { role: null }] } }],
-  };
-
+  // The automation-failure recipient query covers every active member of the
+  // organization — authorization is org-scoped, so there is no participation
+  // filter beyond membership. A change to that query must not silently reroute
+  // these notifications.
   const memberWhere = () => mockDb.member.findMany.mock.calls[0][0].where;
 
-  describe('notifyAutomationFailures — participant filter', () => {
-    it('excludes platform admins for a customer org (isInternal false)', async () => {
+  describe('notifyAutomationFailures — recipient query', () => {
+    it('queries all active members of the organization', async () => {
       mockDb.organization.findUnique.mockResolvedValue({
         name: 'Acme',
-        isInternal: false,
-      });
-      mockDb.task.findUnique.mockResolvedValue({ assignee: null });
-      mockDb.member.findMany.mockResolvedValue([]);
-
-      await service.notifyAutomationFailures({
-        organizationId: 'org_1',
-        taskId: 'tsk_1',
-        taskTitle: '2FA',
-        failedCount: 1,
-        totalCount: 2,
-        taskStatusChanged: false,
-      });
-
-      expect(memberWhere()).toEqual({
-        organizationId: 'org_1',
-        deactivated: false,
-        ...CUSTOMER_PARTICIPANT_WHERE,
-      });
-    });
-
-    it('includes platform admins for an internal org (isInternal true)', async () => {
-      mockDb.organization.findUnique.mockResolvedValue({
-        name: 'OpenComp',
-        isInternal: true,
       });
       mockDb.task.findUnique.mockResolvedValue({ assignee: null });
       mockDb.member.findMany.mockResolvedValue([]);
@@ -457,7 +428,7 @@ describe('TaskNotifierService', () => {
     });
   });
 
-  describe('notifyBulkAutomationFailures — participant filter', () => {
+  describe('notifyBulkAutomationFailures — recipient query', () => {
     const bulkParams = {
       organizationId: 'org_1',
       tasks: [
@@ -465,27 +436,9 @@ describe('TaskNotifierService', () => {
       ],
     };
 
-    it('excludes platform admins for a customer org (isInternal false)', async () => {
+    it('queries all active members of the organization', async () => {
       mockDb.organization.findUnique.mockResolvedValue({
         name: 'Acme',
-        isInternal: false,
-      });
-      mockDb.task.findMany.mockResolvedValue([{ id: 'tsk_1', assignee: null }]);
-      mockDb.member.findMany.mockResolvedValue([]);
-
-      await service.notifyBulkAutomationFailures(bulkParams);
-
-      expect(memberWhere()).toEqual({
-        organizationId: 'org_1',
-        deactivated: false,
-        ...CUSTOMER_PARTICIPANT_WHERE,
-      });
-    });
-
-    it('includes platform admins for an internal org (isInternal true)', async () => {
-      mockDb.organization.findUnique.mockResolvedValue({
-        name: 'OpenComp',
-        isInternal: true,
       });
       mockDb.task.findMany.mockResolvedValue([{ id: 'tsk_1', assignee: null }]);
       mockDb.member.findMany.mockResolvedValue([]);
@@ -518,7 +471,6 @@ describe('TaskNotifierService', () => {
     ): Promise<string[]> {
       mockDb.organization.findUnique.mockResolvedValue({
         name: 'Acme',
-        isInternal: false,
       });
       mockDb.task.findUnique.mockResolvedValue({ assignee: null });
       mockDb.member.findMany.mockResolvedValue(members);

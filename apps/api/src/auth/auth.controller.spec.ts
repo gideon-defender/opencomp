@@ -32,7 +32,6 @@ const sessionContext = (): AuthContext => ({
   organizationId: 'org_1',
   authType: 'session',
   isApiKey: false,
-  isPlatformAdmin: false,
   userRoles: null,
   userId: 'user_1',
   userEmail: 'user@example.com',
@@ -103,20 +102,5 @@ describe('AuthController.getMe — hasInactiveMembership (CS-569)', () => {
 
     expect(res.organizations).toHaveLength(1);
     expect(res.hasInactiveMembership).toBe(false);
-  });
-
-  it('surfaces impersonation state from the auth context (Milestone 2)', async () => {
-    mockMemberFindMany.mockResolvedValue([]);
-    mockMemberCount.mockResolvedValue(0);
-
-    const impersonated = await controller.getMe({
-      ...sessionContext(),
-      impersonatedBy: 'admin_1',
-    });
-    expect(impersonated.impersonatedBy).toBe('admin_1');
-    expect(impersonated.authType).toBe('session');
-
-    const plain = await controller.getMe(sessionContext());
-    expect(plain.impersonatedBy).toBeNull();
   });
 });

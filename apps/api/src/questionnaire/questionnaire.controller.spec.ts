@@ -60,7 +60,6 @@ describe('QuestionnaireController', () => {
     organizationId: 'org_1',
     authType: 'session',
     isApiKey: false,
-    isPlatformAdmin: false,
     userId: 'usr_1',
     userEmail: 'test@example.com',
     userRoles: ['owner'],

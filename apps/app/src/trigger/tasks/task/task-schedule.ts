@@ -1,4 +1,3 @@
-import { isOrgParticipant } from '@/lib/org-participation-rule';
 import { db } from '@db/server';
 import { isUserUnsubscribed, TaskStatusNotificationEmail } from '@gideon-defender/email';
 import { logger, schedules } from '@gideon-defender/trigger-local';
@@ -34,7 +33,6 @@ export const taskSchedule = schedules.task({
           select: {
             id: true,
             name: true,
-            isInternal: true,
             members: {
               where: {
                 deactivated: false,
@@ -45,7 +43,6 @@ export const taskSchedule = schedules.task({
                     id: true,
                     name: true,
                     email: true,
-                    role: true,
                   },
                 },
               },
@@ -205,15 +202,10 @@ export const taskSchedule = schedules.task({
         }>,
         task: (typeof allUpdatedTasks)[number],
       ) => {
-        // Exclude platform admins (OpenComp staff) unless the org is internal —
-        // the single participation rule (no per-member owner carve-out).
-        const orgIsInternal = task.organization?.isInternal ?? false;
+        // Every active member participates — there is no user outside a tenant.
         for (const entry of members) {
           const user = entry.user;
           if (!user?.email || !user.id) continue;
-          if (!isOrgParticipant(user.role, { orgIsInternal })) {
-            continue;
-          }
           const key = `${user.id}-${task.id}`;
           if (!recipientsMap.has(key)) {
             recipientsMap.set(key, {

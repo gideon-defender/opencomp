@@ -189,7 +189,10 @@ describe('assertAzureRetryTargetsPinned', () => {
     const reversioned = [
       {
         ...base,
-        url: base.url.replace('api-version=2023-05-01', 'api-version=2021-01-01'),
+        url: base.url.replace(
+          'api-version=2023-05-01',
+          'api-version=2021-01-01',
+        ),
       },
     ];
     expect(() =>
@@ -276,9 +279,7 @@ describe('assertAzureRetryBodiesPinned', () => {
 
   it('refuses scalar-to-object expansion the acknowledged plan never wrote', () => {
     const current = [{ ...FIX[0], body: { properties: { mode: 'a' } } }];
-    const retry = [
-      { ...FIX[0], body: { properties: { mode: { sub: 'b' } } } },
-    ];
+    const retry = [{ ...FIX[0], body: { properties: { mode: { sub: 'b' } } } }];
     expect(() =>
       assertAzureRetryBodiesPinned({
         currentFixSteps: current,

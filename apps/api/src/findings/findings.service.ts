@@ -276,7 +276,7 @@ export class FindingsService {
     return { kind: 'area' as const, id: null, label: createDto.area! };
   }
 
-  /** Create a finding (auditor or platform admin only). */
+  /** Create a finding (auditors only). */
   async create(
     organizationId: string,
     memberId: string | null,
@@ -289,7 +289,13 @@ export class FindingsService {
       const template = await db.findingTemplate.findUnique({
         where: { id: createDto.templateId },
       });
-      if (!template)
+      // Templates are global or own-org only — another org's template
+      // cannot back a finding here.
+      if (
+        !template ||
+        (template.organizationId !== null &&
+          template.organizationId !== organizationId)
+      )
         throw new BadRequestException(
           `Finding template with ID ${createDto.templateId} not found`,
         );
@@ -362,7 +368,6 @@ export class FindingsService {
     findingId: string,
     updateDto: UpdateFindingDto,
     canCreateFindings: boolean,
-    isPlatformAdmin: boolean,
     userId: string,
     memberId: string | null,
   ) {
@@ -375,11 +380,10 @@ export class FindingsService {
       if (
         (updateDto.status === FindingStatus.needs_revision ||
           updateDto.status === FindingStatus.closed) &&
-        !canCreateFindings &&
-        !isPlatformAdmin
+        !canCreateFindings
       ) {
         throw new ForbiddenException(
-          `Only auditors or platform admins can set status to '${updateDto.status}'`,
+          `Only auditors can set status to '${updateDto.status}'`,
         );
       }
     }
@@ -393,19 +397,33 @@ export class FindingsService {
       revisionNoteUpdate = { revisionNote: null };
     }
 
-    const updatedFinding = await db.finding.update({
-      where: { id: findingId },
-      data: {
-        ...(updateDto.status !== undefined && { status: updateDto.status }),
-        ...(updateDto.type !== undefined && { type: updateDto.type }),
-        ...(updateDto.severity !== undefined && {
-          severity: updateDto.severity,
-        }),
-        ...(updateDto.content !== undefined && { content: updateDto.content }),
-        ...revisionNoteUpdate,
-      },
-      include: this.findingInclude,
-    });
+    let updatedFinding;
+    try {
+      updatedFinding = await db.finding.update({
+        where: { id: findingId },
+        data: {
+          ...(updateDto.status !== undefined && { status: updateDto.status }),
+          ...(updateDto.type !== undefined && { type: updateDto.type }),
+          ...(updateDto.severity !== undefined && {
+            severity: updateDto.severity,
+          }),
+          ...(updateDto.content !== undefined && {
+            content: updateDto.content,
+          }),
+          ...revisionNoteUpdate,
+        },
+        include: this.findingInclude,
+      });
+    } catch (error) {
+      // A concurrent delete between the visibility check and this write
+      // surfaces as P2025 — report the same 404 as a missing row, not a 500.
+      if ((error as { code?: string }).code === 'P2025') {
+        throw new NotFoundException(
+          `Finding with ID ${findingId} not found in organization`,
+        );
+      }
+      throw error;
+    }
 
     const auditParams = { findingId, organizationId, userId, memberId };
 
@@ -475,7 +493,17 @@ export class FindingsService {
   ) {
     const finding = await this.findById(organizationId, findingId);
 
-    await db.finding.delete({ where: { id: findingId } });
+    try {
+      await db.finding.delete({ where: { id: findingId } });
+    } catch (error) {
+      // Same concurrent-delete race as update — stay a 404, not a 500.
+      if ((error as { code?: string }).code === 'P2025') {
+        throw new NotFoundException(
+          `Finding with ID ${findingId} not found in organization`,
+        );
+      }
+      throw error;
+    }
 
     // Deletion is already logged by the global AuditLogInterceptor via
     // `extractFindingDescription`. No explicit call here to avoid a

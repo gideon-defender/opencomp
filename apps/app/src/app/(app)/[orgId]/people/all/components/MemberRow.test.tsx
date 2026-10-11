@@ -109,30 +109,9 @@ describe('MemberRow device status', () => {
     expect(screen.getByTestId('requirement-Device')).toHaveTextContent('Missing');
   });
 
-  it('does not show device status for platform admin', () => {
-    const adminMember = {
-      ...baseMember,
-      user: { ...baseMember.user, role: 'admin' as const },
-    } as MemberWithUser;
-
-    render(
-      <table>
-        <tbody>
-          <MemberRow
-            member={adminMember}
-            onRemove={noop}
-            onRemoveDevice={noop}
-            onUpdateRole={noop}
-            onReactivate={noop}
-            canEdit={false}
-            isCurrentUserOwner={false}
-            deviceStatus="compliant"
-          />
-        </tbody>
-      </table>,
-    );
-
-    expect(screen.queryByTestId('requirement-Device')).not.toBeInTheDocument();
+  it('shows device status for all active members', () => {
+    renderMemberRow('compliant');
+    expect(screen.getByTestId('requirement-Device')).toHaveTextContent('Done');
   });
 
   it('does not show device status for deactivated member', () => {
@@ -344,13 +323,8 @@ describe('MemberRow 2FA status', () => {
     expect(screen.getByTestId('requirement-2FA')).toHaveTextContent(text);
   });
 
-  it('shows the 2FA row even for platform admins (2FA applies to all members)', () => {
-    const adminMember = {
-      ...baseMember,
-      user: { ...baseMember.user, role: 'admin' as const },
-    } as MemberWithUser;
-
-    render2fa({ member: adminMember, twoFactorStatus: 'enabled' });
+  it('shows the 2FA row for all active members', () => {
+    render2fa({ member: baseMember, twoFactorStatus: 'enabled' });
     expect(screen.getByTestId('requirement-2FA')).toHaveTextContent('Done');
   });
 

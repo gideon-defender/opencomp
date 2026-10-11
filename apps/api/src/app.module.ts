@@ -56,8 +56,6 @@ import { EmailModule } from './email/email.module';
 import { SecretsModule } from './secrets/secrets.module';
 import { SecurityPenetrationTestsModule } from './security-penetration-tests/security-penetration-tests.module';
 import { StripeModule } from './stripe/stripe.module';
-import { AdminOrganizationsModule } from './admin-organizations/admin-organizations.module';
-import { AdminFeatureFlagsModule } from './admin-feature-flags/admin-feature-flags.module';
 import { TimelinesModule } from './timelines/timelines.module';
 import { BackgroundChecksModule } from './background-checks/background-checks.module';
 import { BillingModule } from './billing/billing.module';
@@ -131,8 +129,6 @@ import { GideonModule } from './gideon/gideon.module';
     StripeModule,
     BillingModule,
     BackgroundChecksModule,
-    AdminOrganizationsModule,
-    AdminFeatureFlagsModule,
     TimelinesModule,
     OffboardingChecklistModule,
     McpModule,

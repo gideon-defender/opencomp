@@ -8,83 +8,19 @@ import {
   type Finding,
 } from '@/hooks/use-findings-api';
 import { usePermissions } from '@/hooks/use-permissions';
-import { formatDate } from '@/lib/format';
 import { FindingSeverity, FindingStatus, FindingType } from '@db';
-import {
-  Badge,
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  Text,
-} from '@trycompai/design-system';
-import { Search, WarningAlt } from '@trycompai/design-system/icons';
+import { Button } from '@gideon-defender/ui/button';
+import { TriangleAlert } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CreateFindingSheet } from './CreateFindingSheet';
 import { FindingDetailSheet } from './FindingDetailSheet';
-
-type SeverityLabelKey =
-  | 'findings.severityLow'
-  | 'findings.severityMedium'
-  | 'findings.severityHigh'
-  | 'findings.severityCritical';
-
-type StatusLabelKey =
-  | 'findings.statusOpen'
-  | 'findings.statusReadyForReview'
-  | 'findings.statusNeedsRevision'
-  | 'findings.statusClosed';
-
-const SEVERITY_LABEL_KEYS: Record<FindingSeverity, SeverityLabelKey> = {
-  low: 'findings.severityLow',
-  medium: 'findings.severityMedium',
-  high: 'findings.severityHigh',
-  critical: 'findings.severityCritical',
-};
-
-const STATUS_LABEL_KEYS: Record<FindingStatus, StatusLabelKey> = {
-  open: 'findings.statusOpen',
-  ready_for_review: 'findings.statusReadyForReview',
-  needs_revision: 'findings.statusNeedsRevision',
-  closed: 'findings.statusClosed',
-};
+import { FindingsFilters } from './FindingsFilters';
+import { FindingsTable } from './FindingsTable';
+import { FindingTemplateManager } from './FindingTemplateManager';
 
 const capitalize = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
-
-const SEVERITY_VARIANT: Record<
-  FindingSeverity,
-  'default' | 'secondary' | 'destructive' | 'outline'
-> = {
-  low: 'outline',
-  medium: 'secondary',
-  high: 'secondary',
-  critical: 'destructive',
-};
-
-const STATUS_VARIANT: Record<FindingStatus, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-  open: 'destructive',
-  ready_for_review: 'outline',
-  needs_revision: 'secondary',
-  closed: 'default',
-};
 
 interface FindingsTabProps {
   organizationId: string;
@@ -113,6 +49,8 @@ export function FindingsTab({
   const t = useTranslations('overview');
   const { hasPermission } = usePermissions();
   const canCreate = hasPermission('finding', 'create');
+  const canManageTemplates = hasPermission('finding', 'update');
+  const [templateManagerOpen, setTemplateManagerOpen] = useState(false);
 
   const statusOptions: { value: FindingStatus | 'all'; label: string }[] = [
     { value: 'all', label: t('findings.allStatuses') },
@@ -235,157 +173,57 @@ export function FindingsTab({
     return result;
   }, [findings, statusFilter, severityFilter, frameworkFilter, searchQuery, targetLabel]);
 
-  const statusLabel =
-    statusOptions.find((o) => o.value === statusFilter)?.label ?? t('common.status');
-  const severityLabel =
-    severityOptions.find((o) => o.value === severityFilter)?.label ?? t('findings.severity');
-  const frameworkLabel =
-    frameworkOptions.find((o) => o.value === frameworkFilter)?.label ?? t('findings.framework');
-
+  const handleOpenTemplateManager = () => setTemplateManagerOpen(true);
   const hasAnyFinding = findings.length > 0;
 
   return (
-    <Stack gap="md">
-      {hasAnyFinding && (
-        <div className="flex flex-col gap-3 md:flex-row md:items-end">
-          <div className="w-full md:max-w-[300px]">
-            <InputGroup>
-              <InputGroupAddon>
-                <Search size={16} />
-              </InputGroupAddon>
-              <InputGroupInput
-                placeholder={t('findings.searchFindings')}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </InputGroup>
-          </div>
-          <div className="flex gap-2">
-            <div className="flex-1 md:w-[180px] md:flex-none">
-              <Select
-                value={statusFilter}
-                onValueChange={(v) => setStatusFilter((v ?? 'all') as FindingStatus | 'all')}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('common.status')}>{statusLabel}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {statusOptions.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex-1 md:w-[180px] md:flex-none">
-              <Select
-                value={severityFilter}
-                onValueChange={(v) => setSeverityFilter((v ?? 'all') as FindingSeverity | 'all')}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('findings.severity')}>{severityLabel}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {severityOptions.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex-1 md:w-[180px] md:flex-none">
-              <Select
-                value={frameworkFilter}
-                onValueChange={(v) => setFrameworkFilter((v ?? 'all') as FindingType | 'all')}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('findings.framework')}>{frameworkLabel}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {frameworkOptions.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+    <div className="flex flex-col gap-4">
+      {canManageTemplates && (
+        <div className="self-end">
+          <Button type="button" variant="outline" onClick={handleOpenTemplateManager}>
+            {t('findings.manageTemplates')}
+          </Button>
         </div>
+      )}
+      {hasAnyFinding && (
+        <FindingsFilters
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          statusFilter={statusFilter}
+          onStatusChange={setStatusFilter}
+          severityFilter={severityFilter}
+          onSeverityChange={setSeverityFilter}
+          frameworkFilter={frameworkFilter}
+          onFrameworkChange={setFrameworkFilter}
+          statusOptions={statusOptions}
+          severityOptions={severityOptions}
+          frameworkOptions={frameworkOptions}
+        />
       )}
 
       {!hasAnyFinding ? (
-        <Empty>
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <WarningAlt size={24} />
-            </EmptyMedia>
-            <EmptyTitle>{t('findings.emptyTitle')}</EmptyTitle>
-            <EmptyDescription>{t('findings.emptyDescription')}</EmptyDescription>
-          </EmptyHeader>
-        </Empty>
+        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed p-6 text-center">
+          <div className="flex flex-col items-center gap-2">
+            <div className="text-muted-foreground">
+              <TriangleAlert size={24} />
+            </div>
+            <p className="font-medium">{t('findings.emptyTitle')}</p>
+            <p className="text-sm text-muted-foreground">{t('findings.emptyDescription')}</p>
+          </div>
+        </div>
       ) : filtered.length === 0 ? (
-        <Empty>
-          <EmptyHeader>
-            <EmptyTitle>{t('findings.filterEmptyTitle')}</EmptyTitle>
-            <EmptyDescription>{t('findings.filterEmptyDescription')}</EmptyDescription>
-          </EmptyHeader>
-        </Empty>
+        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed p-6 text-center">
+          <div className="flex flex-col items-center gap-2">
+            <p className="font-medium">{t('findings.filterEmptyTitle')}</p>
+            <p className="text-sm text-muted-foreground">{t('findings.filterEmptyDescription')}</p>
+          </div>
+        </div>
       ) : (
-        <Table variant="bordered">
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t('findings.target')}</TableHead>
-              <TableHead>{t('findings.finding')}</TableHead>
-              <TableHead>{t('findings.severity')}</TableHead>
-              <TableHead>{t('common.status')}</TableHead>
-              <TableHead>{t('common.updated')}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.map((f) => (
-              <TableRow
-                key={f.id}
-                onClick={() => setSelectedFinding(f)}
-                style={{ cursor: 'pointer' }}
-              >
-                <TableCell style={{ maxWidth: 360, width: 360 }}>
-                  <span
-                    className="block truncate text-sm text-muted-foreground"
-                    style={{ maxWidth: 360 }}
-                    title={targetLabel(f)}
-                  >
-                    {targetLabel(f)}
-                  </span>
-                </TableCell>
-                <TableCell style={{ maxWidth: 360, width: 360 }}>
-                  <span
-                    className="block truncate text-sm font-medium"
-                    style={{ maxWidth: 360 }}
-                    title={f.content}
-                  >
-                    {f.content}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <Badge variant={SEVERITY_VARIANT[f.severity]}>
-                    {t(SEVERITY_LABEL_KEYS[f.severity])}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge variant={STATUS_VARIANT[f.status]}>{t(STATUS_LABEL_KEYS[f.status])}</Badge>
-                </TableCell>
-                <TableCell>
-                  <Text size="sm" variant="muted">
-                    {formatDate(f.updatedAt)}
-                  </Text>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <FindingsTable
+          findings={filtered}
+          targetLabel={targetLabel}
+          onSelect={setSelectedFinding}
+        />
       )}
 
       {canCreate && (
@@ -413,6 +251,10 @@ export function FindingsTab({
           void mutate();
         }}
       />
-    </Stack>
+
+      {canManageTemplates && (
+        <FindingTemplateManager open={templateManagerOpen} onOpenChange={setTemplateManagerOpen} />
+      )}
+    </div>
   );
 }

@@ -1,17 +1,16 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { db } from '@db';
+import { LegacySessionRevocation } from './legacy-session-revocation';
 import { getSessionCookieNames, unsignedSessionToken } from './session-cookie';
 
 export interface NativeSessionUser {
   id: string;
   email: string;
-  role: string | null;
 }
 
 export interface NativeSessionData {
   id: string;
   activeOrganizationId: string | null;
-  impersonatedBy: string | null;
   deviceAgent: boolean;
   expiresAt: Date;
 }
@@ -38,8 +37,14 @@ export interface NativeSessionResult {
  * the caller fall back (dual-run) or 401.
  */
 @Injectable()
-export class NativeSessionService {
+export class NativeSessionService implements OnModuleInit {
   private readonly logger = new Logger(NativeSessionService.name);
+
+  private readonly legacyRevocation = new LegacySessionRevocation();
+
+  async onModuleInit(): Promise<void> {
+    await this.legacyRevocation.onModuleInit();
+  }
 
   async resolveFromHeaders({
     cookieHeader,
@@ -92,9 +97,8 @@ export class NativeSessionService {
       id: string;
       expiresAt: Date;
       activeOrganizationId: string | null;
-      impersonatedBy: string | null;
       deviceAgent: boolean | null;
-      user: { id: string; email: string; role: string | null };
+      user: { id: string; email: string };
     } | null;
     try {
       session = await db.session.findUnique({
@@ -103,25 +107,29 @@ export class NativeSessionService {
           id: true,
           expiresAt: true,
           activeOrganizationId: true,
-          impersonatedBy: true,
           deviceAgent: true,
-          user: { select: { id: true, email: true, role: true } },
+          user: { select: { id: true, email: true } },
         },
       });
     } catch (error) {
       this.logger.warn(
-        `Native session lookup failed: ${(error as Error).message}`,
+        `Native session lookup failed: ${error instanceof Error ? error.message : String(error)}`,
       );
       return null;
     }
     if (!session) return null;
     if (session.expiresAt.getTime() <= Date.now()) return null;
+    if (await this.legacyRevocation.rejectsSession(session.id)) {
+      this.logger.warn(
+        `Rejected legacy impersonation session ${session.id} — revocation pending column drop`,
+      );
+      return null;
+    }
     return {
       user: session.user,
       session: {
         id: session.id,
         activeOrganizationId: session.activeOrganizationId,
-        impersonatedBy: session.impersonatedBy,
         deviceAgent: session.deviceAgent === true,
         expiresAt: session.expiresAt,
       },

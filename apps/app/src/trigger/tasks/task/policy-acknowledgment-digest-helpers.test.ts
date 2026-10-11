@@ -89,7 +89,7 @@ describe('filterDigestMembersByCompliance', () => {
       id: 'm1',
       role: 'employee',
       department: 'it',
-      user: { id: 'u1', name: 'A', email: 'a@x', role: null },
+      user: { id: 'u1', name: 'A', email: 'a@x' },
     };
     const result = await filterDigestMembersByCompliance(mockDb, [member], 'org_1');
     expect(result).toEqual([member]);
@@ -100,18 +100,7 @@ describe('filterDigestMembersByCompliance', () => {
       id: 'm2',
       role: 'auditor',
       department: null,
-      user: { id: 'u2', name: 'B', email: 'b@x', role: null },
-    };
-    const result = await filterDigestMembersByCompliance(mockDb, [member], 'org_1');
-    expect(result).toEqual([]);
-  });
-
-  it('drops platform admins even when member role has the obligation', async () => {
-    const member: DigestMember = {
-      id: 'm3',
-      role: 'employee',
-      department: 'it',
-      user: { id: 'u3', name: 'C', email: 'c@x', role: 'admin' },
+      user: { id: 'u2', name: 'B', email: 'b@x' },
     };
     const result = await filterDigestMembersByCompliance(mockDb, [member], 'org_1');
     expect(result).toEqual([]);
@@ -125,13 +114,13 @@ describe('filterDigestMembersByCompliance', () => {
       id: 'm4',
       role: 'contributor',
       department: 'hr',
-      user: { id: 'u4', name: 'D', email: 'd@x', role: null },
+      user: { id: 'u4', name: 'D', email: 'd@x' },
     };
     const dropper: DigestMember = {
       id: 'm5',
       role: 'observer',
       department: 'hr',
-      user: { id: 'u5', name: 'E', email: 'e@x', role: null },
+      user: { id: 'u5', name: 'E', email: 'e@x' },
     };
     const result = await filterDigestMembersByCompliance(mockDb, [keeper, dropper], 'org_1');
     expect(result.map((m) => m.id)).toEqual(['m4']);
@@ -147,7 +136,7 @@ describe('filterDigestMembersByCompliance', () => {
       id: 'm6',
       role: 'employee',
       department: 'it',
-      user: { id: 'u6', name: 'F', email: 'f@x', role: null },
+      user: { id: 'u6', name: 'F', email: 'f@x' },
     };
     const result = await filterDigestMembersByCompliance(mockDb, [member], 'org_1');
     expect(result).toEqual([]);
@@ -162,7 +151,7 @@ describe('filterDigestMembersByCompliance', () => {
       id: 'm7',
       role: 'admin',
       department: 'it',
-      user: { id: 'u7', name: 'G', email: 'g@x', role: null },
+      user: { id: 'u7', name: 'G', email: 'g@x' },
     };
     const result = await filterDigestMembersByCompliance(mockDb, [member], 'org_1');
     expect(result).toEqual([member]);
@@ -175,7 +164,7 @@ describe('filterDigestMembersByCompliance', () => {
       id: 'm8',
       role: 'owner',
       department: 'it',
-      user: { id: 'u8', name: 'H', email: 'h@x', role: null },
+      user: { id: 'u8', name: 'H', email: 'h@x' },
     };
     const result = await filterDigestMembersByCompliance(mockDb, [member], 'org_1');
     expect(result).toEqual([member]);

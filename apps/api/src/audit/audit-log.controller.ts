@@ -105,7 +105,6 @@ export class AuditLogController {
               name: true,
               email: true,
               image: true,
-              role: true,
             },
           },
           member: true,

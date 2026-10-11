@@ -313,57 +313,6 @@ describe('HybridAuthGuard — MCP OAuth path', () => {
     );
   });
 
-  it('marks platform admins from the user role', async () => {
-    mockGetMcpSession.mockResolvedValue({ userId: 'usr_4', scopes: 'openid' });
-    mockUserFindUnique.mockResolvedValue({
-      id: 'usr_4',
-      email: 'staff@gideondefender.com',
-      role: 'admin',
-    });
-    mockMemberFindMany.mockResolvedValue([
-      {
-        id: 'mem_4',
-        role: 'owner',
-        department: 'none',
-        organizationId: 'org_1',
-      },
-    ]);
-
-    const { context, request } = createContext({
-      authorization: 'Bearer mcp_access_token',
-    });
-
-    await expect(guard.canActivate(context)).resolves.toBe(true);
-    expect(request.isPlatformAdmin).toBe(true);
-  });
-
-  it('lets a platform admin through even with a non-app-access member role', async () => {
-    // Platform admin (user.role='admin') who is only an employee in the org —
-    // should bypass the app-access gate, consistent with PermissionGuard.
-    mockGetMcpSession.mockResolvedValue({ userId: 'usr_pa', scopes: 'openid' });
-    mockUserFindUnique.mockResolvedValue({
-      id: 'usr_pa',
-      email: 'staff@gideondefender.com',
-      role: 'admin',
-    });
-    mockMemberFindMany.mockResolvedValue([
-      {
-        id: 'mem_pa',
-        role: 'employee',
-        department: 'none',
-        organizationId: 'org_1',
-      },
-    ]);
-
-    const { context, request } = createContext({
-      authorization: 'Bearer mcp_access_token',
-    });
-
-    await expect(guard.canActivate(context)).resolves.toBe(true);
-    expect(request.organizationId).toBe('org_1');
-    expect(request.isPlatformAdmin).toBe(true);
-  });
-
   it('blocks a Portal-only role (employee) — no app access, no MCP', async () => {
     mockGetMcpSession.mockResolvedValue({ userId: 'usr_e', scopes: 'openid' });
     mockUserFindUnique.mockResolvedValue({
@@ -388,6 +337,39 @@ describe('HybridAuthGuard — MCP OAuth path', () => {
       ForbiddenException,
     );
     expect(request.organizationId).toBe('');
+  });
+
+  it('blocks a legacy staff user on a Portal-only membership — no bypass remains', async () => {
+    // Regression: platform-admin bypass was removed. A user whose legacy
+    // `User.role` was 'admin' but whose membership grants no app access
+    // must still be rejected from the MCP path. The `role: 'admin'` field
+    // is load-bearing: without it this test cannot tell a legacy admin
+    // from an ordinary user and would pass even with the bypass restored.
+    mockGetMcpSession.mockResolvedValue({
+      userId: 'usr_staff',
+      scopes: 'openid',
+    });
+    mockUserFindUnique.mockResolvedValue({
+      id: 'usr_staff',
+      email: 'staff@gideondefender.com',
+      role: 'admin',
+    });
+    mockMemberFindMany.mockResolvedValue([
+      {
+        id: 'mem_staff',
+        role: 'employee',
+        department: 'none',
+        organizationId: 'org_1',
+      },
+    ]);
+
+    const { context } = createContext({
+      authorization: 'Bearer mcp_access_token',
+    });
+
+    await expect(guard.canActivate(context)).rejects.toThrow(
+      ForbiddenException,
+    );
   });
 
   it('allows a custom role that grants app access', async () => {
@@ -570,7 +552,6 @@ describe('HybridAuthGuard — Gideon JWT (Milestone 2 enforce)', () => {
       session: {
         id: 'sess_9',
         activeOrganizationId: 'org_9',
-        impersonatedBy: null,
         deviceAgent: false,
         expiresAt: new Date(Date.now() + 60_000),
       },
@@ -603,7 +584,6 @@ describe('HybridAuthGuard — Gideon JWT (Milestone 2 enforce)', () => {
       session: {
         id: 'sess_9',
         activeOrganizationId: 'org_9',
-        impersonatedBy: null,
         deviceAgent: false,
         expiresAt: new Date(Date.now() + 60_000),
       },
@@ -650,7 +630,6 @@ describe('HybridAuthGuard — Gideon JWT (Milestone 2 enforce)', () => {
       session: {
         id: 'sess_9',
         activeOrganizationId: 'org_9',
-        impersonatedBy: null,
         deviceAgent: true,
         expiresAt: new Date(Date.now() + 60_000),
       },
@@ -680,7 +659,6 @@ describe('HybridAuthGuard — Gideon JWT (Milestone 2 enforce)', () => {
       session: {
         id: 'sess_9',
         activeOrganizationId: 'org_9',
-        impersonatedBy: null,
         deviceAgent: false,
         expiresAt: new Date(Date.now() + 60_000),
       },
@@ -824,7 +802,6 @@ describe('HybridAuthGuard — Gideon JWT (Milestone 2 enforce)', () => {
       session: {
         id: 'sess_9',
         activeOrganizationId: 'org_9',
-        impersonatedBy: null,
         deviceAgent: false,
         expiresAt: new Date(Date.now() + 60_000),
       },
@@ -851,7 +828,6 @@ describe('HybridAuthGuard — Gideon JWT (Milestone 2 enforce)', () => {
       session: {
         id: 'sess_9',
         activeOrganizationId: 'org_9',
-        impersonatedBy: null,
         deviceAgent: false,
         expiresAt: new Date(Date.now() + 60_000),
       },
@@ -1011,7 +987,6 @@ describe('HybridAuthGuard — native session first (Milestone 3)', () => {
       session: {
         id: 'ses_native',
         activeOrganizationId: 'org_1',
-        impersonatedBy: null,
         deviceAgent: false,
         expiresAt: new Date(Date.now() + 60_000),
       },
@@ -1042,7 +1017,6 @@ describe('HybridAuthGuard — native session first (Milestone 3)', () => {
     expect(request.userRoles).toEqual(['admin']);
     expect(request.memberId).toBe('mem_1');
     expect(request.sessionId).toBe('ses_native');
-    expect(request.isPlatformAdmin).toBe(false);
   });
 
   it('native miss with no MCP token is a 401 (no better-auth fallback)', async () => {
@@ -1057,32 +1031,6 @@ describe('HybridAuthGuard — native session first (Milestone 3)', () => {
       UnauthorizedException,
     );
     expect(mockGetMcpSession).toHaveBeenCalledTimes(1);
-  });
-
-  it('propagates impersonation state from the native session', async () => {
-    mockResolveFromHeaders.mockResolvedValue({
-      user: { id: 'usr_2', email: 'imp@acme.com', role: 'user' },
-      session: {
-        id: 'ses_imp',
-        activeOrganizationId: 'org_1',
-        impersonatedBy: 'admin_1',
-        deviceAgent: false,
-        expiresAt: new Date(Date.now() + 60_000),
-      },
-    });
-    mockMemberFindFirst.mockResolvedValue({
-      id: 'mem_2',
-      role: 'admin',
-      department: 'it',
-    });
-
-    const { context, request } = createContext({
-      cookie: 'local.session_token=imp_tok',
-    });
-
-    await expect(guard.canActivate(context)).resolves.toBe(true);
-    expect(request.impersonatedBy).toBe('admin_1');
-    expect(request.sessionId).toBe('ses_imp');
   });
 });
 

@@ -122,11 +122,6 @@ export class PermissionGuard implements CanActivate {
       return true;
     }
 
-    // Platform admins bypass permission checks (full access)
-    if (request.isPlatformAdmin) {
-      return true;
-    }
-
     // Build required permissions map, merging actions for duplicate resources
     const permissionBody: Record<string, string[]> = {};
     for (const perm of requiredPermissions) {

@@ -13,7 +13,6 @@ import { setTriggerNestContext } from './trigger/nest-context';
 import { initTracing, shutdownTracing } from './inference-tracing';
 import { createPublicDocument } from './openapi/public-document';
 import { corsOriginMiddleware } from './auth/cors-origin.middleware';
-import { adminAuthRateLimiter } from './auth/admin-rate-limit.middleware';
 import { originCheckMiddleware } from './auth/origin-check.middleware';
 import { LocalizedErrorsInterceptor } from './common/i18n/localized-errors.interceptor';
 import { mkdirSync, writeFileSync, existsSync } from 'fs';
@@ -66,10 +65,6 @@ async function bootstrap(): Promise<void> {
   // Rejects state-changing requests from untrusted origins.
   // Defense-in-depth: CORS blocks fetch-based CSRF, this blocks form-based CSRF.
   app.use(originCheckMiddleware);
-
-  // STEP 3b: Rate-limit better-auth admin routes (impersonation, ban, set-role, etc.)
-  // These bypass NestJS controllers so the global ThrottlerGuard doesn't apply.
-  app.use(adminAuthRateLimiter);
 
   // STEP 4a: Configure body parser
   // NOTE: Attachment uploads are sent as base64 in JSON, so request payloads are

@@ -23,7 +23,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   });
 
   const hasSession =
-    !!session?.user && session.user.role === 'admin' && isInternalUser(session.user.email);
+    !!session?.user && session.user.emailVerified && isInternalUser(session.user.email);
 
   const locale = await getLocale();
   const messages = await getMessages();

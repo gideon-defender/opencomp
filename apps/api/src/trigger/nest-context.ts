@@ -95,7 +95,6 @@ export function createServiceTriggerRequest(params: {
     isApiKey: false,
     isServiceToken: true,
     serviceName: params.serviceName,
-    isPlatformAdmin: false,
     userRoles: null,
   });
 }

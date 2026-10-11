@@ -34,7 +34,8 @@ interface Session {
     image?: string | null;
     createdAt: Date;
     updatedAt: Date;
-    role?: string | null;
+    // NOTE: `role` was removed with platform admin — the API no longer
+    // returns it. Authorization uses the staff email domain (see utils).
   };
 }
 

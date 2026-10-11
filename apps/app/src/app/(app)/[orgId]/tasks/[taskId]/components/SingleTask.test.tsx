@@ -217,7 +217,6 @@ const defaultProps = {
   initialMembers: [],
   initialAutomations: [],
   isWebAutomationsEnabled: false,
-  isPlatformAdmin: false,
   evidenceApprovalEnabled: false,
 };
 

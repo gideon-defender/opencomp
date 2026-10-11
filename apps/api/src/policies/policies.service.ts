@@ -11,7 +11,6 @@ import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { AttachmentsService } from '../attachments/attachments.service';
 import { PolicyPdfRendererService } from '../trust-portal/policy-pdf-renderer.service';
 import { filterComplianceMembers } from '../utils/compliance-filters';
-import { isMemberOrgParticipant } from '../utils/org-participation';
 import { BUCKET_NAME, getSignedUrl, s3Client } from '../app/s3';
 import type { CreatePolicyDto } from './dto/create-policy.dto';
 import { PolicyStatus as DtoPolicyStatus } from './dto/create-policy.dto';
@@ -198,7 +197,7 @@ export class PoliciesService {
     const allMembers = await db.member.findMany({
       where: { organizationId, deactivated: false },
       include: {
-        user: { select: { email: true, name: true, role: true } },
+        user: { select: { email: true, name: true } },
         organization: { select: { name: true, id: true } },
       },
     });
@@ -300,18 +299,10 @@ export class PoliciesService {
       if (createData.assigneeId) {
         const assignee = await db.member.findFirst({
           where: { id: createData.assigneeId, organizationId },
-          include: { user: { select: { role: true } } },
         });
         if (!assignee) {
           throw new BadRequestException(
             'Assignee is not a member of this organization',
-          );
-        }
-        if (
-          !(await isMemberOrgParticipant(assignee.user.role, organizationId))
-        ) {
-          throw new BadRequestException(
-            'Cannot assign a platform admin as assignee',
           );
         }
       }
@@ -1286,17 +1277,6 @@ export class PoliciesService {
       );
     }
 
-    // Cannot assign a platform admin as approver (unless this is an internal org)
-    const approverUser = await db.user.findUnique({
-      where: { id: approver.userId },
-      select: { role: true },
-    });
-    if (!(await isMemberOrgParticipant(approverUser?.role, organizationId))) {
-      throw new BadRequestException(
-        'Cannot assign a platform admin as approver',
-      );
-    }
-
     await db.policy.update({
       where: { id: policyId },
       data: {
@@ -1404,7 +1384,7 @@ export class PoliciesService {
     const allMembers = await db.member.findMany({
       where: { organizationId, isActive: true, deactivated: false },
       include: {
-        user: { select: { email: true, name: true, role: true } },
+        user: { select: { email: true, name: true } },
         organization: { select: { name: true, id: true } },
       },
     });

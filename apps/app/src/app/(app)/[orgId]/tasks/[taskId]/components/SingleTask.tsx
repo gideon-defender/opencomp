@@ -75,7 +75,6 @@ interface SingleTaskProps {
   initialMembers?: (Member & { user: User })[];
   initialAutomations: AutomationWithRuns[];
   isWebAutomationsEnabled: boolean;
-  isPlatformAdmin: boolean;
   evidenceApprovalEnabled?: boolean;
 }
 

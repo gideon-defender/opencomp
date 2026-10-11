@@ -21,12 +21,10 @@ const mePayload = {
     email: 'user@acme.com',
     name: 'User',
     image: null,
-    role: 'admin',
   },
   organizations: [],
   pendingInvitation: null,
   hasInactiveMembership: false,
-  impersonatedBy: null,
   authType: 'session',
 };
 
@@ -53,22 +51,8 @@ describe('useAuthMe', () => {
 
     expect(mockGet).toHaveBeenCalledWith('/v1/auth/me');
     expect(result.current.user?.email).toBe('user@acme.com');
-    expect(result.current.impersonatedBy).toBeNull();
     expect(result.current.isLoading).toBe(false);
     expect(result.current.isError).toBe(false);
-  });
-
-  it('surfaces impersonation state from /me', async () => {
-    mockGet.mockResolvedValue({
-      data: { ...mePayload, impersonatedBy: 'admin_1' },
-      status: 200,
-    });
-
-    const { result } = renderHook(() => useAuthMe(), { wrapper });
-
-    await waitFor(() => {
-      expect(result.current.impersonatedBy).toBe('admin_1');
-    });
   });
 
   it('reports an error and null user when the request fails', async () => {
