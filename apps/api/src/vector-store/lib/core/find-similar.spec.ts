@@ -1,3 +1,7 @@
+jest.mock('../sync/sync-organization', () => ({
+  syncOrganizationEmbeddings: jest.fn(),
+}));
+import { syncOrganizationEmbeddings } from '../sync/sync-organization';
 jest.mock('./client', () => ({
   vectorIndex: { query: jest.fn() },
 }));
@@ -39,6 +43,7 @@ function buildDistinctPolicyResults(count: number) {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  jest.mocked(syncOrganizationEmbeddings).mockResolvedValue(undefined);
   mockEmbed.mockResolvedValue([0.1, 0.2, 0.3]);
   mockBatchEmbed.mockResolvedValue([[0.1, 0.2, 0.3]]);
 });
@@ -105,4 +110,46 @@ describe('findSimilarContentBatch: result cap (CS-594)', () => {
     // Highest-scoring chunk preserved.
     expect(perQuestion[0].score).toBe(0.9);
   });
+});
+
+describe('model rebuild gate', () => {
+  it.each(['single', 'batch'])(
+    'does not query before the %s rebuild completes',
+    async (mode) => {
+      let complete: (() => void) | undefined;
+      jest.mocked(syncOrganizationEmbeddings).mockImplementation(
+        () =>
+          new Promise<void>((resolve) => {
+            complete = resolve;
+          }),
+      );
+      mockQuery.mockResolvedValue([]);
+      const result =
+        mode === 'single'
+          ? findSimilarContent('q', 'org_test')
+          : findSimilarContentBatch(['q'], 'org_test');
+      await Promise.resolve();
+      expect(mockQuery).not.toHaveBeenCalled();
+      expect(mockEmbed).not.toHaveBeenCalled();
+      expect(mockBatchEmbed).not.toHaveBeenCalled();
+      complete?.();
+      await result;
+      expect(syncOrganizationEmbeddings).toHaveBeenCalledWith('org_test');
+      expect(mockQuery).toHaveBeenCalled();
+    },
+  );
+  it.each(['single', 'batch'])(
+    'blocks %s retrieval when rebuild fails',
+    async (mode) => {
+      jest
+        .mocked(syncOrganizationEmbeddings)
+        .mockRejectedValue(new Error('rebuild failed'));
+      const result =
+        mode === 'single'
+          ? findSimilarContent('q', 'org_test')
+          : findSimilarContentBatch(['q'], 'org_test');
+      await expect(result).rejects.toThrow('rebuild failed');
+      expect(mockQuery).not.toHaveBeenCalled();
+    },
+  );
 });

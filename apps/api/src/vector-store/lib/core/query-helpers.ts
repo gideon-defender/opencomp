@@ -6,4 +6,5 @@ export interface ExistingEmbedding {
   sourceId: string;
   sourceType: SourceType;
   updatedAt?: string;
+  embeddingModel?: string | null;
 }

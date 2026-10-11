@@ -40,6 +40,7 @@ export async function findEmbeddingsForSource(
       sourceId: record.metadata.sourceId,
       sourceType: record.metadata.sourceType as SourceType,
       updatedAt: record.metadata.updatedAt ?? undefined,
+      embeddingModel: record.metadata.embeddingModel,
     }));
 
     logger.info('Found embeddings for source', {
@@ -89,6 +90,7 @@ export async function findAllOrganizationEmbeddings(
         sourceId: record.metadata.sourceId,
         sourceType: sourceType as SourceType,
         updatedAt: record.metadata.updatedAt ?? undefined,
+        embeddingModel: record.metadata.embeddingModel,
       });
       groupedBySourceId.set(record.metadata.sourceId, existing);
     }

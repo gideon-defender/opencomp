@@ -6,6 +6,7 @@
     "comp-prisma-postinstall": "./dist/postinstall.js"
   },
   "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.1149.0",
     "@prisma/adapter-pg": "7.6.0",
     "@prisma/client": "7.6.0",
     "dotenv": "^17.2.3",

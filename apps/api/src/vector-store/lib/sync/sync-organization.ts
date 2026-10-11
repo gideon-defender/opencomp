@@ -1,18 +1,11 @@
-import { db } from '@db';
-import { vectorIndex } from '../core/client';
-import {
-  findAllOrganizationEmbeddings,
-  type ExistingEmbedding,
-} from '../core/find-existing-embeddings';
-import { batchUpsertEmbeddings } from '../core/upsert-embedding';
+import { findAllOrganizationEmbeddings } from '../core/find-existing-embeddings';
 import { logger } from '../../logger';
-import { syncPolicies, fetchPolicies } from './sync-policies';
-import { syncContextEntries, fetchContextEntries } from './sync-context';
-import {
-  syncKnowledgeBaseDocuments,
-  fetchKnowledgeBaseDocuments,
-} from './sync-knowledge-base';
-import type { SyncStats } from './sync-utils';
+import { syncPolicies } from './sync-policies';
+import { syncContextEntries } from './sync-context';
+import { syncKnowledgeBaseDocuments } from './sync-knowledge-base';
+import { syncManualAnswers } from './sync-manual-answers';
+import { deleteOrphanedEmbeddings } from './delete-orphaned-embeddings';
+import { verifyEmbeddingIsReady } from './verify-embedding';
 
 /**
  * Lock map to prevent concurrent syncs for the same organization
@@ -95,6 +88,17 @@ async function performSync(organizationId: string): Promise<void> {
       existingEmbeddings,
     );
 
+    const failed =
+      policyStats.failed +
+      contextStats.failed +
+      manualAnswerStats.failed +
+      kbDocStats.failed;
+    if (failed > 0) {
+      throw new Error(
+        `Document embedding rebuild failed for ${failed} sources`,
+      );
+    }
+
     // Step 6: Delete orphaned embeddings
     const orphanedDeleted = await deleteOrphanedEmbeddings(
       organizationId,
@@ -162,279 +166,4 @@ async function performSync(organizationId: string): Promise<void> {
     });
     throw error;
   }
-}
-
-/**
- * Verifies that embeddings are indexed and QUERYABLE after sync.
- * Uses retry with exponential backoff to handle write-to-read visibility lag.
- *
- * IMPORTANT: We use vectorIndex.query() instead of fetch() because:
- * - fetch() checks if data is stored (works immediately)
- * - query() checks if data is INDEXED for semantic search (may have delay)
- *
- * The embedding must be queryable, not just fetchable, for RAG to work.
- */
-async function verifyEmbeddingIsReady(
-  embeddingId: string,
-  organizationId: string,
-): Promise<{
-  success: boolean;
-  attempts: number;
-  totalWaitMs: number;
-}> {
-  if (!vectorIndex) {
-    logger.warn('Vector index not configured, skipping verification');
-    return { success: false, attempts: 0, totalWaitMs: 0 };
-  }
-
-  const maxRetries = 8;
-  const initialDelay = 300; // 300ms
-  let totalWaitMs = 0;
-
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      // First, fetch the embedding to get its vector
-      const fetchedEmbeddings = await vectorIndex.fetch(
-        [embeddingId],
-        organizationId,
-        {
-          includeVectors: true,
-        },
-      );
-
-      const fetchedEmbedding = fetchedEmbeddings?.[0];
-      if (!fetchedEmbedding || !fetchedEmbedding.vector) {
-        // Embedding not even stored yet, wait and retry
-        if (attempt < maxRetries) {
-          const delay = initialDelay * Math.pow(2, attempt - 1);
-          logger.info('Embedding not yet stored, waiting before retry', {
-            organizationId,
-            embeddingId,
-            attempt,
-            nextDelayMs: delay,
-          });
-          await new Promise((resolve) => setTimeout(resolve, delay));
-          totalWaitMs += delay;
-        }
-        continue;
-      }
-
-      // Now query using the embedding's own vector to verify it's INDEXED
-      // If the embedding is indexed, querying with its own vector should return itself
-      const queryResults = await vectorIndex.query({
-        vector: fetchedEmbedding.vector,
-        topK: 1,
-        organizationId,
-        filter: `organizationId = "${organizationId}"`,
-        includeMetadata: true,
-      });
-
-      // Check if our embedding appears in the query results
-      const isIndexed = queryResults.some(
-        (result) => result.id === embeddingId,
-      );
-
-      if (isIndexed) {
-        logger.info(
-          'Embedding verification succeeded - indexed and queryable',
-          {
-            organizationId,
-            embeddingId,
-            attempt,
-            totalWaitMs,
-          },
-        );
-        return { success: true, attempts: attempt, totalWaitMs };
-      }
-
-      // Embedding is stored but not yet indexed for search
-      if (attempt < maxRetries) {
-        const delay = initialDelay * Math.pow(2, attempt - 1); // 300ms, 600ms, 1200ms, 2400ms...
-        logger.info(
-          'Embedding stored but not yet indexed, waiting before retry',
-          {
-            organizationId,
-            embeddingId,
-            attempt,
-            nextDelayMs: delay,
-            queryResultCount: queryResults.length,
-          },
-        );
-        await new Promise((resolve) => setTimeout(resolve, delay));
-        totalWaitMs += delay;
-      }
-    } catch (error) {
-      logger.warn('Verification query failed', {
-        organizationId,
-        embeddingId,
-        attempt,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-      // Continue to next retry
-      if (attempt < maxRetries) {
-        const delay = initialDelay * Math.pow(2, attempt - 1);
-        await new Promise((resolve) => setTimeout(resolve, delay));
-        totalWaitMs += delay;
-      }
-    }
-  }
-
-  // All retries exhausted
-  logger.warn('Embedding verification failed after all retries', {
-    organizationId,
-    embeddingId,
-    attempts: maxRetries,
-    totalWaitMs,
-  });
-  return { success: false, attempts: maxRetries, totalWaitMs };
-}
-
-/**
- * Sync manual answers for an organization
- */
-async function syncManualAnswers(
-  organizationId: string,
-  existingEmbeddings: Map<string, ExistingEmbedding[]>,
-): Promise<SyncStats> {
-  const manualAnswers = await db.securityQuestionnaireManualAnswer.findMany({
-    where: { organizationId },
-    select: {
-      id: true,
-      question: true,
-      answer: true,
-      updatedAt: true,
-    },
-  });
-
-  logger.info('Syncing manual answers', {
-    organizationId,
-    count: manualAnswers.length,
-  });
-
-  let created = 0;
-  let updated = 0;
-  let skipped = 0;
-  let lastUpsertedEmbeddingId: string | null = null;
-
-  if (manualAnswers.length > 0) {
-    const itemsToUpsert = manualAnswers
-      .map((ma) => {
-        const embeddingId = `manual_answer_${ma.id}`;
-        const text = `${ma.question}\n\n${ma.answer}`;
-        const updatedAt = ma.updatedAt.toISOString();
-
-        const existing = existingEmbeddings.get(ma.id) || [];
-        const needsUpdate =
-          existing.length === 0 || existing[0]?.updatedAt !== updatedAt;
-
-        if (!needsUpdate) {
-          skipped++;
-          return null;
-        }
-
-        if (existing.length === 0) created++;
-        else updated++;
-
-        return {
-          id: embeddingId,
-          text,
-          metadata: {
-            organizationId,
-            sourceType: 'manual_answer' as const,
-            sourceId: ma.id,
-            content: text,
-            manualAnswerQuestion: ma.question,
-            updatedAt,
-          },
-        };
-      })
-      .filter((item): item is NonNullable<typeof item> => item !== null);
-
-    // Filter out items with empty text (same filter as batchUpsertEmbeddings)
-    // This ensures we only track IDs that will actually be upserted
-    const validItems = itemsToUpsert.filter(
-      (item) => item.text && item.text.trim().length > 0,
-    );
-
-    if (validItems.length > 0) {
-      await batchUpsertEmbeddings(validItems);
-      // Track the last ACTUALLY upserted embedding ID
-      lastUpsertedEmbeddingId = validItems[validItems.length - 1]?.id ?? null;
-    }
-  }
-
-  logger.info('Manual answers sync completed', {
-    organizationId,
-    created,
-    updated,
-    skipped,
-    total: manualAnswers.length,
-  });
-
-  return {
-    created,
-    updated,
-    skipped,
-    failed: 0,
-    total: manualAnswers.length,
-    lastUpsertedEmbeddingId,
-  };
-}
-
-/**
- * Delete orphaned embeddings (sources that no longer exist in DB)
- */
-async function deleteOrphanedEmbeddings(
-  organizationId: string,
-  existingEmbeddings: Map<string, ExistingEmbedding[]>,
-): Promise<number> {
-  // Fetch current DB IDs
-  const [policies, contextEntries, manualAnswers, kbDocuments] =
-    await Promise.all([
-      fetchPolicies(organizationId),
-      fetchContextEntries(organizationId),
-      db.securityQuestionnaireManualAnswer.findMany({
-        where: { organizationId },
-        select: { id: true },
-      }),
-      fetchKnowledgeBaseDocuments(organizationId),
-    ]);
-
-  const dbPolicyIds = new Set(policies.map((p) => p.id));
-  const dbContextIds = new Set(contextEntries.map((c) => c.id));
-  const dbManualAnswerIds = new Set(manualAnswers.map((ma) => ma.id));
-  const dbKbDocIds = new Set(kbDocuments.map((d) => d.id));
-
-  let orphanedDeleted = 0;
-
-  for (const [sourceId, embeddings] of existingEmbeddings.entries()) {
-    const sourceType = embeddings[0]?.sourceType;
-    if (!sourceType) continue;
-
-    const shouldExist =
-      (sourceType === 'policy' && dbPolicyIds.has(sourceId)) ||
-      (sourceType === 'context' && dbContextIds.has(sourceId)) ||
-      (sourceType === 'manual_answer' && dbManualAnswerIds.has(sourceId)) ||
-      (sourceType === 'knowledge_base_document' && dbKbDocIds.has(sourceId));
-
-    if (!shouldExist && vectorIndex) {
-      const idsToDelete = embeddings.map((e) => e.id);
-      try {
-        await vectorIndex.delete(idsToDelete, organizationId);
-        orphanedDeleted += idsToDelete.length;
-        logger.info('Deleted orphaned embeddings', {
-          sourceId,
-          sourceType,
-          deletedCount: idsToDelete.length,
-        });
-      } catch (error) {
-        logger.warn('Failed to delete orphaned embeddings', {
-          sourceId,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
-      }
-    }
-  }
-
-  return orphanedDeleted;
 }
