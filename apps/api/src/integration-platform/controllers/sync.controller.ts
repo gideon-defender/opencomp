@@ -40,6 +40,14 @@ import {
 } from '@gideon-defender/integration-platform';
 import { IntegrationSyncLoggerService } from '../services/integration-sync-logger.service';
 import { GenericEmployeeSyncService } from '../services/generic-employee-sync.service';
+import {
+  createHrIdentityResolver,
+  getHrSyncUser,
+} from '../services/hr-sync-idp';
+import {
+  recordHrSyncError,
+  shouldSkipHrSync,
+} from '../services/hr-sync-identity';
 import { resolveSyncEmployeeFilter } from '../services/sync-employee-filter';
 import { GenericDeviceSyncService } from '../services/generic-device-sync.service';
 import { DynamicIntegrationRepository } from '../repositories/dynamic-integration.repository';
@@ -384,6 +392,8 @@ export class SyncController {
       }>,
     };
 
+    const resolveIdentity = createHrIdentityResolver({ organizationId });
+
     for (const gwUser of activeUsers) {
       // Normalize email to lowercase for consistent database operations
       // This matches how we build suspendedEmails and activeEmails sets
@@ -391,25 +401,23 @@ export class SyncController {
 
       try {
         // Check if user already exists
-        const existingUser = await db.user.findUnique({
-          where: { email: normalizedEmail },
-        });
+        const identity = await resolveIdentity({ email: normalizedEmail });
 
-        let userId: string;
-
-        if (existingUser) {
-          userId = existingUser.id;
-        } else {
-          // Create new user
-          const newUser = await db.user.create({
-            data: {
-              email: normalizedEmail,
-              name: gwUser.name.fullName || normalizedEmail.split('@')[0],
-              emailVerified: true, // Google Workspace users are verified
-            },
-          });
-          userId = newUser.id;
+        if (
+          shouldSkipHrSync({
+            identity,
+            email: normalizedEmail,
+            organizationId,
+            providerName: 'google-workspace',
+            logger: this.logger,
+            results,
+          }) ||
+          !identity
+        ) {
+          continue;
         }
+        const existingUser = await getHrSyncUser({ identity, organizationId });
+        const userId = existingUser.id;
 
         // Check if member already exists in this org
         const existingMember = await db.member.findFirst({
@@ -536,6 +544,17 @@ export class SyncController {
 
       if (isExcluded) {
         try {
+          if (
+            shouldSkipHrSync({
+              identity: await resolveIdentity({ email: memberEmail }),
+              email: memberEmail,
+              organizationId,
+              providerName: 'google-workspace',
+              logger: this.logger,
+              results,
+            })
+          )
+            continue;
           await db.member.update({
             where: { id: member.id },
             data: { deactivated: true, isActive: false },
@@ -547,7 +566,14 @@ export class SyncController {
             reason: 'User is excluded from Google Workspace sync',
           });
         } catch (error) {
-          this.logger.error(`Error deactivating excluded member: ${error}`);
+          recordHrSyncError({
+            error,
+            email: memberEmail,
+            organizationId,
+            providerName: 'google-workspace',
+            logger: this.logger,
+            results,
+          });
         }
         continue;
       }
@@ -560,6 +586,17 @@ export class SyncController {
 
       if (isSuspended || isDeleted) {
         try {
+          if (
+            shouldSkipHrSync({
+              identity: await resolveIdentity({ email: memberEmail }),
+              email: memberEmail,
+              organizationId,
+              providerName: 'google-workspace',
+              logger: this.logger,
+              results,
+            })
+          )
+            continue;
           await db.member.update({
             where: { id: member.id },
             data: { deactivated: true, isActive: false },
@@ -573,7 +610,14 @@ export class SyncController {
               : 'User was removed from Google Workspace',
           });
         } catch (error) {
-          this.logger.error(`Error deactivating member: ${error}`);
+          recordHrSyncError({
+            error,
+            email: memberEmail,
+            organizationId,
+            providerName: 'google-workspace',
+            logger: this.logger,
+            results,
+          });
         }
       }
     }
@@ -590,7 +634,7 @@ export class SyncController {
     });
 
     return {
-      success: true,
+      success: results.errors === 0,
       totalFound: activeUsers.length,
       totalSuspended: filteredSuspendedEmails.size,
       ...results,
@@ -857,15 +901,6 @@ export class SyncController {
       workers.map((w) => getWorkerEmail(w).split('@')[1]).filter(Boolean),
     );
 
-    // Get all existing members
-    const allOrgMembers = await db.member.findMany({
-      where: {
-        organizationId,
-        deactivated: false,
-      },
-      include: { user: true },
-    });
-
     const results = {
       imported: 0,
       reactivated: 0,
@@ -881,6 +916,8 @@ export class SyncController {
       }>,
     };
 
+    const resolveIdentity = createHrIdentityResolver({ organizationId });
+
     // Process active workers
     for (const worker of activeWorkers) {
       const email = getWorkerEmail(worker);
@@ -890,29 +927,22 @@ export class SyncController {
       }
 
       try {
-        let userId: string;
-        const existingUser = await db.user.findUnique({
-          where: { email },
-        });
-
-        if (existingUser) {
-          userId = existingUser.id;
-        } else {
-          // V2 API uses snake_case (first_name, last_name)
-          const name =
-            worker.name ||
-            [worker.first_name, worker.last_name].filter(Boolean).join(' ') ||
-            email.split('@')[0];
-
-          const newUser = await db.user.create({
-            data: {
-              email,
-              name,
-              emailVerified: true,
-            },
-          });
-          userId = newUser.id;
+        const identity = await resolveIdentity({ email: email });
+        if (
+          shouldSkipHrSync({
+            identity,
+            email,
+            organizationId,
+            providerName: 'rippling',
+            logger: this.logger,
+            results,
+          }) ||
+          !identity
+        ) {
+          continue;
         }
+        const existingUser = await getHrSyncUser({ identity, organizationId });
+        const userId = existingUser.id;
 
         const existingMember = await db.member.findFirst({
           where: { organizationId, userId },
@@ -981,6 +1011,14 @@ export class SyncController {
       }
     }
 
+    const allOrgMembers = await db.member.findMany({
+      where: {
+        organizationId,
+        deactivated: false,
+      },
+      include: { user: true },
+    });
+
     // Deactivate members no longer in Rippling
     for (const member of allOrgMembers) {
       const memberEmail = member.user.email.toLowerCase();
@@ -992,21 +1030,43 @@ export class SyncController {
       }
 
       if (!activeEmails.has(memberEmail)) {
-        const isInactive = inactiveEmails.has(memberEmail);
-        const reason = isInactive
-          ? 'Employee is inactive in Rippling'
-          : 'Employee was removed from Rippling';
+        try {
+          if (
+            shouldSkipHrSync({
+              identity: await resolveIdentity({ email: memberEmail }),
+              email: memberEmail,
+              organizationId,
+              providerName: 'rippling',
+              logger: this.logger,
+              results,
+            })
+          )
+            continue;
+          const isInactive = inactiveEmails.has(memberEmail);
+          const reason = isInactive
+            ? 'Employee is inactive in Rippling'
+            : 'Employee was removed from Rippling';
 
-        await db.member.update({
-          where: { id: member.id },
-          data: { deactivated: true, isActive: false },
-        });
-        results.deactivated++;
-        results.details.push({
-          email: member.user.email,
-          status: 'deactivated',
-          reason,
-        });
+          await db.member.update({
+            where: { id: member.id },
+            data: { deactivated: true, isActive: false },
+          });
+          results.deactivated++;
+          results.details.push({
+            email: member.user.email,
+            status: 'deactivated',
+            reason,
+          });
+        } catch (error) {
+          recordHrSyncError({
+            error,
+            email: memberEmail,
+            organizationId,
+            providerName: 'rippling',
+            logger: this.logger,
+            results,
+          });
+        }
       }
     }
 
@@ -1015,7 +1075,7 @@ export class SyncController {
     );
 
     return {
-      success: true,
+      success: results.errors === 0,
       totalFound: workers.length,
       totalInactive: inactiveEmails.size,
       ...results,
@@ -1331,14 +1391,6 @@ export class SyncController {
 
     this.logger.log(`Found device bindings for ${userDevices.size} users`);
 
-    // Helper to get full name
-    const getFullName = (user: JumpCloudUser): string => {
-      if (user.displayname) return user.displayname;
-      const parts = [user.firstname, user.lastname].filter(Boolean);
-      if (parts.length > 0) return parts.join(' ');
-      return user.username;
-    };
-
     // Filter to active users (exclude staged and suspended)
     const allActiveUsers = users.filter(
       (u) => u.state === 'ACTIVATED' && u.activated && !u.suspended,
@@ -1398,6 +1450,8 @@ export class SyncController {
       }));
     };
 
+    const resolveIdentity = createHrIdentityResolver({ organizationId });
+
     for (const jcUser of activeUsers) {
       // Normalize email to lowercase for consistent database operations
       // This matches how we build suspendedEmails and activeEmails sets
@@ -1405,25 +1459,23 @@ export class SyncController {
 
       try {
         // Check if user already exists
-        const existingUser = await db.user.findUnique({
-          where: { email: normalizedEmail },
-        });
+        const identity = await resolveIdentity({ email: normalizedEmail });
 
-        let userId: string;
-
-        if (existingUser) {
-          userId = existingUser.id;
-        } else {
-          // Create new user
-          const newUser = await db.user.create({
-            data: {
-              email: normalizedEmail,
-              name: getFullName(jcUser),
-              emailVerified: true,
-            },
-          });
-          userId = newUser.id;
+        if (
+          shouldSkipHrSync({
+            identity,
+            email: normalizedEmail,
+            organizationId,
+            providerName: 'jumpcloud',
+            logger: this.logger,
+            results,
+          }) ||
+          !identity
+        ) {
+          continue;
         }
+        const existingUser = await getHrSyncUser({ identity, organizationId });
+        const userId = existingUser.id;
 
         // Get device info for this user
         const deviceDetails = getUserDeviceDetails(jcUser._id);
@@ -1549,6 +1601,17 @@ export class SyncController {
 
       if (isSuspended || isDeleted) {
         try {
+          if (
+            shouldSkipHrSync({
+              identity: await resolveIdentity({ email: memberEmail }),
+              email: memberEmail,
+              organizationId,
+              providerName: 'jumpcloud',
+              logger: this.logger,
+              results,
+            })
+          )
+            continue;
           await db.member.update({
             where: { id: member.id },
             data: { deactivated: true, isActive: false },
@@ -1562,7 +1625,14 @@ export class SyncController {
               : 'User was removed from JumpCloud',
           });
         } catch (error) {
-          this.logger.error(`Error deactivating member: ${error}`);
+          recordHrSyncError({
+            error,
+            email: memberEmail,
+            organizationId,
+            providerName: 'jumpcloud',
+            logger: this.logger,
+            results,
+          });
         }
       }
     }
@@ -1572,7 +1642,7 @@ export class SyncController {
     );
 
     return {
-      success: true,
+      success: results.errors === 0,
       totalFound: activeUsers.length,
       totalSuspended: suspendedEmails.size,
       ...results,

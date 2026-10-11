@@ -1,3 +1,11 @@
+jest.mock('../services/hr-sync-idp', () => ({
+  createHrIdentityResolver:
+    () =>
+    async ({ email }: { email: string }) => ({ id: 'idp_confirmed', email }),
+  getHrSyncUser: ({ identity }: { identity: { email: string } }) =>
+    (db.user.findUnique as jest.Mock)({ where: { email: identity.email } }),
+}));
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { SyncController } from './sync.controller';
 import { HybridAuthGuard } from '../../auth/hybrid-auth.guard';
@@ -66,7 +74,7 @@ interface MockMember {
   deactivated: boolean;
   isActive: boolean;
   role: string;
-  user: { email: string };
+  user: { email: string; gideonSub: string };
 }
 
 describe('SyncController - Google Workspace employees', () => {
@@ -188,7 +196,7 @@ describe('SyncController - Google Workspace employees', () => {
       deactivated: opts.deactivated ?? false,
       isActive: !(opts.deactivated ?? false),
       role: opts.role ?? 'employee',
-      user: { email },
+      user: { email, gideonSub: 'idp_existing' },
     };
   }
 
@@ -198,7 +206,10 @@ describe('SyncController - Google Workspace employees', () => {
     it('should import a user with no existing member record', async () => {
       setupSync({ gwUsers: [makeGwUser('new@example.com')] });
 
-      (mockedDb.user.findUnique as jest.Mock).mockResolvedValue(null);
+      (mockedDb.user.findUnique as jest.Mock).mockResolvedValue({
+        id: 'user_new',
+        gideonSub: 'idp_new',
+      });
       (mockedDb.user.create as jest.Mock).mockResolvedValue({
         id: 'user_new',
         email: 'new@example.com',
@@ -216,9 +227,7 @@ describe('SyncController - Google Workspace employees', () => {
 
       expect(result.imported).toBe(1);
       expect(result.reactivated).toBe(0);
-      expect(mockedDb.user.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({ email: 'new@example.com' }),
-      });
+      expect(mockedDb.user.create).not.toHaveBeenCalled();
       expect(mockedDb.member.create).toHaveBeenCalledWith({
         data: {
           organizationId: orgId,
@@ -233,6 +242,7 @@ describe('SyncController - Google Workspace employees', () => {
       setupSync({ gwUsers: [makeGwUser('existing@example.com')] });
 
       (mockedDb.user.findUnique as jest.Mock).mockResolvedValue({
+        gideonSub: 'idp_existing',
         id: 'user_existing',
         email: 'existing@example.com',
       });
@@ -255,6 +265,7 @@ describe('SyncController - Google Workspace employees', () => {
       setupSync({ gwUsers: [makeGwUser('active@example.com')] });
 
       (mockedDb.user.findUnique as jest.Mock).mockResolvedValue({
+        gideonSub: 'idp_existing',
         id: 'user_active',
         email: 'active@example.com',
       });
@@ -289,6 +300,7 @@ describe('SyncController - Google Workspace employees', () => {
       setupSync({ gwUsers: [makeGwUser('back@example.com')] });
 
       (mockedDb.user.findUnique as jest.Mock).mockResolvedValue({
+        gideonSub: 'idp_existing',
         id: 'user_back',
         email: 'back@example.com',
       });
@@ -318,6 +330,7 @@ describe('SyncController - Google Workspace employees', () => {
       setupSync({ gwUsers: [makeGwUser('back@example.com')] });
 
       (mockedDb.user.findUnique as jest.Mock).mockResolvedValue({
+        gideonSub: 'idp_existing',
         id: 'user_back',
         email: 'back@example.com',
       });
@@ -346,6 +359,7 @@ describe('SyncController - Google Workspace employees', () => {
       setupSync({ gwUsers: [makeGwUser('already@example.com')] });
 
       (mockedDb.user.findUnique as jest.Mock).mockResolvedValue({
+        gideonSub: 'idp_existing',
         id: 'user_already',
         email: 'already@example.com',
       });
@@ -406,6 +420,7 @@ describe('SyncController - Google Workspace employees', () => {
       setupSync({ gwUsers: [makeGwUser('still-active@example.com')] });
 
       (mockedDb.user.findUnique as jest.Mock).mockResolvedValue({
+        gideonSub: 'idp_existing',
         id: 'user_still',
         email: 'still-active@example.com',
       });
@@ -437,6 +452,7 @@ describe('SyncController - Google Workspace employees', () => {
       setupSync({ gwUsers: [makeGwUser('active@example.com')] });
 
       (mockedDb.user.findUnique as jest.Mock).mockResolvedValue({
+        gideonSub: 'idp_existing',
         id: 'user_active',
         email: 'active@example.com',
       });
@@ -471,6 +487,7 @@ describe('SyncController - Google Workspace employees', () => {
       setupSync({ gwUsers: [makeGwUser('active@example.com')] });
 
       (mockedDb.user.findUnique as jest.Mock).mockResolvedValue({
+        gideonSub: 'idp_existing',
         id: 'user_active',
         email: 'active@example.com',
       });
@@ -502,6 +519,7 @@ describe('SyncController - Google Workspace employees', () => {
       setupSync({ gwUsers: [makeGwUser('active@example.com')] });
 
       (mockedDb.user.findUnique as jest.Mock).mockResolvedValue({
+        gideonSub: 'idp_existing',
         id: 'user_active',
         email: 'active@example.com',
       });
@@ -533,6 +551,7 @@ describe('SyncController - Google Workspace employees', () => {
       setupSync({ gwUsers: [makeGwUser('active@example.com')] });
 
       (mockedDb.user.findUnique as jest.Mock).mockResolvedValue({
+        gideonSub: 'idp_existing',
         id: 'user_active',
         email: 'active@example.com',
       });
@@ -565,6 +584,7 @@ describe('SyncController - Google Workspace employees', () => {
       setupSync({ gwUsers: [makeGwUser('user@example.com')] });
 
       (mockedDb.user.findUnique as jest.Mock).mockResolvedValue({
+        gideonSub: 'idp_existing',
         id: 'user_u',
         email: 'user@example.com',
       });
@@ -600,6 +620,7 @@ describe('SyncController - Google Workspace employees', () => {
       });
 
       (mockedDb.user.findUnique as jest.Mock).mockResolvedValue({
+        gideonSub: 'idp_existing',
         id: 'user_kept',
         email: 'kept@example.com',
       });
@@ -646,6 +667,7 @@ describe('SyncController - Google Workspace employees', () => {
 
       // include@example.com gets imported
       (mockedDb.user.findUnique as jest.Mock).mockResolvedValue({
+        gideonSub: 'idp_existing',
         id: 'user_include',
         email: 'include@example.com',
       });
@@ -682,13 +704,15 @@ describe('SyncController - Google Workspace employees', () => {
       (mockedDb.user.findUnique as jest.Mock).mockImplementation(
         ({ where }: { where: { email: string } }) => {
           const map: Record<string, unknown> = {
-            'new@example.com': null,
+            'new@example.com': { id: 'user_new', gideonSub: 'idp_new' },
             'active@example.com': {
               id: 'user_active',
+              gideonSub: 'idp_existing',
               email: 'active@example.com',
             },
             'deactivated@example.com': {
               id: 'user_deact',
+              gideonSub: 'idp_existing',
               email: 'deactivated@example.com',
             },
           };
@@ -772,7 +796,10 @@ describe('SyncController - Google Workspace employees', () => {
     it('should record lastSyncAt on the connection after a successful sync', async () => {
       setupSync({ gwUsers: [makeGwUser('new@example.com')] });
 
-      (mockedDb.user.findUnique as jest.Mock).mockResolvedValue(null);
+      (mockedDb.user.findUnique as jest.Mock).mockResolvedValue({
+        id: 'user_new',
+        gideonSub: 'idp_new',
+      });
       (mockedDb.user.create as jest.Mock).mockResolvedValue({
         id: 'user_new',
         email: 'new@example.com',
@@ -807,11 +834,14 @@ describe('SyncController - Google Workspace employees', () => {
   // ── Error handling ─────────────────────────────────────────────
 
   describe('error handling', () => {
-    it('should count errors when user creation fails', async () => {
+    it('should count errors when user lookup fails', async () => {
       setupSync({ gwUsers: [makeGwUser('fail@example.com')] });
 
-      (mockedDb.user.findUnique as jest.Mock).mockResolvedValue(null);
-      (mockedDb.user.create as jest.Mock).mockRejectedValue(
+      (mockedDb.user.findUnique as jest.Mock).mockResolvedValue({
+        id: 'user_new',
+        gideonSub: 'idp_new',
+      });
+      (mockedDb.user.findUnique as jest.Mock).mockRejectedValue(
         new Error('DB write failed'),
       );
       (mockedDb.member.findMany as jest.Mock).mockResolvedValue([]);

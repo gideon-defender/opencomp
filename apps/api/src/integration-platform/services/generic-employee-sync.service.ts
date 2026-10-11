@@ -3,6 +3,8 @@ import { db } from '@db';
 import type { SyncEmployee } from '@gideon-defender/integration-platform';
 import { matchesSyncFilterTerms } from '@gideon-defender/integration-platform';
 import { BUILT_IN_ROLE_PERMISSIONS } from '@gideon-defender/auth';
+import { createHrIdentityResolver, getHrSyncUser } from './hr-sync-idp';
+import { recordHrSyncError, shouldSkipHrSync } from './hr-sync-identity';
 import type { ResolvedSyncEmployeeFilter } from './sync-employee-filter';
 
 // ============================================================================
@@ -65,7 +67,7 @@ const DEFAULT_PROTECTED_ROLES = ['owner', 'admin', 'auditor'];
 
 /**
  * Generic employee sync service that handles the platform-generic operations:
- * - Creating users and members from a standardized employee list
+ * - Syncing members with identities confirmed in the tenant IdP from an employee list
  * - Deactivating members no longer present in the provider
  * - Safety guards (never deactivate privileged roles)
  *
@@ -82,7 +84,7 @@ export class GenericEmployeeSyncService {
   /**
    * Process a standardized employee list into DB operations.
    *
-   * Phase 1: Import active employees (create User if needed, create Member if needed)
+   * Phase 1: Import active employees confirmed in the tenant IdP (create Member if needed)
    * Phase 2: Deactivate members no longer present in the provider
    */
   async processEmployees({
@@ -188,29 +190,27 @@ export class GenericEmployeeSyncService {
     // ====================================================================
     // Phase 1: Import active employees
     // ====================================================================
+    const resolveIdentity = createHrIdentityResolver({ organizationId });
+
     for (const employee of activeEmployees) {
       const normalizedEmail = employee.email.toLowerCase();
-      const displayName =
-        employee.name ||
-        [employee.firstName, employee.lastName].filter(Boolean).join(' ') ||
-        normalizedEmail.split('@')[0] ||
-        normalizedEmail;
-
       try {
-        // Find or create User
-        let existingUser = await db.user.findUnique({
-          where: { email: normalizedEmail },
-        });
-
-        if (!existingUser) {
-          existingUser = await db.user.create({
-            data: {
-              email: normalizedEmail,
-              name: displayName,
-              emailVerified: true,
-            },
-          });
+        const identity = await resolveIdentity({ email: normalizedEmail });
+        if (
+          shouldSkipHrSync({
+            identity,
+            email: normalizedEmail,
+            organizationId,
+            providerName,
+            logger: this.logger,
+            results,
+          }) ||
+          !identity
+        ) {
+          continue;
         }
+
+        const existingUser = await getHrSyncUser({ identity, organizationId });
 
         // Check if Member already exists in this org
         const existingMember = await db.member.findFirst({
@@ -392,6 +392,17 @@ export class GenericEmployeeSyncService {
 
       if (isSuspended || isRemoved) {
         try {
+          if (
+            shouldSkipHrSync({
+              identity: await resolveIdentity({ email: memberEmail }),
+              email: memberEmail,
+              organizationId,
+              providerName,
+              logger: this.logger,
+              results,
+            })
+          )
+            continue;
           await db.member.update({
             where: { id: member.id },
             data: {
@@ -409,10 +420,14 @@ export class GenericEmployeeSyncService {
               : `User was removed from ${providerName}`,
           });
         } catch (error) {
-          this.logger.error(
-            `Error deactivating member ${memberEmail}: ${error}`,
-          );
-          results.errors++;
+          recordHrSyncError({
+            error,
+            email: memberEmail,
+            organizationId,
+            providerName,
+            logger: this.logger,
+            results,
+          });
         }
       }
     }
