@@ -406,20 +406,6 @@ describe('SOAService', () => {
       );
     });
 
-    it('throws BadRequestException when approver is platform admin', async () => {
-      (mockDb.member.findFirst as jest.Mock).mockResolvedValue({
-        id: 'mem-1',
-        userId: 'user-1',
-        role: 'admin',
-      });
-      (mockDb.user.findUnique as jest.Mock).mockResolvedValue({
-        role: 'admin',
-      });
-      await expect(service.submitForApproval(dto)).rejects.toThrow(
-        BadRequestException,
-      );
-    });
-
     it('throws NotFoundException when document not found', async () => {
       (mockDb.member.findFirst as jest.Mock).mockResolvedValue({
         id: 'mem-1',

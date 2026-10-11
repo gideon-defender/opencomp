@@ -12,7 +12,7 @@ import { Prisma } from '@db';
 import type { TriggerVendorRiskAssessmentVendorDto } from './dto/trigger-vendor-risk-assessment.dto';
 import { resolveTaskCreatorAndAssignee } from '../trigger/vendor/vendor-risk-assessment/assignee';
 import { resolveStrategyDescriptionUpdate } from '../risks/strategy-descriptions';
-import { validateAssigneeNotPlatformAdmin } from '../utils/assignee-validation';
+import { validateAssigneeMembership } from '../utils/assignee-validation';
 
 const normalizeWebsite = (
   website: string | null | undefined,
@@ -225,7 +225,7 @@ export class VendorsService {
   ) {
     try {
       if (createVendorDto.assigneeId) {
-        await validateAssigneeNotPlatformAdmin(
+        await validateAssigneeMembership(
           createVendorDto.assigneeId,
           organizationId,
         );
@@ -612,7 +612,7 @@ export class VendorsService {
         updateVendorDto.assigneeId &&
         updateVendorDto.assigneeId !== existing.assigneeId
       ) {
-        await validateAssigneeNotPlatformAdmin(
+        await validateAssigneeMembership(
           updateVendorDto.assigneeId,
           organizationId,
         );

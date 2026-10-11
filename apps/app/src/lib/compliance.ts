@@ -2,8 +2,6 @@ import 'server-only';
 
 import { db } from '@db/server';
 import { BUILT_IN_ROLE_OBLIGATIONS } from '@gideon-defender/auth';
-import { getOrgIsInternal } from './org-participation';
-import { PLATFORM_ADMIN_ROLE, isOrgParticipant } from './org-participation-rule';
 import {
   type UserPermissions,
   canAccessApp,
@@ -14,7 +12,6 @@ import {
 
 interface MemberWithRole {
   role: string;
-  user?: { role?: string | null } | null;
 }
 
 /**
@@ -81,11 +78,6 @@ export async function filterComplianceMembers<T extends MemberWithRole>(
 ): Promise<T[]> {
   if (members.length === 0) return [];
 
-  // The internal flag only changes a platform admin's participation, so skip the
-  // extra query entirely when the list has no platform admins (the common case).
-  const hasPlatformAdmin = members.some((m) => m.user?.role === PLATFORM_ADMIN_ROLE);
-  const orgIsInternal = hasPlatformAdmin ? await getOrgIsInternal(organizationId) : false;
-
   const builtInRoleNames = new Set(Object.keys(BUILT_IN_ROLE_OBLIGATIONS));
   const allRoleNames = new Set<string>();
 
@@ -114,10 +106,7 @@ export async function filterComplianceMembers<T extends MemberWithRole>(
   }
 
   return memberRoles
-    .filter(({ member, roleNames }) => {
-      // Platform admins are excluded — they join customer orgs to debug — unless
-      // this is an internal (platform-operated) org where they are real members.
-      if (!isOrgParticipant(member.user?.role, { orgIsInternal })) return false;
+    .filter(({ roleNames }) => {
       for (const name of roleNames) {
         // DB override wins, but only if `compliance` is explicitly set —
         // otherwise fall back to the hardcoded built-in default.

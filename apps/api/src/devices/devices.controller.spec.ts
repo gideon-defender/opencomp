@@ -50,7 +50,6 @@ describe('DevicesController', () => {
     organizationId: 'org_1',
     memberId: 'mem_1',
     isApiKey: false,
-    isPlatformAdmin: false,
     userRoles: null,
   };
 
@@ -110,7 +109,6 @@ describe('DevicesController', () => {
         authType: 'api-key' as const,
         organizationId: 'org_1',
         isApiKey: true,
-        isPlatformAdmin: false,
         userRoles: null,
       };
 
@@ -174,7 +172,6 @@ describe('DevicesController', () => {
         authType: 'api-key' as const,
         organizationId: 'org_1',
         isApiKey: true,
-        isPlatformAdmin: false,
         userRoles: null,
       };
 

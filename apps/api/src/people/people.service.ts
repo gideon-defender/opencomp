@@ -454,10 +454,6 @@ export class PeopleService {
       throw new ForbiddenException('Cannot remove the organization owner');
     }
 
-    if (member.user.role === 'admin') {
-      throw new ForbiddenException('Cannot remove a platform admin');
-    }
-
     const skipOffboarding = options?.skipOffboarding === true;
 
     const unassignedItems = skipOffboarding

@@ -52,10 +52,6 @@ export default defineConfig({
       // aliased to their source so vitest runs without a prior build (CI does
       // not build packages). Subpaths must precede their parent so the
       // longer match wins.
-      '@gideon-defender/auth/participation': resolve(
-        __dirname,
-        '../../packages/auth/src/participation.ts',
-      ),
       // The app only consumes the permissions surface of @gideon-defender/auth
       // (it must never run a better-auth server), so alias to permissions.ts
       // rather than index.ts — index.ts re-exports server.ts and would drag the

@@ -33,7 +33,7 @@ export interface OffsetAuditLogsResult {
  * Generic offset-accumulate pager for audit logs: keeps a growing window into
  * the server total by fetching successive batches and merging them (de-duped by
  * id). Callers supply the SWR cache key and a `fetchPage` for their endpoint —
- * see {@link useAdminAuditLogs} and `usePaginatedAuditLogs`.
+ * see `usePaginatedAuditLogs`.
  *
  * Mirrors the repo's offset + loadMore convention (use-automation-versions.ts).
  */

@@ -154,6 +154,80 @@ describe('FindingsService.create (target validator)', () => {
     expect(createArgs.data.area).toBe('people');
     expect(createArgs.data.taskId).toBeNull();
   });
+
+  it('rejects a template owned by another organization', async () => {
+    mockDb.findingTemplate.findUnique.mockResolvedValue({
+      id: 'tmpl_other',
+      organizationId: 'org_2',
+    });
+
+    await expect(
+      svc.create('org_1', 'mem_1', 'usr_1', {
+        ...baseDto,
+        area: 'people',
+        templateId: 'tmpl_other',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(mockDb.finding.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects a template that does not exist', async () => {
+    mockDb.findingTemplate.findUnique.mockResolvedValue(null);
+
+    await expect(
+      svc.create('org_1', 'mem_1', 'usr_1', {
+        ...baseDto,
+        area: 'people',
+        templateId: 'tmpl_missing',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(mockDb.finding.create).not.toHaveBeenCalled();
+  });
+
+  it('accepts an own-org template', async () => {
+    mockDb.findingTemplate.findUnique.mockResolvedValue({
+      id: 'tmpl_own',
+      organizationId: 'org_1',
+    });
+    mockDb.finding.create.mockResolvedValue({
+      id: 'fnd_new',
+      content: 'Example finding',
+      createdBy: null,
+      createdByAdmin: null,
+    });
+
+    await svc.create('org_1', 'mem_1', 'usr_1', {
+      ...baseDto,
+      area: 'people',
+      templateId: 'tmpl_own',
+    });
+
+    expect(mockDb.findingTemplate.findUnique).toHaveBeenCalledWith({
+      where: { id: 'tmpl_own' },
+    });
+    expect(mockDb.finding.create).toHaveBeenCalled();
+  });
+
+  it('accepts a global template', async () => {
+    mockDb.findingTemplate.findUnique.mockResolvedValue({
+      id: 'tmpl_global',
+      organizationId: null,
+    });
+    mockDb.finding.create.mockResolvedValue({
+      id: 'fnd_new',
+      content: 'Example finding',
+      createdBy: null,
+      createdByAdmin: null,
+    });
+
+    await svc.create('org_1', 'mem_1', 'usr_1', {
+      ...baseDto,
+      area: 'people',
+      templateId: 'tmpl_global',
+    });
+
+    expect(mockDb.finding.create).toHaveBeenCalled();
+  });
 });
 
 describe('FindingsService.update (status transition rules)', () => {
@@ -214,7 +288,6 @@ describe('FindingsService.update (status transition rules)', () => {
       'fnd_1',
       { status: 'ready_for_review' },
       false,
-      false,
       'usr_1',
       'mem_1',
     );
@@ -228,7 +301,6 @@ describe('FindingsService.update (status transition rules)', () => {
         'fnd_1',
         { status: 'needs_revision' },
         false,
-        false,
         'usr_1',
         'mem_1',
       ),
@@ -241,7 +313,6 @@ describe('FindingsService.update (status transition rules)', () => {
       'fnd_1',
       { status: 'needs_revision' },
       true,
-      false,
       'usr_1',
       'mem_1',
     );
@@ -255,7 +326,6 @@ describe('FindingsService.update (status transition rules)', () => {
         'fnd_1',
         { status: 'closed' },
         false,
-        false,
         'usr_1',
         'mem_1',
       ),
@@ -268,23 +338,30 @@ describe('FindingsService.update (status transition rules)', () => {
       'fnd_1',
       { status: 'closed' },
       true,
-      false,
       'usr_1',
       'mem_1',
     );
     expect(mockDb.finding.update).toHaveBeenCalled();
   });
 
-  it('allows platform admin to set any status', async () => {
-    await svc.update(
-      'org_1',
-      'fnd_1',
-      { status: 'closed' },
-      false,
-      true,
-      'usr_1',
-      'mem_1',
-    );
-    expect(mockDb.finding.update).toHaveBeenCalled();
+  it('maps a concurrent delete during update to 404 (not 500)', async () => {
+    mockDb.finding.update.mockRejectedValueOnce({ code: 'P2025' });
+    await expect(
+      svc.update(
+        'org_1',
+        'fnd_1',
+        { severity: 'high' },
+        true,
+        'usr_1',
+        'mem_1',
+      ),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('maps a concurrent delete during delete to 404 (not 500)', async () => {
+    mockDb.finding.delete.mockRejectedValueOnce({ code: 'P2025' });
+    await expect(
+      svc.delete('org_1', 'fnd_1', 'usr_1', 'mem_1'),
+    ).rejects.toBeInstanceOf(NotFoundException);
   });
 });

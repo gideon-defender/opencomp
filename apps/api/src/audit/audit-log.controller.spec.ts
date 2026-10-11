@@ -39,7 +39,6 @@ describe('AuditLogController', () => {
     organizationId: 'org_1',
     memberId: 'mem_1',
     isApiKey: false,
-    isPlatformAdmin: false,
     userRoles: null,
   };
 
@@ -82,7 +81,6 @@ describe('AuditLogController', () => {
               name: true,
               email: true,
               image: true,
-              role: true,
             },
           },
           member: true,
@@ -340,7 +338,6 @@ describe('AuditLogController', () => {
         authType: 'api-key' as const,
         organizationId: 'org_1',
         isApiKey: true,
-        isPlatformAdmin: false,
         userRoles: null,
       };
 

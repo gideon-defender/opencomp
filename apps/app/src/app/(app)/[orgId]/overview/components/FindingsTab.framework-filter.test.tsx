@@ -5,7 +5,7 @@ import {
   mockHasPermission,
   setMockPermissions,
 } from '@/test-utils/mocks/permissions';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 mockNextIntl();
@@ -39,39 +39,6 @@ vi.mock('./CreateFindingSheet', () => ({
 
 vi.mock('./FindingDetailSheet', () => ({
   FindingDetailSheet: () => <div data-testid="detail-sheet" />,
-}));
-
-// Render the design-system Select inline. Radix portals its content, so the
-// options are otherwise hidden until the trigger is opened; flattening them
-// keeps the dropdown options queryable.
-vi.mock('@trycompai/design-system', () => ({
-  Badge: ({ children }: any) => <span>{children}</span>,
-  Empty: ({ children }: any) => <div>{children}</div>,
-  EmptyDescription: ({ children }: any) => <p>{children}</p>,
-  EmptyHeader: ({ children }: any) => <div>{children}</div>,
-  EmptyMedia: ({ children }: any) => <div>{children}</div>,
-  EmptyTitle: ({ children }: any) => <h3>{children}</h3>,
-  InputGroup: ({ children }: any) => <div>{children}</div>,
-  InputGroupAddon: ({ children }: any) => <span>{children}</span>,
-  InputGroupInput: (props: any) => <input {...props} />,
-  Select: ({ children }: any) => <div data-testid="select">{children}</div>,
-  SelectContent: ({ children }: any) => <div>{children}</div>,
-  SelectItem: ({ children, value }: any) => <button data-value={value}>{children}</button>,
-  SelectTrigger: ({ children }: any) => <div>{children}</div>,
-  SelectValue: ({ children, placeholder }: any) => <span>{children ?? placeholder}</span>,
-  Stack: ({ children }: any) => <div>{children}</div>,
-  Table: ({ children }: any) => <table>{children}</table>,
-  TableBody: ({ children }: any) => <tbody>{children}</tbody>,
-  TableCell: ({ children }: any) => <td>{children}</td>,
-  TableHead: ({ children }: any) => <th>{children}</th>,
-  TableHeader: ({ children }: any) => <thead>{children}</thead>,
-  TableRow: ({ children, onClick }: any) => <tr onClick={onClick}>{children}</tr>,
-  Text: ({ children }: any) => <span>{children}</span>,
-}));
-
-vi.mock('@trycompai/design-system/icons', () => ({
-  Search: () => <span data-testid="search-icon" />,
-  WarningAlt: () => <span data-testid="warning-icon" />,
 }));
 
 import { FindingsTab } from './FindingsTab';
@@ -140,9 +107,7 @@ describe('FindingsTab framework filter', () => {
 
     render(<FindingsTab organizationId="org_1" />);
 
-    // "All frameworks" labels both the trigger's current value and the reset
-    // option, so it renders more than once.
-    expect(screen.getAllByText('findings.allFrameworks').length).toBeGreaterThanOrEqual(1);
+    fireEvent.keyDown(screen.getAllByRole('combobox')[2], { key: 'ArrowDown' });
     expect(screen.getByText('SOC 2')).toBeInTheDocument();
     // The bug: ISO 42001 findings could not be filtered because the filter
     // list was hardcoded to SOC 2 / ISO 27001.
@@ -150,12 +115,17 @@ describe('FindingsTab framework filter', () => {
     // ISO 27001 is NOT enabled for this org, so it must not be offered — the
     // old hardcoded list wrongly included it.
     expect(screen.queryByText('ISO 27001')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('option', { name: 'ISO 42001' }));
+    expect(screen.getByText('findings.filterEmptyTitle')).toBeInTheDocument();
   });
 
   it('offers HIPAA and GDPR when those are the enabled frameworks', () => {
     setEnabledFrameworks(['HIPAA', 'GDPR']);
 
     render(<FindingsTab organizationId="org_1" />);
+
+    fireEvent.keyDown(screen.getAllByRole('combobox')[2], { key: 'ArrowDown' });
 
     expect(screen.getByText('HIPAA')).toBeInTheDocument();
     expect(screen.getByText('GDPR')).toBeInTheDocument();

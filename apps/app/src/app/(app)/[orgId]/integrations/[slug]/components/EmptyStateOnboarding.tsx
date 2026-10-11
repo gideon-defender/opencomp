@@ -22,7 +22,6 @@ import { Button, Label } from '@trycompai/design-system';
 import { AlertTriangle, ArrowRight, Shield } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
@@ -248,8 +247,7 @@ export function EmptyStateOnboarding({
   // "Coming Soon" is reserved for non-functional integrations. Missing OAuth
   // admin setup is a separate, actionable state with admin guidance.
   const isComingSoon = provider.isActive === false;
-  const isOAuthNotConfigured =
-    !isComingSoon && isOAuth && provider.oauthConfigured === false;
+  const isOAuthNotConfigured = !isComingSoon && isOAuth && provider.oauthConfigured === false;
 
   // Coming soon — integration functionality is missing
   if (isComingSoon) {
@@ -312,15 +310,8 @@ function ComingSoonState({ provider }: { provider: IntegrationProvider }) {
   );
 }
 
-function OAuthNotConfiguredState({
-  provider,
-  orgId,
-}: {
-  provider: IntegrationProvider;
-  orgId: string;
-}) {
+function OAuthNotConfiguredState({ provider }: { provider: IntegrationProvider; orgId: string }) {
   const t = useTranslations('integrations');
-  const router = useRouter();
   return (
     <div className="py-6">
       <div className="rounded-xl border border-warning/30 bg-warning/5 shadow-sm max-w-2xl">
@@ -348,18 +339,6 @@ function OAuthNotConfiguredState({
             <p className="text-xs text-muted-foreground max-w-sm mx-auto">
               {t('onboarding.oauthNotConfiguredDescription', { name: provider.name })}
             </p>
-            <div className="pt-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  router.push(`/${orgId}/admin/integrations`);
-                }}
-              >
-                {t('onboarding.configureOAuth')}
-                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-              </Button>
-            </div>
           </div>
         </div>
       </div>

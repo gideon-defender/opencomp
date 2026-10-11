@@ -8,15 +8,8 @@ import { InviteEmail } from '../email/templates/invite-member';
 import { db, serviceDb } from '@db';
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
-import {
-  admin,
-  bearer,
-  mcp,
-  multiSession,
-  organization,
-} from 'better-auth/plugins';
+import { bearer, mcp, multiSession, organization } from 'better-auth/plugins';
 import { ac, allRoles } from '@gideon-defender/auth';
-import { createAuthMiddleware } from 'better-auth/api';
 import { redisClient } from '../redis/redis.client';
 import {
   getBetterAuthTrustedOrigins,
@@ -119,7 +112,7 @@ export async function isTrustedOrigin(origin: string): Promise<boolean> {
 
 // Gideon is the sole authenticator. Legacy better-auth login entry points
 // (Google/GitHub/Microsoft social, magic link, email OTP) were removed after
-// OIDC cutover — the remaining plugins below serve session/org/admin/MCP
+// OIDC cutover — the remaining plugins below serve session/org/MCP
 // routes consumed by the frontends until their native replacements land.
 const cookieDomain = getCookieDomain();
 
@@ -317,77 +310,6 @@ export const auth = betterAuth({
       },
     },
   },
-  hooks: {
-    after: createAuthMiddleware(async (ctx) => {
-      if (!ctx.path.startsWith('/admin/')) return;
-
-      const session = ctx.context?.session;
-      const userId = session?.user?.id;
-      if (!userId) return;
-
-      const descriptions: Record<string, string> = {
-        '/admin/impersonate-user': 'Impersonated a user',
-        '/admin/stop-impersonating': 'Stopped impersonating a user',
-        '/admin/ban-user': 'Banned a user',
-        '/admin/unban-user': 'Unbanned a user',
-        '/admin/set-role': 'Changed a user role',
-        '/admin/set-user-password': 'Reset a user password',
-        '/admin/create-user': 'Created a user',
-        '/admin/update-user': 'Updated a user',
-        '/admin/remove-user': 'Removed a user',
-        '/admin/revoke-user-session': 'Revoked a user session',
-        '/admin/revoke-user-sessions': 'Revoked all user sessions',
-      };
-
-      const description = descriptions[ctx.path];
-      if (!description) return;
-
-      try {
-        let organizationId = (session.session as Record<string, unknown>)
-          ?.activeOrganizationId as string | undefined;
-
-        if (!organizationId) {
-          const userOrg = await db.organization.findFirst({
-            where: { members: { some: { userId } } },
-            orderBy: { createdAt: 'desc' },
-            select: { id: true },
-          });
-
-          if (!userOrg) {
-            console.error(
-              '[Auth] SECURITY: Admin action blocked — no organization could be resolved for admin user',
-              { userId, path: ctx.path },
-            );
-            throw new Error(
-              'Admin action blocked: unable to resolve organization for audit trail',
-            );
-          }
-
-          organizationId = userOrg.id;
-        }
-
-        await db.auditLog.create({
-          data: {
-            userId,
-            memberId: null,
-            organizationId,
-            entityType: null,
-            entityId: null,
-            description: `[Platform Admin] ${description}`,
-            data: {
-              action: description,
-              method: 'POST',
-              path: ctx.path,
-              resource: 'admin',
-              permission: 'platform-admin',
-            },
-          },
-        });
-      } catch (err) {
-        console.error('[Auth] Failed to write admin audit log:', err);
-      }
-    }),
-  },
   // SECRET_KEY is validated at startup via validateSecurityConfig()
   secret: process.env.SECRET_KEY as string,
   plugins: [
@@ -438,9 +360,6 @@ export const auth = betterAuth({
     }),
     multiSession(),
     bearer(),
-    admin({
-      defaultRole: 'user',
-    }),
     // OAuth 2.0 / OIDC provider for hosted MCP (Gram). Wraps oidcProvider and
     // exposes /api/auth/mcp/* (authorize, token, register) + the two
     // /api/auth/.well-known/* discovery docs, plus the auth.api.getMcpSession()

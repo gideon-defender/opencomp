@@ -97,7 +97,6 @@ export class HybridAuthGuard implements CanActivate {
     request.authType = 'api-key';
     request.isApiKey = true;
     request.isServiceToken = false;
-    request.isPlatformAdmin = false;
     request.apiKeyScopes = result.scopes;
     // Surface the key's id + name on the request so downstream attribution
     // (ActingUserResolver, audit logs) can record "via API key '<name>'"
@@ -144,7 +143,6 @@ export class HybridAuthGuard implements CanActivate {
     request.isApiKey = false;
     request.isServiceToken = true;
     request.serviceName = service.definition.name;
-    request.isPlatformAdmin = false;
     request.userRoles = null;
 
     // Service tokens can pass x-user-id to act on behalf of a user
@@ -296,10 +294,6 @@ export class HybridAuthGuard implements CanActivate {
     if (typeof aal === 'number' && Number.isFinite(aal)) {
       request.gideonAal = aal;
     }
-    // Gideon JWTs from KMS are already verified; platform admin is determined
-    // via opencomp Member role, not JWT role. Keep false here; PermissionGuard
-    // will check hasAppAccess.
-    request.isPlatformAdmin = false;
 
     if (this.gideonShadowService) {
       // Fire-and-forget shadow comparison for operations
@@ -372,8 +366,8 @@ export class HybridAuthGuard implements CanActivate {
   /**
    * Populate the request context from a resolved session (native or
    * better-auth shape). Shared by both resolution paths so behavior cannot
-   * drift: active-org membership is required unless skipped, member
-   * role/department is attached, and platform-admin comes from `User.role`.
+   * drift: active-org membership is required unless skipped, and member
+   * role/department is attached.
    */
   private async populateSessionRequest(
     request: AuthenticatedRequest,
@@ -433,14 +427,6 @@ export class HybridAuthGuard implements CanActivate {
     request.isServiceToken = false;
     request.sessionId = sessionData.id;
     request.sessionDeviceAgent = sessionData.deviceAgent;
-    // Resolve isPlatformAdmin from the User.role column, not from the member
-    // relation. This ensures the flag is set regardless of org membership
-    // or skipOrgCheck.
-    request.isPlatformAdmin = user.role === 'admin';
-
-    if (sessionData.impersonatedBy) {
-      request.impersonatedBy = sessionData.impersonatedBy;
-    }
   }
 
   /**
@@ -521,7 +507,7 @@ export class HybridAuthGuard implements CanActivate {
   ): Promise<boolean> {
     const user = await db.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true, role: true },
+      select: { id: true, email: true },
     });
     if (!user) {
       return false;
@@ -535,7 +521,6 @@ export class HybridAuthGuard implements CanActivate {
     request.isApiKey = false;
     request.isServiceToken = false;
     request.isMcpOAuth = true;
-    request.isPlatformAdmin = user.role === 'admin';
 
     // An MCP token is only usable by a member of at least one organization.
     // Enumerate active memberships up front (device-agent style) so a user with
@@ -581,12 +566,7 @@ export class HybridAuthGuard implements CanActivate {
     // App-access gate: MCP follows the same rule as the web app — only roles
     // that grant app access (`app:read`) may use it. Portal-only roles
     // (employee/contractor, or custom roles without app access) are rejected.
-    // Platform admins bypass this, consistent with PermissionGuard's own
-    // isPlatformAdmin bypass on the normal session path.
-    if (
-      !request.isPlatformAdmin &&
-      !(await hasAppAccess(member.organizationId, member.role))
-    ) {
+    if (!(await hasAppAccess(member.organizationId, member.role))) {
       throw new ForbiddenException(
         "Your role doesn't have access to the app, so it can't use the MCP. " +
           'Ask an organization admin for access.',

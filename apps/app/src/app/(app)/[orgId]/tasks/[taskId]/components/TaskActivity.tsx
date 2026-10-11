@@ -44,11 +44,6 @@ function LogEntry({ log, isLast = false }: { log: ActivityLog; isLast?: boolean 
       <div className="flex-1 min-w-0 pb-6">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm font-medium truncate">{userName}</span>
-          {user?.role === 'admin' && (
-            <span className="inline-flex items-center rounded-md bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground">
-              OpenComp
-            </span>
-          )}
           <Badge
             variant="outline"
             className={cn('text-xs px-2 py-0.5 font-medium', actionColors[action])}
@@ -79,11 +74,6 @@ function LogEntryCompact({ log }: { log: ActivityLog }) {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-xs font-medium truncate">{userName}</span>
-          {user?.role === 'admin' && (
-            <span className="inline-flex items-center rounded-md bg-primary px-1 py-0 text-[9px] font-medium text-primary-foreground">
-              OpenComp
-            </span>
-          )}
           <Badge
             variant="outline"
             className={cn('text-[10px] px-1.5 py-0 font-medium', actionColors[action])}

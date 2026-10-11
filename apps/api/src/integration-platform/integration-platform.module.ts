@@ -5,7 +5,6 @@ import { OAuthController } from './controllers/oauth.controller';
 import { OAuthAppsController } from './controllers/oauth-apps.controller';
 import { OAuthErrorsController } from './controllers/oauth-errors.controller';
 import { ConnectionsController } from './controllers/connections.controller';
-import { AdminIntegrationsController } from './controllers/admin-integrations.controller';
 import { DynamicIntegrationsController } from './controllers/dynamic-integrations.controller';
 import { ChecksController } from './controllers/checks.controller';
 import { InternalChecksController } from './controllers/internal-checks.controller';
@@ -19,6 +18,7 @@ import { ServicesController } from './controllers/services.controller';
 import { CredentialVaultService } from './services/credential-vault.service';
 import { ConnectionService } from './services/connection.service';
 import { OAuthCredentialsService } from './services/oauth-credentials.service';
+import { AutomationCredentialService } from './services/automation-credential.service';
 import { AutoCheckRunnerService } from './services/auto-check-runner.service';
 import { ConnectionAuthTeardownService } from './services/connection-auth-teardown.service';
 import { OAuthTokenRevocationService } from './services/oauth-token-revocation.service';
@@ -47,7 +47,6 @@ import { CheckResultsService } from './services/check-results.service';
     OAuthAppsController,
     OAuthErrorsController,
     ConnectionsController,
-    AdminIntegrationsController,
     DynamicIntegrationsController,
     ChecksController,
     InternalChecksController,
@@ -64,6 +63,11 @@ import { CheckResultsService } from './services/check-results.service';
     CredentialVaultService,
     ConnectionService,
     OAuthCredentialsService,
+    // Phase 0 (remove-cross-tenant-roles): automation-owned credential
+    // lifecycle (backfill/provision/rotation). No HTTP surface; consumed by
+    // the future IAM-run rotation job. The legacy platform store stays
+    // readable through PlatformCredentialRepository until Release B.
+    AutomationCredentialService,
     AutoCheckRunnerService,
     OAuthTokenRevocationService,
     ConnectionAuthTeardownService,
@@ -90,6 +94,7 @@ import { CheckResultsService } from './services/check-results.service';
     CredentialVaultService,
     ConnectionService,
     OAuthCredentialsService,
+    AutomationCredentialService,
     AutoCheckRunnerService,
     DynamicManifestLoaderService,
     // Universal, feature-agnostic access to integration check results. Any

@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  Logger,
+} from '@nestjs/common';
 import { db } from '@db';
 import { CreateFindingTemplateDto } from './dto/create-finding-template.dto';
 import { UpdateFindingTemplateDto } from './dto/update-finding-template.dto';
@@ -7,67 +12,82 @@ import { UpdateFindingTemplateDto } from './dto/update-finding-template.dto';
 export class FindingTemplateService {
   private readonly logger = new Logger(FindingTemplateService.name);
 
-  async findAll() {
-    try {
-      const templates = await db.findingTemplate.findMany({
-        orderBy: [{ category: 'asc' }, { order: 'asc' }, { title: 'asc' }],
-      });
+  /**
+   * Templates visible to an org: global templates (organizationId null)
+   * plus that org's own templates. Other orgs' templates never leak.
+   */
+  async findAll({ organizationId }: { organizationId: string }) {
+    const templates = await db.findingTemplate.findMany({
+      where: {
+        OR: [{ organizationId: null }, { organizationId }],
+      },
+      orderBy: [{ category: 'asc' }, { order: 'asc' }, { title: 'asc' }],
+    });
 
-      this.logger.log(`Retrieved ${templates.length} finding templates`);
-      return templates;
-    } catch (error) {
-      this.logger.error('Failed to retrieve finding templates:', error);
-      throw error;
-    }
+    this.logger.log(
+      `Retrieved ${templates.length} finding templates for organization ${organizationId}`,
+    );
+    return templates;
   }
 
-  async findById(id: string) {
-    try {
-      const template = await db.findingTemplate.findUnique({
-        where: { id },
-      });
+  async findById({
+    id,
+    organizationId,
+  }: {
+    id: string;
+    organizationId: string;
+  }) {
+    const template = await db.findingTemplate.findUnique({
+      where: { id },
+    });
 
-      if (!template) {
-        throw new NotFoundException(`Finding template with ID ${id} not found`);
-      }
-
-      this.logger.log(`Retrieved finding template: ${template.title} (${id})`);
-      return template;
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      this.logger.error(`Failed to retrieve finding template ${id}:`, error);
-      throw error;
+    if (
+      !template ||
+      !this.isVisibleTo(template.organizationId, organizationId)
+    ) {
+      throw new NotFoundException(`Finding template with ID ${id} not found`);
     }
+
+    return template;
   }
 
-  async create(createDto: CreateFindingTemplateDto) {
-    try {
-      const template = await db.findingTemplate.create({
-        data: {
-          category: createDto.category,
-          title: createDto.title,
-          content: createDto.content,
-          order: createDto.order ?? 0,
-        },
-      });
+  /** Creates a per-org template. Global templates are never created via API. */
+  async create({
+    organizationId,
+    createDto,
+  }: {
+    organizationId: string;
+    createDto: CreateFindingTemplateDto;
+  }) {
+    const template = await db.findingTemplate.create({
+      data: {
+        category: createDto.category,
+        title: createDto.title,
+        content: createDto.content,
+        order: createDto.order ?? 0,
+        organizationId,
+      },
+    });
 
-      this.logger.log(
-        `Created finding template: ${template.title} (${template.id})`,
-      );
-      return template;
-    } catch (error) {
-      this.logger.error('Failed to create finding template:', error);
-      throw error;
-    }
+    this.logger.log(
+      `Created finding template: ${template.title} (${template.id}) for organization ${organizationId}`,
+    );
+    return template;
   }
 
-  async updateById(id: string, updateDto: UpdateFindingTemplateDto) {
-    try {
-      // First check if the template exists
-      await this.findById(id);
+  async updateById({
+    id,
+    organizationId,
+    updateDto,
+  }: {
+    id: string;
+    organizationId: string;
+    updateDto: UpdateFindingTemplateDto;
+  }) {
+    const existing = await this.findById({ id, organizationId });
+    this.rejectGlobalWrite(existing.organizationId, 'update');
 
+    try {
       const updatedTemplate = await db.findingTemplate.update({
         where: { id },
         data: updateDto,
@@ -78,39 +98,67 @@ export class FindingTemplateService {
       );
       return updatedTemplate;
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
+      // A concurrent delete between the visibility check and this write
+      // surfaces as P2025 — report the same 404 as a missing row, not a 500.
+      if ((error as { code?: string }).code === 'P2025') {
+        throw new NotFoundException(`Finding template with ID ${id} not found`);
       }
-      this.logger.error(`Failed to update finding template ${id}:`, error);
       throw error;
     }
   }
 
-  async deleteById(id: string) {
-    try {
-      // First check if the template exists
-      const existingTemplate = await this.findById(id);
+  async deleteById({
+    id,
+    organizationId,
+  }: {
+    id: string;
+    organizationId: string;
+  }) {
+    const existing = await this.findById({ id, organizationId });
+    this.rejectGlobalWrite(existing.organizationId, 'delete');
 
+    try {
       await db.findingTemplate.delete({
         where: { id },
       });
-
-      this.logger.log(
-        `Deleted finding template: ${existingTemplate.title} (${id})`,
-      );
-      return {
-        message: 'Finding template deleted successfully',
-        deletedTemplate: {
-          id: existingTemplate.id,
-          title: existingTemplate.title,
-        },
-      };
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
+      // Same concurrent-delete race as updateById — stay a 404, not a 500.
+      if ((error as { code?: string }).code === 'P2025') {
+        throw new NotFoundException(`Finding template with ID ${id} not found`);
       }
-      this.logger.error(`Failed to delete finding template ${id}:`, error);
       throw error;
+    }
+
+    this.logger.log(`Deleted finding template: ${existing.title} (${id})`);
+    return {
+      message: 'Finding template deleted successfully',
+      deletedTemplate: {
+        id: existing.id,
+        title: existing.title,
+      },
+    };
+  }
+
+  private isVisibleTo(
+    templateOrgId: string | null,
+    organizationId: string,
+  ): boolean {
+    return templateOrgId === null || templateOrgId === organizationId;
+  }
+
+  /**
+   * Global templates are shared across orgs — one org must not rename or
+   * remove them for everyone. They stay visible (listable) so the error
+   * names the rule instead of pretending the row is missing.
+   */
+  private rejectGlobalWrite(
+    templateOrgId: string | null,
+    action: 'update' | 'delete',
+  ): void {
+    if (templateOrgId === null) {
+      throw new ForbiddenException(
+        `Global finding templates cannot be ${action}d. Create a per-org copy instead.`,
+      );
     }
   }
 }

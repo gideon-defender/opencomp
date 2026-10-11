@@ -7,7 +7,6 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { db } from '@db';
-import { isMemberOrgParticipant } from '../utils/org-participation';
 import { SaveSOAAnswerDto } from './dto/save-soa-answer.dto';
 import { CreateSOADocumentDto } from './dto/create-soa-document.dto';
 import { EnsureSOASetupDto } from './dto/ensure-soa-setup.dto';
@@ -429,19 +428,6 @@ export class SOAService {
 
     if (!approverMember) {
       throw new NotFoundException('Approver not found in organization');
-    }
-
-    // Cannot assign a platform admin as approver
-    const approverUser = await db.user.findUnique({
-      where: { id: approverMember.userId },
-      select: { role: true },
-    });
-    if (
-      !(await isMemberOrgParticipant(approverUser?.role, dto.organizationId))
-    ) {
-      throw new BadRequestException(
-        'Cannot assign a platform admin as approver',
-      );
     }
 
     const isOwnerOrAdmin =

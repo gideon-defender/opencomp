@@ -280,9 +280,7 @@ export function assertAzureRetryBodiesPinned(args: {
     // field at a depth the preview never wrote, and it is refused.
     const introduced = collectLeafPaths(retry.body).filter(
       (path) =>
-        !allowed.some(
-          (kept) => path === kept || kept.startsWith(`${path}.`),
-        ),
+        !allowed.some((kept) => path === kept || kept.startsWith(`${path}.`)),
     );
     if (introduced.length > 0) {
       throw new Error(

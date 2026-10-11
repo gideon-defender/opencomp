@@ -49,7 +49,6 @@ type MockRequest = {
   headers: Record<string, string>;
   isApiKey?: boolean;
   isServiceToken?: boolean;
-  isPlatformAdmin?: boolean;
   userRoles?: string[] | null;
   organizationId?: string;
 };
@@ -226,18 +225,6 @@ describe('CommentsPermissionGuard', () => {
     });
     context.switchToHttp().getRequest().serviceName = 'svc-test';
     await expect(guard.canActivate(context)).resolves.toBe(true);
-  });
-
-  it('returns true without invoking better-auth for platform admins', async () => {
-    const guard = new CommentsPermissionGuard(reflectorWith('task', 'update'));
-    const context = makeContext({
-      method: 'POST',
-      body: { entityType: 'finding' },
-      headers: {},
-      isPlatformAdmin: true,
-    });
-    await expect(guard.canActivate(context)).resolves.toBe(true);
-    expect(hasPermissionMock).not.toHaveBeenCalled();
   });
 
   it('returns true when no @RequirePermission metadata is set (endpoint opted out)', async () => {

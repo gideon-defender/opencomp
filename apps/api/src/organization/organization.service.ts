@@ -12,10 +12,13 @@ import { db, Role } from '@db';
 import { APP_AWS_ORG_ASSETS_BUCKET, s3Client, getSignedUrl } from '../app/s3';
 import type { UpdateOrganizationDto } from './dto/update-organization.dto';
 import type { TransferOwnershipResponseDto } from './dto/transfer-ownership.dto';
+import { OrganizationCleanupService } from './organization-cleanup.service';
 
 @Injectable()
 export class OrganizationService {
   private readonly logger = new Logger(OrganizationService.name);
+
+  constructor(private readonly cleanupService: OrganizationCleanupService) {}
 
   async findById(id: string) {
     try {
@@ -156,13 +159,94 @@ export class OrganizationService {
         throw new NotFoundException(`Organization with ID ${id} not found`);
       }
 
-      // Delete the organization
+      // Best-effort external cleanup (S3 objects, vector embeddings).
+      // Order is load-bearing: collect references first, delete the DB row,
+      // then destroy externals. Destroying S3 objects before the row commits
+      // would leave live rows pointing at deleted objects if the DB delete
+      // failed. Failures never block deletion — a transient S3/vector
+      // outage must not trap the organization — but they are returned
+      // honestly in `externalCleanup` so the caller can see what survived.
+      // The cleanup service itself degrades per item; these catches are
+      // only for unexpected throws. Surviving objects have no retry source
+      // once the row is gone, so every error here is logged loudly.
+      // Known gaps: S3 narrows concurrent upload races with bounded post-delete
+      // re-list passes (see OrganizationS3CleanupService), but a PUT that
+      // lands between the final list and its delete still survives.
+      // Orphans sit under the deleted org's namespace and stay unreachable.
+      let collected = this.cleanupService.emptyCollectedAssets();
+      try {
+        collected = await this.cleanupService.collectAssetReferences({
+          organizationId: id,
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        this.logger.error(
+          `External asset collection failed for organization ${id} — proceeding with deletion: ${message}`,
+          error instanceof Error ? error.stack : undefined,
+        );
+        collected = this.cleanupService.emptyCollectedAssets();
+        collected.collectErrors.push(`collect threw: ${message}`);
+      }
+
+      // Delete the organization before destroying externals, so a DB failure
+      // leaves every external object untouched (no dangling references).
       await db.organization.delete({
         where: { id },
       });
 
+      let externalCleanup = null as null | Awaited<
+        ReturnType<OrganizationCleanupService['deleteCollectedAssets']>
+      >;
+      try {
+        externalCleanup = await this.cleanupService.deleteCollectedAssets({
+          organizationId: id,
+          collected,
+        });
+        const failures = [
+          ...externalCleanup.collectErrors,
+          ...externalCleanup.s3Errors,
+          ...externalCleanup.vectorErrors,
+        ];
+        if (failures.length > 0) {
+          this.logger.error(
+            `External cleanup partial for organization ${id} — row deleted, externals incomplete. ` +
+              `S3 deleted: ${externalCleanup.s3ObjectsDeleted}, vectors deleted: ${externalCleanup.vectorsDeleted}. ` +
+              `Failures: ${failures.join('; ')}`,
+          );
+        } else {
+          this.logger.log(
+            `Cleaned external assets for organization ${id}: ` +
+              `${externalCleanup.s3ObjectsDeleted} S3 object(s), ` +
+              `vectors deleted: ${externalCleanup.vectorsDeleted}`,
+          );
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        this.logger.error(
+          `External cleanup failed for organization ${id} — row already deleted: ${message}`,
+          error instanceof Error ? error.stack : undefined,
+        );
+        externalCleanup = {
+          s3ObjectsDeleted: 0,
+          vectorsDeleted: false,
+          knowledgeBaseDocumentsQueued: 0,
+          manualAnswersQueued: false,
+          collectErrors: collected.collectErrors,
+          // State is unknown here, never clean: the throw may have landed
+          // after partial S3 deletes, so report that instead of empty lists.
+          s3Errors: [
+            `cleanup threw before completion — S3 and vector state unknown: ${message}`,
+          ],
+          vectorErrors: [`cleanup threw: ${message}`],
+        };
+      }
+
       this.logger.log(`Deleted organization: ${organization.name} (${id})`);
-      return { success: true, deletedOrganization: organization };
+      return {
+        success: true,
+        deletedOrganization: organization,
+        externalCleanup,
+      };
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;

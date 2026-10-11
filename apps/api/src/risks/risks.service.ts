@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { db, Prisma } from '@db';
-import { validateAssigneeNotPlatformAdmin } from '../utils/assignee-validation';
+import { validateAssigneeMembership } from '../utils/assignee-validation';
 import { paginate } from '../utils/base-crud.service';
 import { CreateRiskDto } from './dto/create-risk.dto';
 import { GetRisksQueryDto } from './dto/get-risks-query.dto';
@@ -139,7 +139,7 @@ export class RisksService {
   async create(organizationId: string, createRiskDto: CreateRiskDto) {
     try {
       if (createRiskDto.assigneeId) {
-        await validateAssigneeNotPlatformAdmin(
+        await validateAssigneeMembership(
           createRiskDto.assigneeId,
           organizationId,
         );
@@ -174,7 +174,7 @@ export class RisksService {
       const existing = await this.findById(id, organizationId);
 
       if (updateRiskDto.assigneeId) {
-        await validateAssigneeNotPlatformAdmin(
+        await validateAssigneeMembership(
           updateRiskDto.assigneeId,
           organizationId,
         );

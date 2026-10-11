@@ -19,10 +19,3 @@ export {
   type RoleObligations,
   type RolePermissions,
 } from './permissions';
-
-export {
-  PLATFORM_ADMIN_ROLE,
-  isExcludedFromOrgParticipation,
-  isOrgParticipant,
-  type OrgParticipationContext,
-} from './participation';

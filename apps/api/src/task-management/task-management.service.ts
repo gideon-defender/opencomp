@@ -1,6 +1,5 @@
 import { db } from '@db';
 import { TaskItemEntityType, TaskItemStatus, TaskItemPriority } from '@db';
-import { isMemberOrgParticipant } from '../utils/org-participation';
 
 import {
   BadRequestException,
@@ -307,21 +306,10 @@ export class TaskManagementService {
       if (createTaskItemDto.assigneeId) {
         const assigneeMember = await db.member.findFirst({
           where: { id: createTaskItemDto.assigneeId, organizationId },
-          include: { user: { select: { role: true } } },
         });
         if (!assigneeMember) {
           throw new BadRequestException(
             'Assignee is not a member of this organization',
-          );
-        }
-        if (
-          !(await isMemberOrgParticipant(
-            assigneeMember.user.role,
-            organizationId,
-          ))
-        ) {
-          throw new BadRequestException(
-            'Cannot assign a platform admin as assignee',
           );
         }
       }
@@ -526,21 +514,10 @@ export class TaskManagementService {
         if (updateTaskItemDto.assigneeId) {
           const assigneeMember = await db.member.findFirst({
             where: { id: updateTaskItemDto.assigneeId, organizationId },
-            include: { user: { select: { role: true } } },
           });
           if (!assigneeMember) {
             throw new BadRequestException(
               'Assignee is not a member of this organization',
-            );
-          }
-          if (
-            !(await isMemberOrgParticipant(
-              assigneeMember.user.role,
-              organizationId,
-            ))
-          ) {
-            throw new BadRequestException(
-              'Cannot assign a platform admin as assignee',
             );
           }
         }

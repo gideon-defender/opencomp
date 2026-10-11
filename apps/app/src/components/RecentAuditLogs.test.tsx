@@ -67,7 +67,7 @@ function makeLog(id: string): AuditLogWithRelations {
     entityId: 'vnd_1',
     entityType: 'vendor',
     data: {},
-    user: { id: 'usr_abcdef', name: 'Test User', image: null, role: 'employee' },
+    user: { id: 'usr_abcdef', name: 'Test User', image: null },
     member: null,
     organization: {},
   } as unknown as AuditLogWithRelations;

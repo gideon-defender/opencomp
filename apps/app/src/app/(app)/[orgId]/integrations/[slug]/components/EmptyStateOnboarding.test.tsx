@@ -426,17 +426,12 @@ describe('EmptyStateOnboarding', () => {
         ...overrides,
       }) as unknown as IntegrationProvider;
 
-    it('shows "OAuth not configured" (not "Coming Soon") when an active OAuth provider lacks admin credentials', () => {
+    it('shows "OAuth not configured" guidance (not "Coming Soon") when an active OAuth provider lacks org credentials', () => {
       render(
-        <EmptyStateOnboarding
-          provider={oauthProvider()}
-          orgId="org_1"
-          onConnected={vi.fn()}
-        />,
+        <EmptyStateOnboarding provider={oauthProvider()} orgId="org_1" onConnected={vi.fn()} />,
       );
 
       expect(screen.getByText('onboarding.oauthNotConfigured')).toBeInTheDocument();
-      expect(screen.getByText('onboarding.configureOAuth')).toBeInTheDocument();
       expect(screen.queryByText('onboarding.comingSoon')).not.toBeInTheDocument();
     });
 
@@ -467,20 +462,15 @@ describe('EmptyStateOnboarding', () => {
       expect(screen.queryByText('onboarding.comingSoon')).not.toBeInTheDocument();
     });
 
-    it('navigates to the admin integrations page when the configure button is clicked', () => {
+    it('shows setup guidance without linking to the deleted admin page', () => {
       render(
-        <EmptyStateOnboarding
-          provider={oauthProvider()}
-          orgId="org_1"
-          onConnected={vi.fn()}
-        />,
+        <EmptyStateOnboarding provider={oauthProvider()} orgId="org_1" onConnected={vi.fn()} />,
       );
 
-      fireEvent.click(
-        screen.getByRole('button', { name: 'onboarding.configureOAuth' }),
-      );
-
-      expect(mockRouterPush).toHaveBeenCalledWith('/org_1/admin/integrations');
+      expect(screen.getByText('onboarding.oauthNotConfigured')).toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: 'onboarding.configureOAuth' }),
+      ).not.toBeInTheDocument();
     });
   });
 });

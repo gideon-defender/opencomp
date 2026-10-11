@@ -739,17 +739,6 @@ describe('PeopleService', () => {
       ).rejects.toThrow(ForbiddenException);
     });
 
-    it('should throw ForbiddenException when deleting a platform admin', async () => {
-      (db.member.findFirst as jest.Mock).mockResolvedValue({
-        ...mockMember,
-        user: { ...mockMember.user, role: 'admin' },
-      });
-
-      await expect(
-        service.deleteById('mem_1', 'org_123', 'usr_actor'),
-      ).rejects.toThrow(ForbiddenException);
-    });
-
     it('should throw ForbiddenException when deleting yourself', async () => {
       await expect(
         service.deleteById('mem_1', 'org_123', 'usr_1'),

@@ -71,7 +71,7 @@ export class AuditLogInterceptor implements NestInterceptor {
       return next.handle();
     }
 
-    const { organizationId, impersonatedBy } = request;
+    const { organizationId } = request;
     if (!organizationId) {
       return next.handle();
     }
@@ -299,7 +299,6 @@ export class AuditLogInterceptor implements NestInterceptor {
                   changes,
                   commentCtx,
                   descriptionOverride,
-                  impersonatedBy,
                   actor.callerLabel,
                 ).catch((err) => {
                   this.logger.error('Failed to create audit log entry', err);
@@ -365,7 +364,6 @@ export class AuditLogInterceptor implements NestInterceptor {
     changes: ChangesRecord | null,
     commentContext: AuditContextOverride | null,
     descriptionOverride: string | null,
-    impersonatedBy?: string,
     callerLabel?: string,
   ): Promise<void> {
     const entityType =
@@ -388,9 +386,6 @@ export class AuditLogInterceptor implements NestInterceptor {
     if (changes) {
       auditData.changes = changes;
     }
-    if (impersonatedBy) {
-      auditData.impersonatedBy = impersonatedBy;
-    }
     // Record automated-caller provenance (e.g. 'via API key "CI Pipeline"') so an
     // owner-fallback / key-creator attribution isn't read as the user personally
     // acting in a session — preserves non-repudiation of the audit trail.
@@ -398,7 +393,7 @@ export class AuditLogInterceptor implements NestInterceptor {
       auditData.via = callerLabel;
     }
 
-    const finalDescription = `${impersonatedBy ? '[Impersonated] ' : ''}${description}${
+    const finalDescription = `${description}${
       callerLabel ? ` [${callerLabel}]` : ''
     }`;
 

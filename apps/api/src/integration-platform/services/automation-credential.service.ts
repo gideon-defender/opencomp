@@ -66,9 +66,7 @@ export class AutomationCredentialService {
     private readonly credentialVaultService: CredentialVaultService,
   ) {}
 
-  async backfillOrgCredentials(
-    args: BackfillArgs,
-  ): Promise<BackfillResult> {
+  async backfillOrgCredentials(args: BackfillArgs): Promise<BackfillResult> {
     const { providerSlug, organizationId, automationVersion } = args;
     const existing = await this.oauthAppRepository.findByProviderAndOrg(
       providerSlug,
@@ -84,9 +82,7 @@ export class AutomationCredentialService {
     }
 
     const platform =
-      await this.platformCredentialRepository.findByProviderSlug(
-        providerSlug,
-      );
+      await this.platformCredentialRepository.findByProviderSlug(providerSlug);
     if (!platform) {
       return { status: 'no-platform-source', providerSlug, organizationId };
     }
@@ -184,10 +180,12 @@ export class AutomationCredentialService {
       );
     }
 
-    const encryptedClientId =
-      await this.credentialVaultService.encrypt(args.clientId);
-    const encryptedClientSecret =
-      await this.credentialVaultService.encrypt(args.clientSecret);
+    const encryptedClientId = await this.credentialVaultService.encrypt(
+      args.clientId,
+    );
+    const encryptedClientSecret = await this.credentialVaultService.encrypt(
+      args.clientSecret,
+    );
     const updated = await this.oauthAppRepository.updateAutomationRow({
       providerSlug,
       organizationId,
@@ -203,15 +201,43 @@ export class AutomationCredentialService {
         `Rotation lost a concurrent write for ${providerSlug} in org ${organizationId}`,
       );
     }
-    const row = await this.oauthAppRepository.findByProviderAndOrg(
-      providerSlug,
-      organizationId,
-    );
+    const row = await this.readCommittedRow({ providerSlug, organizationId });
     this.logger.log(
       `Rotated ${providerSlug} for org ${organizationId}: ${expectedVersion} -> ${newVersion}`,
     );
-    if (!row) throw new NotFoundException('OAuth app vanished during rotation');
     return row;
+  }
+
+  /**
+   * Re-reads the row after a committed rotation write. A missing row here is
+   * either a transient read blip (worth a short retry) or a concurrent
+   * delete. Either way the caller must NOT receive the pre-write row stamped
+   * with the new version: those ciphertext blobs are stale, and handing them
+   * out as current would distribute dead secrets as live ones. After bounded
+   * re-reads, throw so the caller records an honest skip instead of a
+   * fabricated success. (A retry with the same expectedVersion could never
+   * succeed, since the version already moved — hence Conflict, not NotFound.)
+   */
+  private async readCommittedRow({
+    providerSlug,
+    organizationId,
+  }: {
+    providerSlug: string;
+    organizationId: string;
+  }): Promise<IntegrationOAuthApp> {
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      const row = await this.oauthAppRepository.findByProviderAndOrg(
+        providerSlug,
+        organizationId,
+      );
+      if (row) return row;
+      if (attempt < 3) {
+        await new Promise((resolve) => setTimeout(resolve, 100 * attempt));
+      }
+    }
+    throw new ConflictException(
+      `Rotation for ${providerSlug} in org ${organizationId} committed but the row is unreadable afterwards (concurrent delete or read failure) — re-read before trusting the new version`,
+    );
   }
 
   async rotateProviderCredentials(args: {
@@ -220,7 +246,10 @@ export class AutomationCredentialService {
     newVersion: string;
     clientId: string;
     clientSecret: string;
-  }): Promise<{ updated: string[]; skipped: { organizationId: string; reason: string }[] }> {
+  }): Promise<{
+    updated: string[];
+    skipped: { organizationId: string; reason: string }[];
+  }> {
     const rows = await this.oauthAppRepository.findAutomationByProvider(
       args.providerSlug,
     );
@@ -231,17 +260,39 @@ export class AutomationCredentialService {
         skipped.push({ organizationId: row.organizationId, reason: 'stale' });
         continue;
       }
-      try {
-        await this.rotateAutomationCredentials({
-          ...args,
-          organizationId: row.organizationId,
-        });
+      // Bounded retries on transient failures only, with linear backoff.
+      // Deterministic outcomes (missing/customer-owned/stale) never retry.
+      // Retries are idempotent: the conditional update matches at most one
+      // versioned row. Unknown errors retry too — they are usually vault/DB
+      // blips — but at most 3 attempts with a growing delay, never a hot loop.
+      let outcome: string | null = null;
+      for (let attempt = 1; attempt <= 3; attempt += 1) {
+        try {
+          await this.rotateAutomationCredentials({
+            ...args,
+            organizationId: row.organizationId,
+          });
+          outcome = null;
+          break;
+        } catch (error) {
+          if (
+            error instanceof NotFoundException ||
+            error instanceof ForbiddenException ||
+            error instanceof ConflictException
+          ) {
+            outcome = error.message;
+            break;
+          }
+          outcome = error instanceof Error ? error.message : 'unknown';
+          if (attempt < 3) {
+            await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
+          }
+        }
+      }
+      if (outcome === null) {
         updated.push(row.organizationId);
-      } catch (error) {
-        skipped.push({
-          organizationId: row.organizationId,
-          reason: error instanceof Error ? error.message : 'unknown',
-        });
+      } else {
+        skipped.push({ organizationId: row.organizationId, reason: outcome });
       }
     }
     this.logger.log(

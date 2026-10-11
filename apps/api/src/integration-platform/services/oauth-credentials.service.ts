@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OAuthAppRepository } from '../repositories/oauth-app.repository';
-import { PlatformCredentialRepository } from '../repositories/platform-credential.repository';
 import {
   CredentialVaultService,
   EncryptedData,
@@ -42,12 +41,14 @@ export class OAuthCredentialsService {
 
   constructor(
     private readonly oauthAppRepository: OAuthAppRepository,
-    private readonly platformCredentialRepository: PlatformCredentialRepository,
     private readonly credentialVaultService: CredentialVaultService,
   ) {}
 
   /**
-   * Get OAuth credentials for a provider, checking org-level first, then platform-level
+   * Get OAuth credentials for a provider — org-level only. There is no
+   * platform fallback: missing org credentials fail closed (Phase 1).
+   * The legacy platform store remains readable for backfill/rotation via
+   * AutomationCredentialService until the Release B contract migration.
    */
   async getCredentials(
     providerSlug: string,
@@ -58,28 +59,11 @@ export class OAuthCredentialsService {
       return null;
     }
 
-    const oauthConfig = manifest.auth.config;
-
-    // 1. Check for org-level custom credentials first
-    const orgCredentials = await this.getOrgCredentials(
+    return this.getOrgCredentials(
       providerSlug,
       organizationId,
-      oauthConfig,
+      manifest.auth.config,
     );
-    if (orgCredentials) {
-      return orgCredentials;
-    }
-
-    // 2. Fall back to platform-level credentials (from database)
-    const platformCredentials = await this.getPlatformCredentials(
-      providerSlug,
-      oauthConfig,
-    );
-    if (platformCredentials) {
-      return platformCredentials;
-    }
-
-    return null;
   }
 
   /**
@@ -107,17 +91,12 @@ export class OAuthCredentialsService {
     );
     const hasOrgCredentials = !!orgApp;
 
-    // Check platform credentials (from database)
-    const platformCred =
-      await this.platformCredentialRepository.findActiveByProviderSlug(
-        providerSlug,
-      );
-    const hasPlatformCredentials = !!platformCred;
-
+    // No platform fallback (Phase 1). The field stays during compatibility
+    // for older clients; it is always false.
     return {
-      available: hasOrgCredentials || hasPlatformCredentials,
+      available: hasOrgCredentials,
       hasOrgCredentials,
-      hasPlatformCredentials,
+      hasPlatformCredentials: false,
       setupInstructions: oauthConfig.setupInstructions,
       createAppUrl: oauthConfig.createAppUrl,
     };
@@ -171,57 +150,6 @@ export class OAuthCredentialsService {
     );
   }
 
-  static maskSecret(value: string): string {
-    if (value.length <= 4) return '\u2022'.repeat(value.length);
-    return '\u2022'.repeat(value.length - 4) + value.slice(-4);
-  }
-
-  /**
-   * Save platform-wide OAuth credentials (admin only)
-   */
-  async savePlatformCredentials(
-    providerSlug: string,
-    clientId: string,
-    clientSecret: string,
-    customScopes?: string[],
-    customSettings?: Record<string, unknown>,
-    userId?: string,
-  ): Promise<void> {
-    if (providerSlug === 'azure') azureTenantId(customSettings);
-    const encryptedClientId =
-      await this.credentialVaultService.encrypt(clientId);
-    const encryptedClientSecret =
-      await this.credentialVaultService.encrypt(clientSecret);
-
-    await this.platformCredentialRepository.upsert({
-      providerSlug,
-      encryptedClientId,
-      encryptedClientSecret,
-      clientIdHint: OAuthCredentialsService.maskSecret(clientId),
-      clientSecretHint: OAuthCredentialsService.maskSecret(clientSecret),
-      customScopes,
-      customSettings: customSettings as Prisma.InputJsonValue | undefined,
-      createdById: userId,
-    });
-
-    this.logger.log(`Saved platform OAuth credentials for ${providerSlug}`);
-  }
-
-  /**
-   * Delete platform-wide OAuth credentials (admin only)
-   */
-  async deletePlatformCredentials(providerSlug: string): Promise<void> {
-    await this.platformCredentialRepository.delete(providerSlug);
-    this.logger.log(`Deleted platform OAuth credentials for ${providerSlug}`);
-  }
-
-  /**
-   * Get all platform credentials (for admin UI)
-   */
-  async getAllPlatformCredentials() {
-    return this.platformCredentialRepository.findAll();
-  }
-
   /**
    * Get org-level OAuth credentials
    */
@@ -263,53 +191,6 @@ export class OAuthCredentialsService {
       };
     } catch (error) {
       this.logger.error(`Failed to decrypt org OAuth credentials: ${error}`);
-      return null;
-    }
-  }
-
-  /**
-   * Get platform-level OAuth credentials from database
-   */
-  private async getPlatformCredentials(
-    providerSlug: string,
-    oauthConfig: OAuthConfig,
-  ): Promise<OAuthCredentials | null> {
-    const platformCred =
-      await this.platformCredentialRepository.findActiveByProviderSlug(
-        providerSlug,
-      );
-
-    if (!platformCred) {
-      return null;
-    }
-
-    try {
-      const clientId = await this.credentialVaultService.decrypt(
-        platformCred.encryptedClientId as unknown as EncryptedData,
-      );
-      const clientSecret = await this.credentialVaultService.decrypt(
-        platformCred.encryptedClientSecret as unknown as EncryptedData,
-      );
-
-      // Use custom scopes if provided, otherwise fall back to manifest defaults
-      const scopes =
-        platformCred.customScopes.length > 0
-          ? platformCred.customScopes
-          : oauthConfig.scopes;
-
-      return {
-        clientId,
-        clientSecret,
-        scopes,
-        source: 'platform',
-        customSettings: (
-          platformCred as { customSettings?: Record<string, unknown> }
-        ).customSettings,
-      };
-    } catch (error) {
-      this.logger.error(
-        `Failed to decrypt platform OAuth credentials: ${error}`,
-      );
       return null;
     }
   }

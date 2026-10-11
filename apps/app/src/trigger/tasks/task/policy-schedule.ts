@@ -1,4 +1,3 @@
-import { isOrgParticipant } from '@/lib/org-participation-rule';
 import { db } from '@db/server';
 import { logger, schedules } from '@gideon-defender/trigger-local';
 import { Novu } from '@novu/api';
@@ -31,7 +30,6 @@ export const policySchedule = schedules.task({
           select: {
             id: true,
             name: true,
-            isInternal: true,
             members: {
               where: {
                 deactivated: false,
@@ -42,7 +40,6 @@ export const policySchedule = schedules.task({
                     id: true,
                     name: true,
                     email: true,
-                    role: true,
                   },
                 },
               },
@@ -131,20 +128,14 @@ export const policySchedule = schedules.task({
             id: string;
             email: string;
             name?: string;
-            role?: string | null;
           };
         }>,
         policy: (typeof overduePolicies)[number],
       ) => {
-        // Exclude platform admins (OpenComp staff) unless the org is internal —
-        // the single participation rule (no per-member owner carve-out).
-        const orgIsInternal = policy.organization?.isInternal ?? false;
+        // Every active member participates — there is no user outside a tenant.
         for (const entry of members) {
           const user = entry.user;
           if (!user?.email || !user.id) continue;
-          if (!isOrgParticipant(user.role, { orgIsInternal })) {
-            continue;
-          }
           const key = `${user.id}-${policy.id}`;
           if (!recipientsMap.has(key)) {
             recipientsMap.set(key, {

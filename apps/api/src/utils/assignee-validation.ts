@@ -1,13 +1,14 @@
 import { BadRequestException } from '@nestjs/common';
 import { db } from '@db';
-import { isMemberOrgParticipant } from './org-participation';
 
 /**
- * Validates that the given member can be assigned as assignee/approver in the organization.
- * Throws BadRequestException if member not found or is a platform admin in a non-internal org.
+ * Validates that the given member exists in the organization and can be
+ * assigned as assignee/approver. Authorization is org-scoped: every member
+ * of the organization is a genuine participant (there is no cross-tenant
+ * role), so only membership is checked.
  * No-op if assigneeId is null/undefined (unassignment).
  */
-export async function validateAssigneeNotPlatformAdmin(
+export async function validateAssigneeMembership(
   assigneeId: string | null | undefined,
   organizationId: string,
   roleLabel: 'assignee' | 'approver' = 'assignee',
@@ -16,7 +17,6 @@ export async function validateAssigneeNotPlatformAdmin(
 
   const member = await db.member.findFirst({
     where: { id: assigneeId, organizationId },
-    include: { user: { select: { role: true } } },
   });
 
   if (!member) {
@@ -26,19 +26,13 @@ export async function validateAssigneeNotPlatformAdmin(
         : 'Assignee is not a member of this organization';
     throw new BadRequestException(msg);
   }
-
-  if (!(await isMemberOrgParticipant(member.user.role, organizationId))) {
-    throw new BadRequestException(
-      `Cannot assign a platform admin as ${roleLabel}`,
-    );
-  }
 }
 
 /**
  * Validates approver specifically (requires deactivated check as well, for submitForReview flows).
  * Returns the approver member for callers that need it (e.g. audit log).
  */
-export async function validateApproverNotPlatformAdmin(
+export async function validateApproverMembership(
   approverId: string,
   organizationId: string,
 ) {
@@ -49,10 +43,6 @@ export async function validateApproverNotPlatformAdmin(
 
   if (!approver) {
     throw new BadRequestException('Approver not found or is deactivated');
-  }
-
-  if (!(await isMemberOrgParticipant(approver.user.role, organizationId))) {
-    throw new BadRequestException('Cannot assign a platform admin as approver');
   }
 
   return approver;

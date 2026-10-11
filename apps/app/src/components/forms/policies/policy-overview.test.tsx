@@ -42,7 +42,6 @@ vi.mock('@/hooks/use-auth-me', () => ({
   useAuthMe: () => ({
     user: { id: 'user_1' },
     organizations: [],
-    impersonatedBy: null,
     authType: 'session',
     hasInactiveMembership: false,
     isLoading: false,

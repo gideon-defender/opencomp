@@ -177,7 +177,6 @@
       "^@db$": "<rootDir>/../prisma/index",
       "^@/(.*)$": "<rootDir>/$1",
       "^\\./sku-definitions\\.js$": "<rootDir>/../../../packages/billing/src/sku-definitions.ts",
-      "^@gideon-defender/auth/participation$": "<rootDir>/../../../packages/auth/src/participation.ts",
       "^@gideon-defender/auth$": "<rootDir>/../../../packages/auth/src/index.ts",
       "^@gideon-defender/billing$": "<rootDir>/../../../packages/billing/src/index.ts",
       "^@gideon-defender/company$": "<rootDir>/../../../packages/company/src/index.ts",

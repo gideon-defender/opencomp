@@ -4,11 +4,6 @@ import type { IntegrationOAuthApp } from '@db';
 
 export type OAuthAppManagementSource = 'customer' | 'automation';
 
-interface OAuthAppProvenance {
-  managementSource?: OAuthAppManagementSource;
-  automationVersion?: string | null;
-}
-
 interface CreateOAuthAppDto {
   providerSlug: string;
   organizationId: string;

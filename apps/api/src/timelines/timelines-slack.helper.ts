@@ -11,8 +11,8 @@ function appUrl() {
   );
 }
 
-function adminTimelineUrl(orgId: string) {
-  return `${appUrl()}/${orgId}/admin/organizations/${orgId}`;
+function orgTimelineUrl(orgId: string) {
+  return `${appUrl()}/${orgId}/overview/timeline`;
 }
 
 /**
@@ -76,7 +76,7 @@ export function notifyReadyForReview({
   frameworkName: string;
   phaseName: string;
 }): Promise<void> {
-  const link = adminTimelineUrl(orgId);
+  const link = orgTimelineUrl(orgId);
   const safeOrg = escapeMrkdwn(orgName);
   const safePhase = escapeMrkdwn(phaseName);
   const safeFramework = escapeMrkdwn(frameworkName);
@@ -122,7 +122,7 @@ export function notifyPhaseCompleted({
               ? ':paperclip:  Document uploaded'
               : ':pencil:  Manually completed';
 
-  const link = adminTimelineUrl(orgId);
+  const link = orgTimelineUrl(orgId);
   const safeOrg = escapeMrkdwn(orgName);
   const safePhase = escapeMrkdwn(phaseName);
   const safeFramework = escapeMrkdwn(frameworkName);
@@ -149,7 +149,7 @@ export function notifyTimelineCompleted({
   orgName: string;
   frameworkName: string;
 }): Promise<void> {
-  const link = adminTimelineUrl(orgId);
+  const link = orgTimelineUrl(orgId);
   const safeOrg = escapeMrkdwn(orgName);
   const safeFramework = escapeMrkdwn(frameworkName);
   return sendSlack(

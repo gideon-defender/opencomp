@@ -40,7 +40,6 @@ export default async function TaskPage({
   const evidenceApprovalEnabled = optionsRes.data?.evidenceApprovalEnabled ?? false;
 
   let isWebAutomationsEnabled = false;
-  let isPlatformAdmin = false;
 
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -51,8 +50,6 @@ export default async function TaskPage({
     isWebAutomationsEnabled =
       flags['is-web-automations-enabled'] === true ||
       flags['is-web-automations-enabled'] === 'true';
-
-    isPlatformAdmin = session.user.role === 'admin';
   }
 
   return (
@@ -62,7 +59,6 @@ export default async function TaskPage({
         initialMembers={members}
         initialAutomations={automations}
         isWebAutomationsEnabled={isWebAutomationsEnabled}
-        isPlatformAdmin={isPlatformAdmin}
         evidenceApprovalEnabled={evidenceApprovalEnabled}
       />
     </Suspense>

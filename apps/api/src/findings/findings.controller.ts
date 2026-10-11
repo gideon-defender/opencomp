@@ -202,7 +202,7 @@ export class FindingsController {
   @UseGuards(PermissionGuard)
   @RequirePermission('finding', 'create')
   @ApiOperation({
-    summary: 'Create a finding (auditor or platform admin only)',
+    summary: 'Create a finding (auditors only)',
   })
   @ApiBody({ type: CreateFindingDto })
   @UsePipes(
@@ -273,8 +273,7 @@ export class FindingsController {
       throw new BadRequestException('User ID is required');
     }
 
-    const [isPlatformAdmin, member, permissions] = await Promise.all([
-      this.checkPlatformAdmin(authContext.userId),
+    const [member, permissions] = await Promise.all([
       db.member.findFirst({
         where: {
           userId: authContext.userId,
@@ -301,7 +300,6 @@ export class FindingsController {
       id,
       updateDto,
       canCreateFindings,
-      isPlatformAdmin,
       authContext.userId,
       member.id,
     );
@@ -311,12 +309,11 @@ export class FindingsController {
   @UseGuards(PermissionGuard)
   @RequirePermission('finding', 'delete')
   @ApiOperation({
-    summary: 'Delete a finding (auditor or platform admin only)',
+    summary: 'Delete a finding (auditors only)',
   })
   @ApiParam({ name: 'id', description: 'Finding ID' })
   @ApiOkResponse({
-    description:
-      'A finding (auditor or platform admin only) deleted successfully',
+    description: 'A finding (auditors only) deleted successfully',
   })
   @ApiAuthErrors()
   async deleteFinding(
@@ -366,14 +363,5 @@ export class FindingsController {
       authContext.organizationId,
       id,
     );
-  }
-
-  private async checkPlatformAdmin(userId?: string): Promise<boolean> {
-    if (!userId) return false;
-    const user = await db.user.findUnique({
-      where: { id: userId },
-      select: { role: true },
-    });
-    return user?.role === 'admin';
   }
 }

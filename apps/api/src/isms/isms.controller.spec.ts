@@ -23,7 +23,6 @@ const sessionContext = (
   authType: 'session',
   isApiKey: false,
   isServiceToken: false,
-  isPlatformAdmin: false,
   userRoles: ['auditor'],
   ...overrides,
 });
@@ -167,21 +166,6 @@ describe('IsmsController', () => {
 
     expect(mockIsmsService.ensureSetup).toHaveBeenCalledWith(
       expect.objectContaining({ canWrite: false }),
-    );
-  });
-
-  it('ensureSetup grants canWrite to platform admins without resolving roles', async () => {
-    mockIsmsService.ensureSetup.mockResolvedValue({ success: true });
-
-    await controller.ensureSetup(
-      { frameworkId: 'fw_1' },
-      'org_1',
-      sessionContext({ isPlatformAdmin: true }),
-    );
-
-    expect(mockResolveRolePermissions).not.toHaveBeenCalled();
-    expect(mockIsmsService.ensureSetup).toHaveBeenCalledWith(
-      expect.objectContaining({ canWrite: true }),
     );
   });
 

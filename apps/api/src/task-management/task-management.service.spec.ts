@@ -59,7 +59,6 @@ describe('TaskManagementService — API key actor fallback', () => {
     organizationId: orgId,
     authType: 'api-key',
     isApiKey: true,
-    isPlatformAdmin: false,
     userRoles: null,
   };
 
@@ -67,7 +66,6 @@ describe('TaskManagementService — API key actor fallback', () => {
     organizationId: orgId,
     authType: 'session',
     isApiKey: false,
-    isPlatformAdmin: false,
     userId: 'usr_session',
     userEmail: 'me@example.com',
     userRoles: ['admin'],

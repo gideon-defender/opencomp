@@ -3,7 +3,6 @@ import type {
   DeviceWithChecks,
   SourceCompliance,
 } from '@/app/(app)/[orgId]/people/devices/types';
-import { getOrgIsInternal } from '@/lib/org-participation';
 import { requireApiPermission } from '@/lib/permissions.server';
 import { db } from '@db/server';
 import { daysSinceCheckIn, getDeviceComplianceStatus } from '@gideon-defender/utils/devices';
@@ -25,13 +24,11 @@ export async function GET(req: Request) {
   if (ctx instanceof NextResponse) return ctx;
   const { organizationId } = ctx;
 
-  const orgIsInternal = await getOrgIsInternal(organizationId);
   const devices = await db.device.findMany({
     where: {
       organizationId,
       member: {
         deactivated: false,
-        ...(orgIsInternal ? {} : { NOT: { user: { role: 'admin' } } }),
       },
     },
     include: {

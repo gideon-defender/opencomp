@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { db } from '@db';
-import { orgParticipantMemberWhere } from '../utils/org-participation';
 import { isUserUnsubscribed } from '@gideon-defender/email';
 import { triggerEmail } from '../email/trigger-email';
 import { resolveEmailLocale, type EmailLocale } from '../email/locale';
@@ -54,17 +53,12 @@ export class TaskItemMentionNotifierService {
         return;
       }
 
-      // Get mentioned users: exclude platform admins unless the org is internal
-      // (where platform admins are real members). `orgParticipantMemberWhere`
-      // returns an AND-wrapped fragment so it intersects with the mentioned-user
-      // filter above rather than overwriting it.
-      const participantWhere = await orgParticipantMemberWhere(organizationId);
+      // Get mentioned users within this organization.
       const mentionedMembers = await db.member.findMany({
         where: {
           organizationId,
           deactivated: false,
           user: { id: { in: mentionedUserIds } },
-          ...participantWhere,
         },
         include: { user: true },
       });

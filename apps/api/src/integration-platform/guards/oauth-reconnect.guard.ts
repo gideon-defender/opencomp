@@ -12,14 +12,11 @@ import type { StartOAuthDto } from '../dto/start-oauth.dto';
 export class OAuthReconnectGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<
-      Pick<
-        AuthenticatedRequest,
-        'organizationId' | 'userRoles' | 'isPlatformAdmin'
-      > & {
+      Pick<AuthenticatedRequest, 'organizationId' | 'userRoles'> & {
         body?: StartOAuthDto;
       }
     >();
-    if (!request.body?.connectionId || request.isPlatformAdmin) return true;
+    if (!request.body?.connectionId) return true;
 
     const allowed = await rolesGrantPermissions({
       organizationId: request.organizationId,

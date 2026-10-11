@@ -23925,7 +23925,7 @@
         ],
         "responses": {
           "200": {
-            "description": "A finding (auditor or platform admin only) deleted successfully"
+            "description": "A finding (auditors only) deleted successfully"
           },
           "401": {
             "description": "Unauthorized - Invalid or missing authentication",
@@ -23953,18 +23953,18 @@
             "apikey": []
           }
         ],
-        "summary": "Delete a finding (auditor or platform admin only)",
+        "summary": "Delete a finding (auditors only)",
         "tags": [
           "Findings"
         ],
-        "description": "Delete a finding (auditor or platform admin only) in OpenComp. Create, review, update, and track audit findings, remediation activity, and finding history for an organization.",
+        "description": "Delete a finding (auditors only) in OpenComp. Create, review, update, and track audit findings, remediation activity, and finding history for an organization.",
         "x-mint": {
           "metadata": {
-            "title": "Delete a finding (auditor or platform admin | OpenComp API",
-            "sidebarTitle": "Delete a finding (auditor or platform admin only)",
-            "description": "Delete a finding (auditor or platform admin only) in OpenComp. Create, review, update, and track audit findings, remediation activity, and finding history.",
-            "og:title": "Delete a finding (auditor or platform admin | OpenComp API",
-            "og:description": "Delete a finding (auditor or platform admin only) in OpenComp. Create, review, update, and track audit findings, remediation activity, and finding history."
+            "title": "Delete a finding (auditors only) | OpenComp API",
+            "sidebarTitle": "Delete a finding (auditors only)",
+            "description": "Delete a finding (auditors only) in OpenComp. Create, review, update, and track audit findings, remediation activity, and finding history for an organization.",
+            "og:title": "Delete a finding (auditors only) | OpenComp API",
+            "og:description": "Delete a finding (auditors only) in OpenComp. Create, review, update, and track audit findings, remediation activity, and finding history for an organization."
           }
         },
         "x-comp-mcp": {

@@ -67,7 +67,6 @@ export const policyAcknowledgmentDigest = schedules.task({
       select: {
         id: true,
         name: true,
-        isInternal: true,
         policy: {
           where: {
             status: 'published',
@@ -89,7 +88,7 @@ export const policyAcknowledgmentDigest = schedules.task({
             role: true,
             department: true,
             user: {
-              select: { id: true, name: true, email: true, role: true },
+              select: { id: true, name: true, email: true },
             },
           },
         },
@@ -120,7 +119,6 @@ export const policyAcknowledgmentDigest = schedules.task({
         db as unknown as ComplianceFilterDb,
         org.members,
         org.id,
-        org.isInternal,
       );
 
       if (complianceMembers.length === 0) continue;

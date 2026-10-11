@@ -9,14 +9,12 @@ export interface AuthMeUser {
   email: string;
   name: string | null;
   image: string | null;
-  role: string | null;
 }
 
 export interface AuthMeData {
   user: AuthMeUser | null;
   pendingInvitation: { id: string } | null;
   hasInactiveMembership: boolean;
-  impersonatedBy: string | null;
   authType: string | null;
 }
 
@@ -36,7 +34,6 @@ export function useAuthMe() {
 
   return {
     user: data?.user ?? null,
-    impersonatedBy: data?.impersonatedBy ?? null,
     authType: data?.authType ?? null,
     hasInactiveMembership: data?.hasInactiveMembership ?? false,
     isLoading,

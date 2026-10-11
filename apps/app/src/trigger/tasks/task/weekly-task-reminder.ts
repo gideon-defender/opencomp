@@ -1,4 +1,3 @@
-import { isOrgParticipant } from '@/lib/org-participation-rule';
 import { db } from '@db/server';
 import { logger, schedules } from '@gideon-defender/trigger-local';
 import { sendWeeklyTaskDigestEmailTask } from '../email/weekly-task-digest-email';
@@ -37,7 +36,6 @@ export const weeklyTaskReminder = schedules.task({
       select: {
         id: true,
         name: true,
-        isInternal: true,
         members: {
           where: {
             deactivated: false,
@@ -49,7 +47,6 @@ export const weeklyTaskReminder = schedules.task({
                 id: true,
                 name: true,
                 email: true,
-                role: true,
               },
             },
           },
@@ -98,16 +95,7 @@ export const weeklyTaskReminder = schedules.task({
           continue;
         }
 
-        // Exclude platform admins (OpenComp staff) unless the org is internal —
-        // the single participation rule (no per-member owner carve-out).
-        if (
-          !isOrgParticipant(member.user.role, {
-            orgIsInternal: org.isInternal,
-          })
-        ) {
-          continue;
-        }
-
+        // Every active member participates — there is no user outside a tenant.
         emailPayloads.push({
           payload: {
             email: member.user.email,

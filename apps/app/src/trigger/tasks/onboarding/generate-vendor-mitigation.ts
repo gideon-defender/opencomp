@@ -1,4 +1,3 @@
-import { isOrgParticipant } from '@/lib/org-participation-rule';
 import { VendorStatus, db } from '@db/server';
 import { logger, metadata, queue, tags, task, tasks } from '@gideon-defender/trigger-local';
 import axios from 'axios';
@@ -58,27 +57,14 @@ export const generateVendorMitigation = task({
         // platform admins are hidden from the assignee UI, so skip them too.
         let assigneeUpdate: { assigneeId: string | null } | Record<string, never> = {};
         if (authorId) {
-          const [author, org] = await Promise.all([
-            db.member.findFirst({
-              where: { id: authorId, organizationId, deactivated: false },
-              include: { user: { select: { role: true } } },
-            }),
-            db.organization.findUnique({
-              where: { id: organizationId },
-              select: { isInternal: true },
-            }),
-          ]);
-          // Only assign when the author is a real member of THIS org and is a
-          // participant (fail closed if the lookup missed — never write an unknown
-          // or cross-org member id).
+          const author = await db.member.findFirst({
+            where: { id: authorId, organizationId, deactivated: false },
+          });
+          // Only assign when the author is a real member of THIS org (fail
+          // closed if the lookup missed — never write an unknown or
+          // cross-org member id).
           assigneeUpdate = {
-            assigneeId:
-              author &&
-              isOrgParticipant(author.user.role, {
-                orgIsInternal: org?.isInternal ?? false,
-              })
-                ? authorId
-                : null,
+            assigneeId: author ? authorId : null,
           };
         }
 

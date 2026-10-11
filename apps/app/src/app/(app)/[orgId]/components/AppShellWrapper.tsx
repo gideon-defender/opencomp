@@ -14,7 +14,7 @@ import {
   type UserPermissions,
 } from '@/lib/permissions';
 import { signOutFromGideon } from '@/utils/gideon-sign-out';
-import { Badge, Globe, Locked, Logout, ManageProtection, Settings } from '@carbon/icons-react';
+import { Badge, Globe, Logout, ManageProtection, Settings } from '@carbon/icons-react';
 import type { Onboarding, Organization } from '@db';
 import { BrandLogo } from '@gideon-defender/ui/brand-logo';
 import {
@@ -51,8 +51,6 @@ import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Suspense, useCallback, useRef } from 'react';
-import { AdminSidebar } from '../admin/components/AdminSidebar';
-import { ImpersonationBanner } from '../admin/components/ImpersonationBanner';
 import { SecuritySidebar } from '../security/components/SecuritySidebar';
 import { SettingsSidebar } from '../settings/components/SettingsSidebar';
 import { TrustSidebar } from '../trust/components/TrustSidebar';
@@ -81,7 +79,6 @@ interface AppShellWrapperProps {
     email: string;
     image: string | null;
   };
-  isAdmin: boolean;
 }
 
 type AppShellWrapperContentProps = Omit<AppShellWrapperProps, 'isCollapsed'>;
@@ -108,7 +105,6 @@ function AppShellWrapperContent({
   canAccessAuditorView,
   permissions,
   user,
-  isAdmin,
 }: AppShellWrapperContentProps) {
   const t = useTranslations('nav');
   const { theme, setTheme } = useTheme();
@@ -119,7 +115,6 @@ function AppShellWrapperContent({
   const isSettingsActive = pathname?.startsWith(`/${organization.id}/settings`);
   const isTrustActive = pathname?.startsWith(`/${organization.id}/trust`);
   const isSecurityActive = pathname?.startsWith(`/${organization.id}/security`);
-  const isAdminActive = pathname?.startsWith(`/${organization.id}/admin`);
 
   const { execute } = useAction(updateSidebarState, {
     onError: () => {
@@ -153,7 +148,6 @@ function AppShellWrapperContent({
 
   return (
     <TooltipProvider>
-      <ImpersonationBanner />
       <AppShell
         showAIChat
         aiChatContent={<Chat />}
@@ -243,9 +237,7 @@ function AppShellWrapperContent({
             {canAccessCompliance(permissions) && (
               <ShellRailNavItem
                 href={`/${organization.id}/overview`}
-                isActive={
-                  !isSettingsActive && !isTrustActive && !isSecurityActive && !isAdminActive
-                }
+                isActive={!isSettingsActive && !isTrustActive && !isSecurityActive}
                 icon={<Badge className="size-5" />}
                 label={t('compliance')}
               />
@@ -275,33 +267,21 @@ function AppShellWrapperContent({
                 label={t('settings')}
               />
             )}
-            {isAdmin && (
-              <ShellRailNavItem
-                href={`/${organization.id}/admin`}
-                isActive={!!isAdminActive}
-                icon={<Locked className="size-5" />}
-                label={t('admin')}
-              />
-            )}
           </AppShellRail>
           <AppShellMain>
             <AppShellSidebar collapsible>
               <AppShellSidebarHeader
                 title={
-                  isAdminActive
-                    ? t('admin')
-                    : isSettingsActive
-                      ? t('settings')
-                      : isTrustActive
-                        ? t('trust')
-                        : isSecurityActive
-                          ? t('security')
-                          : t('compliance')
+                  isSettingsActive
+                    ? t('settings')
+                    : isTrustActive
+                      ? t('trust')
+                      : isSecurityActive
+                        ? t('security')
+                        : t('compliance')
                 }
               />
-              {isAdminActive && isAdmin ? (
-                <AdminSidebar orgId={organization.id} />
-              ) : isSettingsActive ? (
+              {isSettingsActive ? (
                 <SettingsSidebar
                   orgId={organization.id}
                   showBrowserTab={isWebAutomationsEnabled}

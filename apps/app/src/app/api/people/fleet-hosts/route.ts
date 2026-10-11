@@ -1,6 +1,5 @@
 import type { Host } from '@/app/(app)/[orgId]/people/devices/types';
 import { getFleetInstance } from '@/lib/fleet';
-import { getOrgIsInternal } from '@/lib/org-participation';
 import { requireApiPermission } from '@/lib/permissions.server';
 import { db } from '@db/server';
 import { NextResponse } from 'next/server';
@@ -16,12 +15,10 @@ export async function GET(req: Request) {
 
   const fleet = await getFleetInstance();
 
-  const orgIsInternal = await getOrgIsInternal(organizationId);
   const employees = await db.member.findMany({
     where: {
       organizationId,
       deactivated: false,
-      ...(orgIsInternal ? {} : { NOT: { user: { role: 'admin' } } }),
     },
     include: { user: true },
   });

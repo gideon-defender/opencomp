@@ -60,7 +60,6 @@ describe('PermissionGuard', () => {
     request: Partial<{
       isApiKey: boolean;
       isMcpOAuth: boolean;
-      isPlatformAdmin: boolean;
       apiKeyScopes: string[] | undefined;
       userRoles: string[] | null;
       headers: Record<string, string>;
@@ -362,6 +361,27 @@ describe('PermissionGuard', () => {
         ForbiddenException,
       );
       expect(mockHasPermission).not.toHaveBeenCalled();
+    });
+
+    it('ignores a legacy isPlatformAdmin flag — no bypass remains', async () => {
+      // Regression: the platform-admin bypass was removed. A request that
+      // still carries `isPlatformAdmin: true` with roles that lack the
+      // permission must be denied. Restoring the bypass would fail this test.
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockReturnValue([{ resource: 'control', actions: ['delete'] }]);
+      mockResolveRolePermissions.mockResolvedValue({ control: ['read'] });
+
+      const context = createMockExecutionContext({
+        headers: { cookie: 'session=abc' },
+        userRoles: ['auditor'],
+        organizationId: 'org_1',
+        isPlatformAdmin: true,
+      } as never);
+
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 

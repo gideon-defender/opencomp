@@ -66,8 +66,6 @@ export class CommentsPermissionGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest<GuardedRequest>();
 
-    if (request.isPlatformAdmin) return true;
-
     const fallback = required[0];
     const action = fallback.actions[0];
     const resource = this.resolveEntityResource(request, fallback.resource);

@@ -16,10 +16,6 @@
     "./permissions": {
       "types": "./dist/permissions.d.ts",
       "default": "./dist/permissions.js"
-    },
-    "./participation": {
-      "types": "./dist/participation.d.ts",
-      "default": "./dist/participation.js"
     }
   },
   "main": "./dist/index.js",

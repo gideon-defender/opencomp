@@ -43,7 +43,6 @@ describe('RiskAcceptancesController', () => {
     organizationId: orgId,
     authType: 'session',
     isApiKey: false,
-    isPlatformAdmin: false,
     userRoles: ['admin'],
     userId: 'usr_123',
     userEmail: 'admin@example.com',

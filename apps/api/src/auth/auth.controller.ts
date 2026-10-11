@@ -41,7 +41,6 @@ export class AuthController {
         organizations: [],
         pendingInvitation: null,
         hasInactiveMembership: false,
-        impersonatedBy: null,
         authType: authContext.authType,
       };
     }
@@ -55,7 +54,6 @@ export class AuthController {
             email: true,
             name: true,
             image: true,
-            role: true,
           },
         }),
         db.member.findMany({
@@ -105,11 +103,6 @@ export class AuthController {
       })),
       pendingInvitation,
       hasInactiveMembership: inactiveMembershipCount > 0,
-      // Impersonation state for the banner UI. Resolved server-side from the
-      // session by HybridAuthGuard, so frontends read it here instead of
-      // better-auth session resolution (Milestone 2). Null for API-key,
-      // service-token, and Gideon-JWT callers, which cannot impersonate.
-      impersonatedBy: authContext.impersonatedBy ?? null,
       authType: authContext.authType,
     };
   }

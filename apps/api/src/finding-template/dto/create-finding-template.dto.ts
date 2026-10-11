@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsInt, IsOptional, Min } from 'class-validator';
 
 export class CreateFindingTemplateDto {
@@ -27,10 +27,9 @@ export class CreateFindingTemplateDto {
   @IsNotEmpty()
   content: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Display order for the template',
     example: 0,
-    required: false,
   })
   @IsInt()
   @Min(0)

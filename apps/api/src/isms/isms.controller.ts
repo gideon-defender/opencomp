@@ -77,14 +77,13 @@ export class IsmsController {
 
   /**
    * Whether the caller has `evidence:update`, mirroring PermissionGuard's
-   * precedence (platform admin → API key scopes → service token → roles). Used
+   * precedence (API key scopes → service token → roles). Used
    * to keep ensure-setup's list path read-only while still letting writers
    * provision missing documents.
    */
   private async resolveCanWrite(ctx: AuthContextType): Promise<boolean> {
     const RESOURCE = 'evidence';
     const ACTION = 'update';
-    if (ctx.isPlatformAdmin) return true;
 
     if (ctx.isApiKey) {
       const scopes = ctx.apiKeyScopes;
