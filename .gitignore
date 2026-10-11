@@ -113,6 +113,9 @@ scripts/sync-release-branch.sh
 # .github/workflows/sdk_generation.yaml + sdk_publish.yaml (the real ones).
 apps/mcp-server/.github/
 
+# opencode - project config holds a local MCP api key
+opencode.json
+
 # Ad-hoc read-only prod ops scripts (contain DB creds) + any exported customer data.
 # These must never be committed. Unanchored so nested paths are covered too.
 dbq_*.js

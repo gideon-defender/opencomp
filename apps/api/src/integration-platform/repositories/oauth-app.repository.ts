@@ -1,6 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { db } from '@db';
-import type { IntegrationOAuthApp, Prisma } from '@db';
+import { db, Prisma } from '@db';
+import type { IntegrationOAuthApp } from '@db';
+
+export type OAuthAppManagementSource = 'customer' | 'automation';
+
+interface OAuthAppProvenance {
+  managementSource?: OAuthAppManagementSource;
+  automationVersion?: string | null;
+}
 
 interface CreateOAuthAppDto {
   providerSlug: string;
@@ -9,6 +16,9 @@ interface CreateOAuthAppDto {
   encryptedClientSecret: object;
   customScopes?: string[];
   customSettings?: Prisma.InputJsonValue;
+  managementSource?: OAuthAppManagementSource;
+  automationVersion?: string | null;
+  isActive?: boolean;
 }
 
 interface UpdateOAuthAppDto {
@@ -17,6 +27,8 @@ interface UpdateOAuthAppDto {
   customScopes?: string[];
   customSettings?: Prisma.InputJsonValue;
   isActive?: boolean;
+  managementSource?: OAuthAppManagementSource;
+  automationVersion?: string | null;
 }
 
 @Injectable()
@@ -107,6 +119,8 @@ export class OAuthAppRepository {
         encryptedClientSecret: data.encryptedClientSecret,
         customScopes: data.customScopes || [],
         customSettings: data.customSettings || undefined,
+        managementSource: data.managementSource || 'customer',
+        automationVersion: data.automationVersion ?? null,
         isActive: true,
       },
       update: {
@@ -114,8 +128,90 @@ export class OAuthAppRepository {
         encryptedClientSecret: data.encryptedClientSecret,
         customScopes: data.customScopes || [],
         customSettings: data.customSettings || undefined,
+        managementSource: data.managementSource || 'customer',
+        automationVersion: data.automationVersion ?? null,
         isActive: true,
       },
+    });
+  }
+
+  /**
+   * Insert-if-absent for backfill/provisioning. Never overwrites an existing
+   * row (a concurrent customer write wins). Returns whether this call created.
+   */
+  async createIfAbsent(
+    data: CreateOAuthAppDto,
+  ): Promise<{ created: boolean; row: IntegrationOAuthApp }> {
+    try {
+      const row = await db.integrationOAuthApp.create({
+        data: {
+          providerSlug: data.providerSlug,
+          organizationId: data.organizationId,
+          encryptedClientId: data.encryptedClientId,
+          encryptedClientSecret: data.encryptedClientSecret,
+          customScopes: data.customScopes || [],
+          customSettings: data.customSettings || undefined,
+          managementSource: data.managementSource || 'customer',
+          automationVersion: data.automationVersion ?? null,
+          isActive: data.isActive ?? true,
+        },
+      });
+      return { created: true, row };
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        const row = await this.findByProviderAndOrg(
+          data.providerSlug,
+          data.organizationId,
+        );
+        if (!row) throw error;
+        return { created: false, row };
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Conditional rotation primitive. Updates only an automation-owned row whose
+   * version matches — customer-owned, missing, or stale rows match zero rows.
+   * Preserves isActive: rotation never activates a disabled configuration.
+   */
+  async updateAutomationRow(args: {
+    providerSlug: string;
+    organizationId: string;
+    expectedVersion: string;
+    encryptedClientId: object;
+    encryptedClientSecret: object;
+    customScopes?: string[];
+    customSettings?: Prisma.InputJsonValue;
+    newVersion: string;
+  }): Promise<number> {
+    const { count } = await db.integrationOAuthApp.updateMany({
+      where: {
+        providerSlug: args.providerSlug,
+        organizationId: args.organizationId,
+        managementSource: 'automation',
+        automationVersion: args.expectedVersion,
+      },
+      data: {
+        encryptedClientId: args.encryptedClientId,
+        encryptedClientSecret: args.encryptedClientSecret,
+        customScopes: args.customScopes,
+        customSettings: args.customSettings,
+        automationVersion: args.newVersion,
+      },
+    });
+    return count;
+  }
+
+  async findAutomationByProvider(
+    providerSlug: string,
+  ): Promise<IntegrationOAuthApp[]> {
+    return db.integrationOAuthApp.findMany({
+      where: { providerSlug, managementSource: 'automation' },
+      orderBy: { organizationId: 'asc' },
     });
   }
 

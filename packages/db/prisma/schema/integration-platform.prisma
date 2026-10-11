@@ -306,6 +306,18 @@ model IntegrationOAuthApp {
   /// Whether this config is active
   isActive Boolean @default(true)
 
+  /// Credential provenance: who manages this row ('customer' | 'automation').
+  /// Existing rows default to 'customer'. Automation-provisioned backfill and
+  /// new-org provisioning set 'automation' with an automationVersion.
+  /// Customer writes switch ownership back to 'customer' and clear the version.
+  managementSource String @default("customer")
+
+  /// Version of the automation-provisioned credential (null for customer rows).
+  /// Rotation conditionally updates only rows whose version matches, so a
+  /// concurrent customer takeover (managementSource='customer', version=null)
+  /// is never overwritten.
+  automationVersion String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

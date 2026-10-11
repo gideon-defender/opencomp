@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "exportedAt": "2026-10-11T04:51:55.107Z",
+  "tables": {
+    "FindingTemplate": 13,
+    "TimelineTemplate": 0,
+    "TimelinePhaseTemplate": 0,
+    "FrameworkEditorPolicyTemplate": 52,
+    "FrameworkEditorTaskTemplate": 152,
+    "FrameworkEditorControlTemplate": 314,
+    "FrameworkEditorIsmsDocumentTemplate": 12,
+    "FrameworkEditorControlPolicyTemplateLink": 0,
+    "FrameworkEditorControlTaskTemplateLink": 0,
+    "_FrameworkEditorControlTemplateToFrameworkEditorPolicyTemplate": 367,
+    "_FrameworkEditorControlTemplateToFrameworkEditorRequirement": 1856,
+    "_FrameworkEditorControlTemplateToFrameworkEditorTaskTemplate": 558,
+    "OffboardingChecklistTemplate": 0
+  }
+}

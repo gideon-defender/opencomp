@@ -147,6 +147,10 @@ export class OAuthCredentialsService {
       encryptedClientSecret,
       customScopes,
       customSettings: customSettings,
+      // A customer write takes ownership back from automation: rotation must
+      // never overwrite it afterwards (see AutomationCredentialService).
+      managementSource: 'customer',
+      automationVersion: null,
     });
 
     this.logger.log(
