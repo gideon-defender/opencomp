@@ -4,6 +4,7 @@ import { EMBEDDING_MODEL, embedTexts } from './embedding-client';
 describe('embedTexts', () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
     delete process.env.EMBEDDINGS_BASE_URL;
   });
 
@@ -78,6 +79,14 @@ describe('embedTexts', () => {
 
     await expect(embedTexts(['x'])).rejects.toThrow(/missing embeddings/);
   });
+
+  it.each([{ embeddings: [['bad']] }, { embeddings: [[0.1], [0.2]] }])(
+    'rejects invalid vectors or mismatched batch counts',
+    async (data) => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => data }));
+      await expect(embedTexts(['text'])).rejects.toThrow(/embedding|vector/i);
+    },
+  );
 
   it('returns [] for empty/whitespace-only input without calling the server', async () => {
     const fetchMock = vi.fn();

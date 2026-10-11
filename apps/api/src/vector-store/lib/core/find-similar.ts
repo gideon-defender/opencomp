@@ -1,3 +1,4 @@
+import { syncOrganizationEmbeddings } from '../sync/sync-organization';
 import { vectorIndex } from './client';
 import {
   generateEmbedding,
@@ -63,6 +64,7 @@ export async function findSimilarContent(
   }
 
   try {
+    await syncOrganizationEmbeddings(organizationId);
     // Generate embedding for the question
     const queryEmbedding = await generateEmbedding(question);
 
@@ -152,6 +154,7 @@ export async function findSimilarContentBatch(
   const startTime = Date.now();
 
   try {
+    await syncOrganizationEmbeddings(organizationId);
     // Step 1: Generate ALL embeddings in one batch API call (major time savings)
     logger.info('Generating batch embeddings', {
       questionCount: questions.length,
