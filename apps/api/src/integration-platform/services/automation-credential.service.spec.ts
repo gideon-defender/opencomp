@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { AutomationCredentialService } from './automation-credential.service';
 import { OAuthCredentialsService } from './oauth-credentials.service';
+import { PlatformCredentialRepository } from '../repositories/platform-credential.repository';
 import type { EncryptedData } from './credential-vault.service';
 
 const blob = (tag: string): EncryptedData => ({
@@ -16,7 +17,7 @@ const blob = (tag: string): EncryptedData => ({
 
 const platformRow = (overrides = {}) => ({
   id: 'ipc_1',
-  providerSlug: 'github',
+  providerSlug: 'slack',
   encryptedClientId: blob('id'),
   encryptedClientSecret: blob('secret'),
   customScopes: ['read:user'],
@@ -27,7 +28,7 @@ const platformRow = (overrides = {}) => ({
 
 const orgRow = (overrides = {}) => ({
   id: 'ioa_1',
-  providerSlug: 'github',
+  providerSlug: 'slack',
   organizationId: 'org_1',
   managementSource: 'automation',
   automationVersion: 'v1',
@@ -67,6 +68,40 @@ function setup() {
 
 describe('AutomationCredentialService', () => {
   describe('backfillOrgCredentials', () => {
+    it.each([
+      'gcp',
+      'azure',
+      'github-app',
+      'github',
+      'aikido',
+      'google-workspace',
+      'rippling',
+      'vercel',
+    ])(
+      'does not copy the shared %s app into an organization',
+      async (providerSlug) => {
+        const t = setup();
+        expect(
+          await t.service.backfillOrgCredentials({
+            providerSlug,
+            organizationId: 'org_1',
+            automationVersion: 'v1',
+          }),
+        ).toEqual({
+          status: 'shared-app',
+          providerSlug,
+          organizationId: 'org_1',
+        });
+        expect(
+          t.oauthAppRepository.findByProviderAndOrg,
+        ).not.toHaveBeenCalled();
+        expect(t.oauthAppRepository.createIfAbsent).not.toHaveBeenCalled();
+        expect(
+          t.platformCredentialRepository.findByProviderSlug,
+        ).not.toHaveBeenCalled();
+      },
+    );
+
     it('copies an active platform source with automation provenance', async () => {
       const t = setup();
       t.oauthAppRepository.findByProviderAndOrg.mockResolvedValue(null);
@@ -80,7 +115,7 @@ describe('AutomationCredentialService', () => {
       });
 
       const result = await t.service.backfillOrgCredentials({
-        providerSlug: 'github',
+        providerSlug: 'slack',
         organizationId: 'org_1',
         automationVersion: 'v1',
       });
@@ -102,7 +137,7 @@ describe('AutomationCredentialService', () => {
       t.oauthAppRepository.findByProviderAndOrg.mockResolvedValue(orgRow());
 
       const result = await t.service.backfillOrgCredentials({
-        providerSlug: 'github',
+        providerSlug: 'slack',
         organizationId: 'org_1',
         automationVersion: 'v2',
       });
@@ -124,7 +159,7 @@ describe('AutomationCredentialService', () => {
       });
 
       const result = await t.service.backfillOrgCredentials({
-        providerSlug: 'github',
+        providerSlug: 'slack',
         organizationId: 'org_1',
         automationVersion: 'v1',
       });
@@ -138,7 +173,7 @@ describe('AutomationCredentialService', () => {
       t.platformCredentialRepository.findByProviderSlug.mockResolvedValue(null);
 
       const result = await t.service.backfillOrgCredentials({
-        providerSlug: 'github',
+        providerSlug: 'slack',
         organizationId: 'org_1',
         automationVersion: 'v1',
       });
@@ -155,7 +190,7 @@ describe('AutomationCredentialService', () => {
       );
 
       const result = await t.service.backfillOrgCredentials({
-        providerSlug: 'github',
+        providerSlug: 'slack',
         organizationId: 'org_1',
         automationVersion: 'v1',
       });
@@ -173,7 +208,7 @@ describe('AutomationCredentialService', () => {
       t.credentialVaultService.decrypt.mockRejectedValue(new Error('bad tag'));
 
       const result = await t.service.backfillOrgCredentials({
-        providerSlug: 'github',
+        providerSlug: 'slack',
         organizationId: 'org_1',
         automationVersion: 'v1',
       });
@@ -185,7 +220,7 @@ describe('AutomationCredentialService', () => {
 
   describe('rotateAutomationCredentials', () => {
     const rotateArgs = {
-      providerSlug: 'github',
+      providerSlug: 'slack',
       organizationId: 'org_1',
       expectedVersion: 'v1',
       newVersion: 'v2',
@@ -302,7 +337,7 @@ describe('AutomationCredentialService', () => {
       t.oauthAppRepository.updateAutomationRow.mockResolvedValue(1);
 
       const result = await t.service.rotateProviderCredentials({
-        providerSlug: 'github',
+        providerSlug: 'slack',
         expectedVersion: 'v1',
         newVersion: 'v2',
         clientId: 'id',
@@ -328,7 +363,7 @@ describe('AutomationCredentialService', () => {
       t.oauthAppRepository.updateAutomationRow.mockResolvedValue(1);
 
       const result = await t.service.rotateProviderCredentials({
-        providerSlug: 'github',
+        providerSlug: 'slack',
         expectedVersion: 'v1',
         newVersion: 'v2',
         clientId: 'id',
@@ -343,15 +378,17 @@ describe('AutomationCredentialService', () => {
   });
 
   describe('provisionOrgCredentials', () => {
-    it('backfills every active platform provider once', async () => {
+    it('backfills active org-managed providers while retaining shared apps', async () => {
       const t = setup();
       t.platformCredentialRepository.findAll.mockResolvedValue([
-        platformRow({ providerSlug: 'github' }),
-        platformRow({ providerSlug: 'slack', isActive: false }),
+        platformRow({ providerSlug: 'slack' }),
+        platformRow({ providerSlug: 'gcp' }),
+        platformRow({ providerSlug: 'azure' }),
+        platformRow({ providerSlug: 'linear', isActive: false }),
       ]);
       t.oauthAppRepository.findByProviderAndOrg.mockResolvedValue(null);
       t.platformCredentialRepository.findByProviderSlug.mockImplementation(
-        async (slug: string) => (slug === 'github' ? platformRow() : null),
+        async (slug: string) => (slug === 'slack' ? platformRow() : null),
       );
       t.oauthAppRepository.createIfAbsent.mockResolvedValue({
         created: true,
@@ -363,7 +400,20 @@ describe('AutomationCredentialService', () => {
         automationVersion: 'v1',
       });
 
-      expect(results).toHaveLength(1);
+      expect(results).toHaveLength(3);
+      expect(results.slice(1)).toEqual([
+        {
+          status: 'shared-app',
+          providerSlug: 'gcp',
+          organizationId: 'org_new',
+        },
+        {
+          status: 'shared-app',
+          providerSlug: 'azure',
+          organizationId: 'org_new',
+        },
+      ]);
+      expect(t.oauthAppRepository.createIfAbsent).toHaveBeenCalledTimes(1);
       expect(results[0]).toMatchObject({
         status: 'copied',
         organizationId: 'org_new',
@@ -380,9 +430,10 @@ describe('OAuthCredentialsService.saveOrgCredentials provenance', () => {
       {
         encrypt: async (text: string) => blob(`enc:${text}`),
       } as never,
+      new PlatformCredentialRepository(),
     );
 
-    await service.saveOrgCredentials('github', 'org_1', 'id', 'secret');
+    await service.saveOrgCredentials('slack', 'org_1', 'id', 'secret');
 
     expect(oauthAppRepository.upsert).toHaveBeenCalledWith(
       expect.objectContaining({

@@ -10,8 +10,10 @@ import { PlatformCredentialRepository } from '../repositories/platform-credentia
 import { CredentialVaultService } from './credential-vault.service';
 import type { EncryptedData } from './credential-vault.service';
 import type { IntegrationOAuthApp, Prisma } from '@db';
+import { isSharedOAuthProvider } from './shared-oauth';
 
 export type BackfillStatus =
+  | 'shared-app'
   | 'copied'
   | 'already-present'
   | 'no-platform-source'
@@ -68,6 +70,9 @@ export class AutomationCredentialService {
 
   async backfillOrgCredentials(args: BackfillArgs): Promise<BackfillResult> {
     const { providerSlug, organizationId, automationVersion } = args;
+    if (isSharedOAuthProvider(providerSlug)) {
+      return { status: 'shared-app', providerSlug, organizationId };
+    }
     const existing = await this.oauthAppRepository.findByProviderAndOrg(
       providerSlug,
       organizationId,
@@ -208,16 +213,8 @@ export class AutomationCredentialService {
     return row;
   }
 
-  /**
-   * Re-reads the row after a committed rotation write. A missing row here is
-   * either a transient read blip (worth a short retry) or a concurrent
-   * delete. Either way the caller must NOT receive the pre-write row stamped
-   * with the new version: those ciphertext blobs are stale, and handing them
-   * out as current would distribute dead secrets as live ones. After bounded
-   * re-reads, throw so the caller records an honest skip instead of a
-   * fabricated success. (A retry with the same expectedVersion could never
-   * succeed, since the version already moved — hence Conflict, not NotFound.)
-   */
+  /** Re-read committed rotations; never return a pre-write row as current.
+   * Missing rows get bounded retries, then an explicit conflict. */
   private async readCommittedRow({
     providerSlug,
     organizationId,
