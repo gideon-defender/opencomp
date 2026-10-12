@@ -7,7 +7,7 @@ import { parse } from 'yaml';
 
 const root = new URL('../../../../', import.meta.url);
 const read = (path) => readFileSync(new URL(path, root), 'utf8');
-test('dev deploy is manual-only, pins the current main SHA and requires an administrator and MCP infrastructure', () => {
+test('dev deploy authorizes the current main SHA and keeps the selected commit pinned through deployment', () => {
   const workflow = parse(read('.github/workflows/deploy-dev.yml'));
   assert.deepEqual(Object.keys(workflow.on), ['workflow_dispatch']);
   assert.equal(
@@ -52,11 +52,15 @@ test('dev deploy is manual-only, pins the current main SHA and requires an admin
   ])
     assert(buildSteps.includes(required));
   const deploySteps = JSON.stringify(workflow.jobs.deploy.steps);
-  for (const required of [
-    'data.object.sha !== process.env.DEPLOY_SHA',
-    'rolled back',
-    '/healthz',
-  ]) {
+  assert.equal(workflow.env.IMAGE_TAG, 'dev-${{ github.sha }}-${{ github.run_id }}');
+  assert.deepEqual(workflow.jobs.deploy.needs, ['authorize', 'build']);
+  assert.equal(
+    workflow.jobs.deploy.if,
+    "needs.authorize.result == 'success' && needs.build.result == 'success'",
+  );
+  assert(!deploySteps.includes('getRef'));
+  assert(!deploySteps.includes('Reject a superseded main commit'));
+  for (const required of ['rolled back', '/healthz']) {
     assert(deploySteps.includes(required));
   }
   const script = read('.github/scripts/deploy-dev.sh');
