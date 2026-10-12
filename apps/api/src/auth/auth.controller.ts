@@ -15,6 +15,7 @@ import {
 } from '@nestjs/swagger';
 import { db } from '@db';
 import { OrganizationId } from './auth-context.decorator';
+import { throwIdpManagedGone } from './idp-ownership-fence';
 import { PermissionGuard } from './permission.guard';
 import { RequirePermission } from './require-permission.decorator';
 import { AuthContext } from './auth-context.decorator';
@@ -129,6 +130,10 @@ export class AuthController {
     @Param('id') invitationId: string,
     @OrganizationId() organizationId: string,
   ) {
+    // IdP-owned user management (Phase 3-server): invitations are dead —
+    // access comes from IdP assignments. 410; Phase 4 deletes the route.
+    // (Listing stays: reads live until the Invitation table is retired.)
+    throwIdpManagedGone();
     const invitation = await db.invitation.findFirst({
       where: { id: invitationId, organizationId, status: 'pending' },
     });

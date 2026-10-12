@@ -4,12 +4,12 @@ import {
   VerifyEmail,
 } from '@gideon-defender/email';
 import { triggerEmail } from '../email/trigger-email';
-import { InviteEmail } from '../email/templates/invite-member';
 import { db, serviceDb } from '@db';
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { bearer, mcp, multiSession, organization } from 'better-auth/plugins';
 import { ac, allRoles } from '@gideon-defender/auth';
+import { GoneException } from '@nestjs/common';
 import { redisClient } from '../redis/redis.client';
 import {
   getBetterAuthTrustedOrigins,
@@ -315,24 +315,17 @@ export const auth = betterAuth({
   plugins: [
     organization({
       membershipLimit: 100000000000,
-      async sendInvitationEmail(data) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[Auth] Sending invitation to:', data.email);
-        }
-        const appUrl =
-          process.env.NEXT_PUBLIC_APP_URL ??
-          process.env.BETTER_AUTH_URL ??
-          'https://app.gideondefender.com';
-        const inviteLink = `${appUrl}/invite/${data.invitation.id}`;
-        await triggerEmail({
-          to: data.email,
-          subject: `You've been invited to join ${data.organization.name} on OpenComp`,
-          react: InviteEmail({
-            organizationName: data.organization.name,
-            inviteLink,
-            email: data.email,
-          }),
-        });
+      sendInvitationEmail(data): Promise<void> {
+        // IdP-owned user management (Phase 3-server): invitations are dead.
+        // The /api/auth/organization/* invite paths are fenced with 410
+        // before better-auth runs; this rejects fail-closed so any residual
+        // path fails loudly instead of sending a local invite email.
+        // Phase 4 deletes the template + this callback.
+        return Promise.reject(
+          new GoneException(
+            `Invitation ${data.invitation.id} for ${data.email}: membership is managed in the Gideon identity service.`,
+          ),
+        );
       },
       ac: ac,
       roles: allRoles,

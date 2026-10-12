@@ -29,6 +29,7 @@ import {
 import { AuthContext, OrganizationId } from '../auth/auth-context.decorator';
 import { AuditRead } from '../audit/skip-audit-log.decorator';
 import { HybridAuthGuard } from '../auth/hybrid-auth.guard';
+import { throwIdpManagedGone } from '../auth/idp-ownership-fence';
 import { PermissionGuard } from '../auth/permission.guard';
 import { RequirePermission } from '../auth/require-permission.decorator';
 import type { AuthContext as AuthContextType } from '../auth/types';
@@ -95,6 +96,9 @@ export class PeopleController {
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
   ) {
+    // IdP-owned user management (Phase 3-server): invites are granted in
+    // Gideon. Fenced as 410; Phase 4 deletes the route + service.
+    throwIdpManagedGone();
     const results = await this.peopleInviteService.inviteMembers({
       organizationId,
       invites: inviteData.invites,
@@ -233,6 +237,8 @@ export class PeopleController {
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
   ) {
+    // IdP-owned user management (Phase 3-server): 410, see inviteMembers.
+    throwIdpManagedGone();
     const member = await this.peopleService.create(organizationId, createData);
 
     return {
@@ -256,6 +262,8 @@ export class PeopleController {
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
   ) {
+    // IdP-owned user management (Phase 3-server): 410, see inviteMembers.
+    throwIdpManagedGone();
     const result = await this.peopleService.bulkCreate(
       organizationId,
       bulkCreateData,
@@ -319,6 +327,8 @@ export class PeopleController {
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
   ) {
+    // IdP-owned user management (Phase 3-server): 410, see inviteMembers.
+    throwIdpManagedGone();
     const member = await this.peopleService.reactivateById(
       memberId,
       organizationId,
@@ -449,6 +459,8 @@ export class PeopleController {
     @OrganizationId() organizationId: string,
     @AuthContext() authContext: AuthContextType,
   ) {
+    // IdP-owned user management (Phase 3-server): 410, see inviteMembers.
+    throwIdpManagedGone();
     const updatedMember = await this.peopleService.updateById(
       memberId,
       organizationId,
@@ -504,6 +516,8 @@ export class PeopleController {
     @Param('id') memberId: string,
     @OrganizationId() organizationId: string,
   ) {
+    // IdP-owned user management (Phase 3-server): 410, see inviteMembers.
+    throwIdpManagedGone();
     return this.peopleInviteService.resendPortalInvite({
       organizationId,
       memberId,
@@ -526,6 +540,8 @@ export class PeopleController {
     @AuthContext() authContext: AuthContextType,
     @Query('skipOffboarding') skipOffboarding?: string,
   ) {
+    // IdP-owned user management (Phase 3-server): 410, see inviteMembers.
+    throwIdpManagedGone();
     const result = await this.peopleService.deleteById(
       memberId,
       organizationId,
