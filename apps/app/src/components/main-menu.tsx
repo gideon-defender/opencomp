@@ -1,50 +1,23 @@
 'use client';
 
 import { usePermissions } from '@/hooks/use-permissions';
-import type { NavMessageKey } from '@/i18n/keys';
+import { canAccessRoute } from '@/lib/permissions';
 import { Badge } from '@gideon-defender/ui/badge';
 import { Button } from '@gideon-defender/ui/button';
 import { cn } from '@gideon-defender/ui/cn';
-import { Icons } from '@gideon-defender/ui/icons';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@gideon-defender/ui/tooltip';
-import {
-  ClipboardCheck,
-  FileTextIcon,
-  FlaskConical,
-  Gauge,
-  ListCheck,
-  NotebookText,
-  ShieldCheck,
-  ShieldEllipsis,
-  Store,
-  Users,
-  Zap,
-} from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import { getMainMenuItems, type MenuItem } from './main-menu-items';
 
 // Define menu item types with icon component
-type MenuItem = {
-  id: string;
-  path: string;
-  nameKey: NavMessageKey;
-  disabled: boolean;
-  icon: React.FC<{ size?: number }>;
-  protected: boolean;
-  badge?: {
-    text: string;
-    variant: 'default' | 'secondary' | 'outline' | 'destructive';
-  };
-  hidden?: boolean;
-};
-
 interface ItemProps {
   organizationId?: string;
   item: MenuItem;
@@ -61,7 +34,6 @@ type Props = {
   isCollapsed?: boolean;
   onItemClick?: () => void;
   isQuestionnaireEnabled?: boolean;
-  isTrustNdaEnabled?: boolean;
   isOnlyAuditor?: boolean;
 };
 
@@ -71,7 +43,6 @@ export function MainMenu({
   isCollapsed = false,
   onItemClick,
   isQuestionnaireEnabled = false,
-  isTrustNdaEnabled = false,
   isOnlyAuditor = false,
 }: Props) {
   const pathname = usePathname();
@@ -81,128 +52,14 @@ export function MainMenu({
   // role or a custom org role that explicitly grants audit:read — NOT to
   // owner/admin's implicit all-permissions. See `canAccessAuditorView` in
   // lib/permissions.ts for the full rule.
-  const { canAccessAuditorView } = usePermissions();
+  const { canAccessAuditorView, permissions } = usePermissions();
 
-  const items: MenuItem[] = [
-    {
-      id: 'overview',
-      path: '/:organizationId/overview',
-      nameKey: 'overview',
-      disabled: false,
-      icon: Gauge,
-      protected: false,
-    },
-    {
-      id: 'frameworks',
-      path: '/:organizationId/frameworks',
-      nameKey: 'frameworks',
-      disabled: false,
-      icon: Gauge,
-      protected: false,
-    },
-    {
-      id: 'auditor',
-      path: '/:organizationId/auditor',
-      nameKey: 'auditorView',
-      disabled: false,
-      icon: ClipboardCheck,
-      protected: false,
-      hidden: !canAccessAuditorView,
-    },
-    {
-      id: 'controls',
-      path: '/:organizationId/controls',
-      nameKey: 'controls',
-      disabled: false,
-      icon: ShieldEllipsis,
-      protected: false,
-      hidden: !organization?.advancedModeEnabled,
-    },
-    {
-      id: 'policies',
-      path: '/:organizationId/policies',
-      nameKey: 'policies',
-      disabled: false,
-      icon: NotebookText,
-      protected: false,
-    },
-    {
-      id: 'tasks',
-      path: '/:organizationId/tasks',
-      nameKey: 'evidence',
-      disabled: false,
-      icon: ListCheck,
-      protected: false,
-    },
-    {
-      id: 'trust',
-      path: '/:organizationId/trust',
-      nameKey: 'trust',
-      disabled: false,
-      icon: ShieldCheck,
-      protected: false,
-      hidden: !isTrustNdaEnabled,
-    },
-    {
-      id: 'people',
-      path: '/:organizationId/people/all',
-      nameKey: 'people',
-      disabled: false,
-      icon: Users,
-      protected: false,
-    },
-    {
-      id: 'risk',
-      path: '/:organizationId/risk',
-      nameKey: 'risks',
-      disabled: false,
-      icon: Icons.Risk,
-      protected: false,
-    },
-    {
-      id: 'vendors',
-      path: '/:organizationId/vendors',
-      nameKey: 'vendors',
-      disabled: false,
-      icon: Store,
-      protected: false,
-    },
-    {
-      id: 'questionnaire',
-      path: '/:organizationId/questionnaire',
-      nameKey: 'questionnaire',
-      disabled: false,
-      icon: FileTextIcon,
-      protected: false,
-      hidden: !isQuestionnaireEnabled,
-    },
-    {
-      id: 'integrations',
-      path: '/:organizationId/integrations',
-      nameKey: 'integrations',
-      disabled: false,
-      icon: Zap,
-      protected: false,
-      hidden: isOnlyAuditor,
-    },
-    {
-      id: 'tests',
-      path: '/:organizationId/cloud-tests',
-      nameKey: 'cloudTests',
-      disabled: false,
-      icon: FlaskConical,
-      protected: false,
-    },
-    {
-      id: 'settings',
-      path: '/:organizationId/settings',
-      nameKey: 'settings',
-      disabled: false,
-      icon: Icons.Settings,
-      protected: true,
-      hidden: isOnlyAuditor,
-    },
-  ];
+  const items = getMainMenuItems({
+    canAccessAuditorView,
+    isAdvancedModeEnabled: organization?.advancedModeEnabled ?? false,
+    isQuestionnaireEnabled,
+    isOnlyAuditor,
+  });
 
   // Helper function to check if a path is active
   const isPathActive = (itemPath: string) => {
@@ -230,7 +87,10 @@ export function MainMenu({
     return itemBaseSegment === currentBaseSegment;
   };
 
-  const visibleItems = items.filter((item) => !item.disabled && !item.hidden);
+  const visibleItems = items.filter(
+    (item) =>
+      !item.disabled && !item.hidden && canAccessRoute(permissions, item.path.split('/')[2]),
+  );
   const activeIndex = visibleItems.findIndex((item) => isPathActive(item.path));
 
   // Update active indicator position

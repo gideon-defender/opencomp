@@ -3,7 +3,6 @@ import type { ReactNode } from 'react';
 /** Server-resolved data the Overview page passes into the nudge host. */
 export interface ServerNudgeData {
   trust: {
-    isTrustNdaEnabled: boolean;
     isConfigured: boolean;
   };
 }

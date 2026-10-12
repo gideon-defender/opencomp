@@ -1,22 +1,22 @@
 import type { NavMessageKey } from '@/i18n/keys';
 import { canAccessRoute, type UserPermissions } from '@/lib/permissions';
+import type { CommandSearchGroup } from '@trycompai/design-system';
 import {
-  Catalog,
-  Chemistry,
-  Dashboard,
-  Document,
-  Group,
-  Integration,
-  ListChecked,
-  Policy,
-  Security,
+  BookOpen as Catalog,
+  FlaskConical as Chemistry,
+  LayoutDashboard as Dashboard,
+  FileText as Document,
+  Users as Group,
+  Plug as Integration,
+  ListChecks as ListChecked,
+  NotebookText as Policy,
+  Shield as Security,
   Settings,
   ShoppingBag,
-  Task,
-  TaskComplete,
-  Warning,
-} from '@carbon/icons-react';
-import type { CommandSearchGroup } from '@trycompai/design-system';
+  ListTodo as Task,
+  ClipboardCheck as TaskComplete,
+  TriangleAlert as Warning,
+} from 'lucide-react';
 import type { ReactNode } from 'react';
 
 interface AppShellSearchGroupsParams {
@@ -31,7 +31,6 @@ interface AppShellSearchGroupsParams {
   /** CS-189: resolved server-side — see AppShellWrapper. */
   canAccessAuditorView: boolean;
   isQuestionnaireEnabled: boolean;
-  isTrustNdaEnabled: boolean;
   isSecurityEnabled: boolean;
   isAdvancedModeEnabled: boolean;
 }
@@ -70,7 +69,6 @@ export const getAppShellSearchGroups = ({
   isOnlyAuditor,
   canAccessAuditorView,
   isQuestionnaireEnabled,
-  isTrustNdaEnabled,
   isSecurityEnabled,
 }: AppShellSearchGroupsParams): CommandSearchGroup[] => {
   const can = (route: string) => canAccessRoute(permissions, route);
@@ -138,7 +136,7 @@ export const getAppShellSearchGroups = ({
           }),
         ]
       : []),
-    ...(isTrustNdaEnabled && can('trust')
+    ...(can('trust')
       ? [
           createNavItem({
             id: 'trust',

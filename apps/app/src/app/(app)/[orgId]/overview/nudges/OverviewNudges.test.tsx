@@ -35,11 +35,11 @@ vi.mock('next/link', () => ({
 }));
 
 vi.mock('@trycompai/design-system', () => ({
-  Alert: ({ children }: any) => <div data-testid="alert">{children}</div>,
-  AlertAction: ({ children }: any) => <div>{children}</div>,
-  AlertTitle: ({ children }: any) => <div>{children}</div>,
-  AlertDescription: ({ children }: any) => <div>{children}</div>,
-  Button: ({ children }: any) => <span>{children}</span>,
+  Alert: ({ children }: { children: React.ReactNode }) => <div data-testid="alert">{children}</div>,
+  AlertAction: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  AlertTitle: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  AlertDescription: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Button: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
 }));
 
 vi.mock('@trycompai/design-system/icons', () => ({
@@ -90,22 +90,17 @@ describe('OverviewNudges', () => {
     setMockPermissions(TRUST_PERMS);
   });
 
-  const server = (over?: Partial<{ isTrustNdaEnabled: boolean; isConfigured: boolean }>) => ({
-    trust: { isTrustNdaEnabled: true, isConfigured: false, ...over },
+  const server = (over?: Partial<{ isConfigured: boolean }>) => ({
+    trust: { isConfigured: false, ...over },
   });
 
-  it('shows the trust nudge when enabled, not configured, and user can update', () => {
+  it('shows the trust nudge without a feature flag when not configured and user can update', () => {
     render(<OverviewNudges orgId="org_123" server={server()} />);
     expect(screen.getByText('nudges.trustSetupTitle')).toBeInTheDocument();
   });
 
   it('hides the trust nudge when already configured', () => {
     render(<OverviewNudges orgId="org_123" server={server({ isConfigured: true })} />);
-    expect(screen.queryByText('nudges.trustSetupTitle')).not.toBeInTheDocument();
-  });
-
-  it('hides the trust nudge when the feature flag is off', () => {
-    render(<OverviewNudges orgId="org_123" server={server({ isTrustNdaEnabled: false })} />);
     expect(screen.queryByText('nudges.trustSetupTitle')).not.toBeInTheDocument();
   });
 
