@@ -31,6 +31,42 @@ function mergeInto(
 }
 
 /**
+ * Every role name valid in an org: built-ins ∪ its `organization_role` rows.
+ *
+ * Shared by the OIDC entitlements audit and the employee sync so the two
+ * never disagree on which names count as roles. `Set.has` is a value
+ * lookup, so a custom role named e.g. `constructor` stays a custom role.
+ */
+export async function getValidRoleNames(
+  organizationId: string,
+): Promise<Set<string>> {
+  const customRoles = await db.organizationRole.findMany({
+    where: { organizationId },
+    select: { name: true },
+  });
+  return new Set([
+    ...Object.keys(BUILT_IN_ROLE_PERMISSIONS),
+    ...customRoles.map((r) => r.name),
+  ]);
+}
+
+/**
+ * Split a comma-separated `Member.role` string into trimmed names.
+ *
+ * `null`/`undefined` (no membership row) stays `null` so callers can tell
+ * "no membership" apart from "membership with an empty role string".
+ */
+export function splitRoleString(
+  role: string | null | undefined,
+): string[] | null {
+  if (role === null || role === undefined) return null;
+  return role
+    .split(',')
+    .map((r) => r.trim())
+    .filter(Boolean);
+}
+
+/**
  * Merge the effective permissions (`{ resource: actions[] }`) for a set of role
  * names in an org. Built-in roles resolve from `BUILT_IN_ROLE_PERMISSIONS`
  * (own-property lookup only, so a custom role named e.g. `constructor` is not

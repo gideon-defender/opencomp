@@ -203,7 +203,14 @@ model Member {
   userId         String
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   role           String // Purposefully a string, since BetterAuth doesn't support enums this way
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime @default(now())
+  // IdP-owned user management (Phase 0): marks IdP-managed memberships so
+  // guards/UI can distinguish them from legacy local grants. Default 'local'
+  // preserves current behavior until Phase 1 conversion overwrites to 'sso'.
+  roleSource       String  @default("local")
+  // Set by IdP reconciliation when assignments vanish; independent of HR/local
+  // `deactivated`. IdP reconciliation never clears `deactivated`.
+  idpAccessRevoked Boolean @default(false)
 
   department                      String                            @default("none")
   jobTitle                        String?
