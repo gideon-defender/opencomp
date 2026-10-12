@@ -33,6 +33,12 @@ jest.mock('./gideon-oidc-client', () => ({
   loadOidcClient: () => Promise.resolve(mockOidc),
 }));
 
+const mockAuditOidcEntitlements = jest.fn();
+jest.mock('./gideon-oidc-entitlements', () => ({
+  auditOidcEntitlements: (...args: unknown[]) =>
+    mockAuditOidcEntitlements(...args),
+}));
+
 jest.mock('../redis/redis.client', () => ({
   redisClient: {
     set: (...args: unknown[]) => mockRedisSet(...args),
@@ -69,6 +75,12 @@ describe('GideonOidcService', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    mockAuditOidcEntitlements.mockResolvedValue({
+      presented: [],
+      matched: [],
+      unmatched: [],
+      wouldDeny: false,
+    });
     process.env = { ...OLD_ENV, ...ENV };
     service = await createOidcService();
   });
@@ -224,6 +236,50 @@ describe('GideonOidcService', () => {
       });
       expect(result.sessionToken).toBe('ses-token');
       expect(result.redirectTo).toBe('/risks');
+    });
+
+    it('runs the Phase 0 entitlements audit with the login identity', async () => {
+      mockSuccessfulExchange();
+      mockUserFindFirst.mockResolvedValue({
+        id: 'usr_1',
+        email: 'ada@example.com',
+        gideonSub: null,
+        banned: false,
+      });
+      mockUserUpdate.mockResolvedValue({ id: 'usr_1' });
+
+      await service.handleCallback({ callbackUrl });
+
+      expect(mockAuditOidcEntitlements).toHaveBeenCalledWith(
+        expect.objectContaining({
+          claims: { sub: 'gideon-sub-1' },
+          userId: 'usr_1',
+          email: 'ada@example.com',
+        }),
+      );
+    });
+
+    it('still mints a session when the audit would deny (audit never blocks login)', async () => {
+      mockSuccessfulExchange();
+      mockUserFindFirst.mockResolvedValue({
+        id: 'usr_1',
+        email: 'ada@example.com',
+        gideonSub: null,
+        banned: false,
+      });
+      mockUserUpdate.mockResolvedValue({ id: 'usr_1' });
+      mockAuditOidcEntitlements.mockResolvedValue({
+        presented: [],
+        matched: [],
+        unmatched: [],
+        wouldDeny: true,
+        reason: 'empty_entitlements',
+      });
+
+      const result = await service.handleCallback({ callbackUrl });
+
+      expect(result.sessionToken).toBe('ses-token');
+      expect(mockSessionCreate).toHaveBeenCalled();
     });
 
     it('stamps the login tenant on the user row', async () => {

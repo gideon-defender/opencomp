@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { db } from '@db';
 import type { SyncEmployee } from '@gideon-defender/integration-platform';
 import { matchesSyncFilterTerms } from '@gideon-defender/integration-platform';
-import { BUILT_IN_ROLE_PERMISSIONS } from '@gideon-defender/auth';
+import { getValidRoleNames } from '../../auth/app-access';
 import { createHrIdentityResolver, getHrSyncUser } from './hr-sync-idp';
 import { recordHrSyncError, shouldSkipHrSync } from './hr-sync-identity';
 import type { ResolvedSyncEmployeeFilter } from './sync-employee-filter';
@@ -106,14 +106,7 @@ export class GenericEmployeeSyncService {
     // outside this set is dropped (e.g. a Microsoft DSL that mis-maps
     // jobTitle into role would otherwise plant "Senior Front End Engineer"
     // strings into member.role with no matching organization_role row).
-    const customRoles: { name: string }[] = await db.organizationRole.findMany({
-      where: { organizationId },
-      select: { name: true },
-    });
-    const validRoleNames = new Set<string>([
-      ...Object.keys(BUILT_IN_ROLE_PERMISSIONS),
-      ...customRoles.map((r) => r.name),
-    ]);
+    const validRoleNames = await getValidRoleNames(organizationId);
 
     const sanitizeRole = (raw: string | undefined | null): string => {
       if (!raw) return defaultRole;

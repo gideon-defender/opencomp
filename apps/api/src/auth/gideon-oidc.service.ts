@@ -8,6 +8,7 @@ import { db } from '@db';
 import { decodeJwt } from 'jose';
 import type { Configuration } from 'openid-client';
 import { loadOidcClient } from './gideon-oidc-client';
+import { auditOidcEntitlements } from './gideon-oidc-entitlements';
 import {
   mintGideonSession,
   provisionGideonUser,
@@ -247,6 +248,10 @@ export class GideonOidcService {
       image: typeof profile.picture === 'string' ? profile.picture : undefined,
       tenantId,
     });
+    // Phase 0 audit mode: log what Phase 1 enforcement would do, then
+    // proceed with the old behavior (mint session, no Member write). Never
+    // blocks login; never throws (failures log as audit_error inside).
+    await auditOidcEntitlements({ claims, userId: user.id, email, tenantId });
     const session = await mintGideonSession({
       userId: user.id,
       refreshToken:

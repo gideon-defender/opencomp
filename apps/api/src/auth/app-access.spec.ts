@@ -17,7 +17,7 @@ jest.mock('@gideon-defender/auth', () => ({
   },
 }));
 
-import { hasAppAccess } from './app-access';
+import { getValidRoleNames, hasAppAccess, splitRoleString } from './app-access';
 
 describe('hasAppAccess', () => {
   beforeEach(() => {
@@ -72,5 +72,57 @@ describe('hasAppAccess', () => {
   it('does not throw on malformed custom-role permissions', async () => {
     mockOrgRoleFindMany.mockResolvedValue([{ permissions: '{not valid json' }]);
     await expect(hasAppAccess('org_1', 'Broken Role')).resolves.toBe(false);
+  });
+});
+
+describe('getValidRoleNames', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockOrgRoleFindMany.mockResolvedValue([]);
+  });
+
+  it('returns the built-in names and scopes the lookup to the org', async () => {
+    const names = await getValidRoleNames('org_1');
+
+    expect(names.has('owner')).toBe(true);
+    expect(names.has('admin')).toBe(true);
+    expect(names.has('auditor')).toBe(true);
+    expect(names.has('employee')).toBe(true);
+    expect(names.has('contractor')).toBe(true);
+    expect(mockOrgRoleFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { organizationId: 'org_1' },
+        select: { name: true },
+      }),
+    );
+  });
+
+  it('unions custom role names with the built-ins', async () => {
+    mockOrgRoleFindMany.mockResolvedValue([{ name: 'security-reviewer' }]);
+
+    const names = await getValidRoleNames('org_1');
+
+    expect(names.has('security-reviewer')).toBe(true);
+    expect(names.has('admin')).toBe(true);
+    expect(names.has('bogus')).toBe(false);
+  });
+});
+
+describe('splitRoleString', () => {
+  it('returns null for null or undefined (no membership row)', () => {
+    expect(splitRoleString(null)).toBeNull();
+    expect(splitRoleString(undefined)).toBeNull();
+  });
+
+  it('splits on commas, trims, and drops blanks', () => {
+    expect(splitRoleString('admin, employee ,,auditor ')).toEqual([
+      'admin',
+      'employee',
+      'auditor',
+    ]);
+  });
+
+  it('returns an empty array for a blank role string', () => {
+    expect(splitRoleString('  ')).toEqual([]);
   });
 });

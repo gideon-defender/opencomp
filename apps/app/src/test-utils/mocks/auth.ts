@@ -61,6 +61,8 @@ const createMockMember = (overrides?: Partial<Member>): Member => ({
   userId: 'user_test123',
   organizationId: 'org_test123',
   role: 'owner',
+  roleSource: 'local',
+  idpAccessRevoked: false,
   createdAt: new Date(),
   department: Departments.none,
   isActive: true,
