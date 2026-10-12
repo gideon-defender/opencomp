@@ -7,13 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from './alert';
  * Presentational only: the page translates the code and passes strings in,
  * so this renders without next-intl and stays unit-testable.
  */
-export function AuthErrorNotice({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) {
+export function AuthErrorNotice({ title, description }: { title: string; description: string }) {
   return (
     <Alert variant="destructive" data-testid="auth-error-notice">
       <ShieldAlert aria-hidden="true" />

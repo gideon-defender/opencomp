@@ -1,6 +1,6 @@
 import { LoginForm } from '@/app/components/login-form';
-import { AuthErrorNotice } from '@gideon-defender/ui/auth-error-notice';
 import { OtpSignIn } from '@/app/components/otp';
+import { AuthErrorNotice } from '@gideon-defender/ui/auth-error-notice';
 import { BrandLogo } from '@gideon-defender/ui/brand-logo';
 import { Button } from '@gideon-defender/ui/button';
 import {
@@ -76,9 +76,7 @@ export default async function Page({
               <AuthErrorNotice
                 title={t('loginFailedTitle')}
                 description={
-                  error === 'no_role'
-                    ? t('noAccessDescription')
-                    : t('loginFailedDescription')
+                  error === 'no_role' ? t('noAccessDescription') : t('loginFailedDescription')
                 }
               />
             )}

@@ -14,9 +14,7 @@ describe('AuthErrorNotice', () => {
   });
 
   it('exposes an alert role for assistive tech', () => {
-    const html = renderToStaticMarkup(
-      <AuthErrorNotice title="t" description="d" />,
-    );
+    const html = renderToStaticMarkup(<AuthErrorNotice title="t" description="d" />);
 
     expect(html).toContain('role="alert"');
   });
