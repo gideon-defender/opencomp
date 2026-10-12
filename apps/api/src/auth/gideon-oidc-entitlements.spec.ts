@@ -1,7 +1,4 @@
-import {
-  auditOidcEntitlements,
-  parseEntitlementsClaim,
-} from './gideon-oidc-entitlements';
+import { auditOidcEntitlements } from './gideon-oidc-entitlements';
 
 const mockOrgFindUnique = jest.fn();
 const mockOrgRoleFindMany = jest.fn();
@@ -23,32 +20,6 @@ beforeEach(() => {
   mockOrgFindUnique.mockResolvedValue({ id: 'tenant-1' });
   mockOrgRoleFindMany.mockResolvedValue([]);
   mockMemberFindFirst.mockResolvedValue(null);
-});
-
-describe('parseEntitlementsClaim', () => {
-  it('returns empty for absent or invalid claims', () => {
-    expect(parseEntitlementsClaim(undefined)).toEqual([]);
-    expect(parseEntitlementsClaim(null)).toEqual([]);
-    expect(parseEntitlementsClaim({})).toEqual([]);
-    expect(parseEntitlementsClaim({ entitlements: 'admin' })).toEqual([]);
-    expect(parseEntitlementsClaim({ entitlements: [] })).toEqual([]);
-  });
-
-  it('drops non-string and blank entries', () => {
-    expect(
-      parseEntitlementsClaim({
-        entitlements: ['admin', 42, null, '  ', 'auditor'],
-      }),
-    ).toEqual(['admin', 'auditor']);
-  });
-
-  it('trims survivors and keeps duplicates as presented', () => {
-    expect(
-      parseEntitlementsClaim({
-        entitlements: [' admin ', 'admin', 'auditor '],
-      }),
-    ).toEqual(['admin', 'admin', 'auditor']);
-  });
 });
 
 describe('auditOidcEntitlements (Phase 0 audit mode)', () => {

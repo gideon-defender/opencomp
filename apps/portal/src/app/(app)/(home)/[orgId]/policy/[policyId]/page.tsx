@@ -1,15 +1,16 @@
+import { activeMemberWhere } from '@/app/lib/active-member';
 import { auth } from '@/app/lib/auth';
 import { db } from '@db/server';
+import { Badge } from '@gideon-defender/ui/badge';
 import {
-  Badge,
   Breadcrumb,
-  Card,
-  CardContent,
-  CardFooter,
-  PageLayout,
-  Stack,
-  Text,
-} from '@trycompai/design-system';
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@gideon-defender/ui/breadcrumb';
+import { Card, CardContent, CardFooter } from '@gideon-defender/ui/card';
 import { getTranslations } from 'next-intl/server';
 import { headers } from 'next/headers';
 import Link from 'next/link';
@@ -42,7 +43,7 @@ export default async function PolicyPage({
   }
 
   const policy = await db.policy.findUnique({
-    where: { id: policyId },
+    where: { id: policyId, organizationId: orgId },
     include: {
       currentVersion: {
         select: {
@@ -61,11 +62,7 @@ export default async function PolicyPage({
 
   // Get the member info for the current org
   const member = await db.member.findFirst({
-    where: {
-      userId: session.user.id,
-      organizationId: orgId,
-      deactivated: false,
-    },
+    where: activeMemberWhere({ userId: session.user.id, organizationId: orgId }),
   });
 
   if (!member) {
@@ -75,44 +72,43 @@ export default async function PolicyPage({
   const isAccepted = policy.signedBy.includes(member.id);
 
   return (
-    <PageLayout>
-      <Breadcrumb
-        items={[
-          {
-            label: tPage('overviewBreadcrumb'),
-            href: `/${orgId}`,
-            props: { render: <Link href={`/${orgId}`} /> },
-          },
-          { label: policy.name, isCurrent: true },
-        ]}
-      />
-      <Stack gap="md">
+    <div className="flex min-w-0 flex-col gap-6 p-4 sm:p-6">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href={`/${orgId}`}>{tPage('overviewBreadcrumb')}</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{policy.name}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+      <div className="flex min-w-0 flex-col gap-4">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-semibold tracking-tight">{policy.name}</h1>
           <Badge variant="secondary">{formatPolicyStatus(policy.status)}</Badge>
         </div>
         {policy.description && (
-          <Text variant="muted" size="sm">
-            {policy.description}
-          </Text>
+          <p className="text-sm text-muted-foreground">{policy.description}</p>
         )}
         {isAccepted && (
-          <div className="rounded-md border border-green-200 bg-green-50 px-4 py-4 sm:px-5 sm:py-4 dark:border-green-800 dark:bg-green-950/30">
-            <Text size="sm" weight="medium">
-              {t('acceptedBanner')}
-            </Text>
+          <div className="rounded-md border border-border bg-muted px-4 py-4 sm:px-5 sm:py-4">
+            <p className="text-sm font-medium">{t('acceptedBanner')}</p>
           </div>
         )}
         <Card>
-          <CardContent>
-            <Stack gap="md">
+          <CardContent className="pt-6">
+            <div className="flex min-w-0 flex-col gap-4">
               <PolicyViewer policy={policy} />
               {policy.updatedAt && (
-                <Text variant="muted" size="sm">
+                <p className="text-sm text-muted-foreground">
                   {tPage('lastUpdated', { date: new Date(policy.updatedAt).toLocaleDateString() })}
-                </Text>
+                </p>
               )}
-            </Stack>
+            </div>
           </CardContent>
           <CardFooter>
             <PolicyAcceptButton
@@ -123,7 +119,7 @@ export default async function PolicyPage({
             />
           </CardFooter>
         </Card>
-      </Stack>
-    </PageLayout>
+      </div>
+    </div>
   );
 }

@@ -17,6 +17,8 @@ export interface ProvisionGideonUserParams {
    * reads it to create organizations under the login's tenant.
    */
   tenantId?: string;
+  /** Run authorization after identity checks, before any user write. */
+  beforeWrite?: () => Promise<void>;
 }
 
 /**
@@ -42,7 +44,12 @@ export async function resolveActiveOrganizationId({
     });
     if (org) {
       const membership = await db.member.findFirst({
-        where: { userId, organizationId: org.id, deactivated: false },
+        where: {
+          userId,
+          organizationId: org.id,
+          deactivated: false,
+          idpAccessRevoked: false,
+        },
         select: { id: true },
       });
       if (membership) return org.id;
@@ -77,14 +84,22 @@ export async function provisionGideonUser({
   name,
   image,
   tenantId,
+  beforeWrite,
 }: ProvisionGideonUserParams) {
   const normalizedEmail = email.trim().toLowerCase();
   const existing = await db.user.findFirst({
     where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
   });
   if (existing) {
-    return linkGideonSub({ sub, email: normalizedEmail, existing, tenantId });
+    return linkGideonSub({
+      sub,
+      email: normalizedEmail,
+      existing,
+      tenantId,
+      beforeWrite,
+    });
   }
+  await beforeWrite?.();
   try {
     return await db.user.create({
       data: {
@@ -108,6 +123,7 @@ export async function provisionGideonUser({
         email: normalizedEmail,
         existing: raced,
         tenantId,
+        beforeWrite,
       });
     }
     const bySub = await db.user.findUnique({ where: { gideonSub: sub } });
@@ -115,6 +131,7 @@ export async function provisionGideonUser({
     if (bySub.banned) {
       throw new ForbiddenException('Account is disabled');
     }
+    await beforeWrite?.();
     return db.user.update({
       where: { id: bySub.id },
       data: {
@@ -131,11 +148,13 @@ async function linkGideonSub({
   email,
   existing,
   tenantId,
+  beforeWrite,
 }: {
   sub: string;
   email: string;
   existing: { id: string; banned: boolean | null; gideonSub: string | null };
   tenantId?: string;
+  beforeWrite?: () => Promise<void>;
 }) {
   if (existing.banned) {
     throw new ForbiddenException('Account is disabled');
@@ -148,6 +167,7 @@ async function linkGideonSub({
       'Gideon account is linked to a different user',
     );
   }
+  await beforeWrite?.();
   try {
     return await db.user.update({
       where: { id: existing.id },

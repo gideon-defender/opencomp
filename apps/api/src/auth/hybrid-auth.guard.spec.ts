@@ -759,6 +759,7 @@ describe('HybridAuthGuard — Gideon JWT (Milestone 2 enforce)', () => {
         userId: 'usr_1',
         organizationId: 'tenant-abc',
         deactivated: false,
+        idpAccessRevoked: false,
       },
       select: { id: true, role: true, department: true },
     });
@@ -911,6 +912,7 @@ describe('HybridAuthGuard — service token x-user-id acting member', () => {
           userId: 'usr_active',
           organizationId: 'org_1',
           deactivated: false,
+          idpAccessRevoked: false,
           isActive: true,
         }),
       }),

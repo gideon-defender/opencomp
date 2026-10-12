@@ -1,15 +1,16 @@
+import { activeMemberWhere } from '@/app/lib/active-member';
 import { auth } from '@/app/lib/auth';
 import { db } from '@db/server';
 import {
   Breadcrumb,
-  Card,
-  CardContent,
-  PageHeader,
-  PageLayout,
-  Stack,
-  Text,
-} from '@trycompai/design-system';
-import { Document } from '@trycompai/design-system/icons';
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@gideon-defender/ui/breadcrumb';
+import { Card, CardContent } from '@gideon-defender/ui/card';
+import { FileText } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { headers } from 'next/headers';
 import Link from 'next/link';
@@ -33,11 +34,7 @@ export default async function SignedPoliciesPage({
   }
 
   const member = await db.member.findFirst({
-    where: {
-      userId: session.user.id,
-      organizationId: orgId,
-      deactivated: false,
-    },
+    where: activeMemberWhere({ userId: session.user.id, organizationId: orgId }),
   });
 
   if (!member) {
@@ -64,46 +61,43 @@ export default async function SignedPoliciesPage({
   );
 
   return (
-    <PageLayout>
-      <Breadcrumb
-        items={[
-          {
-            label: t('overviewBreadcrumb'),
-            href: `/${orgId}`,
-            props: { render: <Link href={`/${orgId}`} /> },
-          },
-          { label: t('signedPolicies'), isCurrent: true },
-        ]}
-      />
-      <Stack gap="md">
-        <PageHeader title={t('signedPolicies')} />
+    <div className="flex min-w-0 flex-col gap-6 p-4 sm:p-6">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href={`/${orgId}`}>{t('overviewBreadcrumb')}</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{t('signedPolicies')}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+      <div className="flex min-w-0 flex-col gap-4">
+        <h1 className="text-2xl font-semibold">{t('signedPolicies')}</h1>
         {policies.length === 0 ? (
-          <Text variant="muted" size="sm">
-            {t('noSignedPolicies')}
-          </Text>
+          <p className="text-sm text-muted-foreground">{t('noSignedPolicies')}</p>
         ) : (
           <div className="space-y-2">
             {policies.map((policy) => (
               <Link key={policy.id} href={`/${orgId}/policy/${policy.id}`} className="block">
                 <Card>
-                  <CardContent>
+                  <CardContent className="pt-6">
                     <div className="flex items-center gap-3">
                       <div className="text-muted-foreground">
-                        <Document size={20} />
+                        <FileText size={20} aria-hidden="true" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <Text size="sm" weight="medium">
-                          {policy.name}
-                        </Text>
+                        <p className="text-sm font-medium">{policy.name}</p>
                         {policy.description && (
-                          <Text variant="muted" size="sm">
-                            {policy.description}
-                          </Text>
+                          <p className="text-sm text-muted-foreground">{policy.description}</p>
                         )}
                       </div>
-                      <Text variant="muted" size="sm">
+                      <p className="text-sm text-muted-foreground">
                         {new Date(policy.updatedAt).toLocaleDateString()}
-                      </Text>
+                      </p>
                     </div>
                   </CardContent>
                 </Card>
@@ -111,7 +105,7 @@ export default async function SignedPoliciesPage({
             ))}
           </div>
         )}
-      </Stack>
-    </PageLayout>
+      </div>
+    </div>
   );
 }

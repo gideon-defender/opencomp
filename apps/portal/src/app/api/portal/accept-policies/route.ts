@@ -1,3 +1,4 @@
+import { activeMemberWhere } from '@/app/lib/active-member';
 import { auth } from '@/app/lib/auth';
 import { db } from '@db/server';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -32,11 +33,10 @@ export async function POST(req: NextRequest) {
 
   // Verify the member belongs to the authenticated user
   const member = await db.member.findFirst({
-    where: {
-      id: memberId,
+    where: activeMemberWhere({
+      memberId,
       userId: session.user.id,
-      deactivated: false,
-    },
+    }),
   });
 
   if (!member) {
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
   try {
     const updatePromises = policyIds.map(async (policyId) => {
       const policy = await db.policy.findUnique({
-        where: { id: policyId },
+        where: { id: policyId, organizationId: member.organizationId },
       });
 
       if (policy && !policy.signedBy.includes(memberId)) {

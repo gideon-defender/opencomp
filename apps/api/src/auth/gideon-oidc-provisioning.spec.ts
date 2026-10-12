@@ -223,6 +223,7 @@ describe('resolveActiveOrganizationId', () => {
         userId: 'usr_1',
         organizationId: 'tenant-1',
         deactivated: false,
+        idpAccessRevoked: false,
       },
       select: { id: true },
     });

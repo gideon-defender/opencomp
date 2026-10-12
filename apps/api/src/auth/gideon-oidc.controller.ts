@@ -22,6 +22,7 @@ import {
   isValidInviteCode,
 } from './dto/gideon-oidc.dto';
 import { GideonOidcService } from './gideon-oidc.service';
+import { EntitlementsDeniedError } from './gideon-oidc-entitlements';
 import { getOidcCallbackDiagnostics } from './gideon-oidc-diagnostics';
 import { getTrustedOrigins } from './origin-policy';
 import { Public } from './public.decorator';
@@ -198,6 +199,20 @@ export class GideonOidcController {
       });
       res.redirect(this.postLoginTarget(result));
     } catch (error) {
+      // Phase 1: IdP-deny mints no session and lands on the no-access
+      // messaging. Class-matched, never message-matched, so identity-gate
+      // failures keep their own codes.
+      if (error instanceof EntitlementsDeniedError) {
+        this.logger.warn(
+          `Gideon OIDC entitlement deny (reason=${error.reason})`,
+        );
+        this.fail({
+          res,
+          code: 'no_role',
+          redirectTo: storedRedirect,
+        });
+        return;
+      }
       this.logger.warn(
         getOidcCallbackDiagnostics({
           callbackPath: req.originalUrl,

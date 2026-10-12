@@ -1,49 +1,38 @@
+import { serverApi } from '@/lib/api-server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-vi.mock('@db/server', () => ({
-  db: {
-    user: {
-      findUnique: vi.fn(),
-    },
-  },
-}));
-
-import { db } from '@db/server';
 import { requireGideonTenantId } from './require-gideon-tenant';
-
-const mockFindUnique = vi.mocked(db.user.findUnique);
+vi.mock('@/lib/api-server', () => ({ serverApi: { get: vi.fn() } }));
 
 describe('requireGideonTenantId', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
+  beforeEach(() => vi.clearAllMocks());
 
-  it('returns the tid stamped on the user at Gideon login', async () => {
-    mockFindUnique.mockResolvedValue({
-      gideonTenantId: 'tenant-1',
-    } as never);
-
-    await expect(requireGideonTenantId({ user: { id: 'user-1' } })).resolves.toEqual({
+  it('uses the tenant authorized by the API for both setup actions', async () => {
+    vi.mocked(serverApi.get).mockResolvedValue({ data: { tenantId: 'tenant-1' }, status: 200 });
+    expect(await requireGideonTenantId({ user: { id: 'user-1' } })).toEqual({
       tenantId: 'tenant-1',
     });
-    expect(mockFindUnique).toHaveBeenCalledWith({
-      where: { id: 'user-1' },
-      select: { gideonTenantId: true },
+    expect(serverApi.get).toHaveBeenCalledWith('/v1/auth/gideon/bootstrap');
+  });
+
+  it('rejects an old setup session when the API denies owner authorization', async () => {
+    vi.mocked(serverApi.get).mockResolvedValue({ error: 'Forbidden', status: 403 });
+    expect(await requireGideonTenantId({ user: { id: 'user-1' } })).toEqual({
+      error: expect.stringContaining('owner assignment'),
     });
   });
 
-  it('rejects users without a tid (no second way to create orgs)', async () => {
-    mockFindUnique.mockResolvedValue({ gideonTenantId: null } as never);
-
-    const result = await requireGideonTenantId({ user: { id: 'user-1' } });
-
-    expect(result).toEqual({ error: expect.stringContaining('Gideon') });
+  it('fails closed on malformed responses and API outages', async () => {
+    for (const response of [
+      { data: {}, status: 200 },
+      { error: 'Unavailable', status: 503 },
+    ]) {
+      vi.mocked(serverApi.get).mockResolvedValue(response);
+      expect(await requireGideonTenantId({ user: { id: 'user-1' } })).toHaveProperty('error');
+    }
   });
 
-  it('rejects missing sessions', async () => {
-    await expect(requireGideonTenantId(null)).resolves.toEqual({
-      error: 'Not authorized.',
-    });
-    expect(mockFindUnique).not.toHaveBeenCalled();
+  it('rejects missing sessions without an API call', async () => {
+    expect(await requireGideonTenantId(null)).toEqual({ error: 'Not authorized.' });
+    expect(serverApi.get).not.toHaveBeenCalled();
   });
 });

@@ -1,3 +1,4 @@
+import { activeMemberWhere } from '@/app/lib/active-member';
 import { logger } from '@/utils/logger';
 import { db } from '@db/server';
 import type { SupportedOS } from './types';
@@ -58,11 +59,10 @@ export function detectOSFromUserAgent(userAgent: string | null): SupportedOS | n
 
 export async function validateMemberAndOrg(userId: string, orgId: string) {
   const member = await db.member.findFirst({
-    where: {
+    where: activeMemberWhere({
       userId,
       organizationId: orgId,
-      deactivated: false,
-    },
+    }),
   });
 
   if (!member) {

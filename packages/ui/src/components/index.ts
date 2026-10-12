@@ -3,6 +3,7 @@ export * from './accordion';
 export * from './alert';
 export * from './alert-dialog';
 export * from './animated-size-container';
+export * from './auth-error-notice';
 export * from './avatar';
 export * from './badge';
 export * from './brand-logo';

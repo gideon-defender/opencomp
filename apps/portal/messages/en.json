@@ -220,7 +220,10 @@
     "deviceCloseTab": "You can close this tab and return to the OpenComp agent.",
     "deviceMissingParams": "Missing required parameters. Please try signing in again from the OpenComp agent.",
     "deviceInvalidPort": "Invalid callback port. Please try signing in again from the OpenComp agent.",
-    "deviceExchangeFailed": "Failed to complete sign-in. Please try again from the OpenComp agent."
+    "deviceExchangeFailed": "Failed to complete sign-in. Please try again from the OpenComp agent.",
+    "loginFailedTitle": "Sign-in failed",
+    "loginFailedDescription": "Something went wrong during sign-in. Please try again.",
+    "noAccessDescription": "Your account has no role in this organization. Ask your identity admin to assign you a role, then try again."
   },
   "validation": {
     "emailInvalid": "Please enter a valid email address",

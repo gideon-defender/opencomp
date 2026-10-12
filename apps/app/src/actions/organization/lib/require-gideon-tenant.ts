@@ -1,17 +1,13 @@
-import { db } from '@db/server';
+import { serverApi } from '@/lib/api-server';
+import { z } from 'zod';
 
 type SessionLike = {
   user?: { id?: string } | null;
 } | null;
 
-/**
- * Tenant is the org: an organization can only be created under the
- * Gideon-issued tenant id stamped on the caller's user row at login. There
- * is no second way to create organizations.
- *
- * Returns the tid, or a user-facing error when the user has none (caller
- * must sign in again with Gideon).
- */
+const tenantSchema = z.object({ tenantId: z.string().min(1) });
+
+/** The API owns both the rollout policy and the session's owner proof. */
 export async function requireGideonTenantId(
   session: SessionLike,
 ): Promise<{ tenantId: string } | { error: string }> {
@@ -19,15 +15,13 @@ export async function requireGideonTenantId(
   if (!userId) {
     return { error: 'Not authorized.' };
   }
-  const row = await db.user.findUnique({
-    where: { id: userId },
-    select: { gideonTenantId: true },
-  });
-  if (!row?.gideonTenantId) {
+  const response = await serverApi.get('/v1/auth/gideon/bootstrap');
+  const tenant = tenantSchema.safeParse(response.data);
+  if (response.error || !tenant.success) {
     return {
       error:
-        'Organizations must be created from a Gideon-authenticated session. Please sign out and sign in again with Gideon.',
+        'Sign in again with a Gideon owner assignment before creating an organization. Ask your identity admin for access.',
     };
   }
-  return { tenantId: row.gideonTenantId };
+  return tenant.data;
 }

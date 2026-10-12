@@ -1,4 +1,5 @@
 import { LoginForm } from '@/app/components/login-form';
+import { AuthErrorNotice } from '@gideon-defender/ui/auth-error-notice';
 import { OtpSignIn } from '@/app/components/otp';
 import { BrandLogo } from '@gideon-defender/ui/brand-logo';
 import { Button } from '@gideon-defender/ui/button';
@@ -10,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@gideon-defender/ui/card';
-import { ArrowRight } from '@trycompai/design-system/icons';
+import { ArrowRight } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
@@ -32,6 +33,7 @@ export default async function Page({
   const isDeviceAuth = params.device_auth === 'true';
   const callbackPort = typeof params.callback_port === 'string' ? params.callback_port : undefined;
   const state = typeof params.state === 'string' ? params.state : undefined;
+  const error = typeof params.error === 'string' ? params.error : undefined;
 
   const deviceAuthRedirect =
     isDeviceAuth && callbackPort && state
@@ -70,6 +72,16 @@ export default async function Page({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6 pb-6">
+            {error && (
+              <AuthErrorNotice
+                title={t('loginFailedTitle')}
+                description={
+                  error === 'no_role'
+                    ? t('noAccessDescription')
+                    : t('loginFailedDescription')
+                }
+              />
+            )}
             {defaultSignInOptions}
             <LoginForm showGoogle={showGoogle} showMicrosoft={showMicrosoft} />
           </CardContent>

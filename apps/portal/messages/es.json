@@ -220,7 +220,10 @@
     "deviceCloseTab": "Puedes cerrar esta pestaña y volver al agente de OpenComp.",
     "deviceMissingParams": "Faltan parámetros obligatorios. Intenta iniciar sesión de nuevo desde el agente de OpenComp.",
     "deviceInvalidPort": "Puerto de retorno no válido. Intenta iniciar sesión de nuevo desde el agente de OpenComp.",
-    "deviceExchangeFailed": "No se pudo completar el inicio de sesión. Inténtalo de nuevo desde el agente de OpenComp."
+    "deviceExchangeFailed": "No se pudo completar el inicio de sesión. Inténtalo de nuevo desde el agente de OpenComp.",
+    "loginFailedTitle": "Error al iniciar sesión",
+    "loginFailedDescription": "Algo salió mal durante el inicio de sesión. Inténtalo de nuevo.",
+    "noAccessDescription": "Tu cuenta no tiene ningún rol en esta organización. Pide a tu administrador de identidad que te asigne un rol e inténtalo de nuevo."
   },
   "validation": {
     "emailInvalid": "Ingresa un correo electrónico válido",

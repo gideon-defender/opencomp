@@ -1,3 +1,4 @@
+import { activeMemberWhere } from '@/app/lib/active-member';
 import { auth } from '@/app/lib/auth';
 import { BUCKET_NAME, getSignedUrl, s3Client } from '@/utils/s3';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
@@ -38,11 +39,10 @@ export async function GET(req: NextRequest) {
     }
 
     const member = await db.member.findFirst({
-      where: {
+      where: activeMemberWhere({
         userId: session.user.id,
         organizationId: policy.organizationId,
-        deactivated: false,
-      },
+      }),
     });
 
     if (!member) {
@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
 
     if (versionId) {
       const version = await db.policyVersion.findUnique({
-        where: { id: versionId },
+        where: { id: versionId, policyId: policyId },
         select: { pdfUrl: true },
       });
       pdfUrl = version?.pdfUrl ?? null;
