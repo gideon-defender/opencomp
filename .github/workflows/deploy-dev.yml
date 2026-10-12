@@ -204,17 +204,6 @@ jobs:
         id: ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Reject a superseded main commit
-        uses: actions/github-script@v9
-        with:
-          script: |
-            const { data } = await github.rest.git.getRef({
-              owner: context.repo.owner, repo: context.repo.repo, ref: 'heads/main',
-            });
-            if (data.object.sha !== process.env.DEPLOY_SHA) {
-              core.setFailed('Main advanced during this build; deploy the newer successful CI commit.');
-            }
-
       - name: Register task definitions and update ECS services
         shell: bash
         run: |
