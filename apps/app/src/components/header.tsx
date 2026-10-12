@@ -22,12 +22,10 @@ export async function Header({
     headers: await headers(),
   });
   let isQuestionnaireEnabled = false;
-  let isTrustNdaEnabled = false;
+
   if (session?.user?.id) {
     const flags = await getFeatureFlags(session.user.id);
     isQuestionnaireEnabled = flags['ai-vendor-questionnaire'] === true;
-    isTrustNdaEnabled =
-      flags['is-trust-nda-enabled'] === true || flags['is-trust-nda-enabled'] === 'true';
   }
 
   return (
@@ -36,7 +34,6 @@ export async function Header({
         organization={organization}
         organizationId={organizationId}
         isQuestionnaireEnabled={isQuestionnaireEnabled}
-        isTrustNdaEnabled={isTrustNdaEnabled}
       />
 
       {!hideChat && <AssistantButton />}

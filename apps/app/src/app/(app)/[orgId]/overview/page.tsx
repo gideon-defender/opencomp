@@ -1,11 +1,8 @@
-import { getFeatureFlags } from '@/app/posthog';
 import { serverApi } from '@/lib/api-server';
 import type { FrameworkInstanceWithControls } from '@/lib/types/framework';
-import { auth } from '@/utils/auth';
 import type { FrameworkEditorFramework, Policy, Task } from '@db';
 import { PageHeader, PageLayout } from '@trycompai/design-system';
 import { getTranslations } from 'next-intl/server';
-import { headers } from 'next/headers';
 import { Overview } from './components/Overview';
 import { OverviewTabs } from './components/OverviewTabs';
 import { OverviewNudges } from './nudges/OverviewNudges';
@@ -39,8 +36,6 @@ interface ScoresResponse {
 export default async function OverviewPage({ params }: { params: Promise<{ orgId: string }> }) {
   const { orgId: organizationId } = await params;
 
-  const requestHeaders = await headers();
-  const session = await auth.api.getSession({ headers: requestHeaders });
   const t = await getTranslations('overview');
 
   const [scoresRes, frameworksRes, availableRes, settingsRes] = await Promise.all([
@@ -55,15 +50,6 @@ export default async function OverviewPage({ params }: { params: Promise<{ orgId
   const scores = scoresRes.data;
   const frameworksData = frameworksRes.data?.data ?? [];
   const allFrameworks = availableRes.data?.data ?? [];
-
-  let isTrustNdaEnabled = false;
-  if (session?.user?.id) {
-    const flags = await getFeatureFlags(session.user.id, {
-      groups: { organization: organizationId },
-    });
-    isTrustNdaEnabled =
-      flags['is-trust-nda-enabled'] === true || flags['is-trust-nda-enabled'] === 'true';
-  }
 
   // Fail closed: if we can't determine state, don't nudge.
   const isTrustConfigured = settingsRes.data?.isConfigured ?? true;
@@ -82,7 +68,7 @@ export default async function OverviewPage({ params }: { params: Promise<{ orgId
     <>
       <OverviewNudges
         orgId={organizationId}
-        server={{ trust: { isTrustNdaEnabled, isConfigured: isTrustConfigured } }}
+        server={{ trust: { isConfigured: isTrustConfigured } }}
       />
       <PageLayout header={<PageHeader title={t('overviewPage.title')} tabs={<OverviewTabs />} />}>
         <Overview

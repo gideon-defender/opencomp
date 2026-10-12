@@ -7,15 +7,10 @@ import { LanguageSwitcher } from '@/components/language-switcher';
 import { NotificationBell } from '@/components/notifications/notification-bell';
 import { OrganizationBadge } from '@/components/organization-badge';
 import { SidebarProvider, useSidebar } from '@/context/sidebar-context';
-import {
-  canAccessCompliance,
-  canAccessRoute,
-  hasAnyPermission,
-  type UserPermissions,
-} from '@/lib/permissions';
+import type { UserPermissions } from '@/lib/permissions';
 import { signOutFromGideon } from '@/utils/gideon-sign-out';
-import { Badge, Globe, Logout, ManageProtection, Settings } from '@carbon/icons-react';
 import type { Onboarding, Organization } from '@db';
+import { Avatar, AvatarFallback, AvatarImage } from '@gideon-defender/ui/avatar';
 import { BrandLogo } from '@gideon-defender/ui/brand-logo';
 import {
   DropdownMenu,
@@ -36,15 +31,11 @@ import {
   AppShellSidebar,
   AppShellSidebarHeader,
   AppShellUserMenu,
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
   CommandSearch,
-  HStack,
-  Text,
   ThemeSwitcher,
   TooltipProvider,
 } from '@trycompai/design-system';
+import { LogOut as Logout, Settings } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useAction } from 'next-safe-action/hooks';
 import { useTheme } from 'next-themes';
@@ -55,9 +46,9 @@ import { SecuritySidebar } from '../security/components/SecuritySidebar';
 import { SettingsSidebar } from '../settings/components/SettingsSidebar';
 import { TrustSidebar } from '../trust/components/TrustSidebar';
 import { getAppShellSearchGroups } from './app-shell-search-groups';
+import { AppShellProductNavigation } from './AppShellProductNavigation';
 import { AppSidebar } from './AppSidebar';
 import { ConditionalOnboardingTracker } from './ConditionalOnboardingTracker';
-import { ShellRailNavItem } from './ShellRailNavItem';
 
 interface AppShellWrapperProps {
   children: React.ReactNode;
@@ -66,7 +57,6 @@ interface AppShellWrapperProps {
   onboarding: Onboarding | null;
   isCollapsed: boolean;
   isQuestionnaireEnabled: boolean;
-  isTrustNdaEnabled: boolean;
   isWebAutomationsEnabled: boolean;
   isSecurityEnabled: boolean;
   hasAuditorRole: boolean;
@@ -97,7 +87,6 @@ function AppShellWrapperContent({
   logoUrl,
   onboarding,
   isQuestionnaireEnabled,
-  isTrustNdaEnabled,
   isWebAutomationsEnabled,
   isSecurityEnabled,
   hasAuditorRole,
@@ -141,7 +130,6 @@ function AppShellWrapperContent({
     isOnlyAuditor,
     canAccessAuditorView,
     isQuestionnaireEnabled,
-    isTrustNdaEnabled,
     isSecurityEnabled,
     isAdvancedModeEnabled: organization.advancedModeEnabled,
   });
@@ -156,13 +144,13 @@ function AppShellWrapperContent({
       >
         <AppShellNavbar
           startContent={
-            <HStack gap="xs" align="center">
+            <div className="flex items-center gap-1">
               <Link href="/">
                 <BrandLogo showText iconSize={22} />
               </Link>
               <span className="pl-3 pr-1 text-muted-foreground">/</span>
               <OrganizationBadge organization={organization} logoUrl={logoUrl} />
-            </HStack>
+            </div>
           }
           centerContent={<CommandSearch groups={searchGroups} placeholder={t('search')} />}
           endContent={
@@ -187,12 +175,8 @@ function AppShellWrapperContent({
                   style={{ minWidth: '200px' }}
                 >
                   <div className="px-2 py-1.5">
-                    <Text size="sm" weight="medium">
-                      {user.name}
-                    </Text>
-                    <Text size="xs" variant="muted">
-                      {user.email}
-                    </Text>
+                    <span className="text-sm font-medium">{user.name}</span>
+                    <span className="text-xs text-muted-foreground">{user.email}</span>
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
@@ -205,7 +189,7 @@ function AppShellWrapperContent({
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   <div className="flex items-center justify-between px-2 py-1.5">
-                    <Text size="sm">{t('theme')}</Text>
+                    <span className="text-sm">{t('theme')}</span>
                     <ThemeSwitcher
                       size="sm"
                       value={(theme ?? 'system') as 'light' | 'dark' | 'system'}
@@ -215,7 +199,7 @@ function AppShellWrapperContent({
                     />
                   </div>
                   <div className="flex items-center justify-between px-2 py-1.5">
-                    <Text size="sm">{t('language')}</Text>
+                    <span className="text-sm">{t('language')}</span>
                     <LanguageSwitcher />
                   </div>
                   <DropdownMenuSeparator />
@@ -234,39 +218,15 @@ function AppShellWrapperContent({
         />
         <AppShellBody>
           <AppShellRail>
-            {canAccessCompliance(permissions) && (
-              <ShellRailNavItem
-                href={`/${organization.id}/overview`}
-                isActive={!isSettingsActive && !isTrustActive && !isSecurityActive}
-                icon={<Badge className="size-5" />}
-                label={t('compliance')}
-              />
-            )}
-            {isTrustNdaEnabled &&
-              hasAnyPermission(permissions, [{ resource: 'trust', action: 'read' }]) && (
-                <ShellRailNavItem
-                  href={`/${organization.id}/trust`}
-                  isActive={isTrustActive}
-                  icon={<Globe className="size-5" />}
-                  label={t('trust')}
-                />
-              )}
-            {isSecurityEnabled && canAccessRoute(permissions, 'penetration-tests') ? (
-              <ShellRailNavItem
-                href={`/${organization.id}/security`}
-                isActive={isSecurityActive}
-                icon={<ManageProtection className="size-5" />}
-                label={t('security')}
-              />
-            ) : null}
-            {!isOnlyAuditor && canAccessRoute(permissions, 'settings') && (
-              <ShellRailNavItem
-                href={`/${organization.id}/settings`}
-                isActive={isSettingsActive}
-                icon={<Settings className="size-5" />}
-                label={t('settings')}
-              />
-            )}
+            <AppShellProductNavigation
+              organizationId={organization.id}
+              permissions={permissions}
+              isSettingsActive={isSettingsActive}
+              isTrustActive={isTrustActive}
+              isSecurityActive={isSecurityActive}
+              isSecurityEnabled={isSecurityEnabled}
+              isOnlyAuditor={isOnlyAuditor}
+            />
           </AppShellRail>
           <AppShellMain>
             <AppShellSidebar collapsible>

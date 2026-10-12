@@ -1,8 +1,9 @@
 'use client';
 
 import { usePermissions } from '@/hooks/use-permissions';
-import { Alert, AlertAction, AlertDescription, AlertTitle, Button } from '@trycompai/design-system';
-import { ArrowRight, Close } from '@trycompai/design-system/icons';
+import { Alert, AlertDescription, AlertTitle } from '@gideon-defender/ui/alert';
+import { Button } from '@gideon-defender/ui/button';
+import { ArrowRight, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import type { NudgeState, ServerNudgeData } from './types';
@@ -16,14 +17,14 @@ export function useTrustPortalSetupNudge({
 }): NudgeState {
   const { hasPermission } = usePermissions();
   const canSetup = hasPermission('trust', 'update');
-  const { isTrustNdaEnabled, isConfigured } = server.trust;
+  const { isConfigured } = server.trust;
 
   return {
     id: 'trust-portal-setup',
     priority: 20,
     persistDismissal: true,
     ready: true, // server data already resolved
-    eligible: isTrustNdaEnabled && !isConfigured && canSetup,
+    eligible: !isConfigured && canSetup,
     render: (onDismiss) => <TrustPortalSetupNudgeView orgId={orgId} onDismiss={onDismiss} />,
   };
 }
@@ -31,7 +32,7 @@ export function useTrustPortalSetupNudge({
 function TrustPortalSetupNudgeView({ orgId, onDismiss }: { orgId: string; onDismiss: () => void }) {
   const t = useTranslations('overview');
   return (
-    <Alert variant="warning">
+    <Alert className="border-warning/30 bg-warning/5">
       <AlertTitle>
         <span className="text-foreground">{t('nudges.trustSetupTitle')}</span>
       </AlertTitle>
@@ -39,20 +40,23 @@ function TrustPortalSetupNudgeView({ orgId, onDismiss }: { orgId: string; onDism
         <span className="text-foreground">{t('nudges.trustSetupBody')}</span>
       </AlertDescription>
       <div className="col-start-2 pt-1">
-        <Button iconRight={<ArrowRight />} render={<Link href={`/${orgId}/trust`} />}>
-          {t('nudges.trustSetupAction')}
+        <Button asChild>
+          <Link href={`/${orgId}/trust`}>
+            {t('nudges.trustSetupAction')}
+            <ArrowRight className="size-4" />
+          </Link>
         </Button>
       </div>
-      <AlertAction>
+      <div className="absolute right-2 top-2">
         <button
           type="button"
           onClick={onDismiss}
           aria-label={t('common.dismiss')}
           className="rounded-md p-1 opacity-70 transition-opacity hover:opacity-100"
         >
-          <Close size={16} />
+          <X size={16} />
         </button>
-      </AlertAction>
+      </div>
     </Alert>
   );
 }

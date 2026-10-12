@@ -140,9 +140,7 @@ export default async function Layout({
       })
     : {};
   const isQuestionnaireEnabled = featureFlags['ai-vendor-questionnaire'] === true;
-  const isTrustNdaEnabled =
-    featureFlags['is-trust-nda-enabled'] === true ||
-    featureFlags['is-trust-nda-enabled'] === 'true';
+
   const isWebAutomationsEnabled =
     featureFlags['is-web-automations-enabled'] === true ||
     featureFlags['is-web-automations-enabled'] === 'true';
@@ -179,7 +177,6 @@ export default async function Layout({
           onboarding={onboarding}
           isCollapsed={isCollapsed}
           isQuestionnaireEnabled={isQuestionnaireEnabled}
-          isTrustNdaEnabled={isTrustNdaEnabled}
           isWebAutomationsEnabled={isWebAutomationsEnabled}
           isSecurityEnabled={isSecurityEnabled}
           hasAuditorRole={hasAuditorRole}
