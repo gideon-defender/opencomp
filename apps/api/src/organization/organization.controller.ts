@@ -22,6 +22,7 @@ import {
 } from '@nestjs/swagger';
 import { AuthContext, OrganizationId } from '../auth/auth-context.decorator';
 import { HybridAuthGuard } from '../auth/hybrid-auth.guard';
+import { throwIdpManagedGone } from '../auth/idp-ownership-fence';
 import { PermissionGuard } from '../auth/permission.guard';
 import { RequirePermission } from '../auth/require-permission.decorator';
 import { ApiKeyService } from '../auth/api-key.service';
@@ -139,6 +140,10 @@ export class OrganizationController {
     @AuthContext() authContext: AuthContextType,
     @Body() transferData: TransferOwnershipDto,
   ) {
+    // IdP-owned user management (Phase 3-server): ownership is an IdP
+    // assignment, never a local grant — including from support credentials.
+    // 410; Phase 4 deletes the route.
+    throwIdpManagedGone();
     // For API key auth, userId must be provided in the request body
     // For JWT auth, userId comes from the authenticated session
     let userId: string;

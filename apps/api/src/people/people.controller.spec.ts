@@ -5,9 +5,9 @@ import { PeopleAccessService } from './people-access.service';
 import { AttachmentsService } from '../attachments/attachments.service';
 import type { AuthContext } from '../auth/types';
 import { HybridAuthGuard } from '../auth/hybrid-auth.guard';
-import { PermissionGuard } from '../auth/permission.guard';
+import { PERMISSIONS_KEY, PermissionGuard } from '../auth/permission.guard';
 import { PeopleController } from './people.controller';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, GoneException } from '@nestjs/common';
 
 // Mock @db to avoid PrismaClient initialization in controller tests
 jest.mock('@db', () => ({
@@ -75,6 +75,7 @@ describe('PeopleController', () => {
     bulkCreate: jest.fn(),
     updateById: jest.fn(),
     deleteById: jest.fn(),
+    reactivateById: jest.fn(),
     unlinkDevice: jest.fn(),
     removeHostById: jest.fn(),
     updateEmailPreferences: jest.fn(),
@@ -83,6 +84,7 @@ describe('PeopleController', () => {
 
   const mockPeopleInviteService = {
     inviteMembers: jest.fn(),
+    resendPortalInvite: jest.fn(),
   };
 
   const mockAttachmentsService = {
@@ -182,51 +184,96 @@ describe('PeopleController', () => {
     });
   });
 
-  describe('createMember', () => {
-    it('should create a member and return with auth context', async () => {
-      const dto = { userId: 'usr_new', role: 'employee' };
-      const createdMember = {
-        id: 'mem_new',
-        user: { name: 'NewUser' },
-        role: 'employee',
-      };
-      mockPeopleService.create.mockResolvedValue(createdMember);
+  // IdP-owned user management (Phase 3-server): legacy membership writes
+  // return 410 Gone without touching the DB. Guards + @RequirePermission
+  // metadata stay intact, so unauthenticated callers still get 401 and
+  // unauthorized callers still get 403 before the fence runs.
+  describe('IdP-ownership fences (410 Gone)', () => {
+    it.each([
+      ['inviteMembers', ['member', 'create']] as const,
+      ['createMember', ['member', 'create']] as const,
+      ['bulkCreateMembers', ['member', 'create']] as const,
+      ['reactivateMember', ['member', 'update']] as const,
+      ['updateMember', ['member', 'update']] as const,
+      ['resendPortalInvite', ['member', 'update']] as const,
+      ['deleteMember', ['member', 'delete']] as const,
+    ])(
+      '%s keeps its @RequirePermission so 401/403 still precede the 410',
+      (method, [resource, action]) => {
+        expect(
+          Reflect.getMetadata(
+            PERMISSIONS_KEY,
+            PeopleController.prototype[method],
+          ),
+        ).toEqual([{ resource, actions: [action] }]);
+      },
+    );
 
-      const result = await controller.createMember(
-        dto,
-        'org_123',
-        mockAuthContext,
-      );
-
-      expect(result).toMatchObject(createdMember);
-      expect(result.authType).toBe('session');
-      expect(peopleService.create).toHaveBeenCalledWith('org_123', dto);
+    it('inviteMembers returns 410 without inviting', async () => {
+      await expect(
+        controller.inviteMembers({ invites: [] }, 'org_123', mockAuthContext),
+      ).rejects.toThrow(GoneException);
+      expect(mockPeopleInviteService.inviteMembers).not.toHaveBeenCalled();
     });
-  });
 
-  describe('bulkCreateMembers', () => {
-    it('should bulk create and return summary', async () => {
-      const dto = {
-        members: [
-          { userId: 'usr_1', role: 'employee' },
-          { userId: 'usr_2', role: 'contractor' },
-        ],
-      };
-      const bulkResult = {
-        created: [{ id: 'mem_1' }],
-        errors: [{ index: 1, userId: 'usr_2', error: 'Duplicate' }],
-        summary: { total: 2, successful: 1, failed: 1 },
-      };
-      mockPeopleService.bulkCreate.mockResolvedValue(bulkResult);
+    it('createMember returns 410 with a Gideon-managed message', async () => {
+      const error: unknown = await controller
+        .createMember(
+          { userId: 'usr_new', role: 'employee' },
+          'org_123',
+          mockAuthContext,
+        )
+        .catch((err: unknown) => err);
+      if (!(error instanceof GoneException)) {
+        throw new Error('expected GoneException');
+      }
+      expect(error.getStatus()).toBe(410);
+      expect(error.message).toContain('Gideon');
+      expect(mockPeopleService.create).not.toHaveBeenCalled();
+    });
 
-      const result = await controller.bulkCreateMembers(
-        dto,
-        'org_123',
-        mockAuthContext,
-      );
+    it('bulkCreateMembers returns 410 without creating', async () => {
+      await expect(
+        controller.bulkCreateMembers(
+          { members: [] },
+          'org_123',
+          mockAuthContext,
+        ),
+      ).rejects.toThrow(GoneException);
+      expect(mockPeopleService.bulkCreate).not.toHaveBeenCalled();
+    });
 
-      expect(result.summary).toEqual(bulkResult.summary);
-      expect(peopleService.bulkCreate).toHaveBeenCalledWith('org_123', dto);
+    it('reactivateMember returns 410 without reactivating', async () => {
+      await expect(
+        controller.reactivateMember('mem_1', 'org_123', mockAuthContext),
+      ).rejects.toThrow(GoneException);
+      expect(mockPeopleService.reactivateById).not.toHaveBeenCalled();
+    });
+
+    it('updateMember returns 410 without updating', async () => {
+      await expect(
+        controller.updateMember(
+          'mem_1',
+          { role: 'admin' },
+          'org_123',
+          mockAuthContext,
+        ),
+      ).rejects.toThrow(GoneException);
+      expect(mockPeopleService.updateById).not.toHaveBeenCalled();
+    });
+
+    it('resendPortalInvite returns 410 without sending', async () => {
+      await expect(
+        controller.resendPortalInvite('mem_1', 'org_123'),
+      ).rejects.toThrow(GoneException);
+      expect(mockPeopleInviteService.resendPortalInvite).not.toHaveBeenCalled();
+    });
+
+    it('deleteMember returns 410 without deleting', async () => {
+      await expect(
+        controller.deleteMember('mem_1', 'org_123', mockAuthContext),
+      ).rejects.toThrow(GoneException);
+      expect(mockPeopleService.deleteById).not.toHaveBeenCalled();
     });
   });
 
@@ -251,89 +298,25 @@ describe('PeopleController', () => {
   });
 
   describe('updateMember', () => {
-    it('should update a member', async () => {
-      const dto = { role: 'admin' };
-      const updated = { id: 'mem_1', user: { name: 'Alice' }, role: 'admin' };
-      mockPeopleService.updateById.mockResolvedValue(updated);
-
-      const result = await controller.updateMember(
-        'mem_1',
-        dto,
-        'org_123',
-        mockAuthContext,
-      );
-
-      expect(result).toMatchObject(updated);
-      expect(peopleService.updateById).toHaveBeenCalledWith(
-        'mem_1',
-        'org_123',
-        dto,
-        'usr_123',
-      );
-    });
-
-    it('passes backgroundCheckExempt through to the service', async () => {
-      mockPeopleService.updateById.mockResolvedValue({ id: 'mem_1' });
-
-      await controller.updateMember(
-        'mem_1',
-        { backgroundCheckExempt: true },
-        'org_123',
-        mockAuthContext,
-      );
-
-      expect(mockPeopleService.updateById).toHaveBeenCalledWith(
-        'mem_1',
-        'org_123',
-        { backgroundCheckExempt: true },
-        'usr_123',
-      );
+    it('is fenced: covered by the 410 block above (no local role edits)', async () => {
+      await expect(
+        controller.updateMember(
+          'mem_1',
+          { backgroundCheckExempt: true },
+          'org_123',
+          mockAuthContext,
+        ),
+      ).rejects.toThrow(GoneException);
+      expect(mockPeopleService.updateById).not.toHaveBeenCalled();
     });
   });
 
   describe('deleteMember', () => {
-    it('should delete a member and pass actor userId', async () => {
-      const deleteResult = {
-        success: true,
-        deletedMember: { id: 'mem_1', name: 'Alice', email: 'alice@test.com' },
-      };
-      mockPeopleService.deleteById.mockResolvedValue(deleteResult);
-
-      const result = await controller.deleteMember(
-        'mem_1',
-        'org_123',
-        mockAuthContext,
-      );
-
-      expect(result.success).toBe(true);
-      expect(peopleService.deleteById).toHaveBeenCalledWith(
-        'mem_1',
-        'org_123',
-        'usr_123',
-        { skipOffboarding: false },
-      );
-    });
-
-    it('should pass skipOffboarding=true when query param is "true"', async () => {
-      const deleteResult = {
-        success: true,
-        deletedMember: { id: 'mem_1', name: 'Alice', email: 'alice@test.com' },
-      };
-      mockPeopleService.deleteById.mockResolvedValue(deleteResult);
-
-      await controller.deleteMember(
-        'mem_1',
-        'org_123',
-        mockAuthContext,
-        'true',
-      );
-
-      expect(peopleService.deleteById).toHaveBeenCalledWith(
-        'mem_1',
-        'org_123',
-        'usr_123',
-        { skipOffboarding: true },
-      );
+    it('is fenced: covered by the 410 block above (no local removals)', async () => {
+      await expect(
+        controller.deleteMember('mem_1', 'org_123', mockAuthContext, 'true'),
+      ).rejects.toThrow(GoneException);
+      expect(mockPeopleService.deleteById).not.toHaveBeenCalled();
     });
   });
 

@@ -1,8 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { GoneException } from '@nestjs/common';
 import { RolesService } from './roles.service';
 import type { AuthContext } from '../auth/types';
 import { HybridAuthGuard } from '../auth/hybrid-auth.guard';
-import { PermissionGuard } from '../auth/permission.guard';
+import { PERMISSIONS_KEY, PermissionGuard } from '../auth/permission.guard';
 
 import { RolesController } from './roles.controller';
 
@@ -33,6 +34,7 @@ describe('RolesController', () => {
     getRole: jest.fn(),
     updateRole: jest.fn(),
     deleteRole: jest.fn(),
+    updateBuiltInObligations: jest.fn(),
   };
 
   // Mock guards that allow all requests
@@ -65,70 +67,23 @@ describe('RolesController', () => {
   });
 
   describe('createRole', () => {
-    it('should create a role with user roles', async () => {
-      const dto = {
-        name: 'custom-role',
-        permissions: { control: ['read'] },
-      };
-      const expectedRole = {
-        id: 'rol_123',
-        ...dto,
-        isBuiltIn: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      mockRolesService.createRole.mockResolvedValue(expectedRole);
-
-      const result = await controller.createRole(
-        'org_123',
-        mockAuthContext,
-        dto,
-      );
-
-      expect(result).toEqual(expectedRole);
-      expect(rolesService.createRole).toHaveBeenCalledWith('org_123', dto, [
-        'owner',
-      ]);
+    it('returns 410 without creating (IdP owns roles)', async () => {
+      await expect(
+        controller.createRole('org_123', mockAuthContext, {
+          name: 'custom-role',
+          permissions: { control: ['read'] },
+        }),
+      ).rejects.toThrow(GoneException);
+      expect(mockRolesService.createRole).not.toHaveBeenCalled();
     });
 
-    it('should pass multiple roles to service', async () => {
-      const multiRoleContext: AuthContext = {
-        ...mockAuthContext,
-        userRoles: ['admin', 'auditor'],
-      };
-      const dto = {
-        name: 'custom-role',
-        permissions: { control: ['read'] },
-      };
-
-      mockRolesService.createRole.mockResolvedValue({ id: 'rol_123' });
-
-      await controller.createRole('org_123', multiRoleContext, dto);
-
-      expect(rolesService.createRole).toHaveBeenCalledWith('org_123', dto, [
-        'admin',
-        'auditor',
-      ]);
-    });
-
-    it('should default to employee role when userRoles is null', async () => {
-      const noRoleContext: AuthContext = {
-        ...mockAuthContext,
-        userRoles: null,
-      };
-      const dto = {
-        name: 'custom-role',
-        permissions: { control: ['read'] },
-      };
-
-      mockRolesService.createRole.mockResolvedValue({ id: 'rol_123' });
-
-      await controller.createRole('org_123', noRoleContext, dto);
-
-      expect(rolesService.createRole).toHaveBeenCalledWith('org_123', dto, [
-        'employee',
-      ]);
+    it('keeps @RequirePermission(ac, create) so 401/403 still precede the 410', () => {
+      expect(
+        Reflect.getMetadata(
+          PERMISSIONS_KEY,
+          RolesController.prototype.createRole,
+        ),
+      ).toEqual([{ resource: 'ac', actions: ['create'] }]);
     });
   });
 
@@ -169,69 +124,33 @@ describe('RolesController', () => {
   });
 
   describe('updateRole', () => {
-    it('should update a role with user roles', async () => {
-      const dto = { name: 'updated-name' };
-      const expectedRole = {
-        id: 'rol_123',
-        name: 'updated-name',
-        permissions: { control: ['read'] },
-        isBuiltIn: false,
-      };
-
-      mockRolesService.updateRole.mockResolvedValue(expectedRole);
-
-      const result = await controller.updateRole(
-        'org_123',
-        mockAuthContext,
-        'rol_123',
-        dto,
-      );
-
-      expect(result).toEqual(expectedRole);
-      expect(rolesService.updateRole).toHaveBeenCalledWith(
-        'org_123',
-        'rol_123',
-        dto,
-        ['owner'],
-      );
-    });
-
-    it('should pass multiple roles to service on update', async () => {
-      const multiRoleContext: AuthContext = {
-        ...mockAuthContext,
-        userRoles: ['owner', 'admin'],
-      };
-      const dto = { permissions: { control: ['read', 'update'] } };
-
-      mockRolesService.updateRole.mockResolvedValue({ id: 'rol_123' });
-
-      await controller.updateRole('org_123', multiRoleContext, 'rol_123', dto);
-
-      expect(rolesService.updateRole).toHaveBeenCalledWith(
-        'org_123',
-        'rol_123',
-        dto,
-        ['owner', 'admin'],
-      );
+    it('returns 410 without updating (IdP owns roles)', async () => {
+      await expect(
+        controller.updateRole('org_123', mockAuthContext, 'rol_123', {
+          name: 'updated-name',
+        }),
+      ).rejects.toThrow(GoneException);
+      expect(mockRolesService.updateRole).not.toHaveBeenCalled();
     });
   });
 
   describe('deleteRole', () => {
-    it('should delete a role', async () => {
-      const expectedResult = {
-        success: true,
-        message: "Role 'custom-role' deleted",
-      };
-
-      mockRolesService.deleteRole.mockResolvedValue(expectedResult);
-
-      const result = await controller.deleteRole('org_123', 'rol_123');
-
-      expect(result).toEqual(expectedResult);
-      expect(rolesService.deleteRole).toHaveBeenCalledWith(
-        'org_123',
-        'rol_123',
+    it('returns 410 without deleting (IdP owns roles)', async () => {
+      await expect(controller.deleteRole('org_123', 'rol_123')).rejects.toThrow(
+        GoneException,
       );
+      expect(mockRolesService.deleteRole).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('updateBuiltInObligations', () => {
+    it('returns 410 without updating (obligations ship as code)', async () => {
+      await expect(
+        controller.updateBuiltInObligations('org_123', 'owner', {
+          obligations: {},
+        }),
+      ).rejects.toThrow(GoneException);
+      expect(mockRolesService.updateBuiltInObligations).not.toHaveBeenCalled();
     });
   });
 });

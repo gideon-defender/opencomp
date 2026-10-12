@@ -19,6 +19,7 @@ import {
 } from '@nestjs/swagger';
 import { AuthContext, OrganizationId } from '../auth/auth-context.decorator';
 import { HybridAuthGuard } from '../auth/hybrid-auth.guard';
+import { throwIdpManagedGone } from '../auth/idp-ownership-fence';
 import { PermissionGuard } from '../auth/permission.guard';
 import { RequirePermission } from '../auth/require-permission.decorator';
 import type { AuthContext as AuthContextType } from '../auth/types';
@@ -78,6 +79,9 @@ export class RolesController {
     @AuthContext() authContext: AuthContextType,
     @Body() dto: CreateRoleDto,
   ) {
+    // IdP-owned user management (Phase 3-server): role content ships as code
+    // (permissions.ts), assignments live in Gideon. 410; Phase 4 deletes.
+    throwIdpManagedGone();
     return this.rolesService.createRole(
       organizationId,
       dto,
@@ -248,6 +252,8 @@ export class RolesController {
     @Param('name') name: string,
     @Body() dto: UpdateBuiltInObligationsDto,
   ) {
+    // IdP-owned user management (Phase 3-server): 410, see createRole.
+    throwIdpManagedGone();
     return this.rolesService.updateBuiltInObligations(
       organizationId,
       name,
@@ -329,6 +335,8 @@ export class RolesController {
     @Param('roleId') roleId: string,
     @Body() dto: UpdateRoleDto,
   ) {
+    // IdP-owned user management (Phase 3-server): 410, see createRole.
+    throwIdpManagedGone();
     return this.rolesService.updateRole(
       organizationId,
       roleId,
@@ -367,6 +375,8 @@ export class RolesController {
     @OrganizationId() organizationId: string,
     @Param('roleId') roleId: string,
   ) {
+    // IdP-owned user management (Phase 3-server): 410, see createRole.
+    throwIdpManagedGone();
     return this.rolesService.deleteRole(organizationId, roleId);
   }
 }

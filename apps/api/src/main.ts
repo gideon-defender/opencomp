@@ -13,6 +13,7 @@ import { setTriggerNestContext } from './trigger/nest-context';
 import { initTracing, shutdownTracing } from './inference-tracing';
 import { createPublicDocument } from './openapi/public-document';
 import { corsOriginMiddleware } from './auth/cors-origin.middleware';
+import { idpMembershipFencesMiddleware } from './auth/idp-ownership-fence';
 import { originCheckMiddleware } from './auth/origin-check.middleware';
 import { LocalizedErrorsInterceptor } from './common/i18n/localized-errors.interceptor';
 import { mkdirSync, writeFileSync, existsSync } from 'fs';
@@ -65,6 +66,12 @@ async function bootstrap(): Promise<void> {
   // Rejects state-changing requests from untrusted origins.
   // Defense-in-depth: CORS blocks fetch-based CSRF, this blocks form-based CSRF.
   app.use(originCheckMiddleware);
+
+  // STEP 3b: IdP-owned user management fences (Phase 3-server).
+  // Blocks legacy Better Auth membership/role mutations with 410 Gone before
+  // they reach better-auth. Reads (set-active, get-session, lists), team
+  // endpoints, and MCP/session routes pass through untouched.
+  app.use(idpMembershipFencesMiddleware);
 
   // STEP 4a: Configure body parser
   // NOTE: Attachment uploads are sent as base64 in JSON, so request payloads are

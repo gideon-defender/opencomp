@@ -3,7 +3,7 @@ jest.mock('@db', () => ({
 }));
 
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, GoneException } from '@nestjs/common';
 import { OrganizationController } from './organization.controller';
 import { OrganizationService } from './organization.service';
 import { ApiKeyService } from '../auth/api-key.service';
@@ -247,6 +247,21 @@ describe('OrganizationController', () => {
           {} as { settings: never[] },
         ),
       ).rejects.toThrow('settings is required and must be an array');
+    });
+  });
+
+  describe('transferOwnership', () => {
+    // IdP-owned user management (Phase 3-server): ownership is an IdP
+    // assignment — no OpenComp endpoint may grant it, including from owner
+    // or support credentials. Break-glass repairs the IdP assignment; login
+    // and reconciliation then materialize it.
+    it('returns 410 for an owner session without transferring', async () => {
+      await expect(
+        controller.transferOwnership('org_123', sessionAuthContext, {
+          newOwnerId: 'mem_2',
+        }),
+      ).rejects.toThrow(GoneException);
+      expect(mockOrganizationService.transferOwnership).not.toHaveBeenCalled();
     });
   });
 
