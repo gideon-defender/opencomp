@@ -14,7 +14,12 @@ vi.mock('@/env.mjs', () => ({ env: {} }));
 // into the test; the redirect paths return before rendering the form.
 vi.mock('@/components/login-form', () => ({ LoginForm: () => null }));
 
+vi.mock('next-intl/server', () => ({
+  getTranslations: async () => Object.assign((key: string) => key, { rich: (key: string) => key }),
+}));
+
 import { createMockSession, createMockUser, mockAuthApi } from '@/test-utils/mocks/auth';
+import { render, screen } from '@testing-library/react';
 import { redirect } from 'next/navigation';
 import { beforeEach, describe, expect, it } from 'vitest';
 import Page from './page';
@@ -57,5 +62,51 @@ describe('Auth page invite routing', () => {
     await expect(Page({ searchParams: Promise.resolve({}) })).rejects.toThrow('REDIRECT:/');
 
     expect(mockRedirect).toHaveBeenCalledWith('/');
+  });
+
+  it.each(['no_role', 'gideon_unavailable', 'unknown_error'])(
+    'shows %s despite an existing owner session instead of redirecting',
+    async (error) => {
+      const existingSession = {
+        session: createMockSession({ activeOrganizationId: 'org_existing' }),
+        user: createMockUser({ email: 'owner@example.com' }),
+      };
+      mockAuthApi.getSession.mockResolvedValue(existingSession);
+
+      render(await Page({ searchParams: Promise.resolve({ error }) }));
+
+      expect(mockRedirect).not.toHaveBeenCalled();
+      expect(screen.getByTestId('auth-error-notice')).toHaveTextContent(
+        error === 'no_role' ? 'noAccessDescription' : 'loginFailedDescription',
+      );
+      expect(existingSession.session.activeOrganizationId).toBe('org_existing');
+    },
+  );
+
+  it('shows a denial before redirecting an authenticated invitee', async () => {
+    mockAuthApi.getSession.mockResolvedValue({
+      session: createMockSession({ activeOrganizationId: 'org_existing' }),
+      user: createMockUser(),
+    });
+
+    render(
+      await Page({
+        searchParams: Promise.resolve({ error: 'no_role', inviteCode: 'inv_abc123' }),
+      }),
+    );
+
+    expect(mockRedirect).not.toHaveBeenCalled();
+    expect(screen.getByTestId('auth-error-notice')).toHaveTextContent('noAccessDescription');
+  });
+
+  it('still redirects an existing session when the error parameter is empty', async () => {
+    mockAuthApi.getSession.mockResolvedValue({
+      session: createMockSession({ activeOrganizationId: 'org_existing' }),
+      user: createMockUser(),
+    });
+
+    await expect(Page({ searchParams: Promise.resolve({ error: '' }) })).rejects.toThrow(
+      'REDIRECT:/',
+    );
   });
 });

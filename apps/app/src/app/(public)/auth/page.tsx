@@ -1,7 +1,7 @@
-import { AuthErrorNotice } from '@gideon-defender/ui/auth-error-notice';
 import { LoginForm } from '@/components/login-form';
 import { auth } from '@/utils/auth';
 import { getSafeRedirectPath } from '@/utils/auth-callback';
+import { AuthErrorNotice } from '@gideon-defender/ui/auth-error-notice';
 import { BrandLogo } from '@gideon-defender/ui/brand-logo';
 import {
   Card,
@@ -36,34 +36,29 @@ export default async function Page({
   });
   const { inviteCode, redirectTo, error } = await searchParams;
   const safeRedirectTo = getSafeRedirectPath(redirectTo);
+  const t = await getTranslations('auth');
+  const authError =
+    typeof error === 'string' && error
+      ? {
+          title: t('loginFailedTitle'),
+          description: error === 'no_role' ? t('noAccessDescription') : t('loginFailedDescription'),
+        }
+      : null;
 
   const orgId = session?.session?.activeOrganizationId;
 
-  if (orgId && inviteCode) {
+  // A failed OIDC attempt must stay visible even when the browser retains
+  // another account's valid session. Preserve that session and its access.
+  if (!authError && orgId && inviteCode) {
     // An invite code always takes priority: send the user to the invitation
     // acceptance flow (which validates the invite and applies the role), never
     // to the new-org onboarding wizard.
     redirect(`/invite/${inviteCode}`);
   }
 
-  if (orgId && !inviteCode) {
+  if (!authError && orgId && !inviteCode) {
     redirect('/');
   }
-
-  const t = await getTranslations('auth');
-
-  // Pre-session login failures redirect here with ?error=<code> (IdP deny
-  // lands as no_role). Unknown codes fall back to the generic message.
-  const authError =
-    typeof error === 'string' && error
-      ? {
-          title: t('loginFailedTitle'),
-          description:
-            error === 'no_role'
-              ? t('noAccessDescription')
-              : t('loginFailedDescription'),
-        }
-      : null;
 
   return (
     <div className="flex min-h-dvh flex-col text-foreground">
@@ -82,10 +77,7 @@ export default async function Page({
           </CardHeader>
           <CardContent className="space-y-6 pb-6 px-8">
             {authError && (
-              <AuthErrorNotice
-                title={authError.title}
-                description={authError.description}
-              />
+              <AuthErrorNotice title={authError.title} description={authError.description} />
             )}
             <LoginForm inviteCode={inviteCode} redirectTo={safeRedirectTo} />
           </CardContent>
