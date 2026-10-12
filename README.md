@@ -202,7 +202,46 @@ GIDEON_OIDC_REDIRECT_URI=""  # e.g. http://localhost:3333/v1/auth/gideon/callbac
 # GIDEON_OIDC_CLIENT_SECRET="" # only for confidential apps; public apps use PKCE
 ```
 
-#### 2. Redis
+#### 2. Roles → OIDC migration status
+
+Org membership is moving from locally managed roles to IdP-owned
+entitlements: the Gideon identity service decides who holds which role name,
+OpenComp syncs it into `Member.role` at login and enforces it. Permission
+_content_ (`packages/auth/src/permissions.ts`) is unchanged — only who _holds_
+a role moves to the IdP.
+
+Default behavior today is **audit mode**: logins evaluate the verified
+ID-token `entitlements` claim and log what enforcement _would_ do, then mint
+sessions as before. Nothing changes unless an operator opts a tenant in:
+
+```env
+# Phase 1 enforcement (comma-separated tenant IDs; unset = audit everywhere).
+# Clearing this is the instant rollback.
+GIDEON_ENFORCEMENT_TENANTS=""
+# Phase 5 bootstrap gate (deny unknown-tenant setup without a verified IdP
+# `owner` assignment). Enable only after IdP provisioning seeds an owner per
+# new tenant — otherwise new signups brick.
+GIDEON_BOOTSTRAP_ENFORCED=""  # set to "true" to enable
+```
+
+| Phase | Status |
+| ----- | ------ |
+| 0 — Audit + IdP data prep (claim evaluation, `roleSource`/`idpAccessRevoked` columns, conversion inventory) | Shipped |
+| 1 — Enforce + JIT member sync + pilot cutover (`no_role` UX, per-tenant allowlist) | Shipped, allowlisted tenants only |
+| 2 — Nightly reconciliation (revocation between logins) | Not built — revocation lands at next login; sessions live up to `SESSION_TTL_SECONDS` |
+| 3 — Lockdown (legacy membership writes return `410 Gone`) | Server fences shipped; UI cleanup pending (invite dialogs still present) |
+| 4 — Deletion of retired endpoints/services | Pending |
+| 5 — Bootstrap + break-glass prerequisites (owner gate, runbooks) | Gate and runbooks shipped; per-tenant IdP owner seeding still required before enabling |
+
+Operator docs: [delivery plan](docs/plans/2026-10-11-idp-owned-user-management.md),
+[entitlements takeover](docs/plans/2026-10-11-oidc-entitlements-takeover.md),
+[IdP user-management runbook](docs/runbooks/idp-user-management.md).
+Cutover tooling: `scripts/phase0-idp-conversion-inventory.mjs` (read-only
+inventory) and `scripts/phase1-pilot-conversion.mjs` (dry-run by default,
+`--apply` converts one tenant). Pilot one tenant end-to-end before extending
+the allowlist.
+
+#### 3. Redis
 
 Redis is configured via the `REDIS_URL` environment variable (regular Redis —
 no Upstash required):
