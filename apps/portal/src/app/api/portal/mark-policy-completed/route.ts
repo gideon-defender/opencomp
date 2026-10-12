@@ -1,3 +1,4 @@
+import { activeMemberWhere } from '@/app/lib/active-member';
 import { auth } from '@/app/lib/auth';
 import { db } from '@db/server';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -29,23 +30,22 @@ export async function POST(req: NextRequest) {
 
   const { policyId } = parsed.data;
 
+  const policy = await db.policy.findUnique({
+    where: { id: policyId },
+  });
+  if (!policy) {
+    return NextResponse.json({ error: 'Policy not found' }, { status: 404 });
+  }
+
   const member = await db.member.findFirst({
-    where: {
+    where: activeMemberWhere({
       userId: session.user.id,
-      deactivated: false,
-    },
+      organizationId: policy.organizationId,
+    }),
   });
 
   if (!member) {
     return NextResponse.json({ error: 'Member not found' }, { status: 404 });
-  }
-
-  const policy = await db.policy.findUnique({
-    where: { id: policyId },
-  });
-
-  if (!policy) {
-    return NextResponse.json({ error: 'Policy not found' }, { status: 404 });
   }
 
   // Check if user has already signed this policy

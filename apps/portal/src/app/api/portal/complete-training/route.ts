@@ -1,3 +1,4 @@
+import { activeMemberWhere } from '@/app/lib/active-member';
 import { auth } from '@/app/lib/auth';
 import { env } from '@/env.mjs';
 import { db } from '@db/server';
@@ -69,11 +70,10 @@ export async function POST(req: NextRequest) {
 
   // Verify the authenticated user is an active member of the organization.
   const member = await db.member.findFirst({
-    where: {
+    where: activeMemberWhere({
       userId: session.user.id,
       organizationId,
-      deactivated: false,
-    },
+    }),
   });
 
   if (!member) {

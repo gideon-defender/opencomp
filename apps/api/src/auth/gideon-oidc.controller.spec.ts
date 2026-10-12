@@ -1,8 +1,16 @@
 process.env.SECRET_KEY =
   process.env.SECRET_KEY || 'test-secret-key-16-chars-min';
 
+// The no_role test imports EntitlementsDeniedError, which pulls in @db via
+// the entitlements module. The controller's service is fully mocked, so the
+// client is never touched — stub the import to avoid Prisma initialization.
+jest.mock('@db', () => ({
+  db: {},
+}));
+
 import { Test } from '@nestjs/testing';
 import { GideonOidcController } from './gideon-oidc.controller';
+import { EntitlementsDeniedError } from './gideon-oidc-entitlements';
 import { GideonOidcService } from './gideon-oidc.service';
 import { HybridAuthGuard } from './hybrid-auth.guard';
 import { IS_PUBLIC_KEY } from './public.decorator';
@@ -10,6 +18,7 @@ import { signSessionToken } from './session-cookie';
 
 const mockBuildLoginUrl = jest.fn();
 const mockHandleCallback = jest.fn();
+const mockPeekStoredRedirect = jest.fn();
 const mockRevokeAndDeleteSession = jest.fn();
 
 describe('GideonOidcController', () => {
@@ -62,7 +71,8 @@ describe('GideonOidcController', () => {
           useValue: {
             buildLoginUrl: (...args: unknown[]) => mockBuildLoginUrl(...args),
             handleCallback: (...args: unknown[]) => mockHandleCallback(...args),
-            peekStoredRedirect: jest.fn(),
+            peekStoredRedirect: (...args: unknown[]) =>
+              mockPeekStoredRedirect(...args),
             revokeAndDeleteSession: (...args: unknown[]) =>
               mockRevokeAndDeleteSession(...args),
           },
@@ -166,6 +176,51 @@ describe('GideonOidcController', () => {
       );
       expect(res.redirect).toHaveBeenCalledWith(
         'http://localhost:3000/invite/inv_abc123',
+      );
+    });
+
+    it('redirects entitlement denials to the no-access messaging', async () => {
+      mockHandleCallback.mockRejectedValue(
+        new EntitlementsDeniedError({
+          reason: 'empty_entitlements',
+          email: 'ada@example.com',
+          tenantId: 'tenant-1',
+        }),
+      );
+      const res = buildRes();
+
+      await controller.callback(
+        { code: 'c', state: 's' },
+        buildReq({}) as never,
+        res as never,
+      );
+
+      expect(res.redirect).toHaveBeenCalledWith(
+        'http://localhost:3000/auth?error=no_role',
+      );
+    });
+
+    it('routes entitlement denials back to the portal that started login', async () => {
+      mockPeekStoredRedirect.mockResolvedValueOnce(
+        'https://portal.gideondefender.com/auth?callback_port=1234',
+      );
+      mockHandleCallback.mockRejectedValue(
+        new EntitlementsDeniedError({
+          reason: 'empty_entitlements',
+          email: 'ada@example.com',
+          tenantId: 'tenant-1',
+        }),
+      );
+      const res = buildRes();
+
+      await controller.callback(
+        { code: 'c', state: 's' },
+        buildReq({}) as never,
+        res as never,
+      );
+
+      expect(res.redirect).toHaveBeenCalledWith(
+        'https://portal.gideondefender.com/auth?error=no_role',
       );
     });
 

@@ -1,3 +1,4 @@
+import { AuthErrorNotice } from '@gideon-defender/ui/auth-error-notice';
 import { LoginForm } from '@/components/login-form';
 import { auth } from '@/utils/auth';
 import { getSafeRedirectPath } from '@/utils/auth-callback';
@@ -24,12 +25,16 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ inviteCode?: string; redirectTo?: string }>;
+  searchParams: Promise<{
+    inviteCode?: string;
+    redirectTo?: string;
+    error?: string;
+  }>;
 }) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
-  const { inviteCode, redirectTo } = await searchParams;
+  const { inviteCode, redirectTo, error } = await searchParams;
   const safeRedirectTo = getSafeRedirectPath(redirectTo);
 
   const orgId = session?.session?.activeOrganizationId;
@@ -47,6 +52,19 @@ export default async function Page({
 
   const t = await getTranslations('auth');
 
+  // Pre-session login failures redirect here with ?error=<code> (IdP deny
+  // lands as no_role). Unknown codes fall back to the generic message.
+  const authError =
+    typeof error === 'string' && error
+      ? {
+          title: t('loginFailedTitle'),
+          description:
+            error === 'no_role'
+              ? t('noAccessDescription')
+              : t('loginFailedDescription'),
+        }
+      : null;
+
   return (
     <div className="flex min-h-dvh flex-col text-foreground">
       <main className="flex flex-1 items-center justify-center p-6">
@@ -63,6 +81,12 @@ export default async function Page({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6 pb-6 px-8">
+            {authError && (
+              <AuthErrorNotice
+                title={authError.title}
+                description={authError.description}
+              />
+            )}
             <LoginForm inviteCode={inviteCode} redirectTo={safeRedirectTo} />
           </CardContent>
           <CardFooter className="pb-10">

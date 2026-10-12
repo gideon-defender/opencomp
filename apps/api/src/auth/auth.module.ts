@@ -9,6 +9,7 @@ import { HybridAuthGuard } from './hybrid-auth.guard';
 import { PermissionGuard } from './permission.guard';
 import { GideonJwtService } from './gideon-jwt.service';
 import { GideonOidcController } from './gideon-oidc.controller';
+import { GideonBootstrapController } from './gideon-bootstrap.controller';
 import { GideonOidcService } from './gideon-oidc.service';
 import { NativeSessionService } from './native-session.service';
 import { GideonShadowService } from '../gideon/gideon-shadow.service';
@@ -29,7 +30,11 @@ import { GideonShadowService } from '../gideon/gideon-shadow.service';
       disableBodyParser: true,
     }),
   ],
-  controllers: [AuthController, GideonOidcController],
+  controllers: [
+    AuthController,
+    GideonOidcController,
+    GideonBootstrapController,
+  ],
   providers: [
     ApiKeyService,
     ApiKeyGuard,

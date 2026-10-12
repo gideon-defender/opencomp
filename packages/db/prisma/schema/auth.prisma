@@ -253,6 +253,11 @@ model Member {
   backgroundCheckRequests          BackgroundCheckRequest[]
   offboardingChecklistCompletions  OffboardingChecklistCompletion[]
   offboardingAccessRevocations     OffboardingAccessRevocation[]
+
+  // IdP-owned user management (Phase 1): one membership row per (org, user).
+  // The SSO JIT sync relies on this for its P2002 race retry — without it a
+  // raced first-login create inserts a duplicate instead of conflicting.
+  @@unique([organizationId, userId])
 }
 
 model Invitation {

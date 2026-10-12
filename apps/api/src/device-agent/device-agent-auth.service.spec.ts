@@ -183,7 +183,11 @@ describe('DeviceAgentAuthService', () => {
         role: 'admin',
       });
       expect(mockDb.member.findMany).toHaveBeenCalledWith({
-        where: { userId: 'user-1', deactivated: false },
+        where: {
+          userId: 'user-1',
+          deactivated: false,
+          idpAccessRevoked: false,
+        },
         include: {
           organization: { select: { id: true, name: true, slug: true } },
         },

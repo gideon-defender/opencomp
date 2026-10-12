@@ -1,9 +1,10 @@
+import { activeMemberWhere } from '@/app/lib/active-member';
 import { auth } from '@/app/lib/auth';
 import { getFleetInstance } from '@/utils/fleet';
 import { hasPortalAccess } from '@/utils/portal-access';
 import type { FleetPolicyResult, Member } from '@db';
 import { db } from '@db/server';
-import { PageHeader, PageLayout } from '@trycompai/design-system';
+
 import { getTranslations } from 'next-intl/server';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -35,11 +36,7 @@ export default async function OrganizationPage({ params }: { params: Promise<{ o
 
   try {
     member = await db.member.findFirst({
-      where: {
-        userId: session.user.id,
-        organizationId: orgId,
-        deactivated: false,
-      },
+      where: activeMemberWhere({ userId: session.user.id, organizationId: orgId }),
       include: {
         user: true,
         organization: true,
@@ -62,10 +59,10 @@ export default async function OrganizationPage({ params }: { params: Promise<{ o
   });
   if (!canAccessPortal) {
     return (
-      <PageLayout>
-        <PageHeader title={tDashboard('title')} />
+      <div className="flex min-w-0 flex-col gap-6 p-4 sm:p-6">
+        <h1 className="text-2xl font-semibold">{tDashboard('title')}</h1>
         <NoAccessMessage message={tAccess('noRoleMessage')} />
-      </PageLayout>
+      </div>
     );
   }
 
@@ -82,8 +79,8 @@ export default async function OrganizationPage({ params }: { params: Promise<{ o
   });
 
   return (
-    <PageLayout>
-      <PageHeader title={tDashboard('title')} />
+    <div className="flex min-w-0 flex-col gap-6 p-4 sm:p-6">
+      <h1 className="text-2xl font-semibold">{tDashboard('title')}</h1>
       <OrganizationDashboard
         key={orgId}
         organizationId={orgId}
@@ -92,7 +89,7 @@ export default async function OrganizationPage({ params }: { params: Promise<{ o
         host={fleetData.device}
         agentDevices={agentDevices}
       />
-    </PageLayout>
+    </div>
   );
 }
 

@@ -156,6 +156,10 @@
       "types": "./dist/components/animated-size-container.d.ts",
       "import": "./dist/components/animated-size-container.js"
     },
+    "./auth-error-notice": {
+      "types": "./dist/components/auth-error-notice.d.ts",
+      "import": "./dist/components/auth-error-notice.js"
+    },
     "./avatar": {
       "types": "./dist/components/avatar.d.ts",
       "import": "./dist/components/avatar.js"

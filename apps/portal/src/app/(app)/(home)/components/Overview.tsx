@@ -1,3 +1,4 @@
+import { activeMemberWhere } from '@/app/lib/active-member';
 import { db } from '@db/server';
 // Import types directly from @prisma/client
 import type { Member, Organization, User } from '@db';
@@ -7,7 +8,7 @@ import { redirect } from 'next/navigation';
 import { NoAccessMessage } from './NoAccessMessage';
 // Removed OrganizationSelector import
 import { auth } from '@/app/lib/auth';
-import { Card, CardContent, CardHeader, CardTitle, Stack, Text } from '@trycompai/design-system';
+import { Card, CardContent, CardHeader, CardTitle } from '@gideon-defender/ui/card';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
@@ -32,11 +33,7 @@ export async function Overview() {
 
   // Fetch all memberships for the user, including organization details
   const memberships = await db.member.findMany({
-    where: {
-      userId: session.user.id,
-      // We might want to filter by role if needed, but let's see all memberships first
-      // role: "employee", // Keep commented unless needed
-    },
+    where: activeMemberWhere({ userId: session.user.id }),
     include: {
       user: true,
       organization: true, // Include organization details
@@ -69,8 +66,8 @@ export async function Overview() {
 
   // Render a dashboard for each valid membership
   return (
-    <Stack gap="lg">
-      <Text weight="medium">{t('yourOrganizations')}</Text>
+    <div className="flex min-w-0 flex-col gap-6">
+      <p className="font-medium">{t('yourOrganizations')}</p>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {validMemberships.map((member) => (
           <Link href={`/${member.organization.id}`} key={member.id}>
@@ -79,12 +76,12 @@ export async function Overview() {
                 <CardTitle>{member.organization.name}</CardTitle>
               </CardHeader>
               <CardContent>
-                <Text>{member.user.name}</Text>
+                <p>{member.user.name}</p>
               </CardContent>
             </Card>
           </Link>
         ))}
       </div>
-    </Stack>
+    </div>
   );
 }

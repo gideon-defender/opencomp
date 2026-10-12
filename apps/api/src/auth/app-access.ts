@@ -31,6 +31,15 @@ function mergeInto(
 }
 
 /**
+ * Strip control characters so IdP-controlled values cannot forge server log
+ * lines when interpolated. Does not trim — callers trim first when needed.
+ */
+export function stripControlChars(value: string): string {
+  // eslint-disable-next-line no-control-regex
+  return value.replace(/[\u0000-\u001f\u007f]/g, '');
+}
+
+/**
  * Every role name valid in an org: built-ins ∪ its `organization_role` rows.
  *
  * Shared by the OIDC entitlements audit and the employee sync so the two

@@ -4,79 +4,15 @@ import type { SyncEmployee } from '@gideon-defender/integration-platform';
 import { matchesSyncFilterTerms } from '@gideon-defender/integration-platform';
 import { getValidRoleNames } from '../../auth/app-access';
 import { createHrIdentityResolver, getHrSyncUser } from './hr-sync-idp';
-import { recordHrSyncError, shouldSkipHrSync } from './hr-sync-identity';
-import type { ResolvedSyncEmployeeFilter } from './sync-employee-filter';
-
-// ============================================================================
-// Types
-// ============================================================================
-
-interface SyncResultDetail {
-  email: string;
-  status: 'imported' | 'skipped' | 'deactivated' | 'reactivated' | 'error';
-  reason?: string;
-}
-
-interface SyncResult {
-  success: boolean;
-  totalFound: number;
-  imported: number;
-  skipped: number;
-  deactivated: number;
-  reactivated: number;
-  errors: number;
-  details: SyncResultDetail[];
-}
-
-interface ProcessEmployeesOptions {
-  /** Default role for new members. Defaults to 'employee'. */
-  defaultRole?: string;
-  /** Whether to reactivate previously deactivated members. Defaults to false. */
-  allowReactivation?: boolean;
-  /** Roles that should never be auto-deactivated. Defaults to owner/admin/auditor. */
-  protectedRoles?: string[];
-  /** Provider slug for deactivation reason messages. */
-  providerName?: string;
-  /**
-   * Whether the provider is authoritative for "who works here" (directory of record).
-   *
-   * When false (default), Phase 2 is skipped entirely: members absent from the sync
-   * payload are left alone. Set true only for HRIS / identity providers whose user
-   * list = the employee list (Google Workspace, Rippling, JumpCloud, Okta, Entra).
-   *
-   * This prevents feature-licensed tools (Confluence, Slack, etc.) from silently
-   * deactivating active employees when their API returns a partial member list.
-   */
-  isDirectorySource?: boolean;
-  /**
-   * Optional include/exclude email filter (resolved from connection variables).
-   *
-   * When omitted (or mode 'all'), every active employee is imported — the
-   * historical behavior. When provided, this mirrors the Google Workspace /
-   * JumpCloud sync filter so dynamic providers (e.g. Microsoft Entra) can
-   * limit which users are synced.
-   */
-  syncFilter?: ResolvedSyncEmployeeFilter;
-}
+import { shouldSkipHrSync } from './hr-sync-identity';
+import type {
+  SyncResult,
+  ProcessEmployeesOptions,
+} from './generic-employee-sync.types';
+import { deactivateAbsentEmployees } from './generic-employee-sync.deactivation';
 
 const DEFAULT_PROTECTED_ROLES = ['owner', 'admin', 'auditor'];
 
-// ============================================================================
-// Service
-// ============================================================================
-
-/**
- * Generic employee sync service that handles the platform-generic operations:
- * - Syncing members with identities confirmed in the tenant IdP from an employee list
- * - Deactivating members no longer present in the provider
- * - Safety guards (never deactivate privileged roles)
- *
- * This extracts the common pattern from SyncController's 4 provider-specific
- * implementations (Google Workspace, Rippling, JumpCloud).
- *
- * The provider-specific logic (fetching users, normalizing fields) is handled
- * by the dynamic integration's syncDefinition (DSL/code steps).
- */
 @Injectable()
 export class GenericEmployeeSyncService {
   private readonly logger = new Logger(GenericEmployeeSyncService.name);
@@ -102,10 +38,6 @@ export class GenericEmployeeSyncService {
     const providerName = options.providerName ?? 'provider';
     const isDirectorySource = options.isDirectorySource ?? false;
 
-    // Build the set of role identifiers we'll accept on this sync. Anything
-    // outside this set is dropped (e.g. a Microsoft DSL that mis-maps
-    // jobTitle into role would otherwise plant "Senior Front End Engineer"
-    // strings into member.role with no matching organization_role row).
     const validRoleNames = await getValidRoleNames(organizationId);
 
     const sanitizeRole = (raw: string | undefined | null): string => {
@@ -132,8 +64,6 @@ export class GenericEmployeeSyncService {
       `[GenericSync] Processing ${employees.length} employees for org="${organizationId}" provider="${providerName}"`,
     );
 
-    // Resolve the configured include/exclude email filter. When unset (or
-    // mode 'all') this is a no-op and every active employee is imported.
     const filterMode = options.syncFilter?.mode ?? 'all';
     const excludedTerms = options.syncFilter?.excludedTerms ?? [];
     const includedTerms = options.syncFilter?.includedTerms ?? [];
@@ -150,9 +80,6 @@ export class GenericEmployeeSyncService {
       return true;
     };
 
-    // Separate employees by status. Phase 1 imports only the active employees
-    // that pass the filter; Phase 2 tracks presence against both the filtered
-    // set and the full provider list (see the deactivation note below).
     const activeEmployeesAll = employees.filter((e) => e.status === 'active');
     const activeEmployees = activeEmployeesAll.filter((e) =>
       passesImportFilter(e.email.toLowerCase()),
@@ -169,7 +96,6 @@ export class GenericEmployeeSyncService {
       activeEmployees.map((e) => e.email.toLowerCase()),
     );
 
-    // Build domain set from all employees (for domain-scoped deactivation)
     const providerDomains = new Set<string>();
     for (const emp of employees) {
       const domain = emp.email.toLowerCase().split('@')[1];
@@ -180,9 +106,6 @@ export class GenericEmployeeSyncService {
       `[GenericSync] Employee breakdown: active=${activeEmployees.length} inactive/suspended=${inactiveEmails.size} domains=${Array.from(providerDomains).join(',')}`,
     );
 
-    // ====================================================================
-    // Phase 1: Import active employees
-    // ====================================================================
     const resolveIdentity = createHrIdentityResolver({ organizationId });
 
     for (const employee of activeEmployees) {
@@ -205,7 +128,6 @@ export class GenericEmployeeSyncService {
 
         const existingUser = await getHrSyncUser({ identity, organizationId });
 
-        // Check if Member already exists in this org
         const existingMember = await db.member.findFirst({
           where: {
             organizationId,
@@ -214,12 +136,12 @@ export class GenericEmployeeSyncService {
         });
 
         if (existingMember) {
-          // Self-heal limbo roles: if the persisted member.role contains
-          // tokens that don't map to any valid role today (e.g. an Entra
-          // jobTitle planted by a misconfigured DSL pre-fix), drop them.
-          // We only ever shrink the role string here — never overwrite a
-          // valid assignment with whatever the provider sent.
-          const healedRole = sanitizeRole(existingMember.role);
+          // HR updates employment state; only IdP login/reconciliation may change SSO roles.
+          const healedRole =
+            existingMember.roleSource === 'sso' ||
+            existingMember.idpAccessRevoked
+              ? existingMember.role
+              : sanitizeRole(existingMember.role);
           const needsHeal = healedRole !== existingMember.role;
           if (needsHeal) {
             this.logger.warn(
@@ -284,7 +206,6 @@ export class GenericEmployeeSyncService {
           continue;
         }
 
-        // Create new member
         const sanitizedRole = sanitizeRole(employee.role);
         if (employee.role && sanitizedRole !== employee.role) {
           this.logger.warn(
@@ -328,14 +249,6 @@ export class GenericEmployeeSyncService {
       `[GenericSync] Phase 1 complete: imported=${results.imported} skipped=${results.skipped} reactivated=${results.reactivated} errors=${results.errors}`,
     );
 
-    // ====================================================================
-    // Phase 2: Deactivate members no longer in provider
-    //
-    // Only runs when the provider is a directory of record. Feature-licensed
-    // tools (Confluence, Slack, etc.) only know who has product access — they
-    // must not be allowed to deactivate employees who didn't appear in their
-    // response, since "absent from this product" ≠ "no longer employed".
-    // ====================================================================
     if (!isDirectorySource) {
       this.logger.log(
         `[GenericSync] Phase 2 skipped for "${providerName}": isDirectorySource=false. Members absent from the sync payload were left alone.`,
@@ -344,86 +257,18 @@ export class GenericEmployeeSyncService {
       return results;
     }
 
-    const allOrgMembers = await db.member.findMany({
-      where: {
-        organizationId,
-        deactivated: false,
-      },
-      include: {
-        user: true,
-      },
+    await deactivateAbsentEmployees({
+      organizationId,
+      providerName,
+      providerDomains,
+      protectedRoles,
+      inactiveEmails,
+      presenceActiveEmails:
+        filterMode === 'include' ? allActiveEmails : filteredActiveEmails,
+      resolveIdentity,
+      logger: this.logger,
+      results,
     });
-
-    // In 'include' mode, members who still exist in the provider must NOT be
-    // deactivated just for being outside the include subset — check presence
-    // against the full provider list (mirrors the Google Workspace path). In
-    // 'exclude'/'all' mode, presence is the filtered set, so excluded users and
-    // genuinely-removed users are both deactivated.
-    const presenceActiveEmails =
-      filterMode === 'include' ? allActiveEmails : filteredActiveEmails;
-
-    for (const member of allOrgMembers) {
-      const memberEmail = member.user.email.toLowerCase();
-      const memberDomain = memberEmail.split('@')[1];
-
-      // Only check members whose email domain matches the provider's domains
-      if (!memberDomain || !providerDomains.has(memberDomain)) {
-        continue;
-      }
-
-      // Safety guard: never auto-deactivate privileged members
-      const memberRoles = member.role
-        .split(',')
-        .map((role) => role.trim().toLowerCase());
-      if (protectedRoles.some((pr) => memberRoles.includes(pr))) {
-        continue;
-      }
-
-      // If member is not in active set AND not already accounted for, deactivate
-      const isSuspended = inactiveEmails.has(memberEmail);
-      const isRemoved = !presenceActiveEmails.has(memberEmail) && !isSuspended;
-
-      if (isSuspended || isRemoved) {
-        try {
-          if (
-            shouldSkipHrSync({
-              identity: await resolveIdentity({ email: memberEmail }),
-              email: memberEmail,
-              organizationId,
-              providerName,
-              logger: this.logger,
-              results,
-            })
-          )
-            continue;
-          await db.member.update({
-            where: { id: member.id },
-            data: {
-              deactivated: true,
-              isActive: false,
-              offboardDate: member.offboardDate ?? new Date(),
-            },
-          });
-          results.deactivated++;
-          results.details.push({
-            email: memberEmail,
-            status: 'deactivated',
-            reason: isSuspended
-              ? `User is suspended in ${providerName}`
-              : `User was removed from ${providerName}`,
-          });
-        } catch (error) {
-          recordHrSyncError({
-            error,
-            email: memberEmail,
-            organizationId,
-            providerName,
-            logger: this.logger,
-            results,
-          });
-        }
-      }
-    }
 
     results.success = results.errors === 0;
 
