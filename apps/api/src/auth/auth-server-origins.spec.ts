@@ -176,7 +176,7 @@ describe('isStaticTrustedOrigin', () => {
 });
 
 describe('getCustomDomains (structural)', () => {
-  it('auth.server.ts should NOT filter by domainVerified in CORS domain query', () => {
+  it('auth-custom-origins.ts should NOT filter by domainVerified in CORS domain query', () => {
     // Custom domains should be allowed for CORS as soon as they are configured
     // by an admin, not only after DNS verification completes. Vercel can serve
     // the trust portal before our domainVerified flag is set, causing CORS
@@ -184,7 +184,7 @@ describe('getCustomDomains (structural)', () => {
     const fs = require('fs');
     const path = require('path');
     const authServer = fs.readFileSync(
-      path.join(__dirname, 'auth.server.ts'),
+      path.join(__dirname, 'auth-custom-origins.ts'),
       'utf-8',
     ) as string;
 
@@ -202,11 +202,11 @@ describe('getCustomDomains (structural)', () => {
     expect(fnBody).toContain("status: 'published'");
   });
 
-  it('auth.server.ts getCustomDomains should have independent error handling for Redis and DB', () => {
+  it('auth-custom-origins.ts getCustomDomains should have independent error handling for Redis and DB', () => {
     const fs = require('fs');
     const path = require('path');
     const authServer = fs.readFileSync(
-      path.join(__dirname, 'auth.server.ts'),
+      path.join(__dirname, 'auth-custom-origins.ts'),
       'utf-8',
     ) as string;
 

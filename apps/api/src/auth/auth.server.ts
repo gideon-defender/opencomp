@@ -4,19 +4,16 @@ import {
   VerifyEmail,
 } from '@gideon-defender/email';
 import { triggerEmail } from '../email/trigger-email';
-import { db, serviceDb } from '@db';
+import { serviceDb } from '@db';
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { bearer, mcp, multiSession, organization } from 'better-auth/plugins';
 import { ac, allRoles } from '@gideon-defender/auth';
 import { GoneException } from '@nestjs/common';
-import { redisClient } from '../redis/redis.client';
-import {
-  getBetterAuthTrustedOrigins,
-  isStaticTrustedOrigin,
-} from './origin-policy';
+import { getBetterAuthTrustedOrigins } from './origin-policy';
 import { getCookieDomain } from './session-cookie';
-import { resolveActiveOrganizationId } from './gideon-oidc-provisioning';
+import { authDatabaseHooks } from './auth-database-hooks';
+import { idpOrganizationAccessPlugin } from './idp-organization-access-plugin';
 
 export {
   getBetterAuthTrustedOrigins,
@@ -30,85 +27,7 @@ export {
   isStaticTrustedOriginForRequest,
 } from './origin-policy';
 
-// ── Custom domain lookup via Redis cache ─────────────────────────────────────
-
-const CORS_DOMAINS_CACHE_KEY = 'app:cors:custom-domains';
-const CORS_DOMAINS_CACHE_TTL_SECONDS = 5 * 60; // 5 minutes
-
-// The shared client falls back to in-memory when REDIS_URL is unset, so these
-// commands are safe to run unconditionally — no hangs on a bogus endpoint.
-const corsRedisClient = redisClient;
-
-async function getCustomDomains(): Promise<Set<string>> {
-  // Try Redis cache first (non-fatal if Redis is unavailable)
-  if (corsRedisClient) {
-    try {
-      const cached = await corsRedisClient.get<string[]>(
-        CORS_DOMAINS_CACHE_KEY,
-      );
-      if (cached) {
-        return new Set(cached);
-      }
-    } catch (error) {
-      console.error(
-        '[CORS] Redis cache read failed, falling back to DB:',
-        error,
-      );
-    }
-  }
-
-  // Cache miss or Redis unavailable — query DB
-  try {
-    const trusts = await db.trust.findMany({
-      where: {
-        domain: { not: null },
-        status: 'published',
-      },
-      select: { domain: true },
-    });
-
-    const domains = trusts
-      .map((t) => t.domain)
-      .filter((d): d is string => d !== null);
-
-    // Best-effort cache update (don't lose DB results if Redis SET fails)
-    if (corsRedisClient) {
-      try {
-        await corsRedisClient.set(CORS_DOMAINS_CACHE_KEY, domains, {
-          ex: CORS_DOMAINS_CACHE_TTL_SECONDS,
-        });
-      } catch {
-        // Redis unavailable — continue without caching
-      }
-    }
-
-    return new Set(domains);
-  } catch (error) {
-    console.error('[CORS] Failed to fetch custom domains from DB:', error);
-    return new Set();
-  }
-}
-
-/**
- * Check if an origin is trusted. Checks (in order):
- * 1. Static trusted origins list
- * 2. *.gideondefender.com subdomains
- * 3. Published custom domains from the DB (cached in Redis, TTL 5 min)
- */
-export async function isTrustedOrigin(origin: string): Promise<boolean> {
-  if (isStaticTrustedOrigin(origin)) {
-    return true;
-  }
-
-  // Check verified custom domains from DB via Redis cache
-  try {
-    const url = new URL(origin);
-    const customDomains = await getCustomDomains();
-    return customDomains.has(url.hostname);
-  } catch {
-    return false;
-  }
-}
+export { isTrustedOrigin } from './auth-custom-origins';
 
 // Gideon is the sole authenticator. Legacy better-auth login entry points
 // (Google/GitHub/Microsoft social, magic link, email OTP) were removed after
@@ -257,62 +176,11 @@ export const auth = betterAuth({
       },
     }),
   },
-  databaseHooks: {
-    session: {
-      create: {
-        before: async (session) => {
-          const isDev = process.env.NODE_ENV === 'development';
-          if (isDev) {
-            console.log(
-              '[Better Auth] Session creation hook called for user:',
-              session.userId,
-            );
-          }
-          try {
-            const activeOrganizationId = await resolveActiveOrganizationId({
-              userId: session.userId,
-            });
-
-            if (activeOrganizationId) {
-              if (isDev) {
-                const org = await db.organization.findUnique({
-                  where: { id: activeOrganizationId },
-                  select: { name: true },
-                });
-                console.log(
-                  `[Better Auth] Setting activeOrganizationId to ${activeOrganizationId} (${org?.name}) for user ${session.userId}`,
-                );
-              }
-              return {
-                data: {
-                  ...session,
-                  activeOrganizationId,
-                },
-              };
-            } else {
-              if (isDev) {
-                console.log(
-                  `[Better Auth] No organization found for user ${session.userId}`,
-                );
-              }
-              return {
-                data: session,
-              };
-            }
-          } catch (error) {
-            // Always log errors, even in production
-            console.error('[Better Auth] Session creation hook error:', error);
-            return {
-              data: session,
-            };
-          }
-        },
-      },
-    },
-  },
+  databaseHooks: authDatabaseHooks,
   // SECRET_KEY is validated at startup via validateSecurityConfig()
   secret: process.env.SECRET_KEY as string,
   plugins: [
+    idpOrganizationAccessPlugin(),
     organization({
       membershipLimit: 100000000000,
       sendInvitationEmail(data): Promise<void> {
