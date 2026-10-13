@@ -46,7 +46,7 @@ export async function refreshSsoLoginRoles({
   organizationId: string;
   config: EntitlementReconciliationConfig;
 }): Promise<string[]> {
-  if (!config.tenantIds.includes(organizationId))
+  if (!config.allTenants && !config.tenantIds.includes(organizationId))
     throw new Error('Tenant is not enabled for reconciliation');
   const user = await tx.user.findUnique({
     where: { id: userId },

@@ -4,6 +4,7 @@ import { syncSsoMember } from './sso-member-sync';
 const mockTransaction = jest.fn();
 const mockSnapshot = jest.fn();
 const mockEnabled = jest.fn();
+const mockConfig = jest.fn();
 const mockFindRacedMember = jest.fn();
 const tenantId = '00000000-0000-0000-0000-000000000001';
 const config = {
@@ -25,7 +26,7 @@ jest.mock('./entitlement-snapshot', () => ({
 }));
 jest.mock('./entitlement-reconciliation-config', () => ({
   reconciliationEnabled: () => mockEnabled(),
-  readReconciliationConfig: () => config,
+  readReconciliationConfig: () => mockConfig(),
 }));
 
 function deferred<T>() {
@@ -68,6 +69,7 @@ beforeEach(() => {
   member = initialMember();
   pendingLock = Promise.resolve();
   mockEnabled.mockReturnValue(true);
+  mockConfig.mockReturnValue(config);
   tx.member.findFirst.mockImplementation(async () => structuredClone(member));
   tx.member.update.mockImplementation(
     async ({
@@ -105,6 +107,50 @@ beforeEach(() => {
       }
     },
   );
+});
+
+it('refreshes owner/admin at login when all-tenant mode has no static tenant list', async () => {
+  mockConfig.mockReturnValue({ ...config, allTenants: true, tenantIds: [] });
+  mockSnapshot.mockResolvedValue({ entitlements: ['owner', 'admin'] });
+  await syncSsoMember({
+    userId: member.userId,
+    organizationId: tenantId,
+    roles: ['admin', 'owner'],
+  });
+  expect(member).toMatchObject({
+    role: 'admin,owner',
+    roleSource: 'sso',
+    idpAccessRevoked: false,
+  });
+  expect(mockSnapshot).toHaveBeenCalledWith(
+    expect.objectContaining({ tenantId }),
+  );
+});
+
+it('still denies login when an all-tenant reader snapshot has no entitlements', async () => {
+  mockConfig.mockReturnValue({ ...config, allTenants: true, tenantIds: [] });
+  mockSnapshot.mockResolvedValue({ entitlements: [] });
+  await expect(
+    syncSsoMember({
+      userId: member.userId,
+      organizationId: tenantId,
+      roles: ['owner'],
+    }),
+  ).rejects.toThrow('no valid IdP role assignment');
+  expect(tx.member.update).not.toHaveBeenCalled();
+});
+
+it('keeps the tenant allowlist restriction when all-tenant mode is off', async () => {
+  mockConfig.mockReturnValue({ ...config, allTenants: false, tenantIds: [] });
+  await expect(
+    syncSsoMember({
+      userId: member.userId,
+      organizationId: tenantId,
+      roles: ['owner'],
+    }),
+  ).rejects.toThrow('Tenant is not enabled');
+  expect(mockSnapshot).not.toHaveBeenCalled();
+  expect(tx.member.update).not.toHaveBeenCalled();
 });
 
 it.each([{ entitlements: [] }, { entitlements: ['auditor'] }])(

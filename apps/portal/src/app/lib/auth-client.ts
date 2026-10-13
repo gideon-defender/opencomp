@@ -1,10 +1,10 @@
 import { ac, allRoles } from '@gideon-defender/auth';
-import { emailOTPClient, multiSessionClient, organizationClient } from 'better-auth/client/plugins';
+import { emailOTPClient, organizationClient } from 'better-auth/client/plugins';
 import { createAuthClient } from 'better-auth/react';
 
 export const authClient = createAuthClient({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333',
-  plugins: [organizationClient({ ac, roles: allRoles }), emailOTPClient(), multiSessionClient()],
+  plugins: [organizationClient({ ac, roles: allRoles }), emailOTPClient()],
 });
 
 export const {
