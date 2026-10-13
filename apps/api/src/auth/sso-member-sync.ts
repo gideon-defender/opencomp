@@ -1,5 +1,10 @@
 import { Logger } from '@nestjs/common';
 import { db } from '@db';
+import {
+  readReconciliationConfig,
+  reconciliationEnabled,
+} from './entitlement-reconciliation-config';
+import { refreshSsoLoginRoles } from './sso-entitlement-roles';
 
 const logger = new Logger('SsoMemberSync');
 
@@ -54,28 +59,48 @@ export async function syncSsoMember({
     );
   }
 
-  try {
-    return await db.$transaction(async (tx) => {
-      const existing = await tx.member.findFirst({
-        where: { userId, organizationId },
-        select: { id: true },
-      });
-      if (existing) {
-        return tx.member.update({
-          where: { id: existing.id },
-          data: { role, roleSource: 'sso', idpAccessRevoked: false },
+  const config = reconciliationEnabled()
+    ? readReconciliationConfig()
+    : undefined;
+  const sync = () =>
+    db.$transaction(
+      async (tx) => {
+        // Both writers hold this row lock before they observe current IdP grants.
+        if (config)
+          await tx.$queryRaw`SELECT id FROM "Member" WHERE "userId" = ${userId} AND "organizationId" = ${organizationId} FOR UPDATE`;
+        const currentRole = config
+          ? (
+              await refreshSsoLoginRoles({ tx, userId, organizationId, config })
+            ).join(',')
+          : role;
+        const existing = await tx.member.findFirst({
+          where: { userId, organizationId },
+          select: { id: true },
         });
-      }
-      return tx.member.create({
-        data: {
-          userId,
-          organizationId,
-          role,
-          roleSource: 'sso',
-          idpAccessRevoked: false,
-        },
-      });
-    });
+        if (existing) {
+          return tx.member.update({
+            where: { id: existing.id },
+            data: {
+              role: currentRole,
+              roleSource: 'sso',
+              idpAccessRevoked: false,
+            },
+          });
+        }
+        return tx.member.create({
+          data: {
+            userId,
+            organizationId,
+            role: currentRole,
+            roleSource: 'sso',
+            idpAccessRevoked: false,
+          },
+        });
+      },
+      { maxWait: 10_000, timeout: 20_000 },
+    );
+  try {
+    return await sync();
   } catch (error) {
     if ((error as { code?: string }).code !== 'P2002') throw error;
     const raced = await db.member.findFirst({
@@ -86,10 +111,7 @@ export async function syncSsoMember({
     logger.warn(
       `SSO member sync raced first-login create for user ${userId} in org ${organizationId} — updating instead`,
     );
-    return db.member.update({
-      where: { id: raced.id },
-      data: { role, roleSource: 'sso', idpAccessRevoked: false },
-    });
+    return sync();
   }
 }
 

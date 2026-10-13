@@ -124,10 +124,12 @@ describe('syncSsoMember', () => {
   });
 
   it('survives a concurrent first-login P2002 via re-read + update', async () => {
-    txMember.findFirst.mockResolvedValue(null);
+    txMember.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValue({ id: 'mem_raced' });
     txMember.create.mockRejectedValue({ code: 'P2002' });
     db.member.findFirst.mockResolvedValue({ id: 'mem_raced' });
-    db.member.update.mockResolvedValue({ id: 'mem_raced' });
+    txMember.update.mockResolvedValue({ id: 'mem_raced' });
 
     await syncSsoMember({
       userId: 'usr_1',
@@ -135,11 +137,13 @@ describe('syncSsoMember', () => {
       roles: ['admin'],
     });
 
-    expect(db.member.update).toHaveBeenCalledWith({
+    expect(txMember.update).toHaveBeenCalledWith({
       where: { id: 'mem_raced' },
       data: { role: 'admin', roleSource: 'sso', idpAccessRevoked: false },
     });
     expect(txMember.create).toHaveBeenCalledTimes(1);
+    expect(db.$transaction).toHaveBeenCalledTimes(2);
+    expect(db.member.update).not.toHaveBeenCalled();
   });
 
   it('rethrows the original P2002 when the re-read finds no row', async () => {
