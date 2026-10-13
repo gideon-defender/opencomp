@@ -14,6 +14,8 @@ beforeEach(() => {
     GIDEON_ENFORCEMENT_TENANTS: '00000000-0000-0000-0000-000000000001',
   };
   delete process.env.GIDEON_ENTITLEMENTS_RECONCILIATION_ENABLED;
+  delete process.env.GIDEON_ENTITLEMENTS_SKIP_PAGING;
+  delete process.env.GIDEON_ENVIRONMENT;
 });
 afterEach(() => {
   process.env = savedEnv;
@@ -24,6 +26,24 @@ it('is disabled by default and requires explicit enablement', () => {
   process.env.GIDEON_ENTITLEMENTS_RECONCILIATION_ENABLED = 'true';
   expect(reconciliationEnabled()).toBe(true);
 });
+
+it('allows an explicit dev paging opt-out without a fake routing key', () => {
+  process.env.GIDEON_ENVIRONMENT = 'dev';
+  process.env.GIDEON_ENTITLEMENTS_SKIP_PAGING = 'true';
+  delete process.env.GIDEON_ENTITLEMENTS_PAGERDUTY_ROUTING_KEY;
+  expect(readReconciliationConfig().pagerDutyKey).toBeUndefined();
+});
+
+it.each(['prod', '', undefined])(
+  'does not permit paging opt-out outside dev (%s)',
+  (environment) => {
+    if (environment === undefined) delete process.env.GIDEON_ENVIRONMENT;
+    else process.env.GIDEON_ENVIRONMENT = environment;
+    process.env.GIDEON_ENTITLEMENTS_SKIP_PAGING = 'true';
+    delete process.env.GIDEON_ENTITLEMENTS_PAGERDUTY_ROUTING_KEY;
+    expect(() => readReconciliationConfig()).toThrow('PagerDuty');
+  },
+);
 
 it('accepts the bootstrap tenant and deduplicates the enforcement allowlist', () => {
   process.env.GIDEON_ENFORCEMENT_TENANTS +=

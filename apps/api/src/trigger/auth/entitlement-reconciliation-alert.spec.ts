@@ -1,6 +1,9 @@
 import { reportReconciliationIncident } from './entitlement-reconciliation-alert';
 const originalFetch = global.fetch;
 const fetchMock = jest.fn();
+jest.mock('@gideon-defender/trigger-local', () => ({
+  logger: { error: jest.fn() },
+}));
 beforeEach(() => {
   fetchMock.mockReset();
   global.fetch = fetchMock;
@@ -15,6 +18,11 @@ const parameters = {
   resolved: false,
   routingKey: 'secret-routing-key',
 };
+
+it('makes no PagerDuty request when validated dev configuration skips paging', async () => {
+  await reportReconciliationIncident({ ...parameters, routingKey: undefined });
+  expect(fetchMock).not.toHaveBeenCalled();
+});
 
 it('triggers a deduplicated critical incident with no user identity or credentials in the summary', async () => {
   fetchMock.mockResolvedValue(new Response('{}', { status: 202 }));

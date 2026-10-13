@@ -206,7 +206,8 @@ GIDEON_OIDC_REDIRECT_URI=""  # e.g. http://localhost:3333/v1/auth/gideon/callbac
 
 Org membership is moving from locally managed roles to IdP-owned
 entitlements: the Gideon identity service decides who holds which role name,
-OpenComp syncs it into `Member.role` at login and enforces it. Permission
+OpenComp syncs it into `Member.role` at login and, when enabled, reconciles it
+between logins. Permission
 _content_ (`packages/auth/src/permissions.ts`) is unchanged — only who _holds_
 a role moves to the IdP.
 
@@ -216,7 +217,8 @@ sessions as before. Nothing changes unless an operator opts a tenant in:
 
 ```env
 # Phase 1 enforcement (comma-separated tenant IDs; unset = audit everywhere).
-# Clearing this is the instant rollback.
+# Removing a tenant stops claim enforcement/reconciliation for that tenant;
+# it does not restore roles or sessions already revoked.
 GIDEON_ENFORCEMENT_TENANTS=""
 # Phase 5 bootstrap gate (deny unknown-tenant setup without a verified IdP
 # `owner` assignment). Enable only after IdP provisioning seeds an owner per
@@ -228,13 +230,46 @@ GIDEON_BOOTSTRAP_ENFORCED=""  # set to "true" to enable
 | ----- | ------ |
 | 0 — Audit + IdP data prep (claim evaluation, `roleSource`/`idpAccessRevoked` columns, conversion inventory) | Shipped |
 | 1 — Enforce + JIT member sync + pilot cutover (`no_role` UX, per-tenant allowlist) | Shipped, allowlisted tenants only |
-| 2 — Nightly reconciliation (revocation between logins) | Not built — revocation lands at next login; sessions live up to `SESSION_TTL_SECONDS` |
+| 2 — Reconciliation every five minutes (revocation between logins) | Implemented; disabled by default pending reader configuration and pilot acceptance |
 | 3 — Lockdown (legacy membership writes return `410 Gone`) | Server fences shipped; UI cleanup pending (invite dialogs still present) |
 | 4 — Deletion of retired endpoints/services | Pending |
 | 5 — Bootstrap + break-glass prerequisites (owner gate, runbooks) | Gate and runbooks shipped; per-tenant IdP owner seeding still required before enabling |
 
+Between-login reconciliation processes only SSO-owned memberships in
+`GIDEON_ENFORCEMENT_TENANTS`. It reads fresh, complete entitlements from Gideon
+Auth's dedicated client-scoped reader, overwrites cached roles, and revokes
+tenant-scoped sessions when no valid role remains. Role changes, session
+deletion, and audit records commit together. Independent HR offboarding fields
+remain unchanged; restoring IdP entitlements cannot reactivate an HR-offboarded
+member. Reader failures retain last-known access and fail the job.
+
+Configure the API/local Trigger worker through the deployment's secret store:
+
+```env
+GIDEON_ENTITLEMENTS_RECONCILIATION_ENABLED=false # enable after reader preflight
+GIDEON_ENTITLEMENTS_READER_URL=https://gideon.dev.gideondefender.com
+GIDEON_ENTITLEMENTS_READ_TOKEN="" # dedicated reader secret; never commit it
+GIDEON_ENTITLEMENTS_PAGERDUTY_ROUTING_KEY="" # required unless dev explicitly opts out
+# Existing GIDEON_OIDC_CLIENT_ID and GIDEON_ENFORCEMENT_TENANTS define the scope.
+```
+
+Gideon Auth must receive the same secret as `ENTITLEMENTS_READ_TOKEN`, with
+`ENTITLEMENTS_READ_CLIENT_ID` pinned to OpenComp's OAuth client ID. Dev may
+explicitly skip PagerDuty using both `GIDEON_ENVIRONMENT=dev` and
+`GIDEON_ENTITLEMENTS_SKIP_PAGING=true`; failures still log and fail the task.
+Other environments require a PagerDuty routing key. Disable future polling with
+`GIDEON_ENTITLEMENTS_RECONCILIATION_ENABLED=false`; this does not undo recorded
+revocations or restore deleted sessions.
+
+**Dev pilot checkpoint (2026-10-12):** the reader is configured for bootstrap
+tenant `00000000-0000-0000-0000-000000000001`, and the protected account's
+`owner` and `admin` entitlements were verified. Reconciliation remains disabled
+until the dev paging opt-out is deployed. The separate Gmail account's live
+grant → login → revoke acceptance test is still pending.
+
 Operator docs: [delivery plan](docs/plans/2026-10-11-idp-owned-user-management.md),
 [entitlements takeover](docs/plans/2026-10-11-oidc-entitlements-takeover.md),
+[reconciliation configuration and acceptance runbook](docs/oidc-entitlement-reconciliation.md),
 [IdP user-management runbook](docs/runbooks/idp-user-management.md).
 Cutover tooling: `scripts/phase0-idp-conversion-inventory.mjs` (read-only
 inventory) and `scripts/phase1-pilot-conversion.mjs` (dry-run by default,

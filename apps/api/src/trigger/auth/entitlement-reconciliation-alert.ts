@@ -1,4 +1,6 @@
-/** PagerDuty Events API v2: configure a service with an on-call escalation. */
+import { logger } from '@gideon-defender/trigger-local';
+
+/** PagerDuty Events API v2; validated dev configuration may explicitly skip it. */
 export async function reportReconciliationIncident({
   tenantId,
   readerHost,
@@ -10,8 +12,16 @@ export async function reportReconciliationIncident({
   readerHost: string;
   failures: number;
   resolved: boolean;
-  routingKey: string;
+  routingKey?: string;
 }): Promise<void> {
+  if (routingKey === undefined) {
+    if (!resolved)
+      logger.error('Reconciliation paging skipped by dev configuration', {
+        tenantId,
+        failures,
+      });
+    return;
+  }
   if (!routingKey.trim())
     throw new Error('Reconciliation paging is not configured');
   const response = await fetch('https://events.pagerduty.com/v2/enqueue', {
