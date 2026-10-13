@@ -11,6 +11,7 @@ export interface EntitlementReconciliationConfig {
   clientId: string;
   pagerDutyKey?: string;
   tenantIds: string[];
+  allTenants?: boolean;
 }
 
 /** Off by default. A rollback stops polling without restoring old grants. */
@@ -19,9 +20,10 @@ export function reconciliationEnabled(): boolean {
 }
 
 export function readReconciliationConfig(): EntitlementReconciliationConfig {
+  const allTenants = process.env.GIDEON_ENFORCEMENT_ALL_TENANTS === 'true';
   const tenantIds = z.array(gideonUuidSchema).parse([
     ...new Set(
-      (process.env.GIDEON_ENFORCEMENT_TENANTS ?? '')
+      (allTenants ? '' : (process.env.GIDEON_ENFORCEMENT_TENANTS ?? ''))
         .split(',')
         .map((value) => value.trim())
         .filter(Boolean),
@@ -65,5 +67,6 @@ export function readReconciliationConfig(): EntitlementReconciliationConfig {
     clientId,
     pagerDutyKey: skipPaging ? undefined : pagerDutyKey,
     tenantIds,
+    allTenants,
   };
 }

@@ -48,6 +48,20 @@ describe('pilot allowlist + bootstrap gates', () => {
     expect(isEnforcementEnabledFor('tenant-1')).toBe(false);
   });
 
+  it('enforces every identified tenant in all-tenant mode without an allowlist', () => {
+    process.env.GIDEON_ENFORCEMENT_ALL_TENANTS = 'true';
+    delete process.env.GIDEON_ENFORCEMENT_TENANTS;
+    expect(isEnforcementEnabledFor('tenant-1')).toBe(true);
+    expect(isEnforcementEnabledFor('new-tenant')).toBe(true);
+    expect(isEnforcementEnabledFor(undefined)).toBe(false);
+  });
+
+  it('requires explicit true for all-tenant mode', () => {
+    process.env.GIDEON_ENFORCEMENT_ALL_TENANTS = 'false';
+    delete process.env.GIDEON_ENFORCEMENT_TENANTS;
+    expect(isEnforcementEnabledFor('tenant-1')).toBe(false);
+  });
+
   it('isBootstrapEnforced defaults off', () => {
     delete process.env.GIDEON_BOOTSTRAP_ENFORCED;
     expect(isBootstrapEnforced()).toBe(false);

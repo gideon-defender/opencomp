@@ -106,10 +106,13 @@ support sessions are GET/HEAD-only and cannot grant ownership.
    proof or Redis failure denies setup; never restore proof from local roles.
 6. Watch `oidc.entitlements.enforce deny/grant` lines for the first denied
    user; triage via runbook 2 above.
-7. Fleet: extend `GIDEON_ENFORCEMENT_TENANTS` tenant by tenant (convert each
-   with steps 1–3 first). Phase 2's nightly job closes the between-login
-   revocation gap (up to 7 days via `SESSION_TTL_SECONDS`); until it ships,
-   revocation lands at next login.
+7. Fleet: convert existing local memberships with steps 1–3 first, then set
+   `GIDEON_ENFORCEMENT_ALL_TENANTS=true`. This overrides the pilot allowlist
+   for login and discovers all organizations for reconciliation every five
+   minutes. Unknown tenants are denied until their OpenComp organization is
+   provisioned; this mode does not enable self-service bootstrap. To return
+   to pilot scope, set the all-tenant flag to false and retain the allowlist.
+   Neither rollback restores revoked roles or sessions.
 
 ## Membership uniqueness migration
 
