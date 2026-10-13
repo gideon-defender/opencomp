@@ -30,6 +30,15 @@ class BatchEmailItemDto {
   @ApiPropertyOptional({ description: 'CC recipients' })
   @IsOptional()
   cc?: string | string[];
+
+  @ApiPropertyOptional({
+    description:
+      'Recipient user id for a tenant-scoped one-click unsubscribe URL. ' +
+      'Without it the legacy email-only link is used.',
+  })
+  @IsOptional()
+  @IsString()
+  userId?: string;
 }
 
 export class SendBatchEmailDto {

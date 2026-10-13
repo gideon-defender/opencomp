@@ -173,6 +173,14 @@ add({
   keyword: 'maxLength',
   value: 2000,
 });
+// Reviewed evolution: EmailPreferencesDto gained optional findingNotifications.
+// Phase 0 baseline has 6 keys; current spec has 7.
+entries.push({
+  tool: 'update-email-preferences',
+  path: '/properties/request/properties/preferences/properties/findingNotifications',
+  before: undefined,
+  after: { type: 'boolean' },
+});
 export const reviewedSchemaDeltas = entries.map((item) => ({
   ...item,
   path: item.path.replace('request//', 'request/'),

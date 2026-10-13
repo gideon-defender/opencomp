@@ -11,6 +11,7 @@ const weeklyTaskDigestQueue = queue({
 
 interface WeeklyTaskDigestPayload {
   email: string;
+  userId?: string;
   userName: string;
   organizationName: string;
   organizationId: string;
@@ -57,9 +58,11 @@ export const sendWeeklyTaskDigestEmailTask = task({
 
       await sendEmailViaApi({
         to: payload.email,
+        userId: payload.userId,
         subject: getTaskCountMessage(payload.tasks.length),
         react: WeeklyTaskDigestEmail({
           email: payload.email,
+          userId: payload.userId,
           userName: payload.userName,
           organizationName: payload.organizationName,
           organizationId: payload.organizationId,

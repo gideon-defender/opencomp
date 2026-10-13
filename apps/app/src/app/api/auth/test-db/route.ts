@@ -26,13 +26,15 @@ export async function GET() {
       },
     });
 
-    // Test creating a simple user
+    // Test creating a simple user (tenant-scoped: owned by the test org)
     const testUser = await db.user.create({
       data: {
         id: `test_user_${Date.now()}`,
         email: `test-db-${Date.now()}@example.com`,
         name: 'DB Test User',
         emailVerified: false,
+        tenantId: testOrg.id,
+        gideonTenantId: testOrg.id,
         members: {
           create: {
             id: `test_member_${Date.now()}`,

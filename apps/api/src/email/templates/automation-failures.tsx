@@ -20,6 +20,8 @@ import { getUnsubscribeUrl } from '@gideon-defender/email';
 interface Props {
   toName: string;
   toEmail: string;
+  /** Recipient user id for a tenant-scoped unsubscribe link. */
+  userId?: string;
   taskTitle: string;
   failedCount: number;
   totalCount: number;
@@ -67,6 +69,7 @@ const copy = {
 export const AutomationFailuresEmail = ({
   toName,
   toEmail,
+  userId,
   taskTitle,
   failedCount,
   totalCount,
@@ -77,7 +80,7 @@ export const AutomationFailuresEmail = ({
 }: Props) => {
   const t = copy[locale];
 
-  const unsubscribeUrl = getUnsubscribeUrl(toEmail);
+  const unsubscribeUrl = getUnsubscribeUrl(toEmail, userId);
 
   return (
     <Html lang={locale}>

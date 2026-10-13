@@ -372,6 +372,7 @@ describe('PeopleController', () => {
         unassignedItemsNotifications: false,
         taskMentions: true,
         taskAssignments: true,
+        findingNotifications: true,
       };
       mockPeopleService.updateEmailPreferences.mockResolvedValue({
         success: true,
@@ -403,6 +404,7 @@ describe('PeopleController', () => {
             unassignedItemsNotifications: true,
             taskMentions: true,
             taskAssignments: true,
+            findingNotifications: true,
           },
         }),
       ).rejects.toThrow(BadRequestException);

@@ -52,6 +52,7 @@ export const createMockUser = (overrides?: Partial<User>): User => ({
   banExpires: null,
   gideonSub: null,
   gideonTenantId: null,
+  tenantId: 'org_test123',
   ...overrides,
 });
 

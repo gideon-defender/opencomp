@@ -1,20 +1,33 @@
 'use client';
 
-import { Button, Checkbox, HStack, Section, Stack, Text } from '@trycompai/design-system';
+import { Button } from '@gideon-defender/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@gideon-defender/ui/card';
+import { Checkbox } from '@gideon-defender/ui/checkbox';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Lock } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
+import { z } from 'zod';
 import { useEmailPreferences } from '../hooks/useEmailPreferences';
 
-interface EmailPreferences {
-  policyNotifications: boolean;
-  taskReminders: boolean;
-  weeklyTaskDigest: boolean;
-  unassignedItemsNotifications: boolean;
-  taskMentions: boolean;
-  taskAssignments: boolean;
-}
+const emailPreferencesSchema = z.object({
+  policyNotifications: z.boolean(),
+  taskReminders: z.boolean(),
+  weeklyTaskDigest: z.boolean(),
+  unassignedItemsNotifications: z.boolean(),
+  taskMentions: z.boolean(),
+  taskAssignments: z.boolean(),
+  findingNotifications: z.boolean(),
+});
+
+type EmailPreferences = z.infer<typeof emailPreferencesSchema>;
 
 interface RoleNotifications {
   policyNotifications: boolean;
@@ -44,6 +57,7 @@ const NOTIFICATION_ITEMS: NotificationItem[] = [
   { key: 'unassignedItemsNotifications' },
   { key: 'taskMentions', roleKey: 'taskMentions' },
   { key: 'taskAssignments', roleKey: 'taskAssignments' },
+  { key: 'findingNotifications', roleKey: 'findingNotifications' },
 ];
 
 type SettingsTranslator = ReturnType<typeof useTranslations<'settings'>>;
@@ -62,6 +76,8 @@ function itemLabel(t: SettingsTranslator, item: NotificationItem): string {
       return t('emailPrefs.items.taskMentions.label');
     case 'taskAssignments':
       return t('emailPrefs.items.taskAssignments.label');
+    case 'findingNotifications':
+      return t('emailPrefs.items.findingNotifications.label');
   }
 }
 
@@ -79,6 +95,8 @@ function itemDescription(t: SettingsTranslator, item: NotificationItem): string 
       return t('emailPrefs.items.taskMentions.description');
     case 'taskAssignments':
       return t('emailPrefs.items.taskAssignments.description');
+    case 'findingNotifications':
+      return t('emailPrefs.items.findingNotifications.description');
   }
 }
 
@@ -90,37 +108,37 @@ export function EmailNotificationPreferences({
 }: Props) {
   const t = useTranslations('settings');
   const { savePreferences } = useEmailPreferences({ initialPreferences });
-  const [preferences, setPreferences] = useState<EmailPreferences>(initialPreferences);
-  const [saving, setSaving] = useState(false);
-
-  const handleToggle = (key: keyof EmailPreferences, checked: boolean) => {
-    setPreferences((prev) => ({
-      ...prev,
-      [key]: checked,
-    }));
-  };
+  const {
+    control,
+    reset,
+    handleSubmit,
+    formState: { isSubmitting },
+  } = useForm<EmailPreferences>({
+    resolver: zodResolver(emailPreferencesSchema),
+    defaultValues: initialPreferences,
+  });
+  const preferences = useWatch({ control });
 
   const handleSelectAll = () => {
     const allEnabled = Object.values(preferences).every((v) => v === true);
-    setPreferences({
+    reset({
       policyNotifications: !allEnabled,
       taskReminders: !allEnabled,
       weeklyTaskDigest: !allEnabled,
       unassignedItemsNotifications: !allEnabled,
       taskMentions: !allEnabled,
       taskAssignments: !allEnabled,
+      findingNotifications: !allEnabled,
     });
   };
 
-  const handleSave = async () => {
-    setSaving(true);
+  const handleSave = async (values: EmailPreferences) => {
+    if (!isAdminOrOwner) return;
     try {
-      await savePreferences(preferences);
+      await savePreferences(values);
       toast.success(t('emailPrefs.savedToast'));
     } catch {
       toast.error(t('emailPrefs.saveFailedToast'));
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -131,89 +149,91 @@ export function EmailNotificationPreferences({
     return true; // Non-admin users can't change role-controlled notifications
   };
 
-  // Get effective checked state considering role settings
-  const isChecked = (item: NotificationItem): boolean => {
-    if (!isAdminOrOwner && roleNotifications && item.roleKey) {
-      return roleNotifications[item.roleKey];
-    }
-    return preferences[item.key];
-  };
-
   const description = isAdminOrOwner
     ? t('emailPrefs.descriptionAdmin', { email })
     : t('emailPrefs.descriptionMember', { email });
 
   return (
-    <Section
-      title={t('emailPrefs.title')}
-      description={description}
-      actions={
-        isAdminOrOwner ? (
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? t('emailPrefs.saving') : t('emailPrefs.save')}
-          </Button>
-        ) : undefined
-      }
-    >
-      <Stack>
-        {isAdminOrOwner && (
-          <HStack align="center" justify="between">
-            <div>
-              <Text size="base" weight="medium">
-                {t('emailPrefs.enableAll')}
-              </Text>
-              <Text size="sm" variant="muted">
-                {t('emailPrefs.toggleAllHint')}
-              </Text>
-            </div>
-            <Button onClick={handleSelectAll} variant="outline" size="sm">
-              {Object.values(preferences).every((v) => v === true)
-                ? t('emailPrefs.disableAll')
-                : t('emailPrefs.enableAll')}
+    <form onSubmit={handleSubmit(handleSave)}>
+      <Card>
+        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 space-y-1">
+            <CardTitle>{t('emailPrefs.title')}</CardTitle>
+            <CardDescription className="break-words">{description}</CardDescription>
+          </div>
+          {isAdminOrOwner && (
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? t('emailPrefs.saving') : t('emailPrefs.save')}
             </Button>
-          </HStack>
-        )}
-
-        <Stack>
-          {NOTIFICATION_ITEMS.map((item) => {
-            const locked = isLocked(item);
-            const checked = isChecked(item);
-
-            return (
-              <label
-                key={item.key}
-                className={`flex items-start gap-4 rounded-lg border p-4 transition-colors ${
-                  locked ? 'opacity-60 cursor-default' : 'cursor-pointer hover:bg-muted/50'
-                }`}
-              >
-                <Checkbox
-                  checked={checked}
-                  onCheckedChange={locked ? undefined : (c) => handleToggle(item.key, c === true)}
-                  disabled={locked}
-                />
-                <div className="flex-1 min-w-0">
-                  <HStack align="center" gap="xs">
-                    <Text weight="medium">{itemLabel(t, item)}</Text>
-                    {locked && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
-                  </HStack>
-                  <Text size="sm" variant="muted">
-                    {itemDescription(t, item)}
-                  </Text>
-                  {locked && (
-                    <Text size="xs" variant="muted">
-                      {t('emailPrefs.managedByAdmin')}
-                    </Text>
-                  )}
-                </div>
-              </label>
-            );
-          })}
-        </Stack>
-
-        <Text size="xs" variant="muted">
-          {isAdminOrOwner ? t('emailPrefs.footerAdmin') : t('emailPrefs.footerMember')}
-        </Text>
-      </Stack>
-    </Section>
+          )}
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {isAdminOrOwner && (
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-medium">{t('emailPrefs.enableAll')}</p>
+                <p className="text-sm text-muted-foreground">{t('emailPrefs.toggleAllHint')}</p>
+              </div>
+              <Button type="button" onClick={handleSelectAll} variant="outline" size="sm">
+                {Object.values(preferences).every((v) => v === true)
+                  ? t('emailPrefs.disableAll')
+                  : t('emailPrefs.enableAll')}
+              </Button>
+            </div>
+          )}
+          <div className="space-y-3">
+            {NOTIFICATION_ITEMS.map((item) => {
+              const locked = isLocked(item);
+              const id = `email-preference-${item.key}`;
+              return (
+                <label
+                  key={item.key}
+                  htmlFor={id}
+                  className={`flex items-start gap-4 rounded-lg border p-4 transition-colors ${
+                    locked ? 'cursor-default opacity-60' : 'cursor-pointer hover:bg-muted/50'
+                  }`}
+                >
+                  <Controller
+                    name={item.key}
+                    control={control}
+                    render={({ field }) => (
+                      <Checkbox
+                        id={id}
+                        name={field.name}
+                        ref={field.ref}
+                        onBlur={field.onBlur}
+                        checked={
+                          locked && roleNotifications && item.roleKey
+                            ? roleNotifications[item.roleKey]
+                            : field.value
+                        }
+                        onCheckedChange={(checked) => field.onChange(checked === true)}
+                        disabled={locked}
+                        aria-label={itemLabel(t, item)}
+                      />
+                    )}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{itemLabel(t, item)}</span>
+                      {locked && <Lock className="h-3.5 w-3.5 shrink-0" />}
+                    </div>
+                    <p className="text-sm text-muted-foreground">{itemDescription(t, item)}</p>
+                    {locked && (
+                      <p className="text-xs text-muted-foreground">
+                        {t('emailPrefs.managedByAdmin')}
+                      </p>
+                    )}
+                  </div>
+                </label>
+              );
+            })}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {isAdminOrOwner ? t('emailPrefs.footerAdmin') : t('emailPrefs.footerMember')}
+          </p>
+        </CardContent>
+      </Card>
+    </form>
   );
 }

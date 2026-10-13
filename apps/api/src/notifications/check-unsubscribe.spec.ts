@@ -20,16 +20,19 @@ function createMockDb(overrides?: {
     findingNotifications: boolean;
   }[];
 }) {
+  const resolvedUser =
+    overrides?.user === undefined
+      ? {
+          emailNotificationsUnsubscribed: false,
+          emailPreferences: null,
+        }
+      : overrides.user;
   return {
     user: {
-      findUnique: jest.fn().mockResolvedValue(
-        overrides?.user === undefined
-          ? {
-              emailNotificationsUnsubscribed: false,
-              emailPreferences: null,
-            }
-          : overrides.user,
-      ),
+      findUnique: jest.fn().mockResolvedValue(resolvedUser),
+      // Tenant-scoped implementation uses findMany only for callers without
+      // org context: mirror the single-account fixture there.
+      findMany: jest.fn().mockResolvedValue(resolvedUser ? [resolvedUser] : []),
     },
     member: {
       findMany: jest.fn().mockResolvedValue(overrides?.members ?? []),
@@ -456,6 +459,12 @@ describe('isUserUnsubscribed', () => {
             emailNotificationsUnsubscribed: false,
             emailPreferences: { taskReminders: false },
           }),
+          findMany: jest.fn().mockResolvedValue([
+            {
+              emailNotificationsUnsubscribed: false,
+              emailPreferences: { taskReminders: false },
+            },
+          ]),
         },
       };
 
@@ -482,6 +491,34 @@ describe('isUserUnsubscribed', () => {
       );
 
       expect(result).toBe(false);
+    });
+
+    it('resolves the tenant composite key so another tenant’s account never matches', async () => {
+      const db = createMockDb();
+      await isUserUnsubscribed(db, email, 'taskReminders', orgId);
+      expect(db.user.findUnique).toHaveBeenCalledWith({
+        where: {
+          tenantId_email: {
+            tenantId: orgId,
+            email: email.trim().toLowerCase(),
+          },
+        },
+        select: {
+          emailNotificationsUnsubscribed: true,
+          emailPreferences: true,
+        },
+      });
+    });
+
+    it('fails open without org context when several accounts share the address', async () => {
+      const db = createMockDb();
+      db.user.findMany.mockResolvedValue([
+        { emailNotificationsUnsubscribed: true, emailPreferences: null },
+        { emailNotificationsUnsubscribed: false, emailPreferences: null },
+      ]);
+      await expect(
+        isUserUnsubscribed(db, email, 'taskReminders'),
+      ).resolves.toBe(false);
     });
 
     it('should handle emailPreferences that is not an object', async () => {

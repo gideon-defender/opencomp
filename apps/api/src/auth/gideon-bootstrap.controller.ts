@@ -36,18 +36,29 @@ export class GideonBootstrapController {
     }
     const user = await db.user.findUnique({
       where: { id: request.userId },
-      select: { gideonTenantId: true },
+      select: { tenantId: true, gideonTenantId: true },
     });
-    if (!user?.gideonTenantId) {
+    const tenantId = user?.tenantId ?? user?.gideonTenantId;
+    if (!user || !tenantId) {
       throw new ForbiddenException(
         'Sign in with Gideon before creating an organization.',
       );
     }
+    if (!user.tenantId) {
+      // Expand-window row predating the tenant backfill: claim the legacy
+      // login stamp (backfill rule 3c) instead of blocking setup until the
+      // next login. Post-contract rows are never null, so this write runs
+      // only inside the window.
+      await db.user.update({
+        where: { id: request.userId },
+        data: { tenantId },
+      });
+    }
     await authorizeBootstrapSession({
       sessionId: request.sessionId,
       userId: request.userId,
-      tenantId: user.gideonTenantId,
+      tenantId,
     });
-    return { tenantId: user.gideonTenantId };
+    return { tenantId };
   }
 }

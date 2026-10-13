@@ -34,6 +34,16 @@ jest.mock('../redis/redis.client', () => ({
 }));
 
 const mockUserFindFirst = jest.fn();
+const mockUserFindMany = jest.fn();
+// Expand-window fallbacks query tenant-blind candidates via findMany.
+// Default to no candidates (clearAllMocks preserves implementations).
+mockUserFindMany.mockResolvedValue([]);
+// Expand-window fallbacks run a nulls-first raw lookup ($queryRaw).
+// Default to no candidates, same as above.
+const mockQueryRaw = jest.fn();
+mockQueryRaw.mockResolvedValue([]);
+const mockUserFindUnique = jest.fn();
+const mockUserCreate = jest.fn();
 const mockUserUpdate = jest.fn();
 const mockMemberFindFirst = jest.fn();
 const mockMemberUpdateMany = jest.fn();
@@ -45,9 +55,13 @@ const mockTxFindFirst = jest.fn();
 const mockTxUpdate = jest.fn();
 const mockTxCreate = jest.fn();
 jest.mock('@db', () => ({
+  normalizeEmail: jest.requireActual('@gideon-defender/email').normalizeEmail,
   db: {
     user: {
       findFirst: (...args: unknown[]) => mockUserFindFirst(...args),
+      findMany: (...args: unknown[]) => mockUserFindMany(...args),
+      findUnique: (...args: unknown[]) => mockUserFindUnique(...args),
+      create: (...args: unknown[]) => mockUserCreate(...args),
       update: (...args: unknown[]) => mockUserUpdate(...args),
     },
     member: {
@@ -64,6 +78,7 @@ jest.mock('@db', () => ({
       create: (...args: unknown[]) => mockSessionCreate(...args),
     },
     $transaction: (...args: unknown[]) => mockTransaction(...args),
+    $queryRaw: (...args: unknown[]) => mockQueryRaw(...args),
   },
 }));
 
@@ -123,11 +138,13 @@ describe('GideonOidcService Phase 1 enforcement (pilot tenant)', () => {
         },
       }),
     );
+    mockUserFindUnique.mockResolvedValue(null);
     mockUserFindFirst.mockResolvedValue({
       id: 'usr_1',
       email: 'ada@example.com',
       gideonSub: null,
       banned: false,
+      tenantId: 'tenant-1',
     });
     mockUserUpdate.mockResolvedValue({ id: 'usr_1' });
     mockOrgFindUnique.mockResolvedValue({ id: 'tenant-1' });
@@ -281,6 +298,13 @@ describe('GideonOidcService Phase 1 enforcement (pilot tenant)', () => {
       process.env.GIDEON_ENFORCEMENT_ALL_TENANTS = String(allTenants);
       mockExchange({ claims: { sub: 'sub-1' }, tid: 'tenant-9' });
       mockOrgFindUnique.mockResolvedValue({ id: 'tenant-9' });
+      mockUserFindFirst.mockResolvedValue({
+        id: 'usr_1',
+        email: 'ada@example.com',
+        gideonSub: null,
+        banned: false,
+        tenantId: 'tenant-9',
+      });
       if (allTenants) {
         await expect(
           service.handleCallback({ callbackUrl: CALLBACK_URL }),

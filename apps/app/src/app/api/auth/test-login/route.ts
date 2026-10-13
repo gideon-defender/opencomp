@@ -66,9 +66,14 @@ async function handleLogin(request: NextRequest) {
     return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
   }
 
-  // For E2E tests, always start with a clean user state.
+  // For E2E tests, always start with a clean user state (tenant-scoped:
+  // only this test tenant's account is removed, never another tenant's
+  // same-email account).
+  const normalizedTestEmail = email.trim().toLowerCase();
   try {
-    await db.user.deleteMany({ where: { email } });
+    await db.user.deleteMany({
+      where: { tenantId, email: { equals: normalizedTestEmail, mode: 'insensitive' } },
+    });
   } catch (err) {
     console.error('[TEST-LOGIN] Error deleting existing user:', err);
     return NextResponse.json(
@@ -81,9 +86,11 @@ async function handleLogin(request: NextRequest) {
   try {
     user = await db.user.create({
       data: {
-        email,
+        email: normalizedTestEmail,
         name,
         emailVerified: true,
+        tenantId,
+        gideonTenantId: tenantId,
       },
     });
   } catch (err) {

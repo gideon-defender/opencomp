@@ -1,5 +1,10 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsNotEmptyObject, ValidateNested } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsBoolean,
+  IsNotEmptyObject,
+  ValidateIf,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 class EmailPreferencesDto {
@@ -26,6 +31,11 @@ class EmailPreferencesDto {
   @ApiProperty({ example: true })
   @IsBoolean()
   taskAssignments: boolean;
+
+  @ApiPropertyOptional({ example: true })
+  @ValidateIf((_object: unknown, value: unknown) => value !== undefined)
+  @IsBoolean()
+  findingNotifications?: boolean;
 }
 
 export class UpdateEmailPreferencesDto {

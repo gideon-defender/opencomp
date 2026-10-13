@@ -25,6 +25,8 @@ interface TaskItem {
 interface Props {
   toName: string;
   toEmail: string;
+  /** Recipient user id for a tenant-scoped unsubscribe link. */
+  userId?: string;
   taskCount: number;
   submittedByName: string;
   organizationName: string;
@@ -69,6 +71,7 @@ const copy = {
 export const EvidenceBulkReviewRequestedEmail = ({
   toName,
   toEmail,
+  userId,
   taskCount,
   submittedByName,
   organizationName,
@@ -78,7 +81,7 @@ export const EvidenceBulkReviewRequestedEmail = ({
 }: Props) => {
   const t = copy[locale];
 
-  const unsubscribeUrl = getUnsubscribeUrl(toEmail);
+  const unsubscribeUrl = getUnsubscribeUrl(toEmail, userId);
   const taskText = taskCount === 1 ? t.task : t.tasks;
 
   return (

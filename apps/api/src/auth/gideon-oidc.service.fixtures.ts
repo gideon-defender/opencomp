@@ -32,6 +32,14 @@ export const mockRedisGet = jest.fn();
 
 export const mockUserFindUnique = jest.fn();
 export const mockUserFindFirst = jest.fn();
+// Expand-window fallbacks run a nulls-first raw lookup ($queryRaw) with an
+// in-code ownership pick. Default to no candidates: clearAllMocks (used by
+// every spec here) preserves implementations, so this survives as the
+// default and individual tests override with Once values as needed.
+export const mockUserFindMany = jest.fn();
+mockUserFindMany.mockResolvedValue([]);
+export const mockQueryRaw = jest.fn();
+mockQueryRaw.mockResolvedValue([]);
 export const mockUserCreate = jest.fn();
 export const mockUserUpdate = jest.fn();
 export const mockOrgFindFirst = jest.fn();
@@ -49,13 +57,22 @@ export const ENV = {
 };
 
 export function mockSuccessfulExchange() {
+  const b64 = (o: unknown) =>
+    Buffer.from(JSON.stringify(o)).toString('base64url');
+  // Tenant-scoped login: the access token carries the tenant (== org id) so
+  // provisioning can assign immutable ownership. Tests that need a different
+  // tenant override the grant afterwards (see the tenant-stamp test).
+  const accessToken = `${b64({ alg: 'RS256', kid: 'k1' })}.${b64({
+    sub: 'gideon-sub-1',
+    tid: 'org_1',
+  })}.sig`;
   mockRedisGetdel.mockResolvedValue({
     codeVerifier: 'verifier-123',
     nonce: 'nonce-123',
     redirectTo: '/risks',
   });
   mockAuthorizationCodeGrant.mockResolvedValue({
-    access_token: 'access-1',
+    access_token: accessToken,
     refresh_token: 'refresh-1',
     claims: () => ({ sub: 'gideon-sub-1' }),
   });
@@ -66,6 +83,11 @@ export function mockSuccessfulExchange() {
     name: 'Ada',
   });
   mockOrgFindFirst.mockResolvedValue({ id: 'org_1' });
+  mockOrgFindUnique.mockResolvedValue({ id: 'org_1' });
+  mockMemberFindFirst.mockResolvedValue({ id: 'mem_1' });
+  mockUserFindUnique.mockResolvedValue(null);
+  mockUserFindMany.mockResolvedValue([]);
+  mockQueryRaw.mockResolvedValue([]);
   mockSessionCreate.mockResolvedValue({
     token: 'ses-token',
     expiresAt: new Date('2026-09-22T00:00:00Z'),

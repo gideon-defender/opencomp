@@ -1,8 +1,5 @@
 import '../config/load-env';
-import {
-  ChangeEmailConfirmationEmail,
-  VerifyEmail,
-} from '@gideon-defender/email';
+import { VerifyEmail } from '@gideon-defender/email';
 import { triggerEmail } from '../email/trigger-email';
 import { serviceDb } from '@db';
 import { betterAuth } from 'better-auth';
@@ -145,6 +142,7 @@ export const auth = betterAuth({
       }
       await triggerEmail({
         to: user.email,
+        userId: user.id,
         subject: 'Verify your email for OpenComp',
         react: VerifyEmail({ email: user.email, url }),
       });
@@ -240,21 +238,12 @@ export const auth = betterAuth({
   user: {
     modelName: 'User',
     changeEmail: {
-      enabled: true,
-      // Double opt-in: this link goes to the CURRENT address; confirming it
-      // makes better-auth send a verification link to the NEW address (via
-      // emailVerification.sendVerificationEmail), which applies the change.
-      sendChangeEmailConfirmation: async ({ user, newEmail, url }) => {
-        await triggerEmail({
-          to: user.email,
-          subject: 'Confirm your email change for OpenComp',
-          react: ChangeEmailConfirmationEmail({
-            currentEmail: user.email,
-            newEmail,
-            url,
-          }),
-        });
-      },
+      // Disabled: Gideon is the sole identity owner and login emails are
+      // tenant-scoped (UNIQUE("tenantId", email)). Better Auth's change-email
+      // flow is email-global (lookup by email alone) and would bypass tenant
+      // scoping. Email changes arrive via IdP sync/login; the tenant-scoped
+      // admin validator (validateLoginEmailChange) covers operator renames.
+      enabled: false,
     },
   },
   organization: {

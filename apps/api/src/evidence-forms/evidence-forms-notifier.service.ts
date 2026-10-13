@@ -67,6 +67,7 @@ export class EvidenceFormsNotifierService {
       recipients.map((recipient) =>
         this.sendToRecipient({
           recipient,
+          organizationId,
           locale: emailLocale,
           organizationName,
           submitterName,
@@ -81,6 +82,7 @@ export class EvidenceFormsNotifierService {
 
   private async sendToRecipient(params: {
     recipient: Recipient;
+    organizationId: string;
     organizationName: string;
     submitterName: string;
     reviewUrl: string;
@@ -89,11 +91,22 @@ export class EvidenceFormsNotifierService {
     reasonForRequest: string;
     locale?: EmailLocale;
   }): Promise<void> {
-    const { recipient, submitterName, organizationName, reviewUrl } = params;
+    const {
+      recipient,
+      organizationId,
+      submitterName,
+      organizationName,
+      reviewUrl,
+    } = params;
     const emailLocale = resolveEmailLocale(params.locale);
 
     try {
-      const isUnsubscribed = await isUserUnsubscribed(db, recipient.email);
+      const isUnsubscribed = await isUserUnsubscribed(
+        db,
+        recipient.email,
+        undefined,
+        organizationId,
+      );
       if (isUnsubscribed) {
         this.logger.log(
           `Skipping access request notification: ${recipient.email} unsubscribed`,
@@ -102,7 +115,9 @@ export class EvidenceFormsNotifierService {
       }
 
       await triggerEmail({
+        organizationId: organizationId,
         to: recipient.email,
+        userId: recipient.userId,
         subject:
           emailLocale === 'es'
             ? `Nueva solicitud de acceso de ${submitterName}`
@@ -111,6 +126,7 @@ export class EvidenceFormsNotifierService {
           locale: emailLocale,
           toName: recipient.name,
           toEmail: recipient.email,
+          userId: recipient.userId,
           organizationName,
           requesterName: submitterName,
           accountsNeeded: params.accountsNeeded,

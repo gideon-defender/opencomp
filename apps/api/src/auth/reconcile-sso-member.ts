@@ -1,4 +1,6 @@
-import { serviceDb } from '@db';
+import { serviceDb, normalizeEmail } from '@db';
+import { findLegacySharedUser } from './legacy-shared-user';
+import { lookupGideonTenantIdentity } from './gideon-tenant-identity';
 import type { EntitlementReconciliationConfig } from './entitlement-reconciliation-config';
 import { fetchEntitlementSnapshot } from './entitlement-snapshot';
 import { parseEntitlementsClaim } from './gideon-oidc-entitlements';
@@ -22,25 +24,62 @@ export async function reconcileSsoMember({
       const member = await tx.member.findFirst({
         where: { id: memberId, organizationId: tenantId, roleSource: 'sso' },
         include: {
-          user: { select: { gideonSub: true, gideonTenantId: true } },
+          user: { select: { gideonSub: true, tenantId: true, email: true } },
         },
       });
       if (!member) return 'skipped';
-      const subject = member.user.gideonSub;
-      if (
-        !subject ||
-        (member.user.gideonTenantId && member.user.gideonTenantId !== tenantId)
-      ) {
+      let subject = member.user.gideonSub;
+      let identityMissing = false;
+      if (!subject) {
         throw new Error(
           'SSO membership has no valid tenant-linked IdP subject',
         );
       }
-      // Fetch after acquiring the lock, not from a stale pre-lock inventory.
-      const snapshot = await fetchEntitlementSnapshot({
-        config,
-        tenantId,
-        subject,
-      });
+      if (!member.user.tenantId) {
+        // Expand-window row written by old code before the tenant backfill:
+        // the reconciled tenant claims ownership instead of this member
+        // failing. Post-contract rows are never null. A P2002 means another
+        // row already holds this tenant+email, so surface a descriptive
+        // conflict for the operator instead of leaking raw Prisma.
+        try {
+          await tx.user.update({
+            where: { id: member.userId },
+            data: { tenantId },
+          });
+        } catch (error) {
+          if ((error as { code?: string }).code !== 'P2002') throw error;
+          throw new Error(
+            `SSO reconciliation ownership claim for member ${memberId} conflicts within tenant ${tenantId}; merge or delete the duplicate and retry`,
+          );
+        }
+      } else if (member.user.tenantId !== tenantId) {
+        const shared = await findLegacySharedUser({
+          tenantId,
+          normalizedEmail: normalizeEmail(member.user.email),
+          sub: subject,
+          client: tx,
+        });
+        if (shared?.id !== member.userId) {
+          throw new Error(
+            'SSO membership has no valid tenant-linked IdP subject',
+          );
+        }
+        const identity = await lookupGideonTenantIdentity({
+          tenantId,
+          email: member.user.email,
+        });
+        identityMissing = identity === null;
+        if (identity) subject = identity.id;
+      }
+      // A complete tenant lookup with no identity revokes the old membership.
+      // Transport or validation errors throw and retain the last-known state.
+      const snapshot = identityMissing
+        ? {
+            entitlements: [],
+            observed_at: new Date().toISOString(),
+            user_status: 'deleted',
+          }
+        : await fetchEntitlementSnapshot({ config, tenantId, subject });
       const { roles, valid } = await readSsoEntitlementRoles({
         tx,
         tenantId,

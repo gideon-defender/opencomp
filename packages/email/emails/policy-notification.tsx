@@ -18,6 +18,8 @@ import { getUnsubscribeUrl } from '../lib/unsubscribe';
 
 interface Props {
   email: string;
+  /** Recipient user id for a tenant-scoped unsubscribe link. */
+  userId?: string;
   userName: string;
   policyName: string;
   organizationName: string;
@@ -63,6 +65,7 @@ const copy: Record<
 
 export const PolicyNotificationEmail = ({
   email,
+  userId,
   userName,
   policyName,
   organizationName,
@@ -144,7 +147,7 @@ export const PolicyNotificationEmail = ({
 
             <UnsubscribeLink
               email={email}
-              unsubscribeUrl={getUnsubscribeUrl(email)}
+              unsubscribeUrl={getUnsubscribeUrl(email, userId)}
               locale={locale}
             />
 

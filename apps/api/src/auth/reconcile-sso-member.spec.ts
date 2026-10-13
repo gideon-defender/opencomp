@@ -1,3 +1,7 @@
+jest.mock('./legacy-shared-user', () => ({
+  findLegacySharedUser: jest.fn().mockResolvedValue(undefined),
+}));
+
 import { reconcileSsoMember } from './reconcile-sso-member';
 import { NativeSessionService } from './native-session.service';
 import { HybridSessionAuth } from './hybrid-session-auth';
@@ -7,6 +11,7 @@ const mockFindMember = jest.fn();
 const mockFindSession = jest.fn();
 const mockSnapshot = jest.fn();
 jest.mock('@db', () => ({
+  normalizeEmail: (value: string) => value.trim().toLowerCase(),
   serviceDb: {
     $transaction: (...args: unknown[]) => mockTransaction(...args),
   },
@@ -55,7 +60,8 @@ const initialMember = () => ({
   offboardDate: null,
   user: {
     gideonSub: '67dc2bb3-7728-4dc5-b945-074aa1c118ef',
-    gideonTenantId: tenantId,
+    tenantId,
+    email: 'shared@example.com',
   },
 });
 let member = initialMember();
@@ -69,6 +75,7 @@ const tx = {
   organizationRole: { findMany: jest.fn() },
   session: { deleteMany: jest.fn() },
   auditLog: { create: jest.fn() },
+  user: { update: jest.fn() },
 };
 
 beforeEach(() => {
@@ -282,7 +289,7 @@ it('skips a membership changed to local ownership while the inventory was being 
 });
 
 it('rejects a foreign subject link and non-enabled tenant without changing access', async () => {
-  member.user.gideonTenantId = 'foreign-tenant';
+  member.user.tenantId = 'foreign-tenant';
   await expect(reconcile()).rejects.toThrow('tenant-linked');
   expect(mockSnapshot).not.toHaveBeenCalled();
   await expect(

@@ -1,5 +1,5 @@
-import { ConflictException, Logger } from '@nestjs/common';
-import { db } from '@db';
+import { ConflictException, Logger, ForbiddenException } from '@nestjs/common';
+import { db, normalizeEmail } from '@db';
 import { triggerEmail } from '../../email/trigger-email';
 import { resolveEmailLocale, type EmailLocale } from '../../email/locale';
 import { LoginEmailChangedEmail } from '../../email/templates/login-email-changed';
@@ -9,35 +9,42 @@ export interface LoginEmailChange {
   newEmail: string;
 }
 
-/**
- * Validates an admin-initiated login email change for a member.
- *
- * Returns the normalized change to apply, or null when the requested email
- * is already the member's login email (no-op). Throws ConflictException when
- * the email belongs to another account, or when the target user also belongs
- * to other organizations (a login email is global, so one org's admin must
- * not change it for a user shared with other orgs — that user can change it
- * themselves from Settings → User).
- */
+/** Tenant ownership does not separate legacy memberships until the contract split. */
 export async function validateLoginEmailChange(params: {
   userId: string;
   organizationId: string;
   requestedEmail: string;
 }): Promise<LoginEmailChange | null> {
   const { userId, organizationId, requestedEmail } = params;
-  const newEmail = requestedEmail.trim().toLowerCase();
+  const newEmail = normalizeEmail(requestedEmail);
 
   const user = await db.user.findUniqueOrThrow({
     where: { id: userId },
-    select: { email: true },
+    select: { email: true, tenantId: true },
   });
 
-  if (user.email.toLowerCase() === newEmail) {
+  if (normalizeEmail(user.email) === newEmail) {
     return null;
+  }
+
+  if (user.tenantId !== organizationId) {
+    throw new ForbiddenException(
+      'This member belongs to a different organization and cannot be renamed from here.',
+    );
+  }
+
+  const otherMemberships = await db.member.count({
+    where: { userId, organizationId: { not: organizationId } },
+  });
+  if (otherMemberships > 0) {
+    throw new ConflictException(
+      'This account still belongs to other organizations and cannot be renamed until tenant migration completes.',
+    );
   }
 
   const emailTaken = await db.user.findFirst({
     where: {
+      tenantId: user.tenantId,
       email: { equals: newEmail, mode: 'insensitive' },
       id: { not: userId },
     },
@@ -45,21 +52,7 @@ export async function validateLoginEmailChange(params: {
   });
   if (emailTaken) {
     throw new ConflictException(
-      'That email is already used by another account',
-    );
-  }
-
-  const otherOrgMemberships = await db.member.count({
-    where: {
-      userId,
-      organizationId: { not: organizationId },
-      isActive: true,
-      deactivated: false,
-    },
-  });
-  if (otherOrgMemberships > 0) {
-    throw new ConflictException(
-      'This member also belongs to other organizations, so their login email cannot be changed from here. They can change it themselves under Settings → User.',
+      'That email is already used by another account in this organization',
     );
   }
 
@@ -72,11 +65,12 @@ export async function validateLoginEmailChange(params: {
  */
 export async function notifyLoginEmailChanged(params: {
   organizationId: string;
+  memberId: string;
   change: LoginEmailChange;
   logger: Logger;
   locale?: EmailLocale;
 }): Promise<void> {
-  const { organizationId, change, logger } = params;
+  const { organizationId, memberId, change, logger } = params;
   const emailLocale = resolveEmailLocale(params.locale);
 
   try {
@@ -88,6 +82,10 @@ export async function notifyLoginEmailChanged(params: {
     await Promise.all(
       [change.oldEmail, change.newEmail].map((to) =>
         triggerEmail({
+          // No userId: the old-address link must stay verifiable after the
+          // rename, but a user-scoped token binds the current email and
+          // would 400 for the old address. The legacy email-only token
+          // verifies either address.
           to,
           subject:
             emailLocale === 'es'
@@ -103,8 +101,9 @@ export async function notifyLoginEmailChanged(params: {
       ),
     );
   } catch (error) {
+    // Log ids only — raw emails are PII and must not reach server logs.
     logger.error(
-      `Failed to send login email change notifications (${change.oldEmail} -> ${change.newEmail}):`,
+      `Failed to send login email change notifications (member ${memberId} in org ${organizationId}):`,
       error,
     );
   }

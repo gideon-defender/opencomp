@@ -137,7 +137,9 @@ export class TaskItemAssignmentNotifierService {
       // Send email notification via Resend
       try {
         const { id } = await triggerEmail({
+          organizationId: organizationId,
           to: assigneeUser.email,
+          userId: assigneeUser.id,
           subject:
             emailLocale === 'es'
               ? `Se te asignó una tarea: ${taskTitle}`
@@ -146,6 +148,7 @@ export class TaskItemAssignmentNotifierService {
             locale: emailLocale,
             toName: assigneeName,
             toEmail: assigneeUser.email,
+            userId: assigneeUser.id,
             taskTitle,
             assignedByName,
             organizationName,

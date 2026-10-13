@@ -12,15 +12,24 @@ export interface EmailPreferences {
   unassignedItemsNotifications: boolean;
   taskMentions: boolean;
   taskAssignments: boolean;
+  findingNotifications: boolean;
 }
 
 interface Props {
   email: string;
   token: string;
+  userId?: string;
+  organizationId?: string;
   initialPreferences: EmailPreferences;
 }
 
-export function UnsubscribePreferencesClient({ email, token, initialPreferences }: Props) {
+export function UnsubscribePreferencesClient({
+  email,
+  token,
+  userId,
+  organizationId,
+  initialPreferences,
+}: Props) {
   // Invert preferences for display: true (receiving) becomes false (unchecked), false (unsubscribed) becomes true (checked)
   const [preferences, setPreferences] = useState<EmailPreferences>({
     policyNotifications: !initialPreferences.policyNotifications,
@@ -29,6 +38,7 @@ export function UnsubscribePreferencesClient({ email, token, initialPreferences 
     unassignedItemsNotifications: !initialPreferences.unassignedItemsNotifications,
     taskMentions: !initialPreferences.taskMentions,
     taskAssignments: !initialPreferences.taskAssignments,
+    findingNotifications: !initialPreferences.findingNotifications,
   });
   const [error, setError] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
@@ -52,6 +62,7 @@ export function UnsubscribePreferencesClient({ email, token, initialPreferences 
       unassignedItemsNotifications: !allUnsubscribed,
       taskMentions: !allUnsubscribed,
       taskAssignments: !allUnsubscribed,
+      findingNotifications: !allUnsubscribed,
     });
   };
 
@@ -67,6 +78,7 @@ export function UnsubscribePreferencesClient({ email, token, initialPreferences 
       unassignedItemsNotifications: !preferences.unassignedItemsNotifications,
       taskMentions: !preferences.taskMentions,
       taskAssignments: !preferences.taskAssignments,
+      findingNotifications: !preferences.findingNotifications,
     };
 
     try {
@@ -76,6 +88,8 @@ export function UnsubscribePreferencesClient({ email, token, initialPreferences 
         body: JSON.stringify({
           email,
           token,
+          ...(userId ? { userId } : {}),
+          ...(organizationId ? { organizationId } : {}),
           preferences: invertedPreferences,
         }),
       });
@@ -211,6 +225,24 @@ export function UnsubscribePreferencesClient({ email, token, initialPreferences 
                 <div className="font-medium text-foreground">Unsubscribe from Task Assignments</div>
                 <div className="text-sm text-muted-foreground">
                   Stop receiving notifications when someone assigns a task to you
+                </div>
+              </div>
+            </label>
+
+            <label className="flex cursor-pointer items-start gap-4 rounded-lg border p-4 hover:bg-muted/50 transition-colors">
+              <Checkbox
+                checked={preferences.findingNotifications}
+                onCheckedChange={(checked) =>
+                  handleToggle('findingNotifications', checked === true)
+                }
+                className="mt-1 shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-foreground">
+                  Unsubscribe from Finding Notifications
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Stop receiving notifications when security findings need your attention
                 </div>
               </div>
             </label>

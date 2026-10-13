@@ -363,6 +363,7 @@ describe('PeopleService', () => {
         expect(notifyLoginEmailChanged).toHaveBeenCalledWith(
           expect.objectContaining({
             organizationId: 'org_123',
+            memberId: 'mem_1',
             change: {
               oldEmail: 'old@company.dev',
               newEmail: 'new@company.io',
@@ -976,6 +977,7 @@ describe('PeopleService', () => {
         unassignedItemsNotifications: false,
         taskMentions: true,
         taskAssignments: true,
+        findingNotifications: true,
       };
 
       (db.user.update as jest.Mock).mockResolvedValue({});
@@ -1000,6 +1002,7 @@ describe('PeopleService', () => {
         unassignedItemsNotifications: false,
         taskMentions: false,
         taskAssignments: false,
+        findingNotifications: false,
       };
 
       (db.user.update as jest.Mock).mockResolvedValue({});

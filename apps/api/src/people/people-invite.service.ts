@@ -1,5 +1,5 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
-import { db } from '@db';
+import { db, normalizeEmail } from '@db';
 import { triggerEmail } from '../email/trigger-email';
 import { resolveEmailLocale, type EmailLocale } from '../email/locale';
 import { InviteEmail } from '../email/templates/invite-member';
@@ -84,7 +84,11 @@ export class PeopleInviteService {
           continue;
         }
 
-        const email = invite.email.toLowerCase();
+        // Canonical form for tenant-scoped uniqueness: the contract
+        // migration's CHECK rejects non-normalized writes, so normalize
+        // here — every downstream lookup and User.create in this loop
+        // inherits it.
+        const email = normalizeEmail(invite.email);
         const isStrictlyEmployee = invite.roles.every(isRestrictedRole);
 
         const hasCompliance = await this.rolesHaveComplianceObligation(
@@ -166,8 +170,13 @@ export class PeopleInviteService {
     }
 
     let userId = '';
+    // Tenant-scoped (dead path behind the 410 IdP fence, kept scoped so a
+    // future caller can never reuse another tenant's account).
     const existingUser = await db.user.findFirst({
-      where: { email: { equals: email, mode: 'insensitive' } },
+      where: {
+        tenantId: organizationId,
+        email: { equals: email, mode: 'insensitive' },
+      },
     });
 
     if (!existingUser) {
@@ -177,7 +186,13 @@ export class PeopleInviteService {
       // link Google/Microsoft sign-ins to it (account_not_linked), which
       // strands invited employees at the portal sign-in page.
       const newUser = await db.user.create({
-        data: { emailVerified: true, email, name: email.split('@')[0] },
+        data: {
+          emailVerified: true,
+          email,
+          name: email.split('@')[0],
+          tenantId: organizationId,
+          gideonTenantId: organizationId,
+        },
       });
       userId = newUser.id;
     } else {
@@ -301,8 +316,12 @@ export class PeopleInviteService {
       sendAppEmail,
     } = params;
 
+    // Tenant-scoped (dead path behind the 410 IdP fence — see above).
     const existingUser = await db.user.findFirst({
-      where: { email: { equals: email, mode: 'insensitive' } },
+      where: {
+        tenantId: organizationId,
+        email: { equals: email, mode: 'insensitive' },
+      },
     });
 
     if (existingUser) {
@@ -579,6 +598,10 @@ export class PeopleInviteService {
   }
 
   /**
+   * Adding a member requires member:create. Callers without it cannot invite
+   * anyone — not even restricted roles — mirroring the endpoint's
+   * @RequirePermission('member', 'create') for callers that reach the
+   * service another way (e.g. API keys with narrow scopes).
    * Write-level = all CRUD actions. Callers with Write can assign any role.
    * Partial access (e.g. auditor with create+read) can only assign
    * restricted roles (employee/contractor) and custom roles.
@@ -587,6 +610,9 @@ export class PeopleInviteService {
     targetRoles: string[],
     callerMemberActions: Set<string>,
   ): string | null {
+    if (!callerMemberActions.has('create')) {
+      return 'You do not have permission to invite new members.';
+    }
     const hasWriteAccess = ['create', 'read', 'update', 'delete'].every((a) =>
       callerMemberActions.has(a),
     );
@@ -614,17 +640,25 @@ export class PeopleInviteService {
   ): Promise<string> {
     if (callerUserId) return callerUserId;
 
+    // Exact role match: roles are comma-separated, so a substring filter
+    // (`contains: 'owner'`) also matches custom roles like 'co-owner'.
+    // Scan active members in join order and pick the first exact hit.
+    const members = await db.member.findMany({
+      where: {
+        organizationId,
+        isActive: true,
+        deactivated: false,
+      },
+      select: { userId: true, role: true },
+      orderBy: { createdAt: 'asc' },
+    });
     for (const roleNeedle of ['owner', 'admin']) {
-      const member = await db.member.findFirst({
-        where: {
-          organizationId,
-          isActive: true,
-          deactivated: false,
-          role: { contains: roleNeedle },
-        },
-        select: { userId: true },
-        orderBy: { createdAt: 'asc' },
-      });
+      const member = members.find((m) =>
+        m.role
+          .split(',')
+          .map((r) => r.trim())
+          .includes(roleNeedle),
+      );
       if (member?.userId) return member.userId;
     }
 

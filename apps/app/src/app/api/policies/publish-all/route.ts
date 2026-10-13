@@ -8,6 +8,7 @@ export async function POST() {
     publishedCount: number;
     members: {
       email: string;
+      userId?: string;
       userName: string;
       organizationName: string;
       organizationId: string;

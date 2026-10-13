@@ -258,9 +258,11 @@ export const taskSchedule = schedules.task({
           try {
             await sendEmailViaApi({
               to: recipient.email,
+              userId: recipient.userId,
               subject: `Task "${recipient.task.title}" ${taskStatus === 'failed' ? 'failed' : 'needs review'}`,
               react: TaskStatusNotificationEmail({
                 email: recipient.email,
+                userId: recipient.userId,
                 userName: recipient.name,
                 taskName: recipient.task.title,
                 taskStatus,

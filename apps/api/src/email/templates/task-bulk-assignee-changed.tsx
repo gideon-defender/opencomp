@@ -20,6 +20,8 @@ import { getUnsubscribeUrl } from '@gideon-defender/email';
 interface Props {
   toName: string;
   toEmail: string;
+  /** Recipient user id for a tenant-scoped unsubscribe link. */
+  userId?: string;
   taskCount: number;
   newAssigneeName: string;
   changedByName: string;
@@ -64,6 +66,7 @@ const copy = {
 export const TaskBulkAssigneeChangedEmail = ({
   toName,
   toEmail,
+  userId,
   taskCount,
   newAssigneeName,
   changedByName,
@@ -73,7 +76,7 @@ export const TaskBulkAssigneeChangedEmail = ({
 }: Props) => {
   const t = copy[locale];
 
-  const unsubscribeUrl = getUnsubscribeUrl(toEmail);
+  const unsubscribeUrl = getUnsubscribeUrl(toEmail, userId);
   const taskText = taskCount === 1 ? t.task : t.tasks;
 
   return (

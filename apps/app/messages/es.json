@@ -2322,6 +2322,10 @@
         "taskAssignments": {
           "label": "Asignaciones de tareas",
           "description": "Recibe notificaciones cuando alguien te asigne una tarea"
+        },
+        "findingNotifications": {
+          "label": "Notificaciones de hallazgos",
+          "description": "Recibe notificaciones cuando los hallazgos de seguridad requieran tu atención"
         }
       }
     }

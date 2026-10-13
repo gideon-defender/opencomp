@@ -7,6 +7,7 @@ export {
   EMBEDDING_MODEL,
   embedTexts,
 } from './embedding-client';
+export { normalizeEmail } from './normalize-email';
 export {
   countVectorsByOrganization,
   deleteVectorsByOrganization,

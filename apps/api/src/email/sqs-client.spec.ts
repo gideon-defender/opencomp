@@ -17,6 +17,11 @@ jest.mock('@aws-sdk/client-sqs', () => ({
 
 import { SendMessageCommand } from '@aws-sdk/client-sqs';
 import { enqueueEmail, enqueueEmailBatch } from './sqs-client';
+import { z } from 'zod';
+import {
+  getUserUnsubscribeUrl,
+  verifyUserUnsubscribeToken,
+} from '@gideon-defender/email';
 
 const message = {
   to: 'a@b.com',
@@ -56,6 +61,37 @@ describe('enqueueEmail', () => {
     const command = (SendMessageCommand as unknown as jest.Mock).mock
       .calls[0][0];
     expect(command.DelaySeconds).toBe(120);
+  });
+
+  it('queues the origin and signs the footer for the same tenant before a split', async () => {
+    sendMock.mockResolvedValueOnce({ MessageId: 'scoped' });
+    const userId = 'shared';
+    const organizationId = 'secondary';
+    const link = getUserUnsubscribeUrl({ userId, email: message.to });
+    await enqueueEmail({
+      ...message,
+      userId,
+      organizationId,
+      html: `<a href="${link}">Preferences</a>`,
+    });
+    const body = jest.mocked(SendMessageCommand).mock.calls[0]?.[0].MessageBody;
+    if (!body) throw new Error('No queued body');
+    const queued = z
+      .object({ html: z.string(), organizationId: z.string() })
+      .parse(JSON.parse(body));
+    expect(queued.organizationId).toBe(organizationId);
+    const match = queued.html.match(/href="([^"]+)"/);
+    if (!match?.[1]) throw new Error('No footer');
+    const params = new URL(match[1].replaceAll('&amp;', '&')).searchParams;
+    expect(params.get('organizationId')).toBe(organizationId);
+    expect(
+      verifyUserUnsubscribeToken({
+        userId,
+        organizationId,
+        email: message.to,
+        token: params.get('token') ?? '',
+      }),
+    ).toBe(true);
   });
 
   it('does not delay past SQS 900s cap and warns', async () => {

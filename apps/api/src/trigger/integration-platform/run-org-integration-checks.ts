@@ -192,11 +192,14 @@ export async function sendBundledFailureEmails(params: {
 
         try {
           await triggerEmail({
+            organizationId: organizationId,
             to: recipient.email,
+            userId: recipient.id,
             subject: `${count} ${taskText} failed automated checks in ${organizationName}`,
             react: AutomationBulkFailuresEmail({
               toName: recipient.name,
               toEmail: recipient.email,
+              userId: recipient.id,
               organizationName,
               tasksUrl,
               tasks: taskItems,

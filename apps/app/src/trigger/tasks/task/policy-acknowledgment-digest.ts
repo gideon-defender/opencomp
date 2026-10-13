@@ -26,6 +26,8 @@ const ORG_INACTIVITY_DAYS = 90;
 
 interface RollupEntry {
   email: string;
+  /** User id in primaryOrgId's tenant — binds the unsubscribe link to one account. */
+  userId: string;
   userName: string;
   // First org (in iteration order) a policy was added for this user — used
   // as the x-organization-id header when sending. The body lists all orgs.
@@ -105,12 +107,11 @@ export const policyAcknowledgmentDigest = schedules.task({
     // counts 2 — same semantic as the pre-rollup implementation.
     let orgsSkippedUnsubscribed = 0;
 
-    // Rollup across orgs, keyed by normalized email so one person = one
-    // email even when they hold separate member records in multiple
-    // organizations. Keyed on email (not user.id) because User.email is
-    // not @unique in the schema — the same person can end up with multiple
-    // user rows, typically when invited to separate orgs through different
-    // flows, and keying on user.id split those duplicates into one email each.
+    // Rollup keyed by tenant account (org + user row), so each tenant sends
+    // its own digest with its own tenant-scoped unsubscribe link. The same
+    // address in two tenants is two independent accounts with independent
+    // preferences — merging them into one email would bind one tenant's
+    // link and leave the other tenant un-unsubscribable from that email.
     const rollup = new Map<string, RollupEntry>();
 
     for (const org of organizations) {
@@ -145,7 +146,9 @@ export const policyAcknowledgmentDigest = schedules.task({
       if (pendingByMember.length === 0) continue;
 
       // One unsubscribe query per org, batched across members.
-      const emailsWithPending = pendingByMember.map((p) => p.member.user.email);
+      const emailsWithPending = pendingByMember.map((p) =>
+        p.member.user.email.trim().toLowerCase(),
+      );
       const unsubscribedEmails = await getUnsubscribedEmails(
         db,
         emailsWithPending,
@@ -154,7 +157,7 @@ export const policyAcknowledgmentDigest = schedules.task({
       );
 
       for (const { member, policies } of pendingByMember) {
-        if (unsubscribedEmails.has(member.user.email)) {
+        if (unsubscribedEmails.has(member.user.email.trim().toLowerCase())) {
           logger.debug(
             'User unsubscribed from policy notifications for this org, omitting from digest',
             { email: member.user.email, orgId: org.id },
@@ -163,13 +166,14 @@ export const policyAcknowledgmentDigest = schedules.task({
           continue;
         }
 
-        const rollupKey = member.user.email.trim().toLowerCase();
+        const rollupKey = `${org.id}:${member.user.id}`;
         const existing = rollup.get(rollupKey);
         if (existing) {
           existing.orgs.push({ id: org.id, name: org.name, policies });
         } else {
           rollup.set(rollupKey, {
             email: member.user.email,
+            userId: member.user.id,
             userName: member.user.name ?? '',
             primaryOrgId: org.id,
             orgs: [{ id: org.id, name: org.name, policies }],
@@ -181,12 +185,16 @@ export const policyAcknowledgmentDigest = schedules.task({
     // Render all emails and group by primaryOrgId for batch sending.
     let emailsSent = 0;
     let emailsFailed = 0;
-    const emailsByOrg = new Map<string, Array<{ to: string; subject: string; html: string }>>();
+    const emailsByOrg = new Map<
+      string,
+      Array<{ to: string; subject: string; html: string; userId: string }>
+    >();
 
     for (const entry of rollup.values()) {
       const subject = computePolicyAcknowledgmentDigestSubject(entry.orgs);
       const emailElement = PolicyAcknowledgmentDigestEmail({
         email: entry.email,
+        userId: entry.userId,
         userName: entry.userName,
         orgs: entry.orgs,
       });
@@ -205,7 +213,7 @@ export const policyAcknowledgmentDigest = schedules.task({
       }
 
       const orgEmails = emailsByOrg.get(entry.primaryOrgId) ?? [];
-      orgEmails.push({ to: entry.email, subject, html });
+      orgEmails.push({ to: entry.email, subject, html, userId: entry.userId });
       emailsByOrg.set(entry.primaryOrgId, orgEmails);
     }
 

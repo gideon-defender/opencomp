@@ -14,6 +14,8 @@ import {
   mockSuccessfulExchange,
   mockUserCreate,
   mockUserFindFirst,
+  mockUserFindMany,
+  mockQueryRaw,
   mockUserFindUnique,
   mockUserUpdate,
 } from './gideon-oidc.service.fixtures';
@@ -50,13 +52,16 @@ jest.mock('../redis/redis.client', () => ({
 }));
 
 jest.mock('@db', () => ({
+  normalizeEmail: jest.requireActual('@gideon-defender/email').normalizeEmail,
   db: {
     user: {
       findFirst: (...args: unknown[]) => mockUserFindFirst(...args),
+      findMany: (...args: unknown[]) => mockUserFindMany(...args),
       findUnique: (...args: unknown[]) => mockUserFindUnique(...args),
       create: (...args: unknown[]) => mockUserCreate(...args),
       update: (...args: unknown[]) => mockUserUpdate(...args),
     },
+    $queryRaw: (...args: unknown[]) => mockQueryRaw(...args),
     member: {
       findFirst: (...args: unknown[]) => mockMemberFindFirst(...args),
     },
@@ -102,6 +107,7 @@ describe('GideonOidcService', () => {
         email: 'ada@example.com',
         gideonSub: null,
         banned: false,
+        tenantId: 'org_1',
       });
       mockUserUpdate.mockResolvedValue({ id: 'usr_1' });
 
@@ -109,11 +115,11 @@ describe('GideonOidcService', () => {
 
       expect(mockFetchUserInfo).toHaveBeenCalledWith(
         'mock-config',
-        'access-1',
+        expect.any(String),
         'gideon-sub-1',
       );
       expect(mockUserUpdate).toHaveBeenCalledWith({
-        where: { id: 'usr_1' },
+        where: { id: 'usr_1', AND: { gideonSub: null } },
         data: expect.objectContaining({ gideonSub: 'gideon-sub-1' }),
       });
       expect(mockSessionCreate).toHaveBeenCalledWith({
@@ -134,6 +140,7 @@ describe('GideonOidcService', () => {
         email: 'ada@example.com',
         gideonSub: null,
         banned: false,
+        tenantId: 'org_1',
       });
       mockUserUpdate.mockResolvedValue({ id: 'usr_1' });
 
@@ -155,6 +162,7 @@ describe('GideonOidcService', () => {
         email: 'ada@example.com',
         gideonSub: null,
         banned: false,
+        tenantId: 'org_1',
       });
       mockUserUpdate.mockResolvedValue({ id: 'usr_1' });
       mockAuditOidcEntitlements.mockResolvedValue({
@@ -189,13 +197,14 @@ describe('GideonOidcService', () => {
         email: 'ada@example.com',
         gideonSub: null,
         banned: false,
+        tenantId: 'tenant-9',
       });
       mockUserUpdate.mockResolvedValue({ id: 'usr_1' });
 
       await service.handleCallback({ callbackUrl });
 
       expect(mockUserUpdate).toHaveBeenCalledWith({
-        where: { id: 'usr_1' },
+        where: { id: 'usr_1', AND: { gideonSub: null } },
         data: expect.objectContaining({ gideonTenantId: 'tenant-9' }),
       });
     });
@@ -218,6 +227,7 @@ describe('GideonOidcService', () => {
         email: 'ada@example.com',
         gideonSub: null,
         banned: false,
+        tenantId: 'tenant-9',
       });
       mockUserUpdate.mockResolvedValue({ id: 'usr_1' });
       // The tenant IS the org: org id equals the tid and the user belongs

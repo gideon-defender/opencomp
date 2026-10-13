@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 
 interface PolicyEmailRecipient {
   email: string;
+  userId?: string;
   userName: string;
   policyName: string;
   organizationId: string;

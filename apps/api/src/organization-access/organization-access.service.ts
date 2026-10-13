@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { db } from '@db';
+import { db, normalizeEmail } from '@db';
 import { extractDomain, isPublicEmailDomain } from '../stripe/domain.utils';
 import { StripeService } from '../stripe/stripe.service';
 
@@ -84,9 +84,12 @@ export class OrganizationAccessService {
 
     // Only treat an @gideondefender.com address as an internal team member once the
     // account's email has actually been verified. The domain on its own proves
-    // nothing about who controls the mailbox.
+    // nothing about who controls the mailbox. Verification is tenant-scoped:
+    // only the calling organization's user row counts, never another
+    // tenant's same-email account.
     const isVerifiedTrycompEmail =
-      isTrycompEmailDomain && (await this.isEmailVerified(userEmail));
+      isTrycompEmailDomain &&
+      (await this.isEmailVerified(userEmail, organizationId));
 
     const canAutoApproveViaDomain =
       !isTrycompEmailDomain &&
@@ -112,12 +115,19 @@ export class OrganizationAccessService {
     return { hasAccess: false, autoApproved: false, reason: 'not-eligible' };
   }
 
-  private async isEmailVerified(email: string | undefined): Promise<boolean> {
+  private async isEmailVerified(
+    email: string | undefined,
+    organizationId: string,
+  ): Promise<boolean> {
     if (!email) {
       return false;
     }
+    const normalized = normalizeEmail(email);
     const user = await db.user.findFirst({
-      where: { email },
+      where: {
+        tenantId: organizationId,
+        email: { equals: normalized, mode: 'insensitive' },
+      },
       select: { emailVerified: true },
     });
     return user?.emailVerified === true;

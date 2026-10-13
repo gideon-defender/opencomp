@@ -129,6 +129,10 @@ export const acceptRequestedPolicyChangesAction = authActionClient
 
           return {
             email: employee.user.email,
+            // Tenant-scoped unsubscribe link: without the user id the email
+            // falls back to a legacy link, which verifiers reject as
+            // ambiguous when several tenants share the address.
+            userId: employee.user.id,
             userName: employee.user.name || employee.user.email || 'Employee',
             policyName: policy.name,
             organizationId: session.activeOrganizationId || '',

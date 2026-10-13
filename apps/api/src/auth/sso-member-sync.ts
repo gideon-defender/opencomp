@@ -13,6 +13,8 @@ export interface SyncSsoMemberParams {
   organizationId: string;
   /** Validated IdP role names (non-empty after trim). Overwrites, never unions. */
   roles: string[];
+  /** Verified login subject for a shared user during the expand window. */
+  subject?: string;
 }
 
 /** A confirmed IdP denial cuts off existing tokens without altering HR state. */
@@ -49,6 +51,7 @@ export async function syncSsoMember({
   userId,
   organizationId,
   roles,
+  subject,
 }: SyncSsoMemberParams) {
   const role = [...new Set(roles.map((r) => r.trim()).filter(Boolean))].join(
     ',',
@@ -70,7 +73,13 @@ export async function syncSsoMember({
           await tx.$queryRaw`SELECT id FROM "Member" WHERE "userId" = ${userId} AND "organizationId" = ${organizationId} FOR UPDATE`;
         const currentRole = config
           ? (
-              await refreshSsoLoginRoles({ tx, userId, organizationId, config })
+              await refreshSsoLoginRoles({
+                tx,
+                userId,
+                organizationId,
+                config,
+                subject,
+              })
             ).join(',')
           : role;
         const existing = await tx.member.findFirst({

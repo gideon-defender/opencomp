@@ -11,6 +11,7 @@ const policyEmailQueue = queue({
 
 interface PolicyEmailPayload {
   email: string;
+  userId?: string;
   userName: string;
   policyName: string;
   organizationId: string;
@@ -49,9 +50,11 @@ export const sendNewPolicyEmail = task({
 
       await sendEmailViaApi({
         to: payload.email,
+        userId: payload.userId,
         subject: 'Please review and accept this policy',
         react: PolicyNotificationEmail({
           email: payload.email,
+          userId: payload.userId,
           userName: payload.userName,
           policyName: payload.policyName,
           organizationName: payload.organizationName,

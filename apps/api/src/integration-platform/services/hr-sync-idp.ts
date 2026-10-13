@@ -1,58 +1,40 @@
-import { db } from '@db';
+import { db, normalizeEmail } from '@db';
 import type { User } from '@db';
-import { z } from 'zod';
-
-const identitySchema = z.object({
-  id: z.string().uuid(),
-  email: z.string().email(),
-  display_name: z.string().nullable(),
-  status: z.enum([
-    'active',
-    'pending_enrollment',
-    'suspended',
-    'deprovisioned',
-  ]),
-});
-const lookupSchema = z.object({
-  tenant_id: z.string().uuid(),
-  identity: identitySchema.nullable(),
-});
+import { lookupGideonTenantIdentity } from '../../auth/gideon-tenant-identity';
+import { findClaimableExpandRow } from '../../auth/gideon-oidc-link';
+import { findLegacySharedUser } from '../../auth/legacy-shared-user';
+import { linkIdentity } from './hr-sync-idp-link';
 
 export type HrIdentity = Pick<
-  z.infer<typeof identitySchema>,
+  NonNullable<Awaited<ReturnType<typeof lookupGideonTenantIdentity>>>,
   'id' | 'email' | 'display_name'
 >;
 export type HrIdentityResolver = (params: {
   email: string;
 }) => Promise<HrIdentity | null>;
 
-/** Use tenant-linked local subjects first, with a per-run IdP fallback cache. */
+/**
+ * Tenant-scoped identity resolution: the local subject fast-path only
+ * considers User rows owned by the sync's tenant (`tenantId ==
+ * organizationId`). A matching email in another tenant is a different
+ * account and must never satisfy this tenant's lookup.
+ */
 export function createHrIdentityResolver({
   organizationId,
 }: {
   organizationId: string;
 }): HrIdentityResolver {
-  const base =
-    process.env.GIDEON_HR_IDENTITY_URL ||
-    process.env.GIDEON_IDENTITY_URL ||
-    process.env.AUTH__IDENTITY_URL;
-  const token =
-    process.env.GIDEON_INTERNAL_SERVICE_TOKEN ||
-    process.env.INTERNAL_SERVICE_TOKEN;
   const pending = new Map<string, Promise<HrIdentity | null>>();
   return ({ email }) => {
-    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedEmail = normalizeEmail(email);
     const cached = pending.get(normalizedEmail);
     if (cached) return cached;
     const lookup = async (): Promise<HrIdentity | null> => {
       const local = await db.user.findFirst({
         where: {
+          tenantId: organizationId,
           email: { equals: normalizedEmail, mode: 'insensitive' },
           gideonSub: { not: null },
-          OR: [
-            { gideonTenantId: organizationId },
-            { gideonTenantId: null, members: { some: { organizationId } } },
-          ],
         },
       });
       if (local?.gideonSub?.trim()) {
@@ -62,44 +44,33 @@ export function createHrIdentityResolver({
           display_name: local.name,
         };
       }
-      if (!base || !token) {
-        throw new Error(
-          'HR sync requires the Gideon identity URL and internal service token for unlinked users',
-        );
-      }
-      const url = new URL(
-        `${base.replace(/\/$/, '')}/v1/internal/tenants/${encodeURIComponent(organizationId)}/hr-identity`,
-      );
-      url.searchParams.set('email', normalizedEmail);
-      const response = await fetch(url, {
-        headers: {
-          'x-internal-service-token': token,
-          'x-gideon-actor': 'opencomp-hr-sync',
-        },
-        signal: AbortSignal.timeout(5000),
-        redirect: 'error',
+      return lookupGideonTenantIdentity({
+        tenantId: organizationId,
+        email: normalizedEmail,
       });
-      if (!response.ok)
-        throw new Error(`IdP identity lookup failed (HTTP ${response.status})`);
-      const result = lookupSchema.parse(await response.json());
-      if (
-        result.tenant_id !== organizationId ||
-        (result.identity &&
-          result.identity.email.trim().toLowerCase() !== normalizedEmail)
-      ) {
-        throw new Error(
-          'IdP identity lookup returned a mismatched tenant or email',
-        );
-      }
-      return result.identity;
     };
     const result = lookup();
     pending.set(normalizedEmail, result);
+    // Evict on settle: the map only dedupes concurrent in-flight lookups.
+    // Keeping settled promises would poison later retries with the first
+    // failure and grow the map for the resolver's lifetime.
+    const evict = (): void => {
+      if (pending.get(normalizedEmail) === result)
+        pending.delete(normalizedEmail);
+    };
+    result.then(evict, evict);
     return result;
   };
 }
 
-/** Materialize identities verified through a local link or Gideon Auth lookup. */
+/**
+ * Materialize identities verified through a local link or Gideon Auth lookup.
+ * Canonical subject first; tenant-scoped email second; tenant-scoped creation
+ * and race recovery. Never links or overwrites a row owned by another tenant.
+ * Expand-window fallback: rows predating the tenant backfill never match the
+ * tenant-scoped lookups, so a global email match with no ownership is claimed
+ * for the sync tenant (the legacy global key still guards the window).
+ */
 export async function getHrSyncUser({
   identity,
   organizationId,
@@ -107,7 +78,7 @@ export async function getHrSyncUser({
   identity: HrIdentity;
   organizationId: string;
 }): Promise<User> {
-  const email = identity.email.trim().toLowerCase();
+  const email = normalizeEmail(identity.email);
   const bySubject = await db.user.findUnique({
     where: { gideonSub: identity.id },
   });
@@ -115,9 +86,19 @@ export async function getHrSyncUser({
     return linkIdentity({ existing: bySubject, identity, organizationId });
 
   const existing = await db.user.findFirst({
-    where: { email: { equals: email, mode: 'insensitive' } },
+    where: {
+      tenantId: organizationId,
+      email: { equals: email, mode: 'insensitive' },
+    },
   });
   if (existing) return linkIdentity({ existing, identity, organizationId });
+  // Expand-window fallback: a legacy row predating the tenant backfill never
+  // matches the tenant-scoped lookup above. Only rows with no ownership are
+  // eligible — a row owned by another tenant is skipped so creation handles
+  // it (post-contract) instead of stealing it.
+  const expandRow = await findClaimableExpandRow(email);
+  if (expandRow)
+    return linkIdentity({ existing: expandRow, identity, organizationId });
   try {
     return await db.user.create({
       data: {
@@ -125,6 +106,7 @@ export async function getHrSyncUser({
         name: identity.display_name || email.split('@')[0] || email,
         emailVerified: false,
         gideonSub: identity.id,
+        tenantId: organizationId,
         gideonTenantId: organizationId,
       },
     });
@@ -135,44 +117,40 @@ export async function getHrSyncUser({
       error.code !== 'P2002'
     )
       throw error;
+    const shared = await findLegacySharedUser({
+      purpose: 'hr-sync',
+      tenantId: organizationId,
+      normalizedEmail: email,
+      sub: identity.id,
+    });
+    if (shared) return shared;
     const raced = await db.user.findFirst({
-      where: { email: { equals: email, mode: 'insensitive' } },
+      where: {
+        tenantId: organizationId,
+        email: { equals: email, mode: 'insensitive' },
+      },
     });
     if (raced)
       return linkIdentity({ existing: raced, identity, organizationId });
+    // Expand-window fallback (see above): the P2002 may come from the legacy
+    // global email key on a row that predates the tenant backfill.
+    const expandRaced = await findClaimableExpandRow(email);
+    if (expandRaced)
+      return linkIdentity({
+        existing: expandRaced,
+        identity,
+        organizationId,
+      });
     const bySubject = await db.user.findUnique({
       where: { gideonSub: identity.id },
     });
-    if (!bySubject) throw error;
+    if (!bySubject) {
+      // The conflicting row vanished concurrently: report a retryable
+      // failure instead of leaking the raw Prisma error to the sync job.
+      throw new Error(
+        `HR sync hit a user creation conflict for identity ${identity.id}; retry the sync`,
+      );
+    }
     return linkIdentity({ existing: bySubject, identity, organizationId });
   }
-}
-
-async function linkIdentity({
-  existing,
-  identity,
-  organizationId,
-}: {
-  existing: User;
-  identity: HrIdentity;
-  organizationId: string;
-}): Promise<User> {
-  if (existing.gideonSub && existing.gideonSub !== identity.id)
-    throw new Error(
-      'HR sync IdP identity conflicts with the existing user link',
-    );
-  if (existing.banned)
-    throw new Error('HR sync cannot provision a disabled local user');
-  if (existing.gideonSub) {
-    const email = identity.email.trim().toLowerCase();
-    if (existing.email.toLowerCase() === email) return existing;
-    return db.user.update({
-      where: { id: existing.id, gideonSub: identity.id },
-      data: { email },
-    });
-  }
-  return db.user.update({
-    where: { id: existing.id, AND: { gideonSub: null } },
-    data: { gideonSub: identity.id, gideonTenantId: organizationId },
-  });
 }

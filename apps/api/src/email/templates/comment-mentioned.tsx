@@ -20,6 +20,8 @@ import { getUnsubscribeUrl } from '@gideon-defender/email';
 interface Props {
   toName: string;
   toEmail: string;
+  /** Recipient user id for a tenant-scoped unsubscribe link. */
+  userId?: string;
   commentContent: string;
   mentionedByName: string;
   entityName: string;
@@ -58,6 +60,7 @@ const copy = {
 export const CommentMentionedEmail = ({
   toName,
   toEmail,
+  userId,
   commentContent,
   mentionedByName,
   entityName,
@@ -69,7 +72,7 @@ export const CommentMentionedEmail = ({
 }: Props) => {
   const t = copy[locale];
 
-  const unsubscribeUrl = getUnsubscribeUrl(toEmail);
+  const unsubscribeUrl = getUnsubscribeUrl(toEmail, userId);
 
   // Extract plain text from TipTap JSON if needed
   const getPlainText = (content: string): string => {

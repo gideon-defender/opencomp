@@ -176,6 +176,8 @@ export class TrainingService {
     await this.trainingEmailService.sendTrainingCompletedEmail({
       toEmail: resolved.email,
       toName: resolved.userName,
+      userId: resolved.userId,
+      organizationId,
       organizationName: resolved.organizationName,
       completedAt,
     });
@@ -243,6 +245,8 @@ export class TrainingService {
     await this.trainingEmailService.sendHipaaTrainingCompletedEmail({
       toEmail: resolved.email,
       toName: resolved.userName,
+      userId: resolved.userId,
+      organizationId,
       organizationName: resolved.organizationName,
       completedAt,
     });
@@ -285,7 +289,12 @@ export class TrainingService {
     memberId: string,
     organizationId: string,
   ): Promise<
-    | { userName: string; email: string; organizationName: string }
+    | {
+        userId: string;
+        userName: string;
+        email: string;
+        organizationName: string;
+      }
     | { reason: string }
   > {
     const member = await db.member.findUnique({
@@ -302,6 +311,7 @@ export class TrainingService {
       return { reason: 'organization_mismatch' };
 
     return {
+      userId: member.userId,
       userName: member.user.name || 'Team Member',
       email: member.user.email,
       organizationName: member.organization?.name || 'Organization',

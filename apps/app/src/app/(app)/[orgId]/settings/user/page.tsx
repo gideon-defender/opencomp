@@ -16,6 +16,7 @@ export default async function UserSettings() {
         unassignedItemsNotifications: boolean;
         taskMentions: boolean;
         taskAssignments: boolean;
+        findingNotifications: boolean;
       };
       isAdminOrOwner: boolean;
       roleNotifications: {

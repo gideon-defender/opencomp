@@ -1,6 +1,18 @@
-import { ForbiddenException, Logger } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { randomBytes } from 'node:crypto';
-import { db } from '@db';
+import { db, normalizeEmail } from '@db';
+import {
+  findClaimableExpandRow,
+  linkGideonSub,
+  recoverRacedProvision,
+  resolveAdoptEmail,
+  updateLoginState,
+} from './gideon-oidc-link';
+import { findLegacySharedUser } from './legacy-shared-user';
 import { SESSION_TTL_SECONDS } from './session-cookie';
 
 const logger = new Logger('GideonOidcProvisioning');
@@ -12,9 +24,10 @@ export interface ProvisionGideonUserParams {
   image?: string;
   /**
    * Gideon tenant id from the login (decoded from the access token). The
-   * tenant IS the organization (Organization.id), so this also selects the
-   * session's active org — stamped onto the user row for onboarding, which
-   * reads it to create organizations under the login's tenant.
+   * tenant IS the organization (Organization.id), and it is the immutable
+   * User.tenantId ownership boundary: one user belongs to exactly one
+   * tenant, and the same email in another tenant is a separate User row
+   * with a distinct Gideon subject.
    */
   tenantId?: string;
   /** Run authorization after identity checks, before any user write. */
@@ -65,18 +78,36 @@ export async function resolveActiveOrganizationId({
 }
 
 /**
- * JIT find-or-create keyed by verified email, linked via `gideonSub`.
- * The email is lowercased + trimmed first, and the lookup is
- * case-insensitive: OIDC providers preserve the registrant's case but
- * legacy better-auth rows keep the originally typed case, so an exact
- * match on the normalized value would miss the link and create a
- * duplicate account.
- * A non-null conflicting `gideonSub` is rejected rather than overwritten
- * so a Gideon account can never hijack an unrelated OpenComp user.
- * A concurrent first login racing this one surfaces as P2002 — re-read and
- * fall through to the link path instead of failing the login. When the
- * conflict is on the `gideonSub` index instead (same Gideon account with
- * a changed email), adopt the new email on the linked row.
+ * JIT find-or-create keyed by canonical Gideon subject first, then by
+ * tenant-scoped email.
+ *
+ * Identity model: emails are unique within a tenant, not globally. The same
+ * normalized email in two tenants with distinct subjects is two independent
+ * users with separate roles, sessions, and HR state.
+ *
+ * Resolution order:
+ *   1. Canonical subject (`gideonSub`): the authoritative link. A hit
+ *      returns the linked row after a tenant-consistency check — a subject
+ *      issued by tenant A never authenticates as a user owned by tenant B.
+ *      Before contract, existing secondary memberships can read their shared
+ *      row while the legacy global key exists; this path never changes it.
+ *   2. Tenant-scoped legacy email link (`tenantId`, normalized email): only
+ *      rows owned by the authenticated tenant are eligible. A null
+ *      `gideonSub` is linked; a conflicting non-null subject is rejected,
+ *      never overwritten (no hijack across Gideon accounts).
+ *   2b. Expand-window fallback: rows written by old code before the tenant
+ *      backfill carry no ownership, so they never match the tenant-scoped
+ *      lookup. The legacy global email key still guards the window, so a
+ *      global email match with no tenant is this login's row — claim it for
+ *      the login tenant instead of failing. Post-contract rows are never
+ *      null, so the fallback simply misses and creation proceeds.
+ *   3. Create: a new User row owned by the login tenant with a normalized
+ *      email. Creation without a tenant is refused — ownership is required.
+ *
+ * `User.tenantId` is immutable and never updated here; only the legacy
+ * `gideonTenantId` stamp is refreshed. A concurrent first login racing this
+ * one surfaces as P2002 — re-read tenant-scoped state and fall through to
+ * the link path instead of failing the login.
  */
 export async function provisionGideonUser({
   sub,
@@ -86,20 +117,108 @@ export async function provisionGideonUser({
   tenantId,
   beforeWrite,
 }: ProvisionGideonUserParams) {
-  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedEmail = normalizeEmail(email);
+
+  // Authorization runs exactly once per login, before the first write.
+  // The P2002 race-recovery path reuses the same decision instead of
+  // invoking the hook a second time (duplicate entitlement evaluation and
+  // duplicate audit log lines for one login).
+  let beforeWriteDone = false;
+  const runBeforeWriteOnce = async (): Promise<void> => {
+    if (beforeWriteDone) return;
+    beforeWriteDone = true;
+    await beforeWrite?.();
+  };
+
+  const bySub = await db.user.findUnique({ where: { gideonSub: sub } });
+  if (bySub) {
+    if (bySub.banned) {
+      throw new ForbiddenException('Account is disabled');
+    }
+    if (tenantId && bySub.tenantId && bySub.tenantId !== tenantId) {
+      const shared = await findLegacySharedUser({
+        tenantId,
+        normalizedEmail,
+        sub,
+      });
+      if (shared?.id === bySub.id) {
+        await runBeforeWriteOnce();
+        return shared;
+      }
+      logger.warn(
+        `Gideon subject tenant mismatch for user ${bySub.id} — subject is owned by another tenant, rejecting`,
+      );
+      throw new ForbiddenException(
+        'Gideon account belongs to a different organization',
+      );
+    }
+    // Expand-window rows written by old code carry no tenantId yet: the
+    // login tenant claims ownership here instead of this login failing.
+    // Tenant-less logins never claim — creation without a tenant stays
+    // refused below, but existing subject-linked sessions keep working on
+    // the legacy most-recent-org fallback.
+    const claimTenantId = !bySub.tenantId && tenantId ? tenantId : undefined;
+    if (claimTenantId) {
+      logger.warn(`Claiming expand-window null-tenant row ${bySub.id}`);
+    }
+    // Without any tenant scope there is nothing safe to adopt against, so
+    // keep the existing email rather than checking adoption tenant-blind.
+    const scopeTenantId = bySub.tenantId ?? tenantId;
+    const adoptEmail = scopeTenantId
+      ? await resolveAdoptEmail({
+          tenantId: scopeTenantId,
+          normalizedEmail,
+          currentEmail: bySub.email,
+          excludeId: bySub.id,
+        })
+      : undefined;
+    await runBeforeWriteOnce();
+    return updateLoginState({
+      userId: bySub.id,
+      adoptEmail,
+      tenantId,
+      claimTenantId,
+    });
+  }
+
+  if (!tenantId) {
+    logger.warn(
+      'Gideon login without tenant — refusing to create a tenant-less user',
+    );
+    throw new UnauthorizedException(
+      'Gideon login did not include a tenant; cannot provision user',
+    );
+  }
+
   const existing = await db.user.findFirst({
-    where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
+    where: {
+      tenantId,
+      email: { equals: normalizedEmail, mode: 'insensitive' },
+    },
   });
   if (existing) {
     return linkGideonSub({
       sub,
-      email: normalizedEmail,
       existing,
       tenantId,
-      beforeWrite,
+      beforeWrite: runBeforeWriteOnce,
     });
   }
-  await beforeWrite?.();
+  // Expand-window fallback: a legacy row predating the tenant backfill never
+  // matches the tenant-scoped lookup above (`tenantId` filter excludes null).
+  // Only rows with no ownership are eligible — a row owned by another tenant
+  // is skipped so creation (post-contract) or the global-key conflict path
+  // (in-window) handles it.
+  const expandRow = await findClaimableExpandRow(normalizedEmail);
+  if (expandRow) {
+    return linkGideonSub({
+      sub,
+      existing: expandRow,
+      tenantId,
+      beforeWrite: runBeforeWriteOnce,
+    });
+  }
+  await runBeforeWriteOnce();
   try {
     return await db.user.create({
       data: {
@@ -108,85 +227,32 @@ export async function provisionGideonUser({
         name: name ?? normalizedEmail.split('@')[0] ?? normalizedEmail,
         ...(image ? { image } : {}),
         gideonSub: sub,
-        ...(tenantId ? { gideonTenantId: tenantId } : {}),
+        tenantId,
+        gideonTenantId: tenantId,
         lastLogin: new Date(),
       },
     });
   } catch (error) {
     if ((error as { code?: string }).code !== 'P2002') throw error;
-    const raced = await db.user.findFirst({
-      where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
+    const shared = await findLegacySharedUser({
+      tenantId,
+      normalizedEmail,
+      sub,
     });
-    if (raced) {
-      return linkGideonSub({
-        sub,
-        email: normalizedEmail,
-        existing: raced,
-        tenantId,
-        beforeWrite,
-      });
+    if (shared) {
+      if (shared.gideonSub !== sub) {
+        throw new ForbiddenException(
+          'Gideon account is linked to a different user',
+        );
+      }
+      return shared;
     }
-    const bySub = await db.user.findUnique({ where: { gideonSub: sub } });
-    if (!bySub) throw error;
-    if (bySub.banned) {
-      throw new ForbiddenException('Account is disabled');
-    }
-    await beforeWrite?.();
-    return db.user.update({
-      where: { id: bySub.id },
-      data: {
-        email: normalizedEmail,
-        lastLogin: new Date(),
-        ...(tenantId ? { gideonTenantId: tenantId } : {}),
-      },
+    return recoverRacedProvision({
+      sub,
+      normalizedEmail,
+      tenantId,
+      beforeWrite: runBeforeWriteOnce,
     });
-  }
-}
-
-async function linkGideonSub({
-  sub,
-  email,
-  existing,
-  tenantId,
-  beforeWrite,
-}: {
-  sub: string;
-  email: string;
-  existing: { id: string; banned: boolean | null; gideonSub: string | null };
-  tenantId?: string;
-  beforeWrite?: () => Promise<void>;
-}) {
-  if (existing.banned) {
-    throw new ForbiddenException('Account is disabled');
-  }
-  if (existing.gideonSub && existing.gideonSub !== sub) {
-    logger.warn(
-      `Gideon sub mismatch for ${email} — not overwriting existing link`,
-    );
-    throw new ForbiddenException(
-      'Gideon account is linked to a different user',
-    );
-  }
-  await beforeWrite?.();
-  try {
-    return await db.user.update({
-      where: { id: existing.id },
-      data: {
-        lastLogin: new Date(),
-        ...(existing.gideonSub ? {} : { gideonSub: sub }),
-        ...(tenantId ? { gideonTenantId: tenantId } : {}),
-      },
-    });
-  } catch (error) {
-    if ((error as { code?: string }).code === 'P2002') {
-      logger.warn(
-        `Gideon sub already linked elsewhere for ${email} — rejecting`,
-      );
-      throw new ForbiddenException(
-        'Gideon account is linked to a different user',
-      );
-    }
-    throw error;
   }
 }
 

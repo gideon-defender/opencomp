@@ -3,9 +3,16 @@ import type { AuthenticatedRequest } from './types';
 import { recordBootstrapOwner } from './gideon-bootstrap-authorization';
 
 const mockUser = jest.fn();
+const mockUserUpdate = jest.fn();
 const proofs = new Map<string, unknown>();
 jest.mock('@db', () => ({
-  db: { user: { findUnique: (...args: unknown[]) => mockUser(...args) } },
+  normalizeEmail: jest.requireActual('@gideon-defender/email').normalizeEmail,
+  db: {
+    user: {
+      findUnique: (...args: unknown[]) => mockUser(...args),
+      update: (...args: unknown[]) => mockUserUpdate(...args),
+    },
+  },
 }));
 jest.mock('./auth.server', () => ({ auth: { api: {} } }));
 jest.mock('../redis/redis.client', () => ({
@@ -40,7 +47,8 @@ describe('organization setup authorization endpoint', () => {
   const oldEnv = { ...process.env };
   beforeEach(() => {
     proofs.clear();
-    mockUser.mockReset().mockResolvedValue({ gideonTenantId: 'tenant_1' });
+    mockUser.mockReset().mockResolvedValue({ tenantId: 'tenant_1' });
+    mockUserUpdate.mockReset().mockResolvedValue({ id: 'usr_1' });
     process.env.GIDEON_BOOTSTRAP_ENFORCED = 'true';
   });
   afterEach(() => {
@@ -63,7 +71,7 @@ describe('organization setup authorization endpoint', () => {
     await expect(controller.authorize(request())).resolves.toEqual({
       tenantId: 'tenant_1',
     });
-    mockUser.mockResolvedValue({ gideonTenantId: 'tenant_2' });
+    mockUser.mockResolvedValue({ tenantId: 'tenant_2' });
     await expect(controller.authorize(request())).rejects.toThrow(
       'owner assignment',
     );
@@ -74,10 +82,31 @@ describe('organization setup authorization endpoint', () => {
       controller.authorize(request({ sessionId: undefined })),
     ).rejects.toThrow('browser session');
     expect(mockUser).not.toHaveBeenCalled();
-    mockUser.mockResolvedValue({ gideonTenantId: null });
+    mockUser.mockResolvedValue({ tenantId: null, gideonTenantId: null });
     await expect(controller.authorize(request())).rejects.toThrow(
       'Sign in with Gideon',
     );
+    expect(mockUserUpdate).not.toHaveBeenCalled();
+  });
+
+  it('claims an expand-window null-tenant stamp for setup instead of rejecting', async () => {
+    mockUser.mockResolvedValue({
+      tenantId: null,
+      gideonTenantId: 'tenant_1',
+    });
+    await recordBootstrapOwner({
+      sessionId: 'ses_1',
+      userId: 'usr_1',
+      tenantId: 'tenant_1',
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    await expect(controller.authorize(request())).resolves.toEqual({
+      tenantId: 'tenant_1',
+    });
+    expect(mockUserUpdate).toHaveBeenCalledWith({
+      where: { id: 'usr_1' },
+      data: { tenantId: 'tenant_1' },
+    });
   });
 
   it('preserves setup for existing sessions while the rollout gate is off', async () => {

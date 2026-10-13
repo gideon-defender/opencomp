@@ -32,6 +32,9 @@ export async function triggerEmail(params: {
   cc?: string | string[];
   scheduledAt?: string;
   attachments?: EmailAttachmentInput[];
+  /** Recipient user id for a tenant-scoped one-click unsubscribe URL. */
+  userId?: string;
+  organizationId?: string;
 }): Promise<{ id: string }> {
   try {
     const html = await render(params.react);
@@ -45,6 +48,8 @@ export async function triggerEmail(params: {
       channel,
       cc: params.cc,
       scheduledAt: params.scheduledAt,
+      userId: params.userId,
+      organizationId: params.organizationId,
       attachments: params.attachments?.map((att) => ({
         filename: att.filename,
         content:

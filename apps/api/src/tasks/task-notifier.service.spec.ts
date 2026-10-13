@@ -117,6 +117,42 @@ describe('TaskNotifierService', () => {
       expect(mockDb.member.findMany).not.toHaveBeenCalled();
     });
 
+    it('binds the assignee email to the recipient tenant account', async () => {
+      const actor = makeUser('usr_actor', 'actor@acme.com', 'Actor');
+      const assignee = makeUser(
+        'usr_assignee',
+        'assignee@acme.com',
+        'Assignee',
+      );
+
+      mockDb.organization.findUnique.mockResolvedValue({ name: 'Acme' });
+      mockDb.user.findUnique.mockResolvedValue({
+        name: actor.name,
+        email: actor.email,
+      });
+      mockDb.task.findUnique.mockResolvedValue({
+        assignee: { user: assignee },
+      });
+
+      await service.notifyStatusChange({
+        organizationId: 'org_1',
+        taskId: 'tsk_1',
+        taskTitle: '2FA',
+        oldStatus: 'done',
+        newStatus: 'todo',
+        changedByUserId: actor.id,
+      });
+
+      // Without the account id the mail falls back to the ambiguous legacy
+      // email-only unsubscribe link when several tenants share the address.
+      expect(triggerEmailMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: 'assignee@acme.com',
+          userId: 'usr_assignee',
+        }),
+      );
+    });
+
     it('uses Spanish status labels in subject and template for es locale', async () => {
       const actor = makeUser('usr_actor', 'actor@acme.com', 'Actor');
       const assignee = makeUser(
@@ -268,6 +304,14 @@ describe('TaskNotifierService', () => {
       });
 
       expect(triggerEmailMock).not.toHaveBeenCalled();
+      // Tenant-scoped: the org id must reach the unsubscribe gate so a
+      // same-email account in another tenant can never satisfy this check.
+      expect(isUserUnsubscribedMock).toHaveBeenCalledWith(
+        expect.anything(),
+        'assignee@acme.com',
+        expect.anything(),
+        'org_1',
+      );
     });
   });
 

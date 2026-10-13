@@ -3,6 +3,7 @@ import {
   SendMessageCommand,
 } from '@aws-sdk/client-sqs';
 import { EMAIL_SQS_QUEUE_URL, sqsClient } from './aws';
+import { scopeUnsubscribeLinks } from '@gideon-defender/email';
 import type { EmailMessage } from './email-message';
 
 const SQS_MESSAGE_SIZE_LIMIT = 256 * 1024;
@@ -48,6 +49,10 @@ export async function enqueueEmail(
   message: EmailMessage,
 ): Promise<{ id: string }> {
   assertQueueConfigured();
+  message = {
+    ...message,
+    html: scopeUnsubscribeLinks({ ...message, email: message.to }),
+  };
   assertMessageSize(message);
 
   const delaySeconds = computeDelaySeconds(message.scheduledAt);
@@ -71,6 +76,10 @@ export async function enqueueEmailBatch(
   messages: EmailMessage[],
 ): Promise<{ id: string }> {
   assertQueueConfigured();
+  messages = messages.map((message) => ({
+    ...message,
+    html: scopeUnsubscribeLinks({ ...message, email: message.to }),
+  }));
   messages.forEach(assertMessageSize);
 
   let lastId: string | undefined;

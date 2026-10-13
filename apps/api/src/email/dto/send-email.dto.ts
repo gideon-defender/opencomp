@@ -52,6 +52,15 @@ export class SendEmailDto {
   @IsOptional()
   cc?: string | string[];
 
+  @ApiPropertyOptional({
+    description:
+      'Recipient user id for a tenant-scoped one-click unsubscribe URL. ' +
+      'Without it the legacy email-only link is used.',
+  })
+  @IsOptional()
+  @IsString()
+  userId?: string;
+
   @ApiPropertyOptional({ description: 'Schedule email for later delivery' })
   @IsOptional()
   @IsString()

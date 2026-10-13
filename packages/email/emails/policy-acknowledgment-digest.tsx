@@ -30,6 +30,8 @@ export interface PolicyAcknowledgmentDigestOrg {
 
 export interface PolicyAcknowledgmentDigestEmailProps {
   email: string;
+  /** Recipient user id for a tenant-scoped unsubscribe link. */
+  userId?: string;
   userName: string;
   orgs: PolicyAcknowledgmentDigestOrg[];
   locale?: Locale;
@@ -64,6 +66,7 @@ export const computePolicyAcknowledgmentDigestSubject = (
 
 export const PolicyAcknowledgmentDigestEmail = ({
   email,
+  userId,
   userName,
   orgs,
   locale = 'en',
@@ -169,7 +172,7 @@ export const PolicyAcknowledgmentDigestEmail = ({
 
             <UnsubscribeLink
               email={email}
-              unsubscribeUrl={getUnsubscribeUrl(email)}
+              unsubscribeUrl={getUnsubscribeUrl(email, userId)}
               locale={locale}
             />
 

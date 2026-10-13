@@ -1,3 +1,4 @@
+import { ForbiddenException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { GideonOidcService } from './gideon-oidc.service';
 import { EntitlementsDeniedError } from './gideon-oidc-entitlements';
@@ -34,9 +35,19 @@ jest.mock('../redis/redis.client', () => ({
 }));
 
 const mockUserFindFirst = jest.fn();
+const mockUserFindMany = jest.fn();
+// Expand-window fallbacks query tenant-blind candidates via findMany.
+// Default to no candidates (clearAllMocks preserves implementations).
+mockUserFindMany.mockResolvedValue([]);
+// Expand-window fallbacks run a nulls-first raw lookup ($queryRaw).
+// Default to no candidates, same as above.
+const mockQueryRaw = jest.fn();
+mockQueryRaw.mockResolvedValue([]);
 const mockUserUpdate = jest.fn();
 const mockMemberFindFirst = jest.fn();
 const mockOrgFindUnique = jest.fn();
+const mockUserFindUnique = jest.fn();
+const mockUserCreate = jest.fn();
 const mockOrgRoleFindMany = jest.fn();
 const mockSessionCreate = jest.fn();
 const mockTransaction = jest.fn();
@@ -44,9 +55,13 @@ const mockTxFindFirst = jest.fn();
 const mockTxUpdate = jest.fn();
 const mockTxCreate = jest.fn();
 jest.mock('@db', () => ({
+  normalizeEmail: jest.requireActual('@gideon-defender/email').normalizeEmail,
   db: {
     user: {
       findFirst: (...args: unknown[]) => mockUserFindFirst(...args),
+      findMany: (...args: unknown[]) => mockUserFindMany(...args),
+      findUnique: (...args: unknown[]) => mockUserFindUnique(...args),
+      create: (...args: unknown[]) => mockUserCreate(...args),
       update: (...args: unknown[]) => mockUserUpdate(...args),
     },
     member: {
@@ -62,6 +77,7 @@ jest.mock('@db', () => ({
       create: (...args: unknown[]) => mockSessionCreate(...args),
     },
     $transaction: (...args: unknown[]) => mockTransaction(...args),
+    $queryRaw: (...args: unknown[]) => mockQueryRaw(...args),
   },
 }));
 
@@ -124,11 +140,18 @@ describe('GideonOidcService bootstrap gate (unknown tenants)', () => {
         },
       }),
     );
-    mockUserFindFirst.mockResolvedValue({
-      id: 'usr_1',
-      email: 'ada@example.com',
-      gideonSub: null,
-      banned: false,
+    mockUserFindUnique.mockResolvedValue(null);
+    mockUserFindFirst.mockImplementation(async (args: unknown) => {
+      const tenantId =
+        (args as { where?: { tenantId?: string } })?.where?.tenantId ??
+        'tenant-new';
+      return {
+        id: 'usr_1',
+        email: 'ada@example.com',
+        gideonSub: null,
+        banned: false,
+        tenantId,
+      };
     });
     mockUserUpdate.mockResolvedValue({ id: 'usr_1' });
     mockOrgFindUnique.mockResolvedValue(null);
@@ -246,9 +269,12 @@ describe('GideonOidcService bootstrap gate (unknown tenants)', () => {
       id: 'usr_1',
       email: 'ada@example.com',
       gideonSub: 'sub-1',
-      gideonTenantId: 'tenant-existing',
+      tenantId: 'tenant-existing',
       banned: false,
     };
+    // Canonical subject hit owned by another tenant: tenant-consistent
+    // sessions reject the cross-tenant login before any entitlement or write.
+    mockUserFindUnique.mockResolvedValue(existingUser);
     mockUserFindFirst.mockResolvedValue(existingUser);
     mockUserUpdate.mockImplementation(
       ({ data }: { data: Record<string, unknown> }) => {
@@ -262,8 +288,8 @@ describe('GideonOidcService bootstrap gate (unknown tenants)', () => {
     });
     await expect(
       service.handleCallback({ callbackUrl: CALLBACK_URL }),
-    ).rejects.toBeInstanceOf(EntitlementsDeniedError);
-    expect(existingUser.gideonTenantId).toBe('tenant-existing');
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(existingUser.tenantId).toBe('tenant-existing');
     expect(mockUserUpdate).not.toHaveBeenCalled();
     expect(mockSessionCreate).not.toHaveBeenCalled();
   });
