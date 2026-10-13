@@ -9,7 +9,7 @@ export interface EntitlementReconciliationConfig {
   readerUrl: string;
   readerToken: string;
   clientId: string;
-  pagerDutyKey: string;
+  pagerDutyKey?: string;
   tenantIds: string[];
 }
 
@@ -33,11 +33,14 @@ export function readReconciliationConfig(): EntitlementReconciliationConfig {
   const readerToken = process.env.GIDEON_ENTITLEMENTS_READ_TOKEN;
   const clientId = process.env.GIDEON_OIDC_CLIENT_ID;
   const pagerDutyKey = process.env.GIDEON_ENTITLEMENTS_PAGERDUTY_ROUTING_KEY;
+  const skipPaging =
+    process.env.GIDEON_ENTITLEMENTS_SKIP_PAGING === 'true' &&
+    process.env.GIDEON_ENVIRONMENT === 'dev';
   if (
     !readerUrl ||
     !readerToken?.trim() ||
     !clientId?.trim() ||
-    !pagerDutyKey?.trim()
+    (!skipPaging && !pagerDutyKey?.trim())
   ) {
     throw new Error(
       'Entitlement reconciliation requires reader URL/token, OIDC client ID and PagerDuty routing key',
@@ -60,7 +63,7 @@ export function readReconciliationConfig(): EntitlementReconciliationConfig {
     readerUrl: url.toString().replace(/\/$/, ''),
     readerToken,
     clientId,
-    pagerDutyKey,
+    pagerDutyKey: skipPaging ? undefined : pagerDutyKey,
     tenantIds,
   };
 }
