@@ -1,11 +1,13 @@
 import { runEntitlementReconciliation } from './reconcile-entitlements-schedule';
 const mockInventory = jest.fn();
+const mockTenants = jest.fn();
 const mockReconcile = jest.fn();
 const mockPage = jest.fn();
 const mockConfig = jest.fn();
 const mockEnabled = jest.fn();
 jest.mock('@db', () => ({
   serviceDb: {
+    organization: { findMany: (...args: unknown[]) => mockTenants(...args) },
     member: { findMany: (...args: unknown[]) => mockInventory(...args) },
   },
 }));
@@ -35,11 +37,47 @@ beforeEach(() => {
   jest.resetAllMocks();
   mockEnabled.mockReturnValue(true);
   mockConfig.mockReturnValue(config);
+  mockTenants.mockResolvedValue([]);
   mockPage.mockResolvedValue(undefined);
   mockReconcile.mockResolvedValue('changed');
   mockInventory
     .mockResolvedValueOnce([{ id: 'mem_revoked' }, { id: 'mem_offboarded' }])
     .mockResolvedValue([]);
+});
+
+it('discovers tenants beyond the pilot allowlist on every all-tenant run', async () => {
+  mockConfig.mockReturnValue({ ...config, allTenants: true });
+  mockTenants
+    .mockResolvedValueOnce([{ id: 'tenant_1' }])
+    .mockResolvedValueOnce([{ id: 'tenant_new' }])
+    .mockResolvedValue([]);
+  mockInventory
+    .mockReset()
+    .mockResolvedValueOnce([])
+    .mockResolvedValueOnce([{ id: 'mem_new' }])
+    .mockResolvedValue([]);
+  await expect(runEntitlementReconciliation()).resolves.toMatchObject({
+    changed: 1,
+  });
+  expect(mockTenants).toHaveBeenNthCalledWith(2, {
+    where: { id: { gt: 'tenant_1' } },
+    select: { id: true },
+    orderBy: { id: 'asc' },
+    take: 100,
+  });
+  expect(mockReconcile).toHaveBeenCalledWith({
+    memberId: 'mem_new',
+    tenantId: 'tenant_new',
+    config: expect.objectContaining({ tenantIds: ['tenant_1', 'tenant_new'] }),
+  });
+});
+
+it('fails before membership changes if all-tenant discovery fails', async () => {
+  mockConfig.mockReturnValue({ ...config, allTenants: true });
+  mockTenants.mockRejectedValue(new Error('inventory unavailable'));
+  await expect(runEntitlementReconciliation()).rejects.toThrow();
+  expect(mockInventory).not.toHaveBeenCalled();
+  expect(mockReconcile).not.toHaveBeenCalled();
 });
 
 it('does nothing when disabled', async () => {

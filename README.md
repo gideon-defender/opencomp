@@ -202,24 +202,38 @@ GIDEON_OIDC_REDIRECT_URI=""  # e.g. http://localhost:3333/v1/auth/gideon/callbac
 # GIDEON_OIDC_CLIENT_SECRET="" # only for confidential apps; public apps use PKCE
 ```
 
-#### 2. Roles → OIDC migration status
+#### 2. OIDC entitlements and access management
 
 Org membership is moving from locally managed roles to IdP-owned
 entitlements: the Gideon identity service decides who holds which role name,
 OpenComp syncs it into `Member.role` at login and, when enabled, reconciles it
-between logins. Permission
-_content_ (`packages/auth/src/permissions.ts`) is unchanged — only who _holds_
-a role moves to the IdP.
+between logins. Permission definitions in `packages/auth/src/permissions.ts`
+remain the source of truth for what each role can do.
 
-Default behavior today is **audit mode**: logins evaluate the verified
-ID-token `entitlements` claim and log what enforcement _would_ do, then mint
-sessions as before. Nothing changes unless an operator opts a tenant in:
+Configure access in Gideon identity cockpit: link the OpenComp OAuth client to
+the tenant's application, define application roles with entitlement values, and
+assign those roles to users or groups. Entitlement values must match OpenComp
+role names: `owner`, `admin`, `auditor`, `employee`, `contractor`, or an existing
+custom role in that organization. Multiple values grant multiple roles; the
+verified claim `entitlements: ["owner", "admin"]` grants both roles. Group
+assignments must satisfy Gideon's governance review requirements; expired or
+disallowed assignments do not emit entitlements.
+
+With enforcement enabled, an empty claim or one with no recognized role denies
+login without issuing a new session. Valid claims synchronize the membership
+with `roleSource='sso'`. Entitlements control user access; they do not enable
+organization products or configure integration OAuth credentials.
+
+With both enforcement controls unset, the default is **audit mode**: logins
+evaluate the verified ID-token `entitlements` claim and log what enforcement
+_would_ do, then mint sessions as before. Configure enforcement explicitly:
 
 ```env
-# Phase 1 enforcement (comma-separated tenant IDs; unset = audit everywhere).
-# Removing a tenant stops claim enforcement/reconciliation for that tenant;
-# it does not restore roles or sessions already revoked.
+# Pilot enforcement (comma-separated tenant IDs).
+# This allowlist applies only when all-tenant mode is off.
 GIDEON_ENFORCEMENT_TENANTS=""
+# Enforce all tenants, including future provisioned organizations; takes precedence.
+GIDEON_ENFORCEMENT_ALL_TENANTS=false
 # Phase 5 bootstrap gate (deny unknown-tenant setup without a verified IdP
 # `owner` assignment). Enable only after IdP provisioning seeds an owner per
 # new tenant — otherwise new signups brick.
@@ -229,19 +243,43 @@ GIDEON_BOOTSTRAP_ENFORCED=""  # set to "true" to enable
 | Phase | Status |
 | ----- | ------ |
 | 0 — Audit + IdP data prep (claim evaluation, `roleSource`/`idpAccessRevoked` columns, conversion inventory) | Shipped |
-| 1 — Enforce + JIT member sync + pilot cutover (`no_role` UX, per-tenant allowlist) | Shipped, allowlisted tenants only |
-| 2 — Reconciliation every five minutes (revocation between logins) | Implemented; disabled by default pending reader configuration and pilot acceptance |
+| 1 — Enforce + JIT member sync + cutover (`no_role` UX) | Pilot deployed; all-tenant mode implemented locally, awaiting deployment |
+| 2 — Reconciliation every five minutes (revocation between logins) | Enabled for every existing dev tenant (currently bootstrap only); future-tenant discovery awaits deployment of the local all-tenant code |
 | 3 — Lockdown (legacy membership writes return `410 Gone`) | Server fences shipped; UI cleanup pending (invite dialogs still present) |
 | 4 — Deletion of retired endpoints/services | Pending |
 | 5 — Bootstrap + break-glass prerequisites (owner gate, runbooks) | Gate and runbooks shipped; per-tenant IdP owner seeding still required before enabling |
 
+Set `GIDEON_ENFORCEMENT_ALL_TENANTS=true` to enforce every identified tenant.
+Unknown tenants are denied until their OpenComp organization exists; this mode
+does not enable self-service owner bootstrap. Existing local memberships must
+be converted using verified IdP assignments before expanding enforcement.
+Legacy membership/role mutations return `410 Gone` even while the UI cleanup
+is pending. Use identity cockpit to manage access; retained OpenComp invite and
+role-editing controls cannot grant it.
+
+For all-tenant enforcement and between-login reconciliation, configure both:
+
+```env
+GIDEON_ENFORCEMENT_ALL_TENANTS=true
+GIDEON_ENTITLEMENTS_RECONCILIATION_ENABLED=true
+```
+
+The all-tenant flag takes precedence over the pilot allowlist. To return to
+pilot scope, set it to `false` and retain the allowlist. Clearing both controls
+returns login to audit mode and removes reconciliation scope; neither rollback
+restores revoked roles or deleted sessions.
+
 Between-login reconciliation processes only SSO-owned memberships in
-`GIDEON_ENFORCEMENT_TENANTS`. It reads fresh, complete entitlements from Gideon
-Auth's dedicated client-scoped reader, overwrites cached roles, and revokes
+`GIDEON_ENFORCEMENT_TENANTS`, or discovers all organizations each run when
+`GIDEON_ENFORCEMENT_ALL_TENANTS=true`. It reads fresh, complete entitlements
+from Gideon Auth's dedicated client-scoped reader, overwrites cached roles, and revokes
 tenant-scoped sessions when no valid role remains. Role changes, session
 deletion, and audit records commit together. Independent HR offboarding fields
 remain unchanged; restoring IdP entitlements cannot reactivate an HR-offboarded
 member. Reader failures retain last-known access and fail the job.
+
+Restoring an entitlement clears IdP revocation but does not recreate a deleted
+session: the user must perform a fresh OIDC login.
 
 Configure the API/local Trigger worker through the deployment's secret store:
 
@@ -250,7 +288,7 @@ GIDEON_ENTITLEMENTS_RECONCILIATION_ENABLED=false # enable after reader preflight
 GIDEON_ENTITLEMENTS_READER_URL=https://gideon.dev.gideondefender.com
 GIDEON_ENTITLEMENTS_READ_TOKEN="" # dedicated reader secret; never commit it
 GIDEON_ENTITLEMENTS_PAGERDUTY_ROUTING_KEY="" # required unless dev explicitly opts out
-# Existing GIDEON_OIDC_CLIENT_ID and GIDEON_ENFORCEMENT_TENANTS define the scope.
+# GIDEON_OIDC_CLIENT_ID pins the app; enforcement controls define tenant scope.
 ```
 
 Gideon Auth must receive the same secret as `ENTITLEMENTS_READ_TOKEN`, with
@@ -261,11 +299,22 @@ Other environments require a PagerDuty routing key. Disable future polling with
 `GIDEON_ENTITLEMENTS_RECONCILIATION_ENABLED=false`; this does not undo recorded
 revocations or restore deleted sessions.
 
-**Dev pilot checkpoint (2026-10-12):** the reader is configured for bootstrap
-tenant `00000000-0000-0000-0000-000000000001`, and the protected account's
-`owner` and `admin` entitlements were verified. Reconciliation remains disabled
-until the dev paging opt-out is deployed. The separate Gmail account's live
-grant → login → revoke acceptance test is still pending.
+**Dev checkpoint (2026-10-13):** reconciliation covers every existing dev tenant.
+The live inventory found only bootstrap tenant
+`00000000-0000-0000-0000-000000000001`; PagerDuty is explicitly skipped in dev.
+Task revision 41 is deployed with `GIDEON_ENFORCEMENT_ALL_TENANTS=true`, but
+its current image (`dev-0d69878e9813…`) still reads the bootstrap allowlist.
+Deploy the local all-tenant code to activate automatic coverage for future
+provisioned organizations. Setting the flag alone does not update the image.
+The separate Gmail account completed a real auditor login; removing its test
+assignment caused the next scheduled run to revoke its retained session, and
+refreshing the original browser window denied access. Restoring its auditor
+assignment restored the membership on a scheduled run before a fresh login;
+the deleted session stayed invalid, and the fresh login accessed the dashboard
+and protected API. The protected account retained `owner` and `admin`, and its
+existing session still accessed the protected API. Captured HR fields stayed
+unchanged. See the reconciliation runbook for audit evidence and the remaining
+HR-offboarded restoration and outage/paging acceptance checks.
 
 Operator docs: [delivery plan](docs/plans/2026-10-11-idp-owned-user-management.md),
 [entitlements takeover](docs/plans/2026-10-11-oidc-entitlements-takeover.md),
@@ -273,8 +322,9 @@ Operator docs: [delivery plan](docs/plans/2026-10-11-idp-owned-user-management.m
 [IdP user-management runbook](docs/runbooks/idp-user-management.md).
 Cutover tooling: `scripts/phase0-idp-conversion-inventory.mjs` (read-only
 inventory) and `scripts/phase1-pilot-conversion.mjs` (dry-run by default,
-`--apply` converts one tenant). Pilot one tenant end-to-end before extending
-the allowlist.
+`--apply` converts one tenant). Convert existing local memberships before
+extending the allowlist or enabling all-tenant mode; reconciliation does not
+convert local memberships itself.
 
 #### 3. Redis
 

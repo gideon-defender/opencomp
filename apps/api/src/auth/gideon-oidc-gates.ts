@@ -17,13 +17,14 @@ const logger = new Logger('OidcBootstrapGate');
  */
 
 /**
- * Pilot rollout lever (Phase 1): comma-separated tenant ids whose logins
- * enforce. Unset/empty → audit mode everywhere (Phase 0 behavior). Add
- * tenants progressively; clearing it is the instant rollback (rows stay as
+ * All-tenant enforcement takes precedence over the pilot allowlist.
+ * With both controls unset, logins stay in audit mode. Clear all-tenant
+ * mode and the allowlist to roll back enforcement (rows stay as
  * last synced, fences stay up — no local grants are restored).
  */
 export function isEnforcementEnabledFor(tenantId: string | undefined): boolean {
   if (!tenantId) return false;
+  if (process.env.GIDEON_ENFORCEMENT_ALL_TENANTS === 'true') return true;
   const raw = process.env.GIDEON_ENFORCEMENT_TENANTS ?? '';
   const allowlist = new Set(
     raw

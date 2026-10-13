@@ -153,15 +153,9 @@ describe('GideonOidcService Phase 1 enforcement (pilot tenant)', () => {
 
   it('denies a role-less login with no session minted', async () => {
     mockExchange({ claims: { sub: 'sub-1' }, tid: 'tenant-1' });
-
-    const error: unknown = await service
-      .handleCallback({ callbackUrl: CALLBACK_URL })
-      .catch((err: unknown) => err);
-
-    if (!(error instanceof EntitlementsDeniedError)) {
-      throw new Error('expected EntitlementsDeniedError');
-    }
-    expect(error.reason).toBe('empty_entitlements');
+    await expect(
+      service.handleCallback({ callbackUrl: CALLBACK_URL }),
+    ).rejects.toMatchObject({ reason: 'empty_entitlements' });
     expect(mockMemberUpdateMany).toHaveBeenCalledWith({
       where: { userId: 'usr_1', organizationId: 'tenant-1' },
       data: { role: '', roleSource: 'sso', idpAccessRevoked: true },
@@ -281,14 +275,25 @@ describe('GideonOidcService Phase 1 enforcement (pilot tenant)', () => {
     expect(mockSessionCreate).not.toHaveBeenCalled();
   });
 
-  it('leaves non-pilot tenants in audit mode (session minted)', async () => {
-    mockExchange({ claims: { sub: 'sub-1' }, tid: 'tenant-9' });
-    mockOrgFindUnique.mockResolvedValue({ id: 'tenant-9' });
-
-    const result = await service.handleCallback({ callbackUrl: CALLBACK_URL });
-
-    expect(result.sessionToken).toBe('ses-token');
-    expect(mockMemberUpdateMany).not.toHaveBeenCalled();
-    expect(mockTransaction).not.toHaveBeenCalled();
-  });
+  it.each([false, true])(
+    'handles a non-pilot tenant with all-tenant mode=%s',
+    async (allTenants) => {
+      process.env.GIDEON_ENFORCEMENT_ALL_TENANTS = String(allTenants);
+      mockExchange({ claims: { sub: 'sub-1' }, tid: 'tenant-9' });
+      mockOrgFindUnique.mockResolvedValue({ id: 'tenant-9' });
+      if (allTenants) {
+        await expect(
+          service.handleCallback({ callbackUrl: CALLBACK_URL }),
+        ).rejects.toBeInstanceOf(EntitlementsDeniedError);
+        expect(mockSessionCreate).not.toHaveBeenCalled();
+        return;
+      }
+      const result = await service.handleCallback({
+        callbackUrl: CALLBACK_URL,
+      });
+      expect(result.sessionToken).toBe('ses-token');
+      expect(mockMemberUpdateMany).not.toHaveBeenCalled();
+      expect(mockTransaction).not.toHaveBeenCalled();
+    },
+  );
 });

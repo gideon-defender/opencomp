@@ -8,6 +8,23 @@ import {
 import { reconcileSsoMember } from '../../auth/reconcile-sso-member';
 import { reportReconciliationIncident } from './entitlement-reconciliation-alert';
 
+/** Re-read the tenant inventory each run so newly provisioned orgs are covered. */
+async function discoverTenantIds(): Promise<string[]> {
+  const tenantIds: string[] = [];
+  let after: string | undefined;
+  while (true) {
+    const tenants = await serviceDb.organization.findMany({
+      where: after ? { id: { gt: after } } : {},
+      select: { id: true },
+      orderBy: { id: 'asc' },
+      take: 100,
+    });
+    if (tenants.length === 0) return tenantIds;
+    tenantIds.push(...tenants.map((tenant) => tenant.id));
+    after = tenants[tenants.length - 1].id;
+  }
+}
+
 /** Poll every five minutes; the next request after reconciliation sees the cutoff. */
 export async function runEntitlementReconciliation() {
   if (!reconciliationEnabled()) return { skipped: true, changed: 0, failed: 0 };
@@ -30,6 +47,8 @@ export async function runEntitlementReconciliation() {
   let config: EntitlementReconciliationConfig;
   try {
     config = readReconciliationConfig();
+    if (config.allTenants)
+      config = { ...config, tenantIds: await discoverTenantIds() };
   } catch {
     const key = process.env.GIDEON_ENTITLEMENTS_PAGERDUTY_ROUTING_KEY;
     if (key)

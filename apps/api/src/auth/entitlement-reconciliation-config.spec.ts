@@ -16,6 +16,7 @@ beforeEach(() => {
   delete process.env.GIDEON_ENTITLEMENTS_RECONCILIATION_ENABLED;
   delete process.env.GIDEON_ENTITLEMENTS_SKIP_PAGING;
   delete process.env.GIDEON_ENVIRONMENT;
+  delete process.env.GIDEON_ENFORCEMENT_ALL_TENANTS;
 });
 afterEach(() => {
   process.env = savedEnv;
@@ -51,6 +52,15 @@ it('accepts the bootstrap tenant and deduplicates the enforcement allowlist', ()
   expect(readReconciliationConfig().tenantIds).toEqual([
     '00000000-0000-0000-0000-000000000001',
   ]);
+});
+
+it('selects all-tenant inventory explicitly, without requiring a static allowlist', () => {
+  process.env.GIDEON_ENFORCEMENT_ALL_TENANTS = 'true';
+  delete process.env.GIDEON_ENFORCEMENT_TENANTS;
+  expect(readReconciliationConfig()).toMatchObject({
+    allTenants: true,
+    tenantIds: [],
+  });
 });
 
 it.each([
