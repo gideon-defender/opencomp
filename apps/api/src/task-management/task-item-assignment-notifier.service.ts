@@ -134,7 +134,7 @@ export class TaskItemAssignmentNotifierService {
         `Sending assignment notification to assignee: ${assigneeUser.email} for task "${taskTitle}"`,
       );
 
-      // Send email notification via Resend
+      // Send email notification via SES (triggerEmail -> SQS -> email-worker)
       try {
         const { id } = await triggerEmail({
           organizationId: organizationId,

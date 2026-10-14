@@ -132,7 +132,7 @@ export class TaskItemMentionNotifierService {
 
         const userName = user.name || user.email || 'User';
 
-        // Send email notification via Resend
+        // Send email notification via SES (triggerEmail -> SQS -> email-worker)
         try {
           const { id } = await triggerEmail({
             organizationId: organizationId,

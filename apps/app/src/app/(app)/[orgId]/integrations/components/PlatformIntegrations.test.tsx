@@ -8,6 +8,7 @@ import {
 } from '@/test-utils/mocks/permissions';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { SWRConfig } from 'swr';
 
 mockNextIntl();
 
@@ -35,6 +36,16 @@ const {
 const { mockRouterPush, mockUseSearchParams } = vi.hoisted(() => ({
   mockRouterPush: vi.fn(),
   mockUseSearchParams: vi.fn(() => new URLSearchParams()),
+}));
+
+const { mockApiClientGet, mockApiPost } = vi.hoisted(() => ({
+  mockApiClientGet: vi.fn(),
+  mockApiPost: vi.fn(),
+}));
+
+vi.mock('@/lib/api-client', () => ({
+  apiClient: { get: mockApiClientGet },
+  api: { post: mockApiPost },
 }));
 
 vi.mock('@/hooks/use-integration-platform', () => ({
@@ -165,6 +176,8 @@ describe('PlatformIntegrations', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseSearchParams.mockReturnValue(new URLSearchParams() as any);
+    mockApiClientGet.mockResolvedValue({ data: { ready: true }, status: 200 });
+    mockApiPost.mockResolvedValue({ data: {}, status: 200 });
     mockUseIntegrationProviders.mockReturnValue({
       providers: [
         {
@@ -540,6 +553,59 @@ describe('PlatformIntegrations', () => {
 
       expect(screen.getByText('connect')).toBeInTheDocument();
       expect(screen.queryByText('oauthNotConfigured')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Checkr catalog entry', () => {
+    function renderWithCheckr() {
+      setMockPermissions(ADMIN_PERMISSIONS);
+      return render(
+        <SWRConfig value={{ provider: () => new Map(), errorRetryCount: 0 }}>
+          <PlatformIntegrations {...defaultProps} />
+        </SWRConfig>,
+      );
+    }
+
+    it('renders the Checkr card alongside platform providers', () => {
+      renderWithCheckr();
+
+      const link = screen.getByRole('link', { name: /Open Checkr/ });
+      expect(link).toHaveAttribute('href', '/org-1/integrations/checkr');
+      expect(screen.getByText('GitHub')).toBeInTheDocument();
+    });
+
+    it('shows the Ready badge when intake is ready', async () => {
+      mockApiClientGet.mockResolvedValue({ data: { ready: true }, status: 200 });
+      renderWithCheckr();
+
+      expect(await screen.findByText('Ready')).toBeInTheDocument();
+      expect(mockApiClientGet).toHaveBeenCalledWith(
+        '/v1/people/candidate-screenings/readiness',
+        'org-1',
+      );
+    });
+
+    it('hides the status badge for read-only users without calling readiness', () => {
+      setMockPermissions(AUDITOR_PERMISSIONS);
+      render(
+        <SWRConfig value={{ provider: () => new Map(), errorRetryCount: 0 }}>
+          <PlatformIntegrations {...defaultProps} />
+        </SWRConfig>,
+      );
+
+      expect(screen.getByRole('link', { name: /Open Checkr/ })).toBeInTheDocument();
+      expect(screen.queryByText('Ready')).not.toBeInTheDocument();
+      expect(screen.queryByText('Setup required')).not.toBeInTheDocument();
+      expect(mockApiClientGet).not.toHaveBeenCalled();
+    });
+
+    it('surfaces Checkr on search while filtering out other providers', () => {
+      renderWithCheckr();
+
+      fireEvent.change(screen.getByTestId('search-input'), { target: { value: 'checkr' } });
+
+      expect(screen.getByRole('link', { name: /Open Checkr/ })).toBeInTheDocument();
+      expect(screen.queryByText('GitHub')).not.toBeInTheDocument();
     });
   });
 });
