@@ -8,49 +8,21 @@ import { useState } from 'react';
 import { parseRolesString } from '@/lib/permissions';
 import { getInitials } from '@/lib/utils';
 import type { Role } from '@db';
+import { Avatar, AvatarFallback, AvatarImage } from '@gideon-defender/ui/avatar';
+import { Badge } from '@gideon-defender/ui/badge';
 import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-  Badge,
-  Button,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  HStack,
-  Label,
-  TableCell,
-  TableRow,
-  Text,
-} from '@trycompai/design-system';
-import {
-  Checkmark,
-  Edit,
-  Email,
-  Laptop,
-  OverflowMenuVertical,
-  TrashCan,
-} from '@trycompai/design-system/icons';
+} from '@gideon-defender/ui/dropdown-menu';
+import { TableCell, TableRow } from '@gideon-defender/ui/table';
+import { Laptop, MoreVertical } from 'lucide-react';
 
 import { toast } from 'sonner';
 import { BackgroundCheckVerifiedTick } from '../../components/BackgroundCheckVerifiedTick';
-import type { CustomRoleOption } from './MultiRoleCombobox';
-import { MultiRoleCombobox } from './MultiRoleCombobox';
+import { MemberRequirementCell } from './MemberRequirementCell';
 import { RemoveDeviceAlert } from './RemoveDeviceAlert';
-import { RemoveMemberAlert } from './RemoveMemberAlert';
-import {
-  RequirementBadge,
-  RequirementCount,
-  RequirementDash,
-  RequirementLoading,
-} from './RequirementCell';
 import type {
   BackgroundCheckStatus,
   MemberWithUser,
@@ -72,14 +44,9 @@ const ALL_REQUIREMENT_COLUMNS: RequirementColumnKey[] = [
 
 interface MemberRowProps {
   member: MemberWithUser;
-  onRemove: (memberId: string, options: { skipOffboarding: boolean }) => void;
+  // Access is Gideon-synced (read-only). Only device unlink stays local.
   onRemoveDevice: (memberId: string) => void;
-  onUpdateRole: (memberId: string, roles: string[]) => void;
-  onReactivate: (memberId: string) => void;
-  onResendPortalInvite?: (memberId: string) => void;
-  canEdit: boolean;
   isCurrentUserOwner: boolean;
-  customRoles?: CustomRoleOption[];
   taskCompletion?: TaskCompletion;
   deviceStatus?: 'compliant' | 'non-compliant' | 'stale' | 'not-installed';
   isDeviceStatusLoading?: boolean;
@@ -114,14 +81,8 @@ function isBackgroundCheckComplete(status?: BackgroundCheckStatus): boolean {
 
 export function MemberRow({
   member,
-  onRemove,
   onRemoveDevice,
-  onUpdateRole,
-  onReactivate,
-  onResendPortalInvite,
-  canEdit,
   isCurrentUserOwner,
-  customRoles = [],
   taskCompletion,
   deviceStatus,
   isDeviceStatusLoading = false,
@@ -132,16 +93,9 @@ export function MemberRow({
 }: MemberRowProps) {
   const { orgId } = useParams<{ orgId: string }>();
 
-  const [isRemoveAlertOpen, setIsRemoveAlertOpen] = useState(false);
   const [isRemoveDeviceAlertOpen, setIsRemoveDeviceAlertOpen] = useState(false);
-  const [isUpdateRolesOpen, setIsUpdateRolesOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [selectedRoles, setSelectedRoles] = useState<string[]>(() => parseRoles(member.role));
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [isRemoving, setIsRemoving] = useState(false);
   const [isRemovingDevice, setIsRemovingDevice] = useState(false);
-  const [isReactivating, setIsReactivating] = useState(false);
-  const [isSendingInvite, setIsSendingInvite] = useState(false);
 
   const memberName = member.user.name || member.user.email || 'Member';
   const memberEmail = member.user.email || '';
@@ -149,149 +103,11 @@ export function MemberRow({
   const memberId = member.id;
   const currentRoles = parseRoles(member.role);
 
-  const isOwner = currentRoles.includes('owner');
   const isAuditorOnly = currentRoles.length > 0 && currentRoles.every((role) => role === 'auditor');
-  const canRemove = !isOwner;
   const isDeactivated = member.deactivated || !member.isActive;
   const profileHref = `/${orgId}/people/${memberId}`;
   const hasCompletedBackgroundCheck = isBackgroundCheckComplete(backgroundCheckStatus);
   const memberExempt = member.backgroundCheckExempt === true;
-  const shouldShowTaskRequirements = !isDeactivated;
-  // One cell per requirement column. A muted dash = the requirement doesn't
-  // apply to this member (org flag off, exempt, auditor-only, admin, 0 total).
-  const renderRequirementCell = (key: RequirementColumnKey) => {
-    switch (key) {
-      case 'policies':
-        return taskCompletion && taskCompletion.policies.total > 0 ? (
-          <RequirementCount
-            label="Policies"
-            completed={taskCompletion.policies.completed}
-            total={taskCompletion.policies.total}
-          />
-        ) : (
-          <RequirementDash />
-        );
-      case 'training':
-        return taskCompletion && taskCompletion.training.total > 0 ? (
-          <RequirementCount
-            label="Training"
-            completed={taskCompletion.training.completed}
-            total={taskCompletion.training.total}
-          />
-        ) : (
-          <RequirementDash />
-        );
-      case 'hipaa':
-        return taskCompletion?.hipaa ? (
-          <RequirementBadge
-            label="HIPAA"
-            state={
-              taskCompletion.hipaa.completed >= taskCompletion.hipaa.total ? 'done' : 'missing'
-            }
-          />
-        ) : (
-          <RequirementDash />
-        );
-      case 'device':
-        if (!shouldShowTaskRequirements) return <RequirementDash />;
-        if (deviceStatus) {
-          return (
-            <RequirementBadge
-              label="Device"
-              state={deviceStatus === 'compliant' ? 'done' : 'missing'}
-            />
-          );
-        }
-        return isDeviceStatusLoading ? <RequirementLoading /> : <RequirementDash />;
-      case 'background':
-        return shouldShowTaskRequirements &&
-          backgroundCheckStepEnabled &&
-          !memberExempt &&
-          !isAuditorOnly ? (
-          <RequirementBadge
-            label="Background"
-            state={hasCompletedBackgroundCheck ? 'done' : 'missing'}
-          />
-        ) : (
-          <RequirementDash />
-        );
-      case 'twoFactor':
-        // 2FA applies to EVERY non-deactivated member (platform admins
-        // included). Absent status = no 2FA source configured for the org.
-        return !isDeactivated && twoFactorStatus ? (
-          <RequirementBadge
-            label="2FA"
-            state={
-              twoFactorStatus === 'enabled'
-                ? 'done'
-                : twoFactorStatus === 'missing'
-                  ? 'missing'
-                  : 'not-provided'
-            }
-          />
-        ) : (
-          <RequirementDash />
-        );
-    }
-  };
-
-  const handleEditRolesClick = () => {
-    setSelectedRoles(parseRoles(member.role));
-    setDropdownOpen(false);
-    setIsUpdateRolesOpen(true);
-  };
-
-  const handleUpdateRolesClick = async () => {
-    let rolesToUpdate = selectedRoles;
-    if (isOwner && !rolesToUpdate.includes('owner')) {
-      rolesToUpdate = [...rolesToUpdate, 'owner'];
-    }
-
-    if (rolesToUpdate.length === 0) {
-      return;
-    }
-
-    setIsUpdating(true);
-    await onUpdateRole(memberId, rolesToUpdate);
-    setIsUpdating(false);
-    setIsUpdateRolesOpen(false);
-  };
-
-  const handleRemoveClick = async (options: { skipOffboarding: boolean }) => {
-    if (!canRemove) return;
-    setIsRemoveAlertOpen(false);
-    setIsRemoving(true);
-    try {
-      await onRemove(memberId, options);
-    } finally {
-      setIsRemoving(false);
-    }
-  };
-
-  const handleReactivateClick = async () => {
-    setDropdownOpen(false);
-    setIsReactivating(true);
-    try {
-      await onReactivate(memberId);
-    } finally {
-      setIsReactivating(false);
-    }
-  };
-
-  const handleResendPortalInviteClick = async () => {
-    if (!onResendPortalInvite) return;
-    setDropdownOpen(false);
-    setIsSendingInvite(true);
-    try {
-      await onResendPortalInvite(memberId);
-      toast.success('Portal invite email sent');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to send portal invite');
-    } finally {
-      setIsSendingInvite(false);
-    }
-  };
-
   const handleRemoveDeviceClick = async () => {
     try {
       setIsRemoveDeviceAlertOpen(false);
@@ -304,12 +120,19 @@ export function MemberRow({
     }
   };
 
+  // Device unlink stays local (device management, not IdP access). All
+  // role/invite/membership actions are Gideon-synced and have no local UI.
+  const showDeviceAction =
+    !isDeactivated &&
+    (member.fleetDmLabelId || (deviceStatus && deviceStatus !== 'not-installed')) &&
+    isCurrentUserOwner;
+
   return (
     <>
       <TableRow data-state={isDeactivated ? 'disabled' : undefined}>
         {/* NAME */}
         <TableCell>
-          <HStack gap="3" align="center">
+          <div className="flex items-center gap-3">
             <div className={`flex-shrink-0 ${isDeactivated ? 'grayscale opacity-60' : ''}`}>
               <Avatar>
                 <AvatarImage src={memberAvatar || undefined} />
@@ -330,9 +153,9 @@ export function MemberRow({
                   <BackgroundCheckVerifiedTick />
                 )}
               </div>
-              <Text variant="muted">{memberEmail}</Text>
+              <span className="text-muted-foreground">{memberEmail}</span>
             </div>
-          </HStack>
+          </div>
         </TableCell>
 
         {/* STATUS */}
@@ -344,12 +167,12 @@ export function MemberRow({
           )}
         </TableCell>
 
-        {/* ROLE */}
+        {/* ROLE (read-only, synced from Gideon) */}
         <TableCell>
           <div className="w-[160px]">
             <div className="flex flex-wrap gap-1">
               {currentRoles.map((role) => (
-                <Badge key={role} variant="outline">
+                <Badge key={role} variant="outline" title="Access is synced from Gideon">
                   {getRoleLabel(role)}
                 </Badge>
               ))}
@@ -360,104 +183,75 @@ export function MemberRow({
         {/* ONBOARDED */}
         <TableCell>
           {member.onboardDate ? (
-            <Text size="sm" variant="muted">
+            <span className="text-sm text-muted-foreground">
               {format(member.onboardDate, 'MMM d, yyyy')}
-            </Text>
+            </span>
           ) : (
-            <Text size="sm" variant="muted">
-              —
-            </Text>
+            <span className="text-sm text-muted-foreground">—</span>
           )}
         </TableCell>
 
         {/* OFFBOARDED */}
         <TableCell>
           {member.offboardDate ? (
-            <Text size="sm" variant="muted">
+            <span className="text-sm text-muted-foreground">
               {format(member.offboardDate, 'MMM d, yyyy')}
-            </Text>
+            </span>
           ) : (
-            <Text size="sm" variant="muted">
-              —
-            </Text>
+            <span className="text-sm text-muted-foreground">—</span>
           )}
         </TableCell>
 
         {/* Requirement columns */}
         {requirementColumns.map((key) => (
-          <TableCell key={key}>{renderRequirementCell(key)}</TableCell>
+          <TableCell key={key}>
+            <MemberRequirementCell
+              column={key}
+              taskCompletion={taskCompletion}
+              deviceStatus={deviceStatus}
+              isDeviceStatusLoading={isDeviceStatusLoading}
+              backgroundCheckStepEnabled={backgroundCheckStepEnabled}
+              twoFactorStatus={twoFactorStatus}
+              isDeactivated={isDeactivated}
+              memberExempt={memberExempt}
+              isAuditorOnly={isAuditorOnly}
+              hasCompletedBackgroundCheck={hasCompletedBackgroundCheck}
+            />
+          </TableCell>
         ))}
 
-        {/* ACTIONS */}
+        {/* ACTIONS (device-only; access is Gideon-synced) */}
         <TableCell>
           <div className="flex justify-center">
-            <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
-              <DropdownMenuTrigger
-                disabled={!canEdit}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
-              >
-                <OverflowMenuVertical />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {isDeactivated && canEdit && (
-                  <DropdownMenuItem onClick={handleReactivateClick} disabled={isReactivating}>
-                    <Checkmark size={16} className="mr-2" />
-                    <span>{isReactivating ? 'Reinstating...' : 'Reinstate Member'}</span>
-                  </DropdownMenuItem>
-                )}
-                {!isDeactivated && canEdit && (
-                  <DropdownMenuItem onClick={handleEditRolesClick}>
-                    <Edit size={16} className="mr-2" />
-                    <span>Edit Roles</span>
-                  </DropdownMenuItem>
-                )}
-                {!isDeactivated && canEdit && (
+            {showDeviceAction ? (
+              <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+                <DropdownMenuTrigger
+                  aria-label="Member device actions"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+                >
+                  <MoreVertical size={16} />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
                   <DropdownMenuItem
-                    onClick={handleResendPortalInviteClick}
-                    disabled={isSendingInvite}
-                  >
-                    <Email size={16} className="mr-2" />
-                    <span>{isSendingInvite ? 'Sending...' : 'Resend Portal Invite'}</span>
-                  </DropdownMenuItem>
-                )}
-                {!isDeactivated &&
-                  (member.fleetDmLabelId || (deviceStatus && deviceStatus !== 'not-installed')) &&
-                  isCurrentUserOwner && (
-                    <DropdownMenuItem
-                      onClick={() => {
-                        setDropdownOpen(false);
-                        setIsRemoveDeviceAlertOpen(true);
-                      }}
-                    >
-                      <Laptop size={16} className="mr-2" />
-                      <span>Remove Device</span>
-                    </DropdownMenuItem>
-                  )}
-                {!isDeactivated && canRemove && (
-                  <DropdownMenuItem
-                    variant="destructive"
                     onClick={() => {
                       setDropdownOpen(false);
-                      setIsRemoveAlertOpen(true);
+                      setIsRemoveDeviceAlertOpen(true);
                     }}
                   >
-                    <TrashCan size={16} className="mr-2" />
-                    <span>Remove Member</span>
+                    <Laptop size={16} className="mr-2" />
+                    <span>Remove Device</span>
                   </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <span className="text-sm text-muted-foreground" title="Access is synced from Gideon">
+                —
+              </span>
+            )}
           </div>
         </TableCell>
       </TableRow>
 
-      <RemoveMemberAlert
-        open={isRemoveAlertOpen}
-        onOpenChange={setIsRemoveAlertOpen}
-        memberName={memberName}
-        onRemove={handleRemoveClick}
-        isRemoving={isRemoving}
-      />
       <RemoveDeviceAlert
         open={isRemoveDeviceAlertOpen}
         title="Remove Device"
@@ -471,47 +265,6 @@ export function MemberRow({
         onRemove={handleRemoveDeviceClick}
         isRemoving={isRemovingDevice}
       />
-
-      {/* Edit Roles Dialog */}
-      <Dialog open={isUpdateRolesOpen} onOpenChange={setIsUpdateRolesOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Member Roles</DialogTitle>
-            <DialogDescription>Change roles for {memberName}</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor={`role-${memberId}`}>Roles</Label>
-              <MultiRoleCombobox
-                selectedRoles={selectedRoles}
-                onSelectedRolesChange={setSelectedRoles}
-                placeholder="Select a role"
-                lockedRoles={isOwner ? ['owner'] : []}
-                customRoles={customRoles}
-              />
-              {isOwner && (
-                <p className="text-muted-foreground mt-1 text-xs">
-                  The owner role cannot be removed.
-                </p>
-              )}
-              <p className="text-muted-foreground mt-1 text-xs">
-                Members must have at least one role.
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsUpdateRolesOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleUpdateRolesClick}
-              disabled={isUpdating || selectedRoles.length === 0}
-            >
-              Update
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

@@ -29,10 +29,6 @@ export default async function OrganizationSettings({
       logo: string | null;
       logoUrl: string | null;
       isOwner: boolean;
-      eligibleMembers: Array<{
-        id: string;
-        user: { name: string | null; email: string };
-      }>;
     }>('/v1/organization?includeOwnership=true'),
   ]);
 
@@ -47,10 +43,7 @@ export default async function OrganizationSettings({
       <UpdateOrganizationName organizationName={orgName} />
       <UpdateOrganizationWebsite organizationWebsite={orgWebsite} />
       <UpdateOrganizationLogo currentLogoUrl={logoUrl} />
-      <TransferOwnership
-        members={organization?.eligibleMembers ?? []}
-        isOwner={organization?.isOwner ?? false}
-      />
+      <TransferOwnership isOwner={organization?.isOwner ?? false} />
       <DeleteOrganization
         organizationId={orgBasic?.id ?? orgId}
         isOwner={organization?.isOwner ?? false}
