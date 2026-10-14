@@ -46,8 +46,9 @@ packages/
 ## Authentication & Session
 
 - **Auth lives in `apps/api` (NestJS).** The API is the single source of truth for authentication via better-auth. All apps and packages that need to authenticate (app, portal, device-agent, etc.) MUST go through the API — never run a local better-auth instance or handle auth directly in a frontend app.
-- **Session-based auth only.** No JWT tokens. Cross-subdomain cookies (`.gideondefender.com`) allow sessions to work across all apps.
-- **HybridAuthGuard** supports 3 methods in order: API Key (`x-api-key`), Service Token (`x-service-token`), Session (cookies). `@Public()` skips auth.
+- **Session-based auth + Gideon JWT (Phase 0 cutover).** Sessions remain primary — cross-subdomain cookies (`.gideondefender.com`) allow sessions to work across all apps. Gideon JWTs (direct Bearer + MCP, verified via JWKS) run alongside sessions: shadow mode falls through to session on Gideon failure, enforce mode hard-fails Gideon-presenting tokens with 401.
+- **HybridAuthGuard** supports 4 methods in order: API Key (`x-api-key`), Service Token (`x-service-token`), Gideon JWT (shadow/enforce, tenant-pinned), Session (cookies/native + MCP OAuth fallback). `@Public()` skips auth.
+- **Gideon tenant contract:** tenant resolves from verified claims (`tid`/`tenant_id`/`organizationId`/`tenantId`, strict missing/malformed/conflict → reject), subject links via `User.gideonSub` only with `User.tenantId` equal to the token tenant, and callers stay pinned to the token tenant (org headers cannot override).
 - **Client-side auth**: `authClient` (better-auth client) with `baseURL` pointing to the API, NOT the current app.
 - **Client-side data**: `apiClient` from `@/lib/api-client` (always sends cookies).
 - **Server-side data**: `serverApi` from `@/lib/api-server.ts`.

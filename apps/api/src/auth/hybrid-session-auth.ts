@@ -1,12 +1,9 @@
-import {
-  ForbiddenException,
-  HttpException,
-  Logger,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { HttpException, Logger, UnauthorizedException } from '@nestjs/common';
 import { db } from '@db';
-import { hasAppAccess } from './app-access';
 import { auth } from './auth.server';
+import { populateLegacyMcpRequest } from './legacy-mcp-request';
+import { authenticateGideonMcpToken } from './gideon-mcp-tenant-gate';
+import { isJwtShaped } from './gideon-tenant-claim';
 import type { AuthenticatedRequest } from './types';
 import type { GideonJwtService } from './gideon-jwt.service';
 import type {
@@ -157,39 +154,63 @@ export class HybridSessionAuth {
     request: AuthenticatedRequest,
     headers: Headers,
   ): Promise<boolean> {
-    // Milestone 3 — accept Gideon-issued MCP tokens (Gram registered as a
-    // Gideon OAuth client, validated against Gideon JWKS). Falls through to
-    // the legacy better-auth MCP session when the bearer token is not a
-    // Gideon JWT linked to an OpenComp user.
+    // Phase 0 tenant gate — Gideon-issued MCP tokens (Gram re-pointed at
+    // Gideon, validated against Gideon JWKS) must resolve their tenant from
+    // verified claims and stay pinned to it. Any Gideon-presenting token that
+    // fails verification or the tenant gate FAILS CLOSED with no legacy
+    // fallback: only genuinely non-Gideon (opaque/foreign) bearers may use
+    // the legacy better-auth MCP session path.
     const bearer = headers.get('authorization');
-    const gideonToken =
-      bearer?.startsWith('Bearer ') &&
+    const bearerToken =
+      bearer?.startsWith('Bearer ') === true ? bearer.slice(7).trim() : null;
+    const raw =
+      bearerToken &&
       this.gideonJwtService?.isConfigured() &&
-      looksLikeJwtForMcp(bearer.slice(7).trim())
-        ? bearer.slice(7).trim()
+      isJwtShaped(bearerToken)
+        ? bearerToken
         : null;
-    if (gideonToken && this.gideonJwtService) {
-      const verified = await this.gideonJwtService.verify(gideonToken);
-      const sub = verified
-        ? this.gideonJwtService.resolveUserId(verified.payload)
-        : null;
-      if (sub) {
-        const linked = await db.user.findUnique({
-          where: { gideonSub: sub },
-          select: { id: true },
+    if (
+      !raw &&
+      bearerToken &&
+      isJwtShaped(bearerToken) &&
+      this.gideonJwtService?.isEnforceMode() === true &&
+      this.gideonJwtService?.isConfigured() === false
+    ) {
+      // Enforce mode with no Gideon configuration: no legitimate Gideon
+      // token can exist, so a JWT-shaped bearer fails closed instead of
+      // silently using the legacy session path. Opaque bearers still fall
+      // through below.
+      this.logger.warn(
+        '[Gideon] MCP JWT-shaped bearer in enforce mode with Gideon unconfigured — rejecting without legacy fallback',
+      );
+      throw new UnauthorizedException(
+        'Invalid Gideon token: verification failed',
+      );
+    }
+    if (raw && this.gideonJwtService) {
+      const verified = await this.gideonJwtService.verify(raw);
+      if (verified) {
+        return authenticateGideonMcpToken({
+          request,
+          payload: verified.payload,
+          gideonJwtService: this.gideonJwtService,
+          logger: this.logger,
         });
-        if (linked) {
-          const aalRaw = verified?.payload.aal;
-          const aal =
-            typeof aalRaw === 'string' ? parseInt(aalRaw, 10) : aalRaw;
-          if (typeof aal === 'number' && Number.isFinite(aal)) {
-            request.gideonAal = aal;
-          }
-          request.isGideonJwt = true;
-          return this.populateMcpRequest(request, linked.id, 'gideon');
-        }
+      }
+      // Verification failed but the token presents as a Gideon JWT (matching
+      // iss) — expired, wrong audience, bad signature: reject without trying
+      // the legacy session path. `raw` is JWT-shaped by construction, so a
+      // partial Gideon configuration (endpoint set, issuer/audience missing)
+      // that cannot identify tokens also fails closed here.
+      if (
+        this.gideonJwtService.isGideonToken(raw) ||
+        this.gideonJwtService.isMisconfigured()
+      ) {
         this.logger.warn(
-          '[Gideon] MCP token sub not linked to an OpenComp user',
+          '[Gideon] MCP bearer presents as a Gideon JWT but verification failed — rejecting without legacy fallback',
+        );
+        throw new UnauthorizedException(
+          'Invalid Gideon token: verification failed',
         );
       }
     }
@@ -199,88 +220,10 @@ export class HybridSessionAuth {
       return false;
     }
 
-    return this.populateMcpRequest(request, token.userId, 'legacy');
+    return populateLegacyMcpRequest({
+      request,
+      userId: token.userId,
+      logger: this.logger,
+    });
   }
-
-  private async populateMcpRequest(
-    request: AuthenticatedRequest,
-    userId: string,
-    issuer: 'gideon' | 'legacy',
-  ): Promise<boolean> {
-    const user = await db.user.findUnique({
-      where: { id: userId },
-      select: { id: true, email: true },
-    });
-    if (!user) {
-      return false;
-    }
-
-    request.userId = user.id;
-    request.userEmail = user.email;
-    request.userRoles = null;
-    request.organizationId = '';
-    request.authType = 'session';
-    request.isApiKey = false;
-    request.isServiceToken = false;
-    request.isMcpOAuth = true;
-
-    // An MCP token is only usable by a member of at least one organization.
-    // Enumerate active memberships up front (device-agent style) so a user with
-    // none — e.g. someone who completed Google sign-in but was never invited to
-    // any org, or who was removed from all of them — is blocked from EVERY MCP
-    // tool, including the org-agnostic (skipOrgCheck) ones.
-    const memberships = await db.member.findMany({
-      where: { userId, deactivated: false, idpAccessRevoked: false },
-      select: { id: true, role: true, department: true, organizationId: true },
-    });
-
-    if (memberships.length === 0) {
-      // Authenticated, but a member of nothing — not an auth failure, so 403
-      // (not 401) keeps the MCP client from looping on re-authentication.
-      throw new ForbiddenException(
-        'This account is not a member of any organization, so it cannot use the MCP.',
-      );
-    }
-
-    // A saved selection also constrains single-membership users after a split.
-    const binding = await db.mcpOrgBinding.findUnique({
-      where: { userId },
-      select: { organizationId: true },
-    });
-    const member = binding
-      ? memberships.find((m) => m.organizationId === binding.organizationId)
-      : memberships.length === 1
-        ? memberships[0]
-        : undefined;
-    if (!member) {
-      throw new ForbiddenException(
-        'Choose an organization you still belong to for AI/MCP access in OpenComp settings, then try again.',
-      );
-    }
-
-    // App-access gate: MCP follows the same rule as the web app — only roles
-    // that grant app access (`app:read`) may use it. Portal-only roles
-    // (employee/contractor, or custom roles without app access) are rejected.
-    if (!(await hasAppAccess(member.organizationId, member.role))) {
-      throw new ForbiddenException(
-        "Your role doesn't have access to the app, so it can't use the MCP. " +
-          'Ask an organization admin for access.',
-      );
-    }
-
-    request.organizationId = member.organizationId;
-    request.memberId = member.id;
-    request.memberDepartment = member.department;
-    request.userRoles = member.role ? member.role.split(',') : null;
-
-    this.logger.log(
-      `MCP OAuth token (${issuer}) authenticated for user ${user.id} (org ${member.organizationId})`,
-    );
-    return true;
-  }
-}
-
-/** Bearer values with 3 dot-segments are JWT-shaped (vs opaque session tokens). */
-function looksLikeJwtForMcp(token: string): boolean {
-  return token.split('.').length === 3;
 }

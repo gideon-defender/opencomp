@@ -5,6 +5,47 @@ import {
 } from '@nestjs/common';
 import { AuthContext as AuthContextType, AuthenticatedRequest } from './types';
 
+/** Build the public auth context from a guard-populated request. */
+export function toAuthContext(request: AuthenticatedRequest): AuthContextType {
+  const {
+    organizationId,
+    authType,
+    isApiKey,
+    isServiceToken,
+    isGideonJwt,
+    isMcpOAuth,
+    serviceName,
+    userId,
+    userEmail,
+    userRoles,
+    memberId,
+    memberDepartment,
+    gideonAal,
+  } = request;
+
+  if (organizationId === undefined || !authType) {
+    throw new Error(
+      'Authentication context not found. Ensure HybridAuthGuard is applied.',
+    );
+  }
+
+  return {
+    organizationId,
+    authType,
+    isApiKey,
+    isServiceToken,
+    isGideonJwt,
+    isMcpOAuth,
+    serviceName,
+    userId,
+    userEmail,
+    userRoles,
+    memberId,
+    memberDepartment,
+    gideonAal,
+  };
+}
+
 /**
  * Parameter decorator to extract the full authentication context
  * Works with both API key and session authentication
@@ -12,38 +53,7 @@ import { AuthContext as AuthContextType, AuthenticatedRequest } from './types';
 export const AuthContext = createParamDecorator(
   (data: unknown, ctx: ExecutionContext): AuthContextType => {
     const request = ctx.switchToHttp().getRequest<AuthenticatedRequest>();
-
-    const {
-      organizationId,
-      authType,
-      isApiKey,
-      isServiceToken,
-      serviceName,
-      userId,
-      userEmail,
-      userRoles,
-      memberId,
-      memberDepartment,
-    } = request;
-
-    if (organizationId === undefined || !authType) {
-      throw new Error(
-        'Authentication context not found. Ensure HybridAuthGuard is applied.',
-      );
-    }
-
-    return {
-      organizationId,
-      authType,
-      isApiKey,
-      isServiceToken,
-      serviceName,
-      userId,
-      userEmail,
-      userRoles,
-      memberId,
-      memberDepartment,
-    };
+    return toAuthContext(request);
   },
 );
 
