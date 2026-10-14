@@ -274,21 +274,52 @@ describe('GideonJwtService', () => {
     });
   });
 
-  describe('resolveTenantId / resolveUserId', () => {
-    it('prefers tid over tenant_id over organizationId', () => {
-      expect(service.resolveTenantId({ sub: 'u', tid: 'tid1' })).toBe('tid1');
-      expect(service.resolveTenantId({ sub: 'u', tenant_id: 't2' })).toBe('t2');
-      expect(service.resolveTenantId({ sub: 'u', organizationId: 'o3' })).toBe(
-        'o3',
+  describe('resolveTenantClaim / resolveUserId / isMisconfigured', () => {
+    it('resolves a single tenant alias', () => {
+      expect(service.resolveTenantClaim({ sub: 'u', tid: 'tid1' })).toEqual({
+        ok: true,
+        tenantId: 'tid1',
+      });
+      expect(service.resolveTenantClaim({ sub: 'u', tenant_id: 't2' })).toEqual(
+        { ok: true, tenantId: 't2' },
       );
-      expect(service.resolveTenantId({ sub: 'u', tenantId: 't4' })).toBe('t4');
-      expect(service.resolveTenantId({ sub: 'u' })).toBeNull();
+      expect(
+        service.resolveTenantClaim({ sub: 'u', organizationId: 'o3' }),
+      ).toEqual({ ok: true, tenantId: 'o3' });
+      expect(service.resolveTenantClaim({ sub: 'u', tenantId: 't4' })).toEqual({
+        ok: true,
+        tenantId: 't4',
+      });
     });
 
-    it('resolveUserId returns sub or null', () => {
+    it('fails closed on missing, conflicting or malformed tenant claims', () => {
+      for (const payload of [
+        { sub: 'u' },
+        { sub: 'u', tid: 'a', tenant_id: 'b' },
+        { sub: 'u', tid: '' },
+        { sub: 'u', tid: 42 },
+      ]) {
+        const result = service.resolveTenantClaim(payload as never);
+        expect(result.ok).toBe(false);
+      }
+    });
+
+    it('resolveUserId returns sub or null (non-string rejects)', () => {
       expect(service.resolveUserId({ sub: 'usr_1' })).toBe('usr_1');
       expect(service.resolveUserId({ sub: '' })).toBeNull();
       expect(service.resolveUserId({} as never)).toBeNull();
+      expect(service.resolveUserId({ sub: 42 } as never)).toBeNull();
+      expect(service.resolveUserId({ sub: { id: 'x' } } as never)).toBeNull();
+    });
+
+    it('isMisconfigured when the endpoint is set without issuer/audience', () => {
+      expect(service.isMisconfigured()).toBe(false);
+      process.env.GIDEON_IDENTITY_URL = 'https://auth.example.com';
+      expect(service.isMisconfigured()).toBe(true);
+      process.env.GIDEON_JWT_ISSUER = 'https://auth.example.com';
+      expect(service.isMisconfigured()).toBe(true);
+      process.env.GIDEON_JWT_AUDIENCE = 'https://api.example.com';
+      expect(service.isMisconfigured()).toBe(false);
     });
   });
 });

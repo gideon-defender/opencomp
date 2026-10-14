@@ -6,6 +6,13 @@ import {
   jwtVerify,
   type JWTPayload,
 } from 'jose';
+import {
+  isJwtShaped,
+  resolveGideonAal,
+  resolveGideonTenantClaim,
+  type GideonTenantClaimResult,
+} from './gideon-tenant-claim';
+import { stripControlChars } from './app-access';
 
 export interface GideonJwtPayload extends JWTPayload {
   sub: string;
@@ -22,6 +29,14 @@ export interface GideonVerifyResult {
   payload: GideonJwtPayload;
   protectedHeader: Record<string, unknown>;
 }
+
+export {
+  resolveGideonTenantClaim,
+  type GideonTenantClaimError,
+  type GideonTenantClaimFail,
+  type GideonTenantClaimOk,
+  type GideonTenantClaimResult,
+} from './gideon-tenant-claim';
 
 /**
  * Phase 0 — Read-only shadow JWKS verifier for Gideon Auth.
@@ -126,13 +141,23 @@ export class GideonJwtService {
   }
 
   /**
+   * Gideon endpoint configured but issuer/audience binding missing, so no
+   * token can be identified as (or ruled out as) a Gideon JWT. Callers fail
+   * closed on JWT-shaped bearers in this state instead of silently falling
+   * back to legacy paths.
+   */
+  isMisconfigured(): boolean {
+    return this.isConfigured() && (!this.issuer || !this.audience);
+  }
+
+  /**
    * Whether a Bearer token presents as a Gideon JWT: JWT-shaped with an `iss`
    * matching the configured issuer. Used by HybridAuthGuard so enforce mode
    * only hard-fails tokens that claim to be Gideon JWTs — opaque
    * session/MCP bearer tokens fall through to session auth in every mode.
    */
   isGideonToken(token: string): boolean {
-    if (!token || token.split('.').length !== 3) return false;
+    if (!isJwtShaped(token)) return false;
     const issuer = this.issuer;
     if (!issuer) return false;
     try {
@@ -167,12 +192,10 @@ export class GideonJwtService {
       try {
         const peek = decodeJwt(token);
         // `iss` is optional in JWT but expected for Gideon; if present and mismatched, skip verify
-        if (
-          typeof (peek as Record<string, unknown>).iss === 'string' &&
-          (peek as Record<string, unknown>).iss !== this.issuer
-        ) {
+        const peekIss: unknown = peek.iss;
+        if (typeof peekIss === 'string' && peekIss !== this.issuer) {
           this.logger.debug(
-            `Gideon JWT iss mismatch — expected ${this.issuer}, got ${(peek as Record<string, unknown>).iss}`,
+            `Gideon JWT iss mismatch — expected ${stripControlChars(this.issuer)}, got ${stripControlChars(peekIss)}`,
           );
           return null;
         }
@@ -199,16 +222,13 @@ export class GideonJwtService {
         audience: this.audience || undefined,
       });
 
-      // Enforce aal >=2 for admin routes if present (agent-comms README.md:104)
-      const aalRaw = (payload as GideonJwtPayload).aal;
-      if (aalRaw !== undefined) {
-        const aal = typeof aalRaw === 'string' ? parseInt(aalRaw, 10) : aalRaw;
-        if (Number.isFinite(aal) && aal < 2) {
-          this.logger.warn(
-            `Gideon JWT aal=${aal} <2 — admin routes require aal>=2`,
-          );
-          // Do not fail here; PermissionGuard + route will enforce. Phase 0 shadow logs only.
-        }
+      // Phase 0 shadow logs only: low assurance is observed here, not
+      // enforced. A future aal >= 2 gate will consume `gideonAal`.
+      const aal = resolveGideonAal((payload as GideonJwtPayload).aal);
+      if (aal !== undefined && aal < 2) {
+        this.logger.warn(
+          `Gideon JWT aal=${aal} <2 observed (no enforcement yet)`,
+        );
       }
 
       return {
@@ -223,21 +243,13 @@ export class GideonJwtService {
     }
   }
 
-  /**
-   * Extract tenant/organization id from payload.
-   * Gideon uses `tid`, `tenant_id`, or `organizationId` depending on issuer.
-   */
-  resolveTenantId(payload: GideonJwtPayload): string | null {
-    return (
-      payload.tid ||
-      payload.tenant_id ||
-      payload.organizationId ||
-      ((payload as Record<string, unknown>).tenantId as string) ||
-      null
-    );
+  /** Strict contract with rejection reason (used by the tenant gate). */
+  resolveTenantClaim(payload: GideonJwtPayload): GideonTenantClaimResult {
+    return resolveGideonTenantClaim(payload);
   }
 
+  /** Subject claim; non-string values reject as missing (fail closed). */
   resolveUserId(payload: GideonJwtPayload): string | null {
-    return payload.sub || null;
+    return typeof payload.sub === 'string' && payload.sub ? payload.sub : null;
   }
 }

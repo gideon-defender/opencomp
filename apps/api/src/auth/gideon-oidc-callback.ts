@@ -19,6 +19,7 @@ import {
   mintGideonSession,
   provisionGideonUser,
 } from './gideon-oidc-provisioning';
+import { collectTenantClaimValues } from './gideon-tenant-claim';
 import { redisClient } from '../redis/redis.client';
 
 /** Pending-login state TTL: authorize + passkey ceremony must finish in time. */
@@ -186,20 +187,32 @@ export async function handleGideonOidcCallback({
  * tenant is the org). Accepts the tenant claim shapes Gideon issues (`tid`,
  * `tenant_id`, `organizationId`, `tenantId`). Returns undefined for
  * opaque/undecodable tokens so provisioning proceeds without a tenant.
+ *
+ * Invalid decoded claims reject before provisioning; they must not downgrade
+ * an enforced login into tenant-less audit mode. Opaque tokens retain the
+ * existing compatibility path.
  */
 export function extractGideonTenantId(
   accessToken: string | undefined,
 ): string | undefined {
   if (!accessToken) return undefined;
+  let payload: Record<string, unknown>;
   try {
-    const payload = decodeJwt(accessToken) as Record<string, unknown>;
-    const tid =
-      payload.tid ??
-      payload.tenant_id ??
-      payload.organizationId ??
-      payload.tenantId;
-    return typeof tid === 'string' && tid ? tid : undefined;
+    payload = decodeJwt(accessToken);
   } catch {
     return undefined;
   }
+  const { seen, malformedKey } = collectTenantClaimValues({ payload });
+  if (malformedKey) {
+    throw new UnauthorizedException(
+      'Invalid Gideon token: malformed tenant claim',
+    );
+  }
+  if (seen.length === 0) return undefined;
+  if (new Set(seen.map((s) => s.value)).size > 1) {
+    throw new UnauthorizedException(
+      'Invalid Gideon token: conflicting tenant claims',
+    );
+  }
+  return seen[0].value;
 }

@@ -87,6 +87,7 @@ describe('resolveAssistantChatContext', () => {
         userId: 'usr_1',
         organizationId: 'org_other',
         deactivated: false,
+        idpAccessRevoked: false,
       },
       select: { role: true },
     });
@@ -107,6 +108,31 @@ describe('resolveAssistantChatContext', () => {
         logger,
       }),
     ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('rejects a requested org where the membership was IdP-revoked', async () => {
+    // A user revoked in the requested org but active in the ambient org
+    // passes the guards, so this re-verify is the only check standing
+    // between them and the requested org's chat scope.
+    mockedDb.member.findFirst.mockResolvedValue(null);
+
+    await expect(
+      resolveAssistantChatContext({
+        auth: makeAuth(),
+        req: makeReq('org_other'),
+        rolesService,
+        logger,
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(mockedDb.member.findFirst).toHaveBeenCalledWith({
+      where: {
+        userId: 'usr_1',
+        organizationId: 'org_other',
+        deactivated: false,
+        idpAccessRevoked: false,
+      },
+      select: { role: true },
+    });
   });
 
   it('rejects a requested org where the member lacks app access', async () => {
@@ -154,6 +180,53 @@ describe('resolveAssistantChatContext', () => {
     });
 
     expect(result.organizationId).toBe('org_active');
+    expect(mockedDb.member.findFirst).not.toHaveBeenCalled();
+  });
+
+  it('pins Gideon-verified callers to the token tenant (header cannot override)', async () => {
+    // Phase 0 tenant gate: org headers must not redirect a Gideon-verified
+    // caller away from the token tenant — even with a valid membership
+    // elsewhere, cross-tenant scoping requires a token for that tenant.
+    mockedDb.member.findFirst.mockResolvedValue({ role: 'admin' });
+
+    await expect(
+      resolveAssistantChatContext({
+        auth: makeAuth({ isGideonJwt: true, organizationId: 'org_token' }),
+        req: makeReq('org_other'),
+        rolesService,
+        logger,
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(mockedDb.member.findFirst).not.toHaveBeenCalled();
+  });
+
+  it('pins Gideon MCP callers to the token tenant (header cannot override)', async () => {
+    mockedDb.member.findFirst.mockResolvedValue({ role: 'admin' });
+
+    await expect(
+      resolveAssistantChatContext({
+        auth: makeAuth({
+          isGideonJwt: true,
+          isMcpOAuth: true,
+          organizationId: 'org_token',
+        }),
+        req: makeReq('org_other'),
+        rolesService,
+        logger,
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(mockedDb.member.findFirst).not.toHaveBeenCalled();
+  });
+
+  it('serves Gideon callers on their token tenant when the header matches', async () => {
+    const result = await resolveAssistantChatContext({
+      auth: makeAuth({ isGideonJwt: true, organizationId: 'org_token' }),
+      req: makeReq('org_token'),
+      rolesService,
+      logger,
+    });
+
+    expect(result.organizationId).toBe('org_token');
     expect(mockedDb.member.findFirst).not.toHaveBeenCalled();
   });
 });

@@ -76,8 +76,9 @@ jest.mock('./auth/gideon-jwt.service', () => ({
     isShadowMode: () => false,
     isEnforceMode: () => false,
     verify: jest.fn().mockResolvedValue(null),
-    resolveTenantId: jest.fn(),
+    resolveTenantClaim: jest.fn(),
     resolveUserId: jest.fn(),
+    isMisconfigured: () => false,
   })),
 }));
 jest.mock('./gideon/gideon-shadow.service', () => ({

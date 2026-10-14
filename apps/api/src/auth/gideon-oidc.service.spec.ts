@@ -232,6 +232,31 @@ describe('GideonOidcService', () => {
       expect(
         extractGideonTenantId(jwt({ sub: 'u', organizationId: 'tenant-3' })),
       ).toBe('tenant-3');
+      expect(
+        extractGideonTenantId(jwt({ sub: 'u', tenantId: 'tenant-4' })),
+      ).toBe('tenant-4');
+    });
+
+    it('trims a padded tenant claim', () => {
+      expect(
+        extractGideonTenantId(jwt({ sub: 'u', tid: '  tenant-1  ' })),
+      ).toBe('tenant-1');
+    });
+
+    it('rejects whitespace-only, non-string, or conflicting claims', () => {
+      expect(() =>
+        extractGideonTenantId(jwt({ sub: 'u', tid: '   ' })),
+      ).toThrow(UnauthorizedException);
+      expect(() => extractGideonTenantId(jwt({ sub: 'u', tid: 42 }))).toThrow(
+        UnauthorizedException,
+      );
+      expect(() =>
+        extractGideonTenantId(jwt({ sub: 'u', tid: 'a', tenant_id: 'b' })),
+      ).toThrow(UnauthorizedException);
+      // Agreeing duplicates across keys are still one tenant.
+      expect(
+        extractGideonTenantId(jwt({ sub: 'u', tid: 'a', tenant_id: 'a' })),
+      ).toBe('a');
     });
 
     it('returns undefined for opaque or missing tokens', () => {

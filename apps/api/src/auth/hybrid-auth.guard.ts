@@ -14,6 +14,8 @@ import { ApiKeyService } from './api-key.service';
 import { IS_PUBLIC_KEY } from './public.decorator';
 import { SKIP_ORG_CHECK_KEY } from './skip-org-check.decorator';
 import { resolveServiceByToken } from './service-token.config';
+import { stripControlChars } from './app-access';
+import { tryGideonJwtAuth } from './gideon-jwt-request-auth';
 import { AuthenticatedRequest } from './types';
 import { GideonJwtService } from './gideon-jwt.service';
 import { GideonShadowService } from '../gideon/gideon-shadow.service';
@@ -55,7 +57,12 @@ export class HybridAuthGuard implements CanActivate {
 
     // Phase 0 — Gideon JWT shadow/verify (x-api-key → x-service-token → Gideon JWT → cookie)
     // Behind flag: when GIDEON_JWT_ENABLED=false and no identityUrl, this returns null and falls through
-    const gideonResult = await this.tryGideonJwtAuth(request);
+    const gideonResult = await tryGideonJwtAuth({
+      request,
+      gideonJwtService: this.gideonJwtService,
+      gideonShadowService: this.gideonShadowService,
+      logger: this.logger,
+    });
     if (gideonResult === true) return true;
     if (gideonResult === 'enforce_failed') {
       throw new UnauthorizedException('Invalid Gideon JWT');
@@ -164,137 +171,15 @@ export class HybridAuthGuard implements CanActivate {
         request.memberId = member.id;
       } else {
         this.logger.warn(
-          `Service token x-user-id "${actingUserId}" is not an active member of org ${organizationId}`,
+          `Service token x-user-id "${stripControlChars(actingUserId)}" is not an active member of org ${stripControlChars(organizationId)}`,
         );
       }
     }
 
     this.logger.log(
-      `Service "${service.definition.name}" authenticated for org ${organizationId}`,
+      `Service "${service.definition.name}" authenticated for org ${stripControlChars(organizationId)}`,
     );
 
-    return true;
-  }
-
-  /** Gideon JWT verification precedes the session fallback. */
-  private async tryGideonJwtAuth(
-    request: AuthenticatedRequest,
-  ): Promise<true | 'enforce_failed' | null> {
-    if (!this.gideonJwtService || !this.gideonJwtService.isConfigured()) {
-      return null;
-    }
-
-    const authHeader = request.headers['authorization'] as string | undefined;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return null;
-    }
-    const token = authHeader.slice(7).trim();
-    if (!token) return null;
-
-    const result = await this.gideonJwtService.verify(token);
-    if (!result) {
-      // Enforce only tokens that present as Gideon JWTs. Anything else
-      // (opaque session/MCP bearer tokens, foreign JWTs) falls through to
-      // session auth in every mode — dual-run fallback.
-      if (
-        this.gideonJwtService.isEnforceMode() &&
-        this.gideonJwtService.isGideonToken(token)
-      ) {
-        this.logger.warn('[Gideon] JWT verify failed in enforce mode');
-        return 'enforce_failed';
-      }
-      this.logger.debug(
-        '[GideonShadow] JWT verify failed, falling through to session',
-      );
-      return null;
-    }
-
-    const tenantId = this.gideonJwtService.resolveTenantId(result.payload);
-    const gideonSub = this.gideonJwtService.resolveUserId(result.payload);
-    if (!tenantId || !gideonSub) {
-      this.logger.warn('[Gideon] JWT missing tenant or sub');
-      if (this.gideonJwtService.isEnforceMode()) return 'enforce_failed';
-      return null;
-    }
-
-    // Milestone 2 — the Gideon `sub` is not the OpenComp user id (the link
-    // lives on `User.gideonSub`, set by OIDC JIT provisioning). Resolve the
-    // linked OpenComp user before the membership check: an unlinked sub
-    // holds no memberships, so it falls through to session in shadow mode
-    // and 401s in enforce mode — same as an unknown tenant/member.
-    const linkedUser = await db.user.findUnique({
-      where: { gideonSub },
-      select: { id: true, email: true },
-    });
-    if (!linkedUser) {
-      this.logger.warn(`[Gideon] sub not linked to an OpenComp user`);
-      if (this.gideonJwtService.isEnforceMode()) return 'enforce_failed';
-      return null;
-    }
-    const userId = linkedUser.id;
-
-    // Verify org exists and user is member (same check as session).
-    // Tenant is the org: the token's tid IS the organization id. Unknown
-    // tenants and non-members 401 in enforce mode (and fall through in
-    // shadow) — no org without a tid.
-    const org = await db.organization.findUnique({
-      where: { id: tenantId },
-      select: { id: true },
-    });
-    if (!org) {
-      this.logger.warn(
-        `[GideonShadow] unknown Gideon tenant ${tenantId} (no such organization)`,
-      );
-      if (this.gideonJwtService.isEnforceMode()) return 'enforce_failed';
-      return null;
-    }
-
-    const member = await db.member.findFirst({
-      where: {
-        userId,
-        organizationId: org.id,
-        deactivated: false,
-        idpAccessRevoked: false,
-      },
-      select: { id: true, role: true, department: true },
-    });
-    if (!member) {
-      this.logger.warn(
-        `[GideonShadow] user ${userId} not member of tenant ${tenantId}`,
-      );
-      if (this.gideonJwtService.isEnforceMode()) return 'enforce_failed';
-      return null;
-    }
-
-    request.organizationId = org.id;
-    request.userId = userId;
-    request.userEmail = result.payload.email ?? linkedUser.email;
-    request.userRoles = member.role ? member.role.split(',') : null;
-    request.memberId = member.id;
-    request.memberDepartment = member.department;
-    request.authType = 'gideon';
-    request.isApiKey = false;
-    request.isServiceToken = false;
-    request.isGideonJwt = true;
-    // Surface the assurance level for downstream enforcement (native admin
-    // endpoints require aal >= 2 for Gideon-JWT callers). Absent → unknown,
-    // enforced as missing by the consumer.
-    const aalRaw = result.payload.aal;
-    const aal = typeof aalRaw === 'string' ? parseInt(aalRaw, 10) : aalRaw;
-    if (typeof aal === 'number' && Number.isFinite(aal)) {
-      request.gideonAal = aal;
-    }
-
-    if (this.gideonShadowService) {
-      // Fire-and-forget shadow comparison for operations
-      this.gideonShadowService
-        .logTenantOperationsMismatch(tenantId, token)
-        .catch(() => {});
-    }
-
-    this.logger.log(
-      `[Gideon] JWT authenticated user ${userId} tenant ${tenantId} shadow=${this.gideonJwtService.isShadowMode()}`,
-    );
     return true;
   }
 }

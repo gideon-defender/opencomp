@@ -16,8 +16,9 @@ apps/api/src/
 
 ## Authentication
 
-- **Session-based auth only.** No JWT tokens.
-- **HybridAuthGuard** checks in order: API Key (`x-api-key`), Service Token (`x-service-token`), Session (cookies via better-auth).
+- **Session-based auth + Gideon JWT (Phase 0 cutover).** Sessions remain primary. Gideon JWTs (direct Bearer + MCP, verified via JWKS) run alongside sessions: shadow mode falls through to session on Gideon failure, enforce mode hard-fails Gideon-presenting tokens with 401.
+- **HybridAuthGuard** checks in order: API Key (`x-api-key`), Service Token (`x-service-token`), Gideon JWT (shadow/enforce, tenant-pinned), Session (cookies/native + MCP OAuth fallback).
+- **Gideon tenant contract:** tenant resolves from verified claims (`tid`/`tenant_id`/`organizationId`/`tenantId`, strict missing/malformed/conflict → reject), subject links via `User.gideonSub` only with `User.tenantId` equal to the token tenant, and callers stay pinned to the token tenant (org headers cannot override).
 - `@Public()` decorator skips auth entirely (use for webhooks).
 - Access auth context via `@AuthContext()` decorator.
 - Access organization ID via `@OrganizationId()` decorator.

@@ -85,6 +85,7 @@ for (const mode of ['gideon', 'session', 'mcp']) {
       mockUserFindUnique.mockResolvedValue({
         id: 'usr_1',
         email: 'ada@example.com',
+        tenantId: 'org_1',
       });
       mockGetMcpSession.mockResolvedValue(
         mode === 'mcp' ? { userId: 'usr_1' } : null,
@@ -101,8 +102,10 @@ for (const mode of ['gideon', 'session', 'mcp']) {
               isEnforceMode: () => true,
               isShadowMode: () => false,
               verify: async () => ({ payload: { sub: 'sub_1', tid: 'org_1' } }),
-              resolveTenantId: () => 'org_1',
+              resolveTenantClaim: () => ({ ok: true, tenantId: 'org_1' }),
               resolveUserId: () => 'sub_1',
+              isGideonToken: () => false,
+              isMisconfigured: () => false,
             },
           },
           {

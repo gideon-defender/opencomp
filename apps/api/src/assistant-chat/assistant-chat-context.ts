@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { db } from '@db';
 import type { Request } from 'express';
+import { stripControlChars } from '../auth/app-access';
 import type { AuthContext as AuthContextType } from '../auth/types';
 import type { RolesService } from '../roles/roles.service';
 
@@ -51,6 +52,17 @@ export async function resolveAssistantChatContext({
 
   const requested = readRequestedOrgId(req);
 
+  // Phase 0 tenant gate: Gideon-verified callers (direct JWT or MCP OAuth)
+  // are pinned to the token tenant (`auth.organizationId`). Org headers and
+  // route parameters must not override or redirect that constraint — even
+  // when the user holds memberships elsewhere, cross-tenant scoping requires
+  // a token issued for that tenant.
+  if (requested && requested !== auth.organizationId && auth.isGideonJwt) {
+    throw new ForbiddenException(
+      'The requested organization does not match the authorized token tenant.',
+    );
+  }
+
   if (!requested || requested === auth.organizationId) {
     if (!auth.organizationId) {
       throw new BadRequestException('Organization ID is required');
@@ -63,7 +75,12 @@ export async function resolveAssistantChatContext({
   }
 
   const member = await db.member.findFirst({
-    where: { userId, organizationId: requested, deactivated: false },
+    where: {
+      userId,
+      organizationId: requested,
+      deactivated: false,
+      idpAccessRevoked: false,
+    },
     select: { role: true },
   });
   if (!member) {
@@ -83,8 +100,8 @@ export async function resolveAssistantChatContext({
   }
 
   logger.log(
-    `Assistant chat scoped to requested org ${requested} ` +
-      `(session active org: ${auth.organizationId}) for user ${userId}`,
+    `Assistant chat scoped to requested org ${stripControlChars(requested)} ` +
+      `(session active org: ${stripControlChars(auth.organizationId)}) for user ${stripControlChars(userId)}`,
   );
   return { organizationId: requested, userId, permissions };
 }

@@ -1,0 +1,176 @@
+import { Logger } from '@nestjs/common';
+import { db } from '@db';
+import { stripControlChars } from './app-access';
+import {
+  requireGideonBearerAccess,
+  resolveTenantLinkedUser,
+} from './gideon-mcp-tenant-gate';
+import { isJwtShaped, resolveGideonAal } from './gideon-tenant-claim';
+import type { AuthenticatedRequest } from './types';
+import type { GideonJwtService } from './gideon-jwt.service';
+import type { GideonShadowService } from '../gideon/gideon-shadow.service';
+
+/**
+ * Gideon JWT verification for the direct Bearer path (precedes the session
+ * fallback in `HybridAuthGuard`). Shadow mode falls through to session auth
+ * on any Gideon failure; enforce mode hard-fails Gideon-presenting tokens
+ * (and JWT-shaped bearers when Gideon is misconfigured or unconfigured).
+ * Returns `true` on success, `'enforce_failed'` for a hard 401, or
+ * `null` to fall through.
+ */
+export async function tryGideonJwtAuth({
+  request,
+  gideonJwtService,
+  gideonShadowService,
+  logger,
+}: {
+  request: AuthenticatedRequest;
+  gideonJwtService?: GideonJwtService;
+  gideonShadowService?: GideonShadowService;
+  logger: Logger;
+}): Promise<true | 'enforce_failed' | null> {
+  const authHeader = request.headers['authorization'] as string | undefined;
+  const token =
+    authHeader?.startsWith('Bearer ') !== true
+      ? null
+      : authHeader.slice(7).trim() || null;
+
+  if (!gideonJwtService || !gideonJwtService.isConfigured()) {
+    // Enforce mode with no Gideon configuration must not silently fall back:
+    // no legitimate Gideon token can exist, and native session bearers are
+    // opaque, so JWT-shaped bearers fail closed. Opaque bearers still fall
+    // through to session auth.
+    if (token && isJwtShaped(token) && gideonJwtService?.isEnforceMode()) {
+      logger.warn(
+        '[Gideon] JWT-shaped bearer in enforce mode with Gideon unconfigured',
+      );
+      return 'enforce_failed';
+    }
+    return null;
+  }
+
+  if (!token) return null;
+
+  const result = await gideonJwtService.verify(token);
+  if (!result) {
+    // Enforce only tokens that present as Gideon JWTs. Anything else
+    // (opaque session/MCP bearer tokens, foreign JWTs) falls through to
+    // session auth in every mode — dual-run fallback. A partial Gideon
+    // configuration (endpoint set, issuer/audience missing) cannot identify
+    // tokens, so JWT-shaped bearers also fail closed instead of silently
+    // falling back.
+    if (
+      gideonJwtService.isEnforceMode() &&
+      (gideonJwtService.isGideonToken(token) ||
+        (gideonJwtService.isMisconfigured() && isJwtShaped(token)))
+    ) {
+      logger.warn('[Gideon] JWT verify failed in enforce mode');
+      return 'enforce_failed';
+    }
+    logger.debug(
+      '[GideonShadow] JWT verify failed, falling through to session',
+    );
+    return null;
+  }
+
+  const tenantClaim = gideonJwtService.resolveTenantClaim(result.payload);
+  const gideonSub = gideonJwtService.resolveUserId(result.payload);
+  if (!tenantClaim.ok || !gideonSub) {
+    logger.warn(
+      `[Gideon] JWT rejected: ${!tenantClaim.ok ? `tenant claim ${tenantClaim.reason}` : 'missing sub'}`,
+    );
+    if (gideonJwtService.isEnforceMode()) return 'enforce_failed';
+    return null;
+  }
+  const tenantId = tenantClaim.tenantId;
+
+  // The Gideon `sub` is not the OpenComp user id (the link lives on
+  // `User.gideonSub`, set by OIDC JIT provisioning). An unlinked sub holds
+  // no memberships: fall through in shadow, 401 in enforce. Phase 0 also
+  // requires `User.tenantId` to equal the verified tenant (same-email
+  // two-tenants isolation) — see `resolveTenantLinkedUser`.
+  const link = await resolveTenantLinkedUser({
+    sub: gideonSub,
+    tenantId,
+    logger,
+  });
+  if (!link.ok) {
+    if (gideonJwtService.isEnforceMode()) return 'enforce_failed';
+    return null;
+  }
+  const linkedUser = link.user;
+  const userId = linkedUser.id;
+
+  // Verify org exists and user is member (same check as session).
+  // Tenant is the org: the token's tid IS the organization id. Unknown
+  // tenants and non-members 401 in enforce mode (and fall through in
+  // shadow) — no org without a tid.
+  const org = await db.organization.findUnique({
+    where: { id: tenantId },
+    select: { id: true },
+  });
+  if (!org) {
+    logger.warn(
+      `[GideonShadow] unknown Gideon tenant ${stripControlChars(tenantId)} (no such organization)`,
+    );
+    if (gideonJwtService.isEnforceMode()) return 'enforce_failed';
+    return null;
+  }
+
+  const member = await db.member.findFirst({
+    where: {
+      userId,
+      organizationId: org.id,
+      deactivated: false,
+      idpAccessRevoked: false,
+    },
+    select: { id: true, role: true, department: true },
+  });
+  if (!member) {
+    logger.warn(
+      `[GideonShadow] user ${userId} not member of tenant ${stripControlChars(tenantId)}`,
+    );
+    if (gideonJwtService.isEnforceMode()) return 'enforce_failed';
+    return null;
+  }
+
+  // Gram tokens reach this path first; enforce the same access contract before
+  // accepting any verified bearer or setting successful-authentication flags.
+  await requireGideonBearerAccess({ userId, tenantId, role: member.role });
+
+  request.organizationId = org.id;
+  request.userId = userId;
+  // The verified payload is attacker-shaped JSON: only trust a string email,
+  // otherwise fall back to the linked user row.
+  const payloadEmail = result.payload.email;
+  request.userEmail =
+    typeof payloadEmail === 'string' && payloadEmail
+      ? payloadEmail
+      : linkedUser.email;
+  request.userRoles = member.role ? member.role.split(',') : null;
+  request.memberId = member.id;
+  request.memberDepartment = member.department;
+  request.authType = 'gideon';
+  request.isApiKey = false;
+  request.isServiceToken = false;
+  request.isGideonJwt = true;
+  // Surface the assurance level for a future aal >= 2 gate. Absent →
+  // unknown. No consumer enforces it yet — treat the value as informational
+  // until the cutover adds the check.
+  const aal = resolveGideonAal(result.payload.aal);
+  if (aal !== undefined) {
+    request.gideonAal = aal;
+  }
+
+  if (gideonShadowService) {
+    // Fire-and-forget shadow comparison for operations
+    gideonShadowService
+      .logTenantOperationsMismatch(tenantId, token)
+      .catch(() => {});
+  }
+
+  logger.log(
+    `[Gideon] JWT authenticated user ${userId} tenant ${stripControlChars(tenantId)} shadow=${gideonJwtService.isShadowMode()}`,
+  );
+  return true;
+}
