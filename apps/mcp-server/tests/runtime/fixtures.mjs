@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { parse } from 'yaml';
 import { compileTools } from '../../src/tools.ts';
+import { assertReviewedRegistry, reviewedToolAdditions } from '../compatibility/additions.mjs';
 
 export const source = JSON.parse(
   readFileSync(new URL('../../../../packages/docs/openapi.json', import.meta.url), 'utf8'),
@@ -12,6 +13,12 @@ export const baseline = JSON.parse(
   readFileSync(new URL('../fixtures/parity-fixture.json', import.meta.url), 'utf8'),
 );
 export const registry = compileTools({ source, overlay });
+export const expectedToolCount = baseline.tools.length + reviewedToolAdditions.length;
+export const expectedToolNames = [
+  ...baseline.tools.map((tool) => tool.name),
+  ...reviewedToolAdditions.map((tool) => tool.name),
+].sort();
+assertReviewedRegistry({ tools: registry.tools, baseline });
 export const tool = (name) => {
   const found = registry.tools.find((candidate) => candidate.name === name);
   if (!found) throw new Error(`Missing fixture tool ${name}`);

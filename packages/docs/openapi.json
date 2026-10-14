@@ -34819,6 +34819,220 @@
         }
       }
     },
+    "/v1/people/candidate-screenings/readiness": {
+      "get": {
+        "description": "Checks this tenant’s enabled Checkr account and credentials before starting candidate screening. Returns safe readiness information only.",
+        "operationId": "CandidateScreeningsController_readiness_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "apikey": []
+          }
+        ],
+        "summary": "Check candidate intake readiness",
+        "tags": [
+          "Candidate Screenings"
+        ],
+        "x-comp-mcp": {
+          "name": "check-candidate-screening-readiness"
+        },
+        "x-mint": {
+          "metadata": {
+            "title": "Check candidate intake readiness | OpenComp API",
+            "sidebarTitle": "Check candidate intake readiness",
+            "description": "Checks this tenant’s enabled Checkr account and credentials before starting candidate screening. Returns safe readiness information only.",
+            "og:title": "Check candidate intake readiness | OpenComp API",
+            "og:description": "Checks this tenant’s enabled Checkr account and credentials before starting candidate screening. Returns safe readiness information only."
+          }
+        },
+        "x-speakeasy-mcp": {
+          "name": "check-candidate-screening-readiness"
+        }
+      }
+    },
+    "/v1/people/candidate-screenings": {
+      "get": {
+        "description": "Lists the latest 100 screening attempts for this tenant. Use to follow queued dispatches and Checkr invitation delivery; this does not report IdP provisioning or grant access.",
+        "operationId": "CandidateScreeningsController_list_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "apikey": []
+          }
+        ],
+        "summary": "List candidate screening attempts",
+        "tags": [
+          "Candidate Screenings"
+        ],
+        "x-comp-mcp": {
+          "name": "list-candidate-screenings"
+        },
+        "x-mint": {
+          "metadata": {
+            "title": "List candidate screening attempts | OpenComp API",
+            "sidebarTitle": "List candidate screening attempts",
+            "description": "Lists the latest 100 screening attempts for this tenant. Use to follow queued dispatches and Checkr invitation delivery; this does not report IdP.",
+            "og:title": "List candidate screening attempts | OpenComp API",
+            "og:description": "Lists the latest 100 screening attempts for this tenant. Use to follow queued dispatches and Checkr invitation delivery; this does not report IdP."
+          }
+        },
+        "x-speakeasy-mcp": {
+          "name": "list-candidate-screenings"
+        }
+      },
+      "post": {
+        "description": "Queues a Checkr-hosted invitation without creating an account or granting access. Reuse operationId for retries. Poll GET /v1/people/candidate-screenings/{runId} for dispatch status.",
+        "operationId": "CandidateScreeningsController_start_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartCandidateScreeningDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateScreeningRunDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apikey": []
+          }
+        ],
+        "summary": "Start a candidate background check",
+        "tags": [
+          "Candidate Screenings"
+        ],
+        "x-comp-mcp": {
+          "name": "start-candidate-screening"
+        },
+        "x-mint": {
+          "metadata": {
+            "title": "Start a candidate background check | OpenComp API",
+            "sidebarTitle": "Start a candidate background check",
+            "description": "Queues a Checkr-hosted invitation without creating an account or granting access. Reuse operationId for retries. Poll GET.",
+            "og:title": "Start a candidate background check | OpenComp API",
+            "og:description": "Queues a Checkr-hosted invitation without creating an account or granting access. Reuse operationId for retries. Poll GET."
+          }
+        },
+        "x-speakeasy-mcp": {
+          "name": "start-candidate-screening"
+        }
+      }
+    },
+    "/v1/people/candidate-screenings/{id}": {
+      "get": {
+        "description": "Returns a tenant-scoped screening attempt by runId. Use to follow queued dispatch and hosted invitation delivery. Completion and identity provisioning are IdP-owned.",
+        "operationId": "CandidateScreeningsController_get_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "apikey": []
+          }
+        ],
+        "summary": "Get candidate screening dispatch status",
+        "tags": [
+          "Candidate Screenings"
+        ],
+        "x-comp-mcp": {
+          "name": "get-candidate-screening"
+        },
+        "x-mint": {
+          "metadata": {
+            "title": "Get candidate screening dispatch status | OpenComp API",
+            "sidebarTitle": "Get candidate screening dispatch status",
+            "description": "Returns a tenant-scoped screening attempt by runId. Use to follow queued dispatch and hosted invitation delivery. Completion and identity provisioning are.",
+            "og:title": "Get candidate screening dispatch status | OpenComp API",
+            "og:description": "Returns a tenant-scoped screening attempt by runId. Use to follow queued dispatch and hosted invitation delivery. Completion and identity provisioning are."
+          }
+        },
+        "x-speakeasy-mcp": {
+          "name": "get-candidate-screening"
+        }
+      }
+    },
+    "/v1/people/candidate-screenings/connection": {
+      "put": {
+        "description": "Verifies and enables this tenant’s exclusive Checkr account using an encrypted tenant secret. Cannot replace an existing account. Never returns credentials or changes IdP access.",
+        "operationId": "CandidateScreeningsController_configure_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfigureCheckrIntakeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "apikey": []
+          }
+        ],
+        "summary": "Configure tenant Checkr intake",
+        "tags": [
+          "Candidate Screenings"
+        ],
+        "x-comp-mcp": {
+          "name": "configure-checkr-candidate-intake"
+        },
+        "x-mint": {
+          "metadata": {
+            "title": "Configure tenant Checkr intake | OpenComp API",
+            "sidebarTitle": "Configure tenant Checkr intake",
+            "description": "Verifies and enables this tenant’s exclusive Checkr account using an encrypted tenant secret. Cannot replace an existing account. Never returns credentials.",
+            "og:title": "Configure tenant Checkr intake | OpenComp API",
+            "og:description": "Verifies and enables this tenant’s exclusive Checkr account using an encrypted tenant secret. Cannot replace an existing account. Never returns credentials."
+          }
+        },
+        "x-speakeasy-mcp": {
+          "name": "configure-checkr-candidate-intake"
+        }
+      }
+    },
     "/v1/offboarding-checklist/pending": {
       "get": {
         "description": "Lists members whose offboarding checklist is still incomplete, with their outstanding items, so you can track and finish departing-employee offboarding.",
@@ -35854,6 +36068,9 @@
       "description": "Retrieve audit trails for compliance activity, evidence changes, access decisions, and customer-facing security review workflows."
     },
     {
+      "name": "Candidate Screenings"
+    },
+    {
       "name": "CloudSecurity",
       "description": "Run AWS, Azure, and GCP cloud security scans, detect enabled services, review findings, and connect cloud posture results to compliance work.",
       "x-group": "Cloud Security"
@@ -36068,12 +36285,6 @@
             "description": "Last login time",
             "example": "2024-01-15T12:00:00Z",
             "nullable": true
-          },
-          "role": {
-            "type": "object",
-            "description": "Platform role of the user (managed by Better Auth admin plugin)",
-            "example": "user",
-            "nullable": true
           }
         },
         "required": [
@@ -36084,8 +36295,7 @@
           "image",
           "createdAt",
           "updatedAt",
-          "lastLogin",
-          "role"
+          "lastLogin"
         ]
       },
       "BackgroundCheckSummaryDto": {
@@ -40826,6 +41036,126 @@
           "runId",
           "context"
         ]
+      },
+      "StartCandidateScreeningDto": {
+        "type": "object",
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "description": "Client operation UUID. Reuse it when retrying the same submission.",
+            "format": "uuid",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254
+          },
+          "firstName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "lastName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "country": {
+            "type": "string",
+            "description": "ISO country code for the candidate’s work location.",
+            "example": "US",
+            "pattern": "^[A-Z]{2}$"
+          },
+          "state": {
+            "type": "string",
+            "description": "Two-letter work state; required for US work locations.",
+            "example": "CA",
+            "pattern": "^[A-Z]{2}$"
+          },
+          "city": {
+            "type": "string",
+            "description": "Work city, used for location-specific disclosures.",
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "operationId",
+          "email",
+          "firstName",
+          "lastName",
+          "country"
+        ],
+        "additionalProperties": false
+      },
+      "CandidateScreeningRunDto": {
+        "type": "object",
+        "properties": {
+          "runId": {
+            "type": "string",
+            "description": "Screening attempt ID. Poll the tenant-scoped screening detail endpoint.",
+            "example": "pcs_example"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "dispatching",
+              "invited",
+              "refunding",
+              "failed",
+              "needs_review"
+            ]
+          }
+        },
+        "required": [
+          "runId",
+          "status"
+        ]
+      },
+      "ConfigureCheckrIntakeDto": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "description": "Verified Checkr account belonging exclusively to this tenant."
+          },
+          "apiKeySecretId": {
+            "type": "string",
+            "description": "ID of this tenant’s encrypted secret containing its Checkr API key.",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "environment": {
+            "type": "string",
+            "enum": [
+              "sandbox",
+              "production"
+            ]
+          },
+          "package": {
+            "type": "string",
+            "description": "Checkr package slug for new screening attempts.",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "node": {
+            "type": "string",
+            "description": "Checkr hierarchy node custom ID, when required by the account.",
+            "maxLength": 100
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "accountId",
+          "apiKeySecretId",
+          "environment",
+          "package",
+          "enabled"
+        ],
+        "additionalProperties": false
       },
       "CreateTemplateItemDto": {
         "type": "object",

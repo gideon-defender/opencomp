@@ -44,6 +44,31 @@ OpenComp is the fastest way to get compliant with SOC 2, ISO 27001, HIPAA, GDPR 
 - [Redis](https://redis.io/)
 - [Tailwind CSS](https://tailwindcss.com/?ref=gideondefender.com)
 
+## Candidate background checks
+
+People starts Checkr-hosted candidate screenings without creating local users,
+assigning roles, or sending Employee Portal invitations. Configure a separate
+Checkr account and encrypted credentials for each tenant; see the
+[candidate intake setup and recovery guide](docs/checkr-candidate-intake.md).
+
+Use **Start background check** to submit a candidate's name, email, and work
+location. The tenant needs a configured Checkr connection, background-check
+allowance or credits, and a running local Trigger worker. Deploying alone does
+not configure the connection. The **Candidates** tab tracks invitation dispatch;
+an invitation sent does not indicate a completed check or a provisioned account.
+Completion webhooks and Gideon identity provisioning are outside this flow.
+
+### People directory troubleshooting
+
+The People directory reads memberships for the organization in the page URL.
+Roles come from `Member.role`, synchronized from Gideon OIDC entitlements;
+`User.role` is no longer part of the database schema. If API logs show
+`Unknown field role ... on model User`, deploy the API fix that removes that
+field from the directory query, together with the app fix that displays failed
+reads as an error. A failed request must not appear as a successfully empty
+directory. Check `GET /v1/people?includeDeactivated=true` with the matching
+`X-Organization-Id` before changing or recreating accounts.
+
 ## Contact us
 
 Contact our team at info@gideondefender.com to learn more about how we can help you achieve compliance.
@@ -612,6 +637,17 @@ parallel. All image builds must succeed before deployment starts. The email
 worker uses the API image; the employee portal is not deployed by this workflow.
 
 Tenant migration runs in three stages:
+
+The migrator invocation preserves the task definition's RDS certificate
+bootstrap. For shell entrypoints, the staged driver is passed as one command
+string; unsupported wrappers fail before service rollout rather than reporting
+a successful migration that never ran.
+
+An older workflow passed separate Node arguments to a shell entrypoint, which
+could exit successfully without running migrations. After merging the fix,
+start a new workflow run on the current `main` commit. Check the staged
+migrator logs and Prisma migration state; a green run from the old workflow
+does not establish that the tenant contract was applied.
 
 1. **Expansion:** the first migrator applies migrations before
    `20261013000004_user_tenant_enforce`, preserving the global email key while

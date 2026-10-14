@@ -1,25 +1,19 @@
 'use client';
 
-import type { Role } from '@db';
+import { Button } from '@gideon-defender/ui/button';
 import {
-  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  HStack,
-  PageHeader,
-  PageLayout,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@trycompai/design-system';
-import { Add, Download, OverflowMenuVertical } from '@trycompai/design-system/icons';
+} from '@gideon-defender/ui/dropdown-menu';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@gideon-defender/ui/tabs';
+import { PageHeader, PageLayout } from '@trycompai/design-system';
+import { Download, MoreVertical, Plus } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { useCallback, useState } from 'react';
-import { InviteMembersModal } from '../all/components/InviteMembersModal';
+import { StartBackgroundCheckDialog } from '../all/components/StartBackgroundCheckDialog';
 
 interface PeoplePageTabsProps {
   peopleContent: ReactNode;
@@ -34,7 +28,8 @@ interface PeoplePageTabsProps {
   showSettings: boolean;
   canInviteUsers: boolean;
   canManageMembers: boolean;
-  allowedBuiltInRoles: Role[];
+  canStartScreening: boolean;
+  candidatesContent: ReactNode | null;
   organizationId: string;
 }
 
@@ -44,10 +39,12 @@ function tabParamToInternal(
   showEmployeeTasks: boolean,
   showRoleMapping: boolean,
   showSettings: boolean,
+  showCandidates: boolean,
 ): string {
   if (!tabParam || tabParam === 'people') {
     return 'people';
   }
+  if (tabParam === 'candidates') return showCandidates ? 'candidates' : 'people';
   if (tabParam === 'tasks') {
     return showEmployeeTasks ? 'employee-tasks' : 'people';
   }
@@ -73,6 +70,7 @@ function internalValueToTabParam(value: string): string {
       return 'tasks';
     case 'org-chart':
       return 'chart';
+    case 'candidates':
     case 'people':
     case 'devices':
     case 'role-mapping':
@@ -93,20 +91,21 @@ export function PeoplePageTabs({
   showEmployeeTasks,
   settingsContent,
   showSettings,
-  canInviteUsers,
-  allowedBuiltInRoles,
+  canStartScreening,
+  candidatesContent,
   organizationId,
 }: PeoplePageTabsProps) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isScreeningModalOpen, setIsScreeningModalOpen] = useState(false);
 
   const activeTab = tabParamToInternal(
     searchParams.get('tab'),
     showEmployeeTasks,
     showRoleMapping,
     showSettings,
+    candidatesContent !== null,
   );
 
   const handleTabChange = useCallback(
@@ -131,8 +130,9 @@ export function PeoplePageTabs({
           <PageHeader
             title="People"
             tabs={
-              <TabsList variant="underline">
+              <TabsList className="max-w-full overflow-x-auto">
                 <TabsTrigger value="people">People</TabsTrigger>
+                {candidatesContent && <TabsTrigger value="candidates">Candidates</TabsTrigger>}
                 {showEmployeeTasks && <TabsTrigger value="employee-tasks">Tasks</TabsTrigger>}
                 <TabsTrigger value="devices">Devices</TabsTrigger>
                 <TabsTrigger value="org-chart">Chart</TabsTrigger>
@@ -141,19 +141,21 @@ export function PeoplePageTabs({
               </TabsList>
             }
             actions={
-              <HStack gap="2">
+              <div className="flex items-center gap-2">
                 <div>
                   <Button
-                    iconLeft={<Add size={16} />}
-                    onClick={() => setIsInviteModalOpen(true)}
-                    disabled={!canInviteUsers}
+                    onClick={() => setIsScreeningModalOpen(true)}
+                    disabled={!canStartScreening}
                   >
-                    Add User
+                    <Plus className="mr-2 h-4 w-4" />
+                    Start background check
                   </Button>
                 </div>
                 <DropdownMenu>
-                  <DropdownMenuTrigger render={<Button variant="outline" size="icon" />}>
-                    <OverflowMenuVertical size={16} />
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon" aria-label="People actions">
+                      <MoreVertical size={16} />
+                    </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem
@@ -170,12 +172,13 @@ export function PeoplePageTabs({
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </HStack>
+              </div>
             }
           />
         }
       >
         <TabsContent value="people">{peopleContent}</TabsContent>
+        {candidatesContent && <TabsContent value="candidates">{candidatesContent}</TabsContent>}
         {showEmployeeTasks && (
           <TabsContent value="employee-tasks">{employeeTasksContent}</TabsContent>
         )}
@@ -185,11 +188,12 @@ export function PeoplePageTabs({
         {showSettings && <TabsContent value="settings">{settingsContent}</TabsContent>}
       </PageLayout>
 
-      <InviteMembersModal
-        open={isInviteModalOpen}
-        onOpenChange={setIsInviteModalOpen}
+      <StartBackgroundCheckDialog
+        key={organizationId}
+        open={isScreeningModalOpen}
+        onOpenChange={setIsScreeningModalOpen}
         organizationId={organizationId}
-        allowedBuiltInRoles={allowedBuiltInRoles}
+        canStart={canStartScreening}
       />
     </Tabs>
   );

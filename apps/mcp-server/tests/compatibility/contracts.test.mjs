@@ -14,7 +14,9 @@ const order = (entries) =>
 test('every static and dynamic nested schema matches Phase 0 except individually reviewed exact deltas', () => {
   const actual = [];
   const dynamicDeltas = [];
-  for (const tool of registry.tools) {
+  for (const capturedTool of baseline.tools) {
+    const tool = registry.tools.find((item) => item.name === capturedTool.name);
+    assert(tool, capturedTool.name);
     const captured = baseline.tools.find((candidate) => candidate.name === tool.name);
     assert(captured, tool.name);
     assert.equal(tool.description, captured.description);
@@ -61,7 +63,9 @@ test('canonicalization retains conflicting intersections and meaningful constrai
   assert.notDeepEqual(canonical({ type: 'string', maxLength: 4 }), canonical({ type: 'string' }));
 });
 test('all annotation changes are checked against their semantic policy, not snapshot-updated', () => {
-  for (const tool of registry.tools) {
+  for (const capturedTool of baseline.tools) {
+    const tool = registry.tools.find((item) => item.name === capturedTool.name);
+    assert(tool, capturedTool.name);
     const before = baseline.tools.find((item) => item.name === tool.name).annotations;
     assert.deepEqual(before, {
       title: '',

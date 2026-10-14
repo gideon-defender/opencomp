@@ -30,6 +30,7 @@ export const statement = {
   finding: ['create', 'read', 'update', 'delete'],
   questionnaire: ['create', 'read', 'update', 'delete'],
   integration: ['create', 'read', 'update', 'delete'],
+  backgroundCheck: ['create', 'read'],
   apiKey: ['create', 'read', 'delete'],
   // App access resources
   app: ['read'], // Main app access
@@ -72,6 +73,7 @@ export const owner = ac.newRole({
   finding: ['read', 'update'],
   questionnaire: ['create', 'read', 'update', 'delete'],
   integration: ['create', 'read', 'update', 'delete'],
+  backgroundCheck: ['create', 'read'],
   apiKey: ['create', 'read', 'delete'],
   // App access
   app: ['read'],
@@ -110,6 +112,7 @@ export const admin = ac.newRole({
   finding: ['read', 'update'],
   questionnaire: ['create', 'read', 'update', 'delete'],
   integration: ['create', 'read', 'update', 'delete'],
+  backgroundCheck: ['create', 'read'],
   apiKey: ['create', 'read', 'delete'],
   // App access
   app: ['read'],
@@ -145,6 +148,7 @@ export const auditor = ac.newRole({
   finding: ['create', 'read', 'update', 'delete'], // Auditors raise and retract findings
   questionnaire: ['read'],
   integration: ['read'],
+  backgroundCheck: ['read'],
   // App access
   app: ['read'],
   trust: ['read'],

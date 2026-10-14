@@ -2,53 +2,13 @@ import { db, type Prisma } from '@db';
 import type { PeopleResponseDto } from '../dto/people-responses.dto';
 import type { CreatePeopleDto } from '../dto/create-people.dto';
 import type { UpdatePeopleDto } from '../dto/update-people.dto';
+import { MEMBER_SELECT } from './member-select';
 
 /**
  * Common database queries for member operations
  */
 export class MemberQueries {
-  /**
-   * Standard member selection fields
-   */
-  static readonly MEMBER_SELECT = {
-    id: true,
-    organizationId: true,
-    userId: true,
-    role: true,
-    createdAt: true,
-    department: true,
-    jobTitle: true,
-    isActive: true,
-    deactivated: true,
-    backgroundCheckExempt: true,
-    backgroundCheckExemptReason: true,
-    backgroundCheckExemptJustification: true,
-    onboardDate: true,
-    offboardDate: true,
-    fleetDmLabelId: true,
-    user: {
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        emailVerified: true,
-        image: true,
-        createdAt: true,
-        updatedAt: true,
-        lastLogin: true,
-        role: true,
-      },
-    },
-    backgroundCheckRequests: {
-      select: {
-        id: true,
-        status: true,
-        requesterNotes: true,
-      },
-      take: 1,
-      orderBy: { createdAt: 'desc' },
-    },
-  } as const;
+  static readonly MEMBER_SELECT = MEMBER_SELECT;
 
   /**
    * Get all members for an organization

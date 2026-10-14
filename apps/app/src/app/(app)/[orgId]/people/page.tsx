@@ -1,7 +1,6 @@
 import { hasPermission } from '@/lib/permissions';
 import { resolveUserPermissions } from '@/lib/permissions.server';
 import { auth } from '@/utils/auth';
-import type { Role } from '@db';
 import { db } from '@db/server';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
@@ -9,6 +8,7 @@ import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { TeamMembers } from './all/components/TeamMembers';
 import { TeamMembersSkeleton } from './all/components/TeamMembersSkeleton';
+import { CandidateScreeningsTab } from './components/CandidateScreeningsTab';
 import { PeoplePageTabs } from './components/PeoplePageTabs';
 import { EmployeesOverview } from './dashboard/components/EmployeesOverview';
 import { DevicesTabContent } from './devices/components/DevicesTabContent';
@@ -39,14 +39,8 @@ export default async function PeoplePage({ params }: { params: Promise<{ orgId: 
   const canManageMembers = hasPermission(userPermissions, 'member', 'update');
   const canInviteUsers = hasPermission(userPermissions, 'member', 'create');
 
-  const hasWriteMemberAccess =
-    canInviteUsers &&
-    hasPermission(userPermissions, 'member', 'read') &&
-    canManageMembers &&
-    hasPermission(userPermissions, 'member', 'delete');
-  const allowedBuiltInRoles: Role[] = hasWriteMemberAccess
-    ? ['admin', 'auditor', 'employee', 'contractor']
-    : ['employee', 'contractor'];
+  const canStartScreening = hasPermission(userPermissions, 'backgroundCheck', 'create');
+  const canReadScreenings = hasPermission(userPermissions, 'backgroundCheck', 'read');
   const canManageOrgSettings = hasPermission(userPermissions, 'organization', 'update');
 
   const organization = canManageOrgSettings
@@ -85,7 +79,14 @@ export default async function PeoplePage({ params }: { params: Promise<{ orgId: 
       showEmployeeTasks
       canInviteUsers={canInviteUsers}
       canManageMembers={canManageMembers}
-      allowedBuiltInRoles={allowedBuiltInRoles}
+      canStartScreening={canStartScreening}
+      candidatesContent={
+        canReadScreenings ? (
+          <Suspense fallback={<p>Loading candidate screenings…</p>}>
+            <CandidateScreeningsTab organizationId={orgId} />
+          </Suspense>
+        ) : null
+      }
       organizationId={orgId}
     />
   );

@@ -5,6 +5,7 @@ import { trainingVideos as trainingVideosData } from '@/lib/data/training-videos
 import type { Invitation, Member, User } from '@db';
 import { db } from '@db/server';
 import type { BackgroundCheckStatus } from '../../[employeeId]/components/backgroundCheckTypes';
+import { loadPeopleDirectory } from '../data/load-people-directory';
 import { getEmployeeSyncConnections } from '../data/queries';
 import { TeamMembersClient } from './TeamMembersClient';
 import { buildTwoFactorStatusMap, type TwoFactorStatusesResponse } from './two-factor-status-map';
@@ -50,15 +51,19 @@ export async function TeamMembers(props: TeamMembersProps) {
   }
 
   // Fetch members, invitations, and 2FA statuses from API
-  const [membersRes, invitationsRes, twoFactorRes] = await Promise.all([
-    serverApi.get<{ data: MemberWithUser[]; count: number }>('/v1/people?includeDeactivated=true'),
-    serverApi.get<{ data: Invitation[] }>('/v1/auth/invitations'),
-    serverApi.get<TwoFactorStatusesResponse>('/v1/integrations/sync/two-factor-statuses'),
+  const tenantHeaders = { 'X-Organization-Id': organizationId };
+  const [members, invitationsRes, twoFactorRes] = await Promise.all([
+    loadPeopleDirectory(organizationId),
+    serverApi.get<{ data: Invitation[] }>('/v1/auth/invitations', tenantHeaders),
+    serverApi.get<TwoFactorStatusesResponse>(
+      '/v1/integrations/sync/two-factor-statuses',
+      tenantHeaders,
+    ),
   ]);
 
-  const members: MemberWithUser[] = Array.isArray(membersRes.data?.data)
-    ? membersRes.data.data
-    : [];
+  if (members === null) {
+    return <p role="alert">Unable to load people. Please refresh the page or try again later.</p>;
+  }
   const pendingInvitations: Invitation[] = Array.isArray(invitationsRes.data?.data)
     ? invitationsRes.data.data
     : [];

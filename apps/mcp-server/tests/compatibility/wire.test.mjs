@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import { isDeepStrictEqual } from 'node:util';
 import { executeRequest } from '../../src/client.ts';
 import { CompAiCore } from '../../src/core.ts';
-import { registry } from '../runtime/fixtures.mjs';
+import { baseline, registry } from '../runtime/fixtures.mjs';
 import { sample } from './sample.mjs';
 
 const ignoredHeaders = new Set([
@@ -84,7 +84,9 @@ test(
             legacy.set(value.name, value);
       }
       const mismatches = [];
-      for (const tool of registry.tools) {
+      for (const captured of baseline.tools) {
+        const tool = registry.tools.find((item) => item.name === captured.name);
+        assert(tool, captured.name);
         const input = sample(tool.staticInputSchema);
         const old = legacy.get(tool.name);
         assert(old, tool.name);

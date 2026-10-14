@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { parse } from 'yaml';
 import { loadOpenApi } from '../src/openapi-loader.ts';
+import { assertReviewedRegistry } from './compatibility/additions.mjs';
 
 const source = JSON.parse(
   readFileSync(new URL('../../../packages/docs/openapi.json', import.meta.url), 'utf8'),
@@ -21,7 +22,7 @@ const tinyDocument = (paths) => ({ openapi: '3.0.0', paths, components: { schema
 test('owned registry matches all 412 captured tool names, descriptions and wire locations', () => {
   const before = structuredClone(source);
   const result = loadOpenApi({ source, overlay });
-  assert.equal(result.tools.length, baseline.tools.length);
+  assertReviewedRegistry({ tools: result.tools, baseline });
   for (const tool of baseline.tools) {
     const actual = result.tools.find((item) => item.name === tool.name);
     assert(actual, tool.name);
@@ -65,14 +66,11 @@ test('all captured tools remain available with owned metadata only', () => {
     }
   }
   const { tools } = loadOpenApi({ source: owned, overlay });
-  assert.deepEqual(
-    tools.map((tool) => tool.name).sort(),
-    baseline.tools.map((tool) => tool.name).sort(),
-  );
-  for (const tool of tools) {
+  assertReviewedRegistry({ tools, baseline });
+  for (const captured of baseline.tools) {
     assert.equal(
-      tool.description,
-      baseline.tools.find((item) => item.name === tool.name).description,
+      tools.find((tool) => tool.name === captured.name).description,
+      captured.description,
     );
   }
 });

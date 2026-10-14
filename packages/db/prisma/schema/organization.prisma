@@ -108,6 +108,9 @@ model Organization {
 
   // Background Checks
   backgroundCheckRequests BackgroundCheckRequest[]
+  peopleCandidates PeopleCandidate[]
+  candidateScreenings CandidateScreening[]
+  checkrIntakeConnection CheckrIntakeConnection?
 
   // Org Chart
   organizationChart OrganizationChart?

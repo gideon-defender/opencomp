@@ -7,5 +7,6 @@ import { SecretsService } from './secrets.service';
   imports: [AuthModule],
   controllers: [SecretsController],
   providers: [SecretsService],
+  exports: [SecretsService],
 })
 export class SecretsModule {}

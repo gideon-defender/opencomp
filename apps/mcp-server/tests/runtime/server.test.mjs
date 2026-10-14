@@ -3,7 +3,7 @@ import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createOwnedServer } from '../../src/server.ts';
-import { overlay, registry, source } from './fixtures.mjs';
+import { expectedToolCount, overlay, registry, source } from './fixtures.mjs';
 
 async function withClient({ options = {}, run }) {
   const calls = [];
@@ -45,7 +45,7 @@ test('MCP SDK static mode lists all 412 tools with owned descriptions and semant
   await withClient({
     run: async ({ client }) => {
       const result = await client.listTools();
-      assert.equal(result.tools.length, 412);
+      assert.equal(result.tools.length, expectedToolCount);
       for (const actual of result.tools) {
         const expected = registry.tools.find((tool) => tool.name === actual.name);
         assert.equal(actual.description, expected.description);
@@ -166,7 +166,10 @@ test('non-destructive filters hide POST deletions and reject their execution in 
             : JSON.parse(
                 (await client.callTool({ name: 'list_tools', arguments: {} })).content[0].text,
               );
-        assert.deepEqual(listed.map((tool) => tool.name), ['get-tasks']);
+        assert.deepEqual(
+          listed.map((tool) => tool.name),
+          ['get-tasks'],
+        );
         for (const name of deletionTools) {
           const result = await client.callTool(
             mode === 'static'

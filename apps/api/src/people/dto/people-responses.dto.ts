@@ -68,14 +68,6 @@ export class UserResponseDto {
     nullable: true,
   })
   lastLogin: Date | null;
-
-  @ApiProperty({
-    description:
-      'Platform role of the user (managed by Better Auth admin plugin)',
-    example: 'user',
-    nullable: true,
-  })
-  role: string | null;
 }
 
 export class PeopleResponseDto {

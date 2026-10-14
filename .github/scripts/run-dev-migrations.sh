@@ -5,7 +5,10 @@ phase="${1:?Expected expand or contract phase}"
 case "$phase" in expand|contract) ;; *) echo 'Invalid migration phase'; exit 1 ;; esac
 task_definition="$(cat "$RUNNER_TEMP/opencomp-migrator-task")"
 overrides="$RUNNER_TEMP/opencomp-migrator-overrides-$phase.json"
-jq -n --arg phase "$phase" '{containerOverrides:[{name:"migrator",command:["node","packages/db/scripts/staged-migrate.mjs",$phase]}]}' > "$overrides"
+definition_json="$RUNNER_TEMP/opencomp-migrator-definition.json"
+aws ecs describe-task-definition --region "$AWS_REGION" \
+  --task-definition "$task_definition" --query taskDefinition --output json > "$definition_json"
+jq --arg phase "$phase" -f .github/scripts/migrator-overrides.jq "$definition_json" > "$overrides"
 
 task_arn="$(aws ecs run-task \
   --region "$AWS_REGION" --cluster "$ECS_CLUSTER" --launch-type FARGATE \

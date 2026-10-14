@@ -3,11 +3,11 @@ import { test } from 'node:test';
 import { z } from 'zod';
 import { serializeRequest } from '../../src/request/serialize.ts';
 import { createSchemaCompiler } from '../../src/schema/compiler.ts';
-import { baseline, registry, tool } from './fixtures.mjs';
+import { baseline, expectedToolCount, registry, tool } from './fixtures.mjs';
 
 const compile = (source) => createSchemaCompiler({})({ source, location: 'fixture' });
 test('compiles all 412 tools without changing names, descriptions, locations, or frozen fixtures', () => {
-  assert.equal(registry.tools.length, 412);
+  assert.equal(registry.tools.length, expectedToolCount);
   for (const captured of baseline.tools) {
     const actual = tool(captured.name);
     assert.equal(actual.description, captured.description);

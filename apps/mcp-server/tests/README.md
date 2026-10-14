@@ -92,6 +92,16 @@ Empty DTO schemas still limit discovery. Malformed emitted fields such as
 string constraint is inert on that type. Fix DTOs and export the public spec
 rather than silently interpreting a field as a different type.
 
+## Additive API contracts
+
+`compatibility/additions.mjs` names the five candidate-intake operations added
+on 2026-10-14 with their exact methods, routes, and operation IDs. Registry tests
+require exactly the frozen tool names plus these additions; unexpected additions
+still fail. The full original schema/wire comparisons continue over all 412
+captured tools. Candidate intake has separate runtime tests for strict screening
+input, credential-reference configuration, escaped run IDs, and annotations.
+The generated sources and frozen fixtures are unchanged.
+
 ## Test layers
 
 `owned-contract.test.mjs` checks metadata, name derivation, overlay exclusions and
