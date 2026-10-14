@@ -60,14 +60,58 @@ test('dev deploy authorizes the current main SHA and keeps the selected commit p
   );
   assert(!deploySteps.includes('getRef'));
   assert(!deploySteps.includes('Reject a superseded main commit'));
-  for (const required of ['rolled back', '/healthz']) {
-    assert(deploySteps.includes(required));
-  }
+  assert(deploySteps.includes('/healthz'));
+});
+
+test('dev deploy stages migrations around a verified rollout and blocks contract after failure', () => {
+  const workflow = parse(read('.github/workflows/deploy-dev.yml'));
+  const steps = workflow.jobs.deploy.steps;
+  const expand = steps.findIndex((step) =>
+    step.run?.includes('bash .github/scripts/deploy-dev.sh'),
+  );
+  const drain = steps.findIndex((step) =>
+    step.run?.includes('bash .github/scripts/wait-dev-services.sh'),
+  );
+  const contract = steps.findIndex((step) =>
+    step.run?.includes('bash .github/scripts/run-dev-migrations.sh contract'),
+  );
+  const health = steps.findIndex((step) => step.run?.includes('/healthz'));
+  assert(expand >= 0, 'Expansion and rollout step is required');
+  assert(drain > expand, 'Verify the rollout after updating services');
+  assert(contract > drain, 'Contract must wait for old tasks to stop');
+  assert(health > contract, 'Check the hosted edge after contract completes');
+  assert.equal(steps[drain].if, undefined, 'Keep the default success-only execution');
+  assert.equal(steps[contract].if, undefined, 'A failed rollout must block contract');
+
   const script = read('.github/scripts/deploy-dev.sh');
   assert(script.includes('gideon-dev-opencomp-mcp|$mcp_task_definition'));
-  assert(script.indexOf('migrator_exit_code') < script.indexOf('aws ecs update-service'));
-  assert.equal(
-    spawnSync('bash', ['-n', fileURLToPath(new URL('.github/scripts/deploy-dev.sh', root))]).status,
-    0,
+  const expansion = script.indexOf('bash .github/scripts/run-dev-migrations.sh expand');
+  const update = script.indexOf('aws ecs update-service');
+  assert(expansion >= 0 && update > expansion, 'Expansion must succeed before service updates');
+  assert(
+    !script.includes('run-dev-migrations.sh contract'),
+    'Do not contract before draining old tasks',
   );
+
+  const waiter = read('.github/scripts/wait-dev-services.sh');
+  for (const required of [
+    '.taskDefinition == $expected',
+    '.rolloutState == "COMPLETED"',
+    'RUNNING STOPPED',
+    '.lastStatus == "STOPPED"',
+    '.taskDefinitionArn == $expected',
+    'exit 1',
+  ])
+    assert(waiter.includes(required), `Missing rollout check: ${required}`);
+
+  const migrator = read('.github/scripts/run-dev-migrations.sh');
+  assert(migrator.includes('staged-migrate.mjs'));
+  assert(migrator.includes('if [ "$exit_code" != 0 ]; then'));
+  for (const path of [
+    '.github/scripts/deploy-dev.sh',
+    '.github/scripts/wait-dev-services.sh',
+    '.github/scripts/run-dev-migrations.sh',
+  ]) {
+    assert.equal(spawnSync('bash', ['-n', fileURLToPath(new URL(path, root))]).status, 0);
+  }
 });

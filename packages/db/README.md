@@ -81,6 +81,30 @@ also include provider identity, so existing task vectors rebuild on the next sca
 
 ## Tenant contract approval recovery
 
+The administrator-only **Deploy to Dev** workflow now runs two migration tasks.
+The first applies expansion migrations while preserving their original SQL and
+checksums. It recovers the known failed atomic contract attempt only when the
+legacy global email key still exists and tenant ownership remains nullable.
+Other failed migrations require inspection; the workflow does not clear them.
+
+The workflow then deploys the new images, verifies each requested task definition,
+and checks that old tasks have stopped, including tasks with desired status
+STOPPED that are still alive. Only then does the second migrator task approve and
+apply the contract, validation, session cleanup, and later pending migrations.
+Approval exists only in that task's database connection. Large-table and
+large-split gates remain enforced. Subsequent deployments apply all migrations
+normally once the tenant migration is complete.
+
+The deploy role needs `ecs:ListTasks` with an `ecs:cluster` condition limited to
+the dev cluster. Terraform manages this in
+`everything-as-code/terraform/opencomp/iam.tf` as `deploy_task_inspection`.
+The workflow checks this permission before image builds start.
+
+If rollout verification fails, expansion remains applied and contract does not
+run. Fix the rollout and rerun the workflow. Do not manually approve contract
+while old tasks remain alive. The manual commands below remain available for
+other environments and inspected recovery cases.
+
 An ordinary `pnpm exec prisma migrate deploy` stops at the contract approval
 gate on populated databases. Prisma records that migration as failed. After
 the tenant-aware code has rolled out and old nodes have drained, run from
