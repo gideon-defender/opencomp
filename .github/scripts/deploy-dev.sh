@@ -41,30 +41,10 @@ mcp_task_definition="$(register_task_definition gideon-dev-opencomp-mcp "$mcp_im
 email_task_definition="$(register_task_definition gideon-dev-opencomp-email-worker "$api_image")"
 migrator_task_definition="$(register_task_definition gideon-dev-opencomp-migrator "$migrator_image")"
 
-migrator_task_arn="$(aws ecs run-task \
-  --region "$AWS_REGION" \
-  --cluster "$ECS_CLUSTER" \
-  --launch-type FARGATE \
-  --task-definition "$migrator_task_definition" \
-  --network-configuration "awsvpcConfiguration={subnets=[$MIGRATOR_SUBNETS],securityGroups=[$MIGRATOR_SECURITY_GROUP],assignPublicIp=ENABLED}" \
-  --query 'tasks[0].taskArn' \
-  --output text)"
+printf '%s\n' "$migrator_task_definition" > "$RUNNER_TEMP/opencomp-migrator-task"
+bash .github/scripts/run-dev-migrations.sh expand
 
-aws ecs wait tasks-stopped \
-  --region "$AWS_REGION" \
-  --cluster "$ECS_CLUSTER" \
-  --tasks "$migrator_task_arn"
-
-migrator_exit_code="$(aws ecs describe-tasks \
-  --region "$AWS_REGION" \
-  --cluster "$ECS_CLUSTER" \
-  --tasks "$migrator_task_arn" \
-  --query 'tasks[0].containers[0].exitCode' \
-  --output text)"
-if [ "$migrator_exit_code" != "0" ]; then
-  echo "ECS migrator exited with code $migrator_exit_code"
-  exit 1
-fi
+: > "$RUNNER_TEMP/opencomp-expected-tasks"
 
 for service_definition in \
   "gideon-dev-opencomp-mcp|$mcp_task_definition" \

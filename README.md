@@ -240,14 +240,14 @@ GIDEON_ENFORCEMENT_ALL_TENANTS=false
 GIDEON_BOOTSTRAP_ENFORCED=""  # set to "true" to enable
 ```
 
-| Phase | Status |
-| ----- | ------ |
-| 0 — Audit + IdP data prep (claim evaluation, `roleSource`/`idpAccessRevoked` columns, conversion inventory) | Shipped |
-| 1 — Enforce + JIT member sync + cutover (`no_role` UX) | Pilot deployed; all-tenant mode implemented locally, awaiting deployment |
-| 2 — Reconciliation every five minutes (revocation between logins) | Enabled for every existing dev tenant (currently bootstrap only); future-tenant discovery awaits deployment of the local all-tenant code |
-| 3 — Lockdown (legacy membership writes return `410 Gone`) | Server fences shipped; UI cleanup pending (invite dialogs still present) |
-| 4 — Deletion of retired endpoints/services | Pending |
-| 5 — Bootstrap + break-glass prerequisites (owner gate, runbooks) | Gate and runbooks shipped; per-tenant IdP owner seeding still required before enabling |
+| Phase                                                                                                       | Status                                                                                                                                   |
+| ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| 0 — Audit + IdP data prep (claim evaluation, `roleSource`/`idpAccessRevoked` columns, conversion inventory) | Shipped                                                                                                                                  |
+| 1 — Enforce + JIT member sync + cutover (`no_role` UX)                                                      | Pilot deployed; all-tenant mode implemented locally, awaiting deployment                                                                 |
+| 2 — Reconciliation every five minutes (revocation between logins)                                           | Enabled for every existing dev tenant (currently bootstrap only); future-tenant discovery awaits deployment of the local all-tenant code |
+| 3 — Lockdown (legacy membership writes return `410 Gone`)                                                   | Server fences shipped; UI cleanup pending (invite dialogs still present)                                                                 |
+| 4 — Deletion of retired endpoints/services                                                                  | Pending                                                                                                                                  |
+| 5 — Bootstrap + break-glass prerequisites (owner gate, runbooks)                                            | Gate and runbooks shipped; per-tenant IdP owner seeding still required before enabling                                                   |
 
 Set `GIDEON_ENFORCEMENT_ALL_TENANTS=true` to enforce every identified tenant.
 Unknown tenants are denied until their OpenComp organization exists; this mode
@@ -599,18 +599,64 @@ Steps to deploy OpenComp on Docker are coming soon.
 
 Gideon hosted production and dev environments run on AWS
 
-Dev deployment is manual; merging to `main` does not deploy automatically. To deploy the `main` branch to dev, run the [Deploy to Dev workflow](.github/workflows/deploy-dev.yml) from the repository's **Actions** tab. The workflow is restricted to repository administrators, applies database migrations, builds in parallel then pushes the ARM64 API, app, trust-center, and migrator images, and rolls the ECS services. It uses the `dev` environment secrets `AWS_ACCOUNT_ID`, `AWS_REGION`, `ECS_CLUSTER`, `AWS_ROLE_TO_ASSUME`, `MIGRATOR_SUBNETS` and `MIGRATOR_SECURITY_GROUP`.
-The employee portal is not currently deployed by this workflow.
+Dev deployment is manual; merging to `main` does not deploy automatically. After
+merging changes, a repository administrator must run the
+[Deploy to Dev workflow](.github/workflows/deploy-dev.yml) from the repository's
+**Actions** tab, selecting the current `main` commit. The workflow uses the `dev`
+environment secrets `AWS_ACCOUNT_ID`, `AWS_REGION`, `ECS_CLUSTER`,
+`AWS_ROLE_TO_ASSUME`, `MIGRATOR_SUBNETS` and `MIGRATOR_SECURITY_GROUP`.
 
-Dev domains (`*.dev.gideondefender.com`): `opencomp.dev` → app, `trust.dev/{friendlyUrl}` → trust-center, `opencomp-api.dev` → API.
+The workflow checks infrastructure and deployment permissions, then builds and
+pushes the ARM64 API, app, trust-center, hosted MCP, and migrator images in
+parallel. All image builds must succeed before deployment starts. The email
+worker uses the API image; the employee portal is not deployed by this workflow.
+
+Tenant migration runs in three stages:
+
+1. **Expansion:** the first migrator applies migrations before
+   `20261013000004_user_tenant_enforce`, preserving the global email key while
+   normalizing emails, backfilling tenant ownership, and building indexes.
+2. **Service rollout:** deploy the new images, verify each requested task
+   definition, and wait for old tasks to stop. A service rollback or an old task
+   that remains alive blocks the contract phase.
+3. **Contract:** the second migrator sets `app.tenant_contract_approved=yes` only
+   in its database connection. It splits shared users into tenant accounts,
+   enforces ownership and email constraints, validates them, removes stale
+   sessions, and applies later pending migrations. The workflow then checks the
+   hosted MCP edge.
+
+Once the tenant contract is complete, subsequent deploys apply pending migrations
+normally before the service rollout.
+
+If a previous plain deploy failed at `user_tenant_enforce` and Prisma reports
+`P3009`, rerun the updated workflow after merging it into `main`. The migrator
+clears that failed record only after it verifies zero applied steps, the legacy
+global email key, and nullable tenant ownership. Later validation or cleanup
+approval failures require an explicit approval-rejection message for automatic
+recovery. Other migration failures stop the workflow for inspection.
+
+If service rollout fails, expansion remains applied and contract does not run.
+Fix the rollout and rerun the workflow. Do not enable contract approval on the
+first migrator or run contract manually while old tasks remain alive. Large-table
+index and large-split approval gates still apply. See the
+[database recovery guide](packages/db/README.md#tenant-contract-approval-recovery)
+for manual recovery outside this workflow.
+
+The deploy role also needs `ecs:ListTasks`, restricted by `ecs:cluster` to the dev
+OpenComp cluster. The infrastructure repository manages this grant in
+`everything-as-code/terraform/opencomp/iam.tf` as `deploy_task_inspection`. The
+workflow checks the permission before image builds start.
+
+Dev domains (`*.dev.gideondefender.com`): `opencomp.dev` → app, `trust.dev/{friendlyUrl}` → trust-center, `opencomp-api.dev` → API, `mcp.dev` → hosted MCP.
 
 Key env/config for a `dev` deploy:
 
 ```env
-BASE_URL=https://api.dev.gideondefender.com
+BASE_URL=https://opencomp-api.dev.gideondefender.com
 NEXT_PUBLIC_APP_URL=https://opencomp.dev.gideondefender.com
-NEXT_PUBLIC_API_URL=https://api.dev.gideondefender.com
-NEXT_PUBLIC_TRUST_API_URL=https://trust.dev.gideondefender.com
+NEXT_PUBLIC_API_URL=https://opencomp-api.dev.gideondefender.com
+NEXT_PUBLIC_BETTER_AUTH_URL=https://opencomp-api.dev.gideondefender.com
+NEXT_PUBLIC_TRUST_API_URL=https://opencomp-api.dev.gideondefender.com
 TRUST_APP_URL=https://trust.dev.gideondefender.com  # build-time for trust-center
 LOCAL_TRIGGER_DATABASE_URL=postgresql://...?options=-c%20search_path%3Dopencomp_trigger%2Cpublic
 ```
@@ -627,7 +673,7 @@ AWS services used to host OpenComp:
 - SES
 - SQS
 
-Notes: session cookies are isolated per env (`dev` prefix / `.dev.gideondefender.com` domain, mirroring the staging carve-out); `opencomp.dev.gideondefender.com` must be in the billing-redirect allowlist; leave `TRUST_PORTAL_PROJECT_ID` / Vercel vars unset in dev (custom domains stay on the shared-domain path until a separate dev Vercel project exists); the deploy workflow runs `prisma migrate deploy` (including the `opencomp_trigger` schema) before replacing ECS tasks.
+Notes: session cookies are isolated per env (`dev` prefix / `.dev.gideondefender.com` domain, mirroring the staging carve-out); `opencomp.dev.gideondefender.com` must be in the billing-redirect allowlist; leave `TRUST_PORTAL_PROJECT_ID` / Vercel vars unset in dev (custom domains stay on the shared-domain path until a separate dev Vercel project exists). Database migrations also provision the `opencomp_trigger` schema. Contract migrations run only after the tenant-aware services have rolled out and old tasks have stopped.
 
 ## 📦 Package Publishing
 

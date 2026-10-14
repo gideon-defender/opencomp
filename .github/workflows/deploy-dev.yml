@@ -50,7 +50,7 @@ jobs:
             }
 
   preflight:
-    name: Check MCP infrastructure is provisioned
+    name: Check deployment infrastructure and permissions
     needs: authorize
     runs-on: ubuntu-latest
     environment:
@@ -73,6 +73,10 @@ jobs:
             echo 'Provision terraform/opencomp MCP infrastructure in everything-as-code before deploying this branch.'
             exit 1
           fi
+          # The contract phase must verify old tasks stopped before it runs.
+          aws ecs list-tasks --region "$AWS_REGION" --cluster "$ECS_CLUSTER" \
+            --service-name gideon-dev-opencomp-api --desired-status RUNNING \
+            --query taskArns --output text >/dev/null
 
   build:
     name: Build and push images
@@ -204,33 +208,19 @@ jobs:
         id: ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Register task definitions and update ECS services
+      - name: Apply expansion migrations and deploy tenant-aware services
         shell: bash
         run: |
           bash .github/scripts/deploy-dev.sh
 
-      - name: Wait for ECS services
+      - name: Verify the requested rollout and drain old ECS tasks
         shell: bash
         run: |
-          set -euo pipefail
-          for service in \
-            gideon-dev-opencomp-mcp \
-            gideon-dev-opencomp-api \
-            gideon-dev-opencomp-app \
-            gideon-dev-opencomp-trust-center \
-            gideon-dev-opencomp-email-worker; do
-            aws ecs wait services-stable \
-              --region "$AWS_REGION" \
-              --cluster "$ECS_CLUSTER" \
-              --services "$service"
-          done
-          while IFS='|' read -r service expected; do
-            actual="$(aws ecs describe-services --region "$AWS_REGION" --cluster "$ECS_CLUSTER" --services "$service" --query 'services[0].taskDefinition' --output text)"
-            if [ "$actual" != "$expected" ]; then
-              echo "$service rolled back or did not deploy the requested task definition"
-              exit 1
-            fi
-          done < "$RUNNER_TEMP/opencomp-expected-tasks"
+          bash .github/scripts/wait-dev-services.sh
+
+      - name: Apply approved tenant contract migrations
+        shell: bash
+        run: bash .github/scripts/run-dev-migrations.sh contract
 
       - name: Verify hosted MCP edge
         shell: bash

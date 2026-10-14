@@ -66,7 +66,7 @@ RUN cd packages/db \
   && cp -R prisma/migrations dist/migrations
 
 # Prisma 7 requires the datasource URL in prisma.config.ts (not in schema.prisma).
-RUN printf 'import "dotenv/config";\nimport { defineConfig } from "prisma/config";\n\nexport default defineConfig({\n  schema: "packages/db/dist/schema.prisma",\n  migrations: { path: "packages/db/dist/migrations" },\n  datasource: { url: process.env.DATABASE_URL! },\n});\n' > prisma.config.ts
+RUN printf 'import "dotenv/config";\nimport { defineConfig } from "prisma/config";\n\nexport default defineConfig({\n  schema: "packages/db/dist/schema.prisma",\n  migrations: { path: process.env.PRISMA_MIGRATIONS_PATH || "packages/db/dist/migrations" },\n  datasource: { url: process.env.DATABASE_URL! },\n});\n' > prisma.config.ts
 
 # Run migrations against the combined schema (direct bin path — no package
 # manager needed at runtime).
