@@ -18,14 +18,34 @@ verify_tasks() {
 test -s "$RUNNER_TEMP/opencomp-expected-tasks"
 while IFS='|' read -r service expected; do
   aws ecs wait services-stable --region "$AWS_REGION" --cluster "$ECS_CLUSTER" --services "$service"
-  state="$(aws ecs describe-services --region "$AWS_REGION" --cluster "$ECS_CLUSTER" --services "$service")"
-  if ! jq -e --arg expected "$expected" '
-    (.failures // [] | length) == 0 and (.services | length) == 1 and
-    all(.services[];
-      .taskDefinition == $expected and .pendingCount == 0 and .runningCount == .desiredCount and
-      (.deployments | length) == 1 and
-      all(.deployments[]; .taskDefinition == $expected and .rolloutState == "COMPLETED"))
-  ' <<< "$state" >/dev/null; then
+  # The stability waiter can return before rolloutState changes to COMPLETED.
+  completed=false
+  for ((attempt=1; attempt<=${SERVICE_ROLLOUT_ATTEMPTS:-60}; attempt++)); do
+    state="$(aws ecs describe-services --region "$AWS_REGION" --cluster "$ECS_CLUSTER" --services "$service")"
+    if ! jq -e --arg expected "$expected" '
+      (.failures // [] | length) == 0 and (.services | length) == 1 and
+      all(.services[]; .taskDefinition == $expected and
+        all(.deployments[]; .rolloutState != "FAILED"))
+    ' <<< "$state" >/dev/null; then
+      echo "$service rolled back or failed the requested rollout; contract migrations are blocked"
+      exit 1
+    fi
+    if jq -e --arg expected "$expected" '
+      (.failures // [] | length) == 0 and (.services | length) == 1 and
+      all(.services[];
+        .taskDefinition == $expected and .pendingCount == 0 and .runningCount == .desiredCount and
+        (.deployments | length) == 1 and
+        all(.deployments[]; .taskDefinition == $expected and .rolloutState == "COMPLETED"))
+    ' <<< "$state" >/dev/null; then
+      completed=true
+      break
+    fi
+    echo "Waiting for $service's requested rollout to complete ($attempt)"
+    sleep "${SERVICE_ROLLOUT_DELAY_SECONDS:-5}"
+  done
+  if [ "$completed" != true ]; then
+    jq '{failures, services: [.services[] | {taskDefinition, desiredCount, runningCount, pendingCount,
+      deployments: [.deployments[] | {taskDefinition, rolloutState, rolloutStateReason}]}]}' <<< "$state"
     echo "$service did not complete the requested rollout; contract migrations are blocked"
     exit 1
   fi

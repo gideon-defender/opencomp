@@ -29,8 +29,15 @@ elif args[:2] == ['ecs', 'update-service']:
 elif args[:2] == ['ecs', 'describe-services']:
     expected = 'arn:' + value('--services') + ':new'
     if scenario == 'rollback': expected = 'old'
+    rollout = 'COMPLETED'
+    if scenario == 'rollout-lag':
+        marker = 'rollout-observed:' + value('--services')
+        if marker not in trace.read_text(): rollout = 'IN_PROGRESS'
+        with trace.open('a') as f: f.write(marker + '\\n')
+    if scenario == 'rollout-stuck': rollout = 'IN_PROGRESS'
+    if scenario == 'rollout-failed': rollout = 'FAILED'
     emit({'services': [{'taskDefinition': expected, 'desiredCount': 1, 'runningCount': 1,
-        'pendingCount': 0, 'deployments': [{'taskDefinition': expected, 'rolloutState': 'COMPLETED'}]}]})
+        'pendingCount': 0, 'deployments': [{'taskDefinition': expected, 'rolloutState': rollout}]}]})
 elif args[:2] == ['ecs', 'list-tasks']:
     status = value('--desired-status')
     print('arn:task/' + value('--service-name') + '/' + status)
@@ -67,6 +74,7 @@ class DevDeployTests(unittest.TestCase):
                        RUNNER_TEMP=directory, AWS_TRACE=str(trace), SCENARIO=scenario,
                        TASK_DRAIN_ATTEMPTS='2' if scenario == 'old-drains' else '1',
                        TASK_DRAIN_DELAY_SECONDS='0',
+                       SERVICE_ROLLOUT_ATTEMPTS='2', SERVICE_ROLLOUT_DELAY_SECONDS='0',
                        AWS_REGION='test', ECS_CLUSTER='test', ECR_REGISTRY='test',
                        IMAGE_TAG='test', MIGRATOR_SUBNETS='test', MIGRATOR_SECURITY_GROUP='test')
             result = subprocess.run(['bash', '-c',
@@ -87,6 +95,19 @@ class DevDeployTests(unittest.TestCase):
         result, events = self.run_flow('expand-failure')
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(events, ['migration:expand'])
+
+    def test_waits_for_rollout_completion_after_aws_stability_waiter(self):
+        result, events = self.run_flow('rollout-lag')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(events[-1], 'migration:contract')
+        self.assertEqual(sum(event.startswith('rollout-observed:') for event in events), 10)
+
+    def test_failed_or_stuck_rollouts_block_contract(self):
+        for scenario in ['rollout-failed', 'rollout-stuck']:
+            with self.subTest(scenario=scenario):
+                result, events = self.run_flow(scenario)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertNotIn('migration:contract', events)
 
     def test_waits_until_old_tasks_actually_stop(self):
         result, events = self.run_flow('old-drains')
