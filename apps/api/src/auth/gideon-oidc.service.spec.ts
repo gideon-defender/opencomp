@@ -13,6 +13,8 @@ import {
   mockSessionCreate,
   mockUserCreate,
   mockUserFindFirst,
+  mockUserFindMany,
+  mockQueryRaw,
   mockUserFindUnique,
   mockUserUpdate,
 } from './gideon-oidc.service.fixtures';
@@ -55,10 +57,12 @@ jest.mock('@db', () => ({
   db: {
     user: {
       findFirst: (...args: unknown[]) => mockUserFindFirst(...args),
+      findMany: (...args: unknown[]) => mockUserFindMany(...args),
       findUnique: (...args: unknown[]) => mockUserFindUnique(...args),
       create: (...args: unknown[]) => mockUserCreate(...args),
       update: (...args: unknown[]) => mockUserUpdate(...args),
     },
+    $queryRaw: (...args: unknown[]) => mockQueryRaw(...args),
     member: {
       findFirst: (...args: unknown[]) => mockMemberFindFirst(...args),
     },

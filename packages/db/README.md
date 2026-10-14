@@ -25,6 +25,21 @@ import { db } from '@gideon-defender/db';
 - Publishing runs a build automatically via `prepublishOnly`.
 - See `INTEGRATION_GUIDE.md` for integration details.
 
+## Tenant migration regression tests
+
+Run from `packages/db` with a local test PostgreSQL database and `psql` on PATH:
+
+```bash
+USER_TENANT_TEST_DATABASE_URL=postgres://postgres@localhost:5432/postgres \
+  pnpm exec vitest run src/user-tenant-migrations.spec.ts
+```
+
+The suite creates and removes isolated schemas. It checks mixed ownership
+signals beyond 5,000 rows, DDL lock release, batch commits, retry behavior,
+contract rollback, and the pinned Prisma migration runner. Without the database
+URL, these integration tests are skipped. Set `PSQL_BIN` if `psql` needs an
+explicit path.
+
 ## Embedding providers
 
 The shared `embedTexts` client is used by risk/vendor task matching and API
@@ -63,3 +78,20 @@ source rebuild blocks retrieval; the next request retries missing or outdated
 vectors. The first request after a model change can take longer to rebuild the
 index. Subsequent syncs skip unchanged current-model documents. Linkage hashes
 also include provider identity, so existing task vectors rebuild on the next scan.
+
+## Tenant contract approval recovery
+
+An ordinary `pnpm exec prisma migrate deploy` stops at the contract approval
+gate on populated databases. Prisma records that migration as failed. After
+the tenant-aware code has rolled out and old nodes have drained, run from
+`packages/db` with the same database URL:
+
+```sh
+pnpm exec prisma migrate resolve --rolled-back 20261013000004_user_tenant_enforce
+```
+
+This clears the failed migration record; it does not roll back SQL. Add
+`options=-c app.tenant_contract_approved=yes` to the connection URL (URL-encoded),
+then run `pnpm exec prisma migrate deploy`. If validation or session cleanup
+fails at its approval gate, resolve that specific failed migration before retry.
+For other failures, verify rollback or repair partial changes before resolving.

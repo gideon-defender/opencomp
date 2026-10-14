@@ -63,3 +63,7 @@ export {
   VendorStatus,
 } from '@prisma/client';
 export { db } from './client';
+// Single-source email form: re-exported from `@gideon-defender/email` (not
+// `@gideon-defender/db`, which would drag the Prisma/Bedrock bundle into the
+// Next.js server bundle for a one-liner). See apps/api/prisma/index.ts.
+export { normalizeEmail } from '@gideon-defender/email';

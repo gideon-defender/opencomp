@@ -15,6 +15,7 @@ const config = {
   tenantIds: [tenantId],
 };
 jest.mock('@db', () => ({
+  normalizeEmail: jest.requireActual('@gideon-defender/email').normalizeEmail,
   db: {
     $transaction: (...args: unknown[]) => mockTransaction(...args),
     member: { findFirst: (...args: unknown[]) => mockFindRacedMember(...args) },
@@ -46,7 +47,7 @@ const initialMember = () => ({
   idpAccessRevoked: false,
   user: {
     gideonSub: '67dc2bb3-7728-4dc5-b945-074aa1c118ef',
-    gideonTenantId: tenantId,
+    tenantId,
     email: 'user@example.com',
   },
 });
@@ -242,7 +243,7 @@ it('refreshes grants again after a concurrent first-login create conflict', asyn
 });
 
 it('rejects a foreign subject link before requesting a snapshot', async () => {
-  member.user.gideonTenantId = 'foreign-tenant';
+  member.user.tenantId = 'foreign-tenant';
   await expect(
     syncSsoMember({
       userId: member.userId,

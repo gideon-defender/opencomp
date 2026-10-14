@@ -158,26 +158,41 @@ export async function notifyOwnerOfUnassignedItems({
     });
     if (!organization) return;
 
-    const owner = await db.member.findFirst({
+    // Exact role match: roles are comma-separated, so a substring filter
+    // (`contains: 'owner'`) also matches custom roles like 'co-owner'.
+    // Scan members in join order and pick the first exact hit. Only
+    // `deactivated` filters the scan: `isActive` is an independent flag
+    // (invited/inactive owners still own the org), and filtering on it
+    // silently drops the reassignment email when the sole owner is inactive.
+    const members = await db.member.findMany({
       where: {
         organizationId,
-        role: { contains: 'owner' },
         deactivated: false,
       },
       include: { user: true },
+      orderBy: { createdAt: 'asc' },
     });
+    const owner = members.find((m) =>
+      m.role
+        .split(',')
+        .map((r) => r.trim())
+        .includes('owner'),
+    );
     if (!owner) return;
 
     const unsubscribed = await isUserUnsubscribed(
       db,
       owner.user.email,
       'unassignedItemsNotifications',
+      organizationId,
     );
     if (unsubscribed) return;
 
     const userName = owner.user.name || owner.user.email || 'Owner';
     await triggerEmail({
+      organizationId: organizationId,
       to: owner.user.email,
+      userId: owner.userId,
       subject:
         emailLocale === 'es'
           ? `Miembro eliminado de ${organization.name}: elementos requieren reasignación`
@@ -185,6 +200,7 @@ export async function notifyOwnerOfUnassignedItems({
       react: UnassignedItemsNotificationEmail({
         locale: emailLocale,
         email: owner.user.email,
+        userId: owner.userId,
         userName,
         organizationName: organization.name,
         organizationId,

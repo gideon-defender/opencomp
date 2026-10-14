@@ -143,6 +143,7 @@ export async function handleGideonOidcCallback({
       userId: user.id,
       organizationId: tenantId,
       roles: matched,
+      ...(user.tenantId && user.tenantId !== tenantId ? { subject: sub } : {}),
     });
   } else {
     await auditOidcEntitlements({ claims, userId: user.id, email, tenantId });

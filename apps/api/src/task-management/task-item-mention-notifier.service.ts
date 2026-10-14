@@ -135,7 +135,9 @@ export class TaskItemMentionNotifierService {
         // Send email notification via Resend
         try {
           const { id } = await triggerEmail({
+            organizationId: organizationId,
             to: user.email,
+            userId: user.id,
             subject:
               emailLocale === 'es'
                 ? `${mentionedByName} te mencionó en una tarea`
@@ -144,6 +146,7 @@ export class TaskItemMentionNotifierService {
               locale: emailLocale,
               toName: userName,
               toEmail: user.email,
+              userId: user.id,
               taskTitle,
               mentionedByName,
               entityName,

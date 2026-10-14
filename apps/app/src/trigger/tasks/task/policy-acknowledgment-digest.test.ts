@@ -342,7 +342,7 @@ describe('policyAcknowledgmentDigest', () => {
     });
   });
 
-  it('rolls up pending policies across orgs into a single email when a user belongs to multiple orgs', async () => {
+  it('sends one digest per tenant account when a user belongs to multiple orgs', async () => {
     mockFindMany.mockResolvedValueOnce([
       {
         id: 'org_1',
@@ -405,29 +405,35 @@ describe('policyAcknowledgmentDigest', () => {
 
     const result = await taskUnderTest.run({ timestamp: new Date() } as never);
 
-    expect(mockSendBatchEmailViaApi).toHaveBeenCalledTimes(1);
-    const call = mockSendBatchEmailViaApi.mock.calls[0][0] as {
-      emails: Array<{ to: string; subject: string }>;
-      organizationId: string;
-    };
-    expect(call.emails).toHaveLength(1);
-    expect(call.emails[0].to).toBe('alice@example.com');
-    expect(call.emails[0].subject).toBe('You have 3 policies to review across 2 organizations');
-    expect(call.organizationId).toBe('org_1');
+    // Tenant independence: the same address in two tenants is two accounts
+    // with separate preferences and separate scoped links — one digest each.
+    expect(mockSendBatchEmailViaApi).toHaveBeenCalledTimes(2);
+    const [first, second] = mockSendBatchEmailViaApi.mock.calls.map(
+      (args) =>
+        args[0] as {
+          emails: Array<{ to: string; subject: string }>;
+          organizationId: string;
+        },
+    );
+    expect(first.organizationId).toBe('org_1');
+    expect(first.emails).toHaveLength(1);
+    expect(first.emails[0].to).toBe('alice@example.com');
+    expect(first.emails[0].subject).toBe('You have 1 policy to review at Acme');
+    expect(second.organizationId).toBe('org_2');
+    expect(second.emails).toHaveLength(1);
+    expect(second.emails[0].subject).toBe('You have 2 policies to review at Beta');
     expect(result).toMatchObject({
       success: true,
       orgsProcessed: 2,
-      recipients: 1,
-      emailsSent: 1,
+      recipients: 2,
+      emailsSent: 2,
     });
   });
 
-  it('rolls up across orgs by email when the same person has multiple User records (schema allows duplicate emails)', async () => {
-    // Regression: User.email is not @unique in the Prisma schema, so one
-    // person can end up with multiple user rows — typically when they get
-    // invited to separate orgs through different flows. Keying the rollup
-    // on user.id split those duplicates into one email each. Rollup must
-    // collapse by normalized email instead.
+  it('treats the same email in two tenants as independent accounts with separate digests', async () => {
+    // Tenant independence: one address, two tenant-owned User rows — each
+    // account gets its own digest bound to its own scoped unsubscribe link.
+    // Unsubscribing one must never silence the other.
     mockFindMany.mockResolvedValueOnce([
       {
         id: 'org_1',
@@ -485,18 +491,23 @@ describe('policyAcknowledgmentDigest', () => {
 
     const result = await taskUnderTest.run({ timestamp: new Date() } as never);
 
-    expect(mockSendBatchEmailViaApi).toHaveBeenCalledTimes(1);
-    const call = mockSendBatchEmailViaApi.mock.calls[0][0] as {
-      emails: Array<{ to: string; subject: string }>;
-      organizationId: string;
-    };
-    expect(call.emails[0].subject).toBe('You have 2 policies to review across 2 organizations');
-    expect(call.organizationId).toBe('org_1');
+    expect(mockSendBatchEmailViaApi).toHaveBeenCalledTimes(2);
+    const [first, second] = mockSendBatchEmailViaApi.mock.calls.map(
+      (args) =>
+        args[0] as {
+          emails: Array<{ to: string; subject: string }>;
+          organizationId: string;
+        },
+    );
+    expect(first.organizationId).toBe('org_1');
+    expect(first.emails[0].subject).toBe('You have 1 policy to review at Acme');
+    expect(second.organizationId).toBe('org_2');
+    expect(second.emails[0].subject).toBe('You have 1 policy to review at Beta');
     expect(result).toMatchObject({
       success: true,
       orgsProcessed: 2,
-      recipients: 1,
-      emailsSent: 1,
+      recipients: 2,
+      emailsSent: 2,
     });
   });
 

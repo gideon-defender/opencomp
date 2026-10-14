@@ -26,6 +26,7 @@ jest.mock('@db', () => ({
       findMany: (...args: unknown[]) => mockMemberFindMany(...args),
       updateMany: (...args: unknown[]) => mockMemberUpdateMany(...args),
     },
+    mcpOrgBinding: { findUnique: jest.fn().mockResolvedValue(null) },
     organizationRole: { findMany: jest.fn().mockResolvedValue([]) },
   },
 }));

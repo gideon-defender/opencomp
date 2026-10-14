@@ -13,6 +13,8 @@ import {
   mockSuccessfulExchange,
   mockUserCreate,
   mockUserFindFirst,
+  mockUserFindMany,
+  mockQueryRaw,
   mockUserFindUnique,
   mockUserUpdate,
 } from './gideon-oidc.service.fixtures';
@@ -32,15 +34,22 @@ jest.mock('../redis/redis.client', () => ({
 }));
 
 jest.mock('@db', () => ({
+  normalizeEmail: jest.requireActual('@gideon-defender/email').normalizeEmail,
   db: {
     user: {
       findFirst: (...args: unknown[]) => mockUserFindFirst(...args),
+      findMany: (...args: unknown[]) => mockUserFindMany(...args),
       findUnique: (...args: unknown[]) => mockUserFindUnique(...args),
       create: (...args: unknown[]) => mockUserCreate(...args),
       update: (...args: unknown[]) => mockUserUpdate(...args),
     },
+    $queryRaw: (...args: unknown[]) => mockQueryRaw(...args),
+    member: {
+      findFirst: async () => ({ id: 'mem_1' }),
+    },
     organization: {
       findFirst: (...args: unknown[]) => mockOrgFindFirst(...args),
+      findUnique: async () => ({ id: 'org_1' }),
     },
     session: {
       create: (...args: unknown[]) => mockSessionCreate(...args),
@@ -70,6 +79,7 @@ describe('GideonOidcService authorizationCodeGrant verification', () => {
       email: 'ada@example.com',
       gideonSub: null,
       banned: false,
+      tenantId: 'org_1',
     });
     mockUserUpdate.mockResolvedValue({ id: 'usr_1' });
   }
@@ -102,7 +112,7 @@ describe('GideonOidcService authorizationCodeGrant verification', () => {
       redirectTo: '/risks',
     });
     mockAuthorizationCodeGrant.mockResolvedValue({
-      access_token: 'access-1',
+      access_token: `${Buffer.from(JSON.stringify({ alg: 'RS256', kid: 'k1' })).toString('base64url')}.${Buffer.from(JSON.stringify({ sub: 'gideon-sub-1', tid: 'org_1' })).toString('base64url')}.sig`,
       claims: () => ({ sub: 'gideon-sub-1' }),
     });
     mockFetchUserInfo.mockResolvedValue({

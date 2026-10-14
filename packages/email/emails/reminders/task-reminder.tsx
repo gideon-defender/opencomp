@@ -18,6 +18,8 @@ import { getUnsubscribeUrl } from '../../lib/unsubscribe';
 
 interface Props {
   email: string;
+  /** Recipient user id for a tenant-scoped unsubscribe link. */
+  userId?: string;
   name: string;
   dueDate: string;
   recordId: string;
@@ -44,7 +46,14 @@ const copy: Record<
   },
 };
 
-export const TaskReminderEmail = ({ email, name, dueDate, recordId, locale = 'en' }: Props) => {
+export const TaskReminderEmail = ({
+  email,
+  userId,
+  name,
+  dueDate,
+  recordId,
+  locale = 'en',
+}: Props) => {
   const t = copy[locale];
   const link = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.gideondefender.com'}${recordId}`;
 
@@ -98,7 +107,7 @@ export const TaskReminderEmail = ({ email, name, dueDate, recordId, locale = 'en
 
             <UnsubscribeLink
               email={email}
-              unsubscribeUrl={getUnsubscribeUrl(email)}
+              unsubscribeUrl={getUnsubscribeUrl(email, userId)}
               locale={locale}
             />
 

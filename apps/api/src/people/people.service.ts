@@ -13,6 +13,8 @@ import type { PeopleResponseDto } from './dto/people-responses.dto';
 import type { CreatePeopleDto } from './dto/create-people.dto';
 import type { UpdatePeopleDto } from './dto/update-people.dto';
 import type { BulkCreatePeopleDto } from './dto/bulk-create-people.dto';
+import { updateUserEmailPreferences } from './utils/update-email-preferences';
+import { getUserEmailPreferences } from './utils/get-email-preferences';
 import { MemberValidator } from './utils/member-validator';
 import { MemberQueries } from './utils/member-queries';
 import { authorizeRoleChange } from './utils/role-authorization';
@@ -388,6 +390,7 @@ export class PeopleService {
         // update response. notifyLoginEmailChanged handles its own errors.
         void notifyLoginEmailChanged({
           organizationId,
+          memberId,
           change: emailChange,
           logger: this.logger,
         });
@@ -760,35 +763,13 @@ export class PeopleService {
     userEmail: string,
     _organizationId: string,
   ) {
-    const user = await db.user.findUnique({
-      where: { id: userId },
-      select: {
-        emailPreferences: true,
-        emailNotificationsUnsubscribed: true,
-      },
-    });
-    if (!user) throw new NotFoundException('User not found');
-    return {
-      email: userEmail,
-      preferences: user.emailPreferences ?? {},
-      unsubscribed: user.emailNotificationsUnsubscribed ?? false,
-    };
+    return getUserEmailPreferences({ userId, userEmail });
   }
 
   async updateEmailPreferences(
     userId: string,
-    preferences: Record<string, boolean>,
+    preferences: Record<string, boolean | undefined>,
   ) {
-    const allUnsubscribed = Object.values(preferences).every(
-      (v) => v === false,
-    );
-    await db.user.update({
-      where: { id: userId },
-      data: {
-        emailPreferences: preferences,
-        emailNotificationsUnsubscribed: allUnsubscribed,
-      },
-    });
-    return { success: true };
+    return updateUserEmailPreferences({ userId, preferences });
   }
 }

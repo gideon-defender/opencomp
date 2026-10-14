@@ -9,6 +9,7 @@ import {
 import { HybridAuthGuard } from '../auth/hybrid-auth.guard';
 import { PermissionGuard } from '../auth/permission.guard';
 import { RequirePermission } from '../auth/require-permission.decorator';
+import { OrganizationId } from '../auth/auth-context.decorator';
 import { SkipAuditLog } from '../audit/skip-audit-log.decorator';
 import { SendEmailDto } from './dto/send-email.dto';
 import { SendBatchEmailDto } from './dto/send-batch-email.dto';
@@ -31,7 +32,10 @@ export class EmailController {
     summary: 'Enqueue an email via SQS for SES delivery (internal)',
   })
   @ApiResponse({ status: 200, description: 'Email enqueued' })
-  async sendEmail(@Body() dto: SendEmailDto) {
+  async sendEmail(
+    @Body() dto: SendEmailDto,
+    @OrganizationId() organizationId: string,
+  ) {
     const { id } = await enqueueEmail({
       to: dto.to,
       subject: dto.subject,
@@ -41,6 +45,8 @@ export class EmailController {
       cc: dto.cc,
       scheduledAt: dto.scheduledAt,
       attachments: dto.attachments,
+      userId: dto.userId,
+      organizationId,
     });
 
     return { success: true, taskId: id };
@@ -54,7 +60,10 @@ export class EmailController {
     summary: 'Enqueue a batch of emails via SQS for SES delivery (internal)',
   })
   @ApiResponse({ status: 200, description: 'Batch email enqueued' })
-  async sendBatchEmail(@Body() dto: SendBatchEmailDto) {
+  async sendBatchEmail(
+    @Body() dto: SendBatchEmailDto,
+    @OrganizationId() organizationId: string,
+  ) {
     const fromAddress = defaultFromAddress();
 
     const emails = dto.emails.map((email) => ({
@@ -63,6 +72,8 @@ export class EmailController {
       html: email.html,
       from: email.from ?? fromAddress,
       cc: email.cc,
+      userId: email.userId,
+      organizationId,
     }));
 
     const { id } = await enqueueEmailBatch(emails);

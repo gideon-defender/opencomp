@@ -36455,6 +36455,10 @@
           "taskAssignments": {
             "type": "boolean",
             "example": true
+          },
+          "findingNotifications": {
+            "type": "boolean",
+            "example": true
           }
         },
         "required": [

@@ -221,7 +221,9 @@ export class TaskNotifierService {
           // Send email notification
           try {
             const { id } = await triggerEmail({
+              organizationId: organizationId,
               to: recipient.email,
+              userId: recipient.id,
               subject:
                 emailLocale === 'es'
                   ? `${taskCount} ${taskCount === 1 ? 'tarea' : 'tareas'} estado cambiado a ${statusLabel}`
@@ -230,6 +232,7 @@ export class TaskNotifierService {
                 locale: emailLocale,
                 toName: recipient.name,
                 toEmail: recipient.email,
+                userId: recipient.id,
                 taskCount,
                 newStatus: statusLabel,
                 changedByName,
@@ -389,7 +392,9 @@ export class TaskNotifierService {
           // Send email notification
           try {
             const { id } = await triggerEmail({
+              organizationId: organizationId,
               to: recipient.email,
+              userId: recipient.id,
               subject:
                 emailLocale === 'es'
                   ? `${taskCount} ${taskCount === 1 ? 'tarea reasignada a' : 'tareas reasignadas a'} ${newAssigneeName}`
@@ -398,6 +403,7 @@ export class TaskNotifierService {
                 locale: emailLocale,
                 toName: recipient.name,
                 toEmail: recipient.email,
+                userId: recipient.id,
                 taskCount,
                 newAssigneeName,
                 changedByName,
@@ -566,7 +572,9 @@ export class TaskNotifierService {
           // Send email notification
           try {
             const { id } = await triggerEmail({
+              organizationId: organizationId,
               to: recipient.email,
+              userId: recipient.id,
               subject:
                 emailLocale === 'es'
                   ? `Tarea "${taskTitle}" estado cambiado a ${newStatusLabel}`
@@ -575,6 +583,7 @@ export class TaskNotifierService {
                 locale: emailLocale,
                 toName: recipient.name,
                 toEmail: recipient.email,
+                userId: recipient.id,
                 taskTitle,
                 oldStatus: oldStatusLabel,
                 newStatus: newStatusLabel,
@@ -756,7 +765,9 @@ export class TaskNotifierService {
           // Send email notification
           try {
             const { id } = await triggerEmail({
+              organizationId: organizationId,
               to: recipient.email,
+              userId: recipient.id,
               subject:
                 emailLocale === 'es'
                   ? `Tarea "${taskTitle}" reasignada a ${newAssigneeName}`
@@ -765,6 +776,7 @@ export class TaskNotifierService {
                 locale: emailLocale,
                 toName: recipient.name,
                 toEmail: recipient.email,
+                userId: recipient.id,
                 taskTitle,
                 oldAssigneeName,
                 newAssigneeName,
@@ -894,6 +906,7 @@ export class TaskNotifierService {
         db,
         recipient.email,
         'taskAssignments',
+        organizationId,
       );
 
       if (isUnsubscribed) {
@@ -912,7 +925,9 @@ export class TaskNotifierService {
       // Send email notification
       try {
         const { id } = await triggerEmail({
+          organizationId: organizationId,
           to: recipient.email,
+          userId: recipient.id,
           subject:
             emailLocale === 'es'
               ? `Revisión de evidencia solicitada: "${taskTitle}"`
@@ -921,6 +936,7 @@ export class TaskNotifierService {
             locale: emailLocale,
             toName: recipient.name,
             toEmail: recipient.email,
+            userId: recipient.id,
             taskTitle,
             submittedByName,
             organizationName,
@@ -1055,6 +1071,7 @@ export class TaskNotifierService {
         db,
         recipient.email,
         'taskAssignments',
+        organizationId,
       );
 
       if (isUnsubscribed) {
@@ -1079,7 +1096,9 @@ export class TaskNotifierService {
       // Send email notification
       try {
         const { id } = await triggerEmail({
+          organizationId: organizationId,
           to: recipient.email,
+          userId: recipient.id,
           subject:
             emailLocale === 'es'
               ? `${taskCount} ${taskCount === 1 ? 'tarea enviada para tu revisión' : 'tareas enviadas para tu revisión'}`
@@ -1088,6 +1107,7 @@ export class TaskNotifierService {
             locale: emailLocale,
             toName: recipient.name,
             toEmail: recipient.email,
+            userId: recipient.id,
             taskCount,
             submittedByName,
             organizationName,
@@ -1264,6 +1284,7 @@ export class TaskNotifierService {
             db,
             recipient.email,
             'taskAssignments',
+            organizationId,
           );
 
           if (isUnsubscribed) {
@@ -1276,7 +1297,9 @@ export class TaskNotifierService {
           // Send email notification
           try {
             const { id } = await triggerEmail({
+              organizationId: organizationId,
               to: recipient.email,
+              userId: recipient.id,
               subject:
                 emailLocale === 'es'
                   ? `Fallos de automatización en la tarea "${taskTitle}"`
@@ -1285,6 +1308,7 @@ export class TaskNotifierService {
                 locale: emailLocale,
                 toName: recipient.name,
                 toEmail: recipient.email,
+                userId: recipient.id,
                 taskTitle,
                 failedCount,
                 totalCount,
@@ -1486,6 +1510,7 @@ export class TaskNotifierService {
             db,
             recipient.email,
             'taskAssignments',
+            organizationId,
           );
 
           if (isUnsubscribed) {
@@ -1498,7 +1523,9 @@ export class TaskNotifierService {
           // Send email notification
           try {
             const { id } = await triggerEmail({
+              organizationId: organizationId,
               to: recipient.email,
+              userId: recipient.id,
               subject:
                 emailLocale === 'es'
                   ? `${taskCount} ${taskCount === 1 ? 'tarea con fallos de automatización' : 'tareas con fallos de automatización'}`
@@ -1507,6 +1534,7 @@ export class TaskNotifierService {
                 locale: emailLocale,
                 toName: recipient.name,
                 toEmail: recipient.email,
+                userId: recipient.id,
                 organizationName,
                 tasksUrl,
                 tasks: taskItems,

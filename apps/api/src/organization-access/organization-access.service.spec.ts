@@ -3,6 +3,7 @@ import { db } from '@db';
 import { OrganizationAccessService } from './organization-access.service';
 
 jest.mock('@db', () => ({
+  normalizeEmail: jest.requireActual('@gideon-defender/email').normalizeEmail,
   db: {
     organization: {
       findUnique: jest.fn(),
@@ -13,6 +14,15 @@ jest.mock('@db', () => ({
     },
   },
 }));
+
+const expectTenantScopedEmailLookup = (email: string, tenantId: string) =>
+  expect(mockedDb.user.findFirst).toHaveBeenCalledWith({
+    where: {
+      tenantId,
+      email: { equals: email.trim().toLowerCase(), mode: 'insensitive' },
+    },
+    select: { emailVerified: true },
+  });
 
 const mockedDb = db as unknown as {
   organization: {
@@ -140,6 +150,7 @@ describe('OrganizationAccessService', () => {
     });
     expect(isDomainActiveCustomer).not.toHaveBeenCalled();
     expect(mockedDb.organization.update).toHaveBeenCalled();
+    expectTenantScopedEmailLookup('tofik@gideondefender.com', 'org_1');
   });
 
   it('does not grant on @gideondefender.com email when the account email is unverified', async () => {

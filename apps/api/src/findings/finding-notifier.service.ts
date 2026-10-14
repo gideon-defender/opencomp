@@ -321,12 +321,15 @@ export class FindingNotifierService {
 
       await Promise.allSettled([
         triggerEmail({
+          organizationId: params.organizationId,
           to: recipient.email,
+          userId: recipient.userId,
           subject,
           react: FindingNotificationEmail({
             locale: emailLocale,
             toName: recipient.name,
             toEmail: recipient.email,
+            userId: recipient.userId,
             heading: params.heading,
             message: params.message,
             taskTitle: params.taskTitle,

@@ -4,6 +4,7 @@ import {
   Font,
   Heading,
   Html,
+  Link,
   Preview,
   Section,
   Tailwind,
@@ -12,9 +13,12 @@ import {
 import { Footer } from '../components/footer';
 import { Logo } from '../components/logo';
 import { formatDateForLocale, type EmailLocale } from '../locale';
+import { getUnsubscribeUrl } from '@gideon-defender/email';
 
 interface Props {
   email: string;
+  /** Recipient user id for a tenant-scoped unsubscribe link. */
+  userId?: string;
   userName: string;
   organizationName: string;
   completedAt: Date;
@@ -25,41 +29,48 @@ const copy = {
   en: {
     preview:
       "Congratulations! You've completed your HIPAA Security Awareness Training",
-    heading: "HIPAA Training Complete!",
-    hi: "Hi",
+    heading: 'HIPAA Training Complete!',
+    hi: 'Hi',
     congratsPrefix:
-      "Congratulations! You have successfully completed the HIPAA Security Awareness Training for",
-    completionDate: "Completion Date:",
+      'Congratulations! You have successfully completed the HIPAA Security Awareness Training for',
+    completionDate: 'Completion Date:',
     certAttached:
-      "Your HIPAA training completion certificate is attached to this email. Please save it for your records.",
+      'Your HIPAA training completion certificate is attached to this email. Please save it for your records.',
     thanksPrefix:
-      "Thank you for your commitment to protecting PHI and maintaining HIPAA compliance at",
-    intendedFor: "This notification was intended for",
+      'Thank you for your commitment to protecting PHI and maintaining HIPAA compliance at',
+    intendedFor: 'This notification was intended for',
+    unsubscribeQuestion: "Don't want to receive training notifications?",
+    managePrefs: 'Manage your email preferences',
   },
   es: {
     preview:
-      "¡Felicidades! Has completado tu formación de concienciación en seguridad HIPAA",
-    heading: "¡Formación HIPAA completada!",
-    hi: "Hola",
+      '¡Felicidades! Has completado tu formación de concienciación en seguridad HIPAA',
+    heading: '¡Formación HIPAA completada!',
+    hi: 'Hola',
     congratsPrefix:
-      "¡Felicidades! Has completado con éxito la formación de concienciación en seguridad HIPAA de",
-    completionDate: "Fecha de finalización:",
+      '¡Felicidades! Has completado con éxito la formación de concienciación en seguridad HIPAA de',
+    completionDate: 'Fecha de finalización:',
     certAttached:
-      "Tu certificado de finalización de la formación HIPAA está adjunto a este correo. Guárdalo para tus registros.",
+      'Tu certificado de finalización de la formación HIPAA está adjunto a este correo. Guárdalo para tus registros.',
     thanksPrefix:
-      "Gracias por tu compromiso con la protección de la PHI y el mantenimiento del cumplimiento HIPAA en",
-    intendedFor: "Esta notificación estaba destinada a",
+      'Gracias por tu compromiso con la protección de la PHI y el mantenimiento del cumplimiento HIPAA en',
+    intendedFor: 'Esta notificación estaba destinada a',
+    unsubscribeQuestion: '¿No quieres recibir notificaciones de formación?',
+    managePrefs: 'Gestionar tus preferencias de correo electrónico',
   },
 };
 
 export const HipaaTrainingCompletedEmail = ({
   email,
+  userId,
   userName,
   organizationName,
   completedAt,
   locale = 'en',
 }: Props) => {
   const t = copy[locale];
+
+  const unsubscribeUrl = getUnsubscribeUrl(email, userId);
 
   const formattedDate = formatDateForLocale(new Date(completedAt), locale, {
     year: 'numeric',
@@ -127,8 +138,20 @@ export const HipaaTrainingCompletedEmail = ({
             <br />
             <Section>
               <Text className="text-[12px] leading-[24px] text-[#666666]">
-                {t.intendedFor}{' '}
-                <span className="text-[#121212]">{email}</span>.
+                {t.intendedFor} <span className="text-[#121212]">{email}</span>.
+              </Text>
+            </Section>
+
+            <Section className="mt-[30px] mb-[20px]">
+              <Text className="text-[12px] leading-[20px] text-[#666666]">
+                {t.unsubscribeQuestion}{' '}
+                <Link
+                  href={unsubscribeUrl}
+                  className="text-[#121212] underline"
+                >
+                  {t.managePrefs}
+                </Link>
+                .
               </Text>
             </Section>
 

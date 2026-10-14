@@ -223,6 +223,7 @@ export class PoliciesService {
       publishedCount: draftPolicies.length,
       members: complianceMembers.map((m) => ({
         email: m.user.email,
+        userId: m.userId,
         userName: m.user.name || '',
         organizationName: m.organization.name || '',
         organizationId: m.organization.id,
@@ -1395,6 +1396,7 @@ export class PoliciesService {
     const isNewPolicy = policy.lastPublishedAt === null;
     const members = complianceMembers.map((m) => ({
       email: m.user.email,
+      userId: m.userId,
       userName: m.user.name || m.user.email || 'Employee',
       policyName: policy.name,
       organizationId,

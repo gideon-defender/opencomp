@@ -1,9 +1,14 @@
-import { db } from '@db/server';
-import { verifyUnsubscribeToken } from '@gideon-defender/email';
+import { db, normalizeEmail } from '@db/server';
+import { resolveUnsubscribeUser, verifyUnsubscribeToken } from '@gideon-defender/email';
 import { UnsubscribePreferencesClient, type EmailPreferences } from './client';
 
 interface PageProps {
-  searchParams: Promise<{ email?: string; token?: string }>;
+  searchParams: Promise<{
+    email?: string | string[];
+    token?: string | string[];
+    userId?: string | string[];
+    organizationId?: string | string[];
+  }>;
 }
 
 const DEFAULT_PREFERENCES: EmailPreferences = {
@@ -13,24 +18,71 @@ const DEFAULT_PREFERENCES: EmailPreferences = {
   unassignedItemsNotifications: true,
   taskMentions: true,
   taskAssignments: true,
+  findingNotifications: true,
 };
 
-async function fetchUserPreferences(
-  email: string,
-  token: string,
-): Promise<{ error: string } | { preferences: EmailPreferences }> {
+async function fetchUserPreferences({
+  email,
+  token,
+  userId,
+  organizationId,
+}: {
+  email: string;
+  token: string;
+  userId?: string;
+  organizationId?: string;
+}): Promise<{ error: string } | { preferences: EmailPreferences }> {
+  const normalizedEmail = normalizeEmail(email);
+
+  if (userId) {
+    const scoped = await resolveUnsubscribeUser({
+      db,
+      userId,
+      email: normalizedEmail,
+      token,
+      organizationId,
+    });
+    if (!scoped) return { error: 'Invalid token' };
+    if (scoped.emailNotificationsUnsubscribed) {
+      return {
+        preferences: {
+          policyNotifications: false,
+          taskReminders: false,
+          weeklyTaskDigest: false,
+          unassignedItemsNotifications: false,
+          taskMentions: false,
+          taskAssignments: false,
+          findingNotifications: false,
+        },
+      };
+    }
+    const preferences =
+      scoped.emailPreferences && typeof scoped.emailPreferences === 'object'
+        ? { ...DEFAULT_PREFERENCES, ...(scoped.emailPreferences as Record<string, boolean>) }
+        : DEFAULT_PREFERENCES;
+    return { preferences };
+  }
+
+  // Pass the raw address: the verifier also accepts the pre-scoping
+  // (raw) token form so in-flight links keep working.
   if (!verifyUnsubscribeToken(email, token)) {
     return { error: 'Invalid token' };
   }
 
-  const user = await db.user.findUnique({
-    where: { email },
-    select: { emailPreferences: true, emailNotificationsUnsubscribed: true },
+  const matches = await db.user.findMany({
+    where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
+    select: { id: true, emailPreferences: true, emailNotificationsUnsubscribed: true },
   });
 
-  if (!user) {
+  if (matches.length === 0) {
     return { error: 'User not found' };
   }
+  if (matches.length > 1) {
+    return {
+      error: 'This email is used by several organizations — use your organization-specific link',
+    };
+  }
+  const user = matches[0];
 
   // If user has the old all-or-nothing unsubscribe flag, convert to preferences
   if (user.emailNotificationsUnsubscribed) {
@@ -42,6 +94,7 @@ async function fetchUserPreferences(
         unassignedItemsNotifications: false,
         taskMentions: false,
         taskAssignments: false,
+        findingNotifications: false,
       },
     };
   }
@@ -57,7 +110,12 @@ async function fetchUserPreferences(
 
 export default async function UnsubscribePreferencesPage({ searchParams }: PageProps) {
   const params = await searchParams;
-  const { email, token } = params;
+  // Coerce to string — query params can be arrays when repeated.
+  const email = typeof params.email === 'string' ? params.email : undefined;
+  const token = typeof params.token === 'string' ? params.token : undefined;
+  const userId = typeof params.userId === 'string' ? params.userId : undefined;
+  const organizationId =
+    typeof params.organizationId === 'string' ? params.organizationId : undefined;
 
   if (!email || !token) {
     return (
@@ -69,7 +127,7 @@ export default async function UnsubscribePreferencesPage({ searchParams }: PageP
     );
   }
 
-  const result = await fetchUserPreferences(email, token);
+  const result = await fetchUserPreferences({ email, token, userId, organizationId });
 
   if ('error' in result) {
     return (
@@ -85,6 +143,8 @@ export default async function UnsubscribePreferencesPage({ searchParams }: PageP
     <UnsubscribePreferencesClient
       email={email}
       token={token}
+      userId={userId}
+      organizationId={organizationId}
       initialPreferences={result.preferences}
     />
   );

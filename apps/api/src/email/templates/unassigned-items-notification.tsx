@@ -28,6 +28,8 @@ interface Props {
   removedMemberName: string;
   unassignedItems: UnassignedItem[];
   email?: string;
+  /** Recipient user id for a tenant-scoped unsubscribe link. */
+  userId?: string;
   locale?: EmailLocale;
 }
 
@@ -97,6 +99,7 @@ export const UnassignedItemsNotificationEmail = ({
   removedMemberName,
   unassignedItems,
   email,
+  userId,
   locale = 'en',
 }: Props) => {
   const t = copy[locale];
@@ -195,7 +198,7 @@ export const UnassignedItemsNotificationEmail = ({
               <Section>
                 <Text className="text-[12px] leading-[24px] text-[#666666]">
                   <Link
-                    href={getUnsubscribeUrl(email)}
+                    href={getUnsubscribeUrl(email ?? '', userId)}
                     className="text-[#121212] underline"
                   >
                     {t.unsubscribe}

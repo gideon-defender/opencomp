@@ -314,7 +314,9 @@ export class CommentMentionNotifierService {
         // Send email notification via Resend
         try {
           const { id } = await triggerEmail({
+            organizationId: organizationId,
             to: user.email,
+            userId: user.id,
             subject:
               emailLocale === 'es'
                 ? `${mentionedByName} te mencionó en un comentario`
@@ -323,6 +325,7 @@ export class CommentMentionNotifierService {
               locale: emailLocale,
               toName: userName,
               toEmail: user.email,
+              userId: user.id,
               commentContent,
               mentionedByName,
               entityName,

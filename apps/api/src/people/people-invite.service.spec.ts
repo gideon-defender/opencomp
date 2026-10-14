@@ -12,6 +12,8 @@ jest.mock('@db', () => ({
     failed: 'failed',
     cancelled: 'cancelled',
   },
+  // normalizeEmail is used by the implementation; keep the mock faithful.
+  normalizeEmail: jest.requireActual('@gideon-defender/email').normalizeEmail,
   db: {
     organization: {
       findUnique: jest.fn(),
@@ -23,6 +25,7 @@ jest.mock('@db', () => ({
     },
     member: {
       findFirst: jest.fn(),
+      findMany: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
     },
@@ -141,6 +144,84 @@ describe('PeopleInviteService', () => {
     expect(service).toBeDefined();
   });
 
+  describe('tenant isolation', () => {
+    const baseParams = {
+      organizationId: 'org_123',
+      callerUserId: 'user_caller',
+      callerRole: 'admin,owner',
+    };
+
+    it('scopes the existing-user lookup by tenantId with a normalized email', async () => {
+      (mockDb.organization.findUnique as jest.Mock).mockResolvedValue({
+        name: 'Test Org',
+      });
+      (mockDb.user.findFirst as jest.Mock).mockResolvedValue({
+        id: 'usr_existing',
+        email: 'emp@example.com',
+        emailVerified: true,
+      });
+      (mockDb.member.findFirst as jest.Mock).mockResolvedValue({
+        id: 'mem_existing',
+        role: 'employee',
+        deactivated: false,
+        isActive: true,
+      });
+
+      const results = await service.inviteMembers({
+        ...baseParams,
+        invites: [{ email: '  EMP@Example.COM ', roles: ['employee'] }],
+      });
+
+      expect(results[0].success).toBe(true);
+      expect(mockDb.user.findFirst).toHaveBeenCalledWith({
+        where: {
+          tenantId: 'org_123',
+          email: { equals: 'emp@example.com', mode: 'insensitive' },
+        },
+      });
+    });
+
+    it('creates an independent user stamped with the calling tenant (same email in another tenant is a different account)', async () => {
+      (mockDb.organization.findUnique as jest.Mock).mockResolvedValue({
+        name: 'Test Org',
+      });
+      // No user in THIS tenant — a same-email row in another tenant must not
+      // satisfy the lookup, so creation proceeds for this tenant.
+      (mockDb.user.findFirst as jest.Mock).mockResolvedValue(null);
+      (mockDb.user.create as jest.Mock).mockResolvedValue({
+        id: 'usr_new',
+        email: 'emp@example.com',
+      });
+      (mockDb.member.findFirst as jest.Mock).mockResolvedValue(null);
+      (mockDb.member.create as jest.Mock).mockResolvedValue({
+        id: 'mem_new',
+      });
+      (
+        mockDb.employeeTrainingVideoCompletion.createMany as jest.Mock
+      ).mockResolvedValue({ count: 0 });
+
+      const results = await service.inviteMembers({
+        ...baseParams,
+        invites: [{ email: 'EMP@Example.COM', roles: ['employee'] }],
+      });
+
+      expect(results[0].success).toBe(true);
+      expect(mockDb.user.findFirst).toHaveBeenCalledWith({
+        where: {
+          tenantId: 'org_123',
+          email: { equals: 'emp@example.com', mode: 'insensitive' },
+        },
+      });
+      expect(mockDb.user.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          email: 'emp@example.com',
+          tenantId: 'org_123',
+          gideonTenantId: 'org_123',
+        }),
+      });
+    });
+  });
+
   describe('inviteMembers', () => {
     const baseParams = {
       organizationId: 'org_123',
@@ -172,9 +253,9 @@ describe('PeopleInviteService', () => {
     it('allows an API key with full member CRUD scopes to assign admin (resolves an owner as inviter)', async () => {
       (mockDb.user.findFirst as jest.Mock).mockResolvedValue(null);
       // Owner fallback lookup for inviterId (API keys have no caller user)
-      (mockDb.member.findFirst as jest.Mock).mockResolvedValue({
-        userId: 'owner_user',
-      });
+      (mockDb.member.findMany as jest.Mock).mockResolvedValue([
+        { userId: 'owner_user', role: 'owner' },
+      ]);
       (mockDb.organization.findUnique as jest.Mock).mockResolvedValue({
         name: 'Test Org',
       });
@@ -224,9 +305,9 @@ describe('PeopleInviteService', () => {
 
     it('allows a legacy API key (empty scopes = full access) to assign admin', async () => {
       (mockDb.user.findFirst as jest.Mock).mockResolvedValue(null);
-      (mockDb.member.findFirst as jest.Mock).mockResolvedValue({
-        userId: 'owner_user',
-      });
+      (mockDb.member.findMany as jest.Mock).mockResolvedValue([
+        { userId: 'owner_user', role: 'owner' },
+      ]);
       (mockDb.organization.findUnique as jest.Mock).mockResolvedValue({
         name: 'Test Org',
       });
@@ -249,7 +330,32 @@ describe('PeopleInviteService', () => {
     it('fails clearly when an API key invite has no owner/admin to attribute as inviter', async () => {
       (mockDb.user.findFirst as jest.Mock).mockResolvedValue(null);
       // No owner or admin found
-      (mockDb.member.findFirst as jest.Mock).mockResolvedValue(null);
+      (mockDb.member.findMany as jest.Mock).mockResolvedValue([]);
+
+      const results = await service.inviteMembers({
+        ...baseParams,
+        callerUserId: '',
+        callerRole: '',
+        isApiKey: true,
+        apiKeyScopes: [
+          'member:create',
+          'member:read',
+          'member:update',
+          'member:delete',
+        ],
+        invites: [{ email: 'admin@example.com', roles: ['admin'] }],
+      });
+
+      expect(results[0].success).toBe(false);
+      expect(results[0].error).toContain('inviter');
+    });
+
+    it('does not treat a custom role containing owner/admin as an inviter', async () => {
+      (mockDb.user.findFirst as jest.Mock).mockResolvedValue(null);
+      // 'co-owner' contains the substring 'owner' but is not the owner role
+      (mockDb.member.findMany as jest.Mock).mockResolvedValue([
+        { userId: 'other_user', role: 'co-owner' },
+      ]);
 
       const results = await service.inviteMembers({
         ...baseParams,

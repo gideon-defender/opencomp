@@ -242,27 +242,20 @@ export class HybridSessionAuth {
       );
     }
 
-    let member = memberships[0];
-    if (memberships.length > 1) {
-      // Multi-org: use the org the user chose for MCP (set at connect time),
-      // as long as they're still a member of it. No saved/valid choice → ask
-      // them to pick rather than guessing a tenant.
-      const binding = await db.mcpOrgBinding.findUnique({
-        where: { userId },
-        select: { organizationId: true },
-      });
-      const chosen = binding
-        ? memberships.find((m) => m.organizationId === binding.organizationId)
+    // A saved selection also constrains single-membership users after a split.
+    const binding = await db.mcpOrgBinding.findUnique({
+      where: { userId },
+      select: { organizationId: true },
+    });
+    const member = binding
+      ? memberships.find((m) => m.organizationId === binding.organizationId)
+      : memberships.length === 1
+        ? memberships[0]
         : undefined;
-      if (!chosen) {
-        // 403 (not 401): the token is valid — the user just needs to pick an
-        // org. A 401 would make the MCP client re-run sign-in in a loop.
-        throw new ForbiddenException(
-          'This account belongs to multiple organizations. Choose your ' +
-            'organization for AI/MCP access in OpenComp settings, then try again.',
-        );
-      }
-      member = chosen;
+    if (!member) {
+      throw new ForbiddenException(
+        'Choose an organization you still belong to for AI/MCP access in OpenComp settings, then try again.',
+      );
     }
 
     // App-access gate: MCP follows the same rule as the web app — only roles

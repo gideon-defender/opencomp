@@ -71,6 +71,10 @@ test(
       'export-document',
     ]);
     const seenBodyDeltas = new Set();
+    // Reviewed evolution: current spec accepts optional
+    // preferences.findingNotifications; the retained generated oracle predates it
+    // and drops the unknown key while the owned runtime sends it.
+    const seenEvolvedPreferences = new Set();
     try {
       for (const file of await readdir(new URL('../../src/mcp-server/tools/', import.meta.url))) {
         if (!file.endsWith('.ts')) continue;
@@ -109,12 +113,25 @@ test(
           before.body = {};
           seenBodyDeltas.add(tool.name);
         }
+        if (tool.name === 'update-email-preferences') {
+          assert.equal(before.body?.preferences?.findingNotifications, undefined);
+          const { findingNotifications, ...afterRest } = after.body.preferences;
+          assert.equal(findingNotifications, true);
+          assert.deepEqual(afterRest, before.body.preferences);
+          before.body.preferences.findingNotifications = true;
+          seenEvolvedPreferences.add(tool.name);
+        }
         if (!isDeepStrictEqual(after, before)) mismatches.push({ tool: tool.name, before, after });
         if (!isDeepStrictEqual(afterResult, beforeResult))
           mismatches.push({ tool: tool.name, beforeResult, afterResult });
       }
       assert.deepEqual(mismatches, [], 'Unexpected per-operation wire/result deltas');
       assert.deepEqual(seenBodyDeltas, bodyDeltas, 'Stale wire delta allowlist');
+      assert.deepEqual(
+        seenEvolvedPreferences,
+        new Set(['update-email-preferences']),
+        'Stale evolved preferences allowlist',
+      );
     } finally {
       api.closeAllConnections();
       await new Promise((resolve) => api.close(resolve));

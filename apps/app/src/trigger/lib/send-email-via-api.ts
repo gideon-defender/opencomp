@@ -13,6 +13,8 @@ interface SendEmailViaApiParams {
   system?: boolean;
   from?: string;
   cc?: string | string[];
+  /** Recipient user id for a tenant-scoped one-click unsubscribe URL. */
+  userId?: string;
 }
 
 interface BatchEmailItem {
@@ -21,6 +23,8 @@ interface BatchEmailItem {
   html: string;
   from?: string;
   cc?: string | string[];
+  /** Recipient user id for a tenant-scoped one-click unsubscribe URL. */
+  userId?: string;
 }
 
 interface SendBatchEmailViaApiParams {
@@ -56,6 +60,7 @@ export async function sendEmailViaApi(params: SendEmailViaApiParams): Promise<{ 
       system: params.system,
       from: params.from,
       cc: params.cc,
+      userId: params.userId,
     }),
   });
 

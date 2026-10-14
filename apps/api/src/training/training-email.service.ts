@@ -16,11 +16,14 @@ export class TrainingEmailService {
   async sendTrainingCompletedEmail(params: {
     toEmail: string;
     toName: string;
+    /** Recipient user id for a tenant-scoped unsubscribe link. */
+    userId?: string;
+    organizationId?: string;
     organizationName: string;
     completedAt: Date;
     locale?: EmailLocale;
   }): Promise<void> {
-    const { toEmail, toName, organizationName, completedAt } = params;
+    const { toEmail, toName, userId, organizationName, completedAt } = params;
     const emailLocale = resolveEmailLocale(params.locale);
 
     // Generate the certificate PDF
@@ -41,6 +44,8 @@ export class TrainingEmailService {
 
     const { id } = await triggerEmail({
       to: toEmail,
+      userId,
+      organizationId: params.organizationId,
       subject:
         emailLocale === 'es'
           ? `¡Felicidades! Has completado tu formación de concienciación en seguridad - ${organizationName}`
@@ -48,6 +53,7 @@ export class TrainingEmailService {
       react: TrainingCompletedEmail({
         locale: emailLocale,
         email: toEmail,
+        userId,
         userName: toName,
         organizationName,
         completedAt,
@@ -70,11 +76,14 @@ export class TrainingEmailService {
   async sendHipaaTrainingCompletedEmail(params: {
     toEmail: string;
     toName: string;
+    /** Recipient user id for a tenant-scoped unsubscribe link. */
+    userId?: string;
+    organizationId?: string;
     organizationName: string;
     completedAt: Date;
     locale?: EmailLocale;
   }): Promise<void> {
-    const { toEmail, toName, organizationName, completedAt } = params;
+    const { toEmail, toName, userId, organizationName, completedAt } = params;
     const emailLocale = resolveEmailLocale(params.locale);
 
     const certificatePdf =
@@ -93,6 +102,8 @@ export class TrainingEmailService {
 
     const { id } = await triggerEmail({
       to: toEmail,
+      userId,
+      organizationId: params.organizationId,
       subject:
         emailLocale === 'es'
           ? `¡Felicidades! Has completado tu formación de concienciación en seguridad HIPAA - ${organizationName}`
@@ -100,6 +111,7 @@ export class TrainingEmailService {
       react: HipaaTrainingCompletedEmail({
         locale: emailLocale,
         email: toEmail,
+        userId,
         userName: toName,
         organizationName,
         completedAt,

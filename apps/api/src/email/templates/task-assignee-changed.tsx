@@ -19,6 +19,8 @@ import { UnsubscribeFooter } from '../components/unsubscribe-footer';
 interface Props {
   toName: string;
   toEmail: string;
+  /** Recipient user id for a tenant-scoped unsubscribe link. */
+  userId?: string;
   taskTitle: string;
   oldAssigneeName: string;
   newAssigneeName: string;
@@ -64,6 +66,7 @@ const copy = {
 export const TaskAssigneeChangedEmail = ({
   toName,
   toEmail,
+  userId,
   taskTitle,
   oldAssigneeName,
   newAssigneeName,
@@ -131,6 +134,7 @@ export const TaskAssigneeChangedEmail = ({
 
             <UnsubscribeFooter
               email={toEmail}
+              userId={userId}
               message={t.unsubscribeQuestion}
               locale={locale}
             />

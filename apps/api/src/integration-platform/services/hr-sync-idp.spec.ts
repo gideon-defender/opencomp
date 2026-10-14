@@ -1,17 +1,25 @@
+jest.mock('../../auth/legacy-shared-user', () => ({
+  findLegacySharedUser: jest.fn().mockResolvedValue(undefined),
+}));
 import { createHrIdentityResolver, getHrSyncUser } from './hr-sync-idp';
 
 const mockFindUser = jest.fn();
+const mockFindManyUsers = jest.fn();
 const mockFindUserBySubject = jest.fn();
 const mockCreateUser = jest.fn();
 const mockUpdateUser = jest.fn();
+const mockQueryRaw = jest.fn();
 jest.mock('@db', () => ({
+  normalizeEmail: jest.requireActual('@gideon-defender/email').normalizeEmail,
   db: {
     user: {
       findUnique: (...args: unknown[]) => mockFindUserBySubject(...args),
       findFirst: (...args: unknown[]) => mockFindUser(...args),
+      findMany: (...args: unknown[]) => mockFindManyUsers(...args),
       create: (...args: unknown[]) => mockCreateUser(...args),
       update: (...args: unknown[]) => mockUpdateUser(...args),
     },
+    $queryRaw: (...args: unknown[]) => mockQueryRaw(...args),
   },
 }));
 
@@ -36,6 +44,23 @@ function respond({
   });
 }
 
+/**
+ * Assert the expand-window fallback ran as a single nulls-first raw lookup
+ * for the normalized email. The NULLS FIRST ordering is load-bearing: an
+ * owned row sharing the address must never shadow the claimable row.
+ */
+function expectExpandLookup(mock: jest.Mock, normalizedEmail: string): void {
+  expect(mock).toHaveBeenCalledTimes(1);
+  const [strings, ...values] = mock.mock.calls[0] as [
+    TemplateStringsArray,
+    ...unknown[],
+  ];
+  const sql = strings.join('?');
+  expect(sql).toContain('NULLS FIRST');
+  expect(sql).toContain('LIMIT 1');
+  expect(values).toEqual([normalizedEmail]);
+}
+
 describe('HR local subject check with IdP fallback', () => {
   beforeEach(() => {
     jest.resetAllMocks();
@@ -49,12 +74,16 @@ describe('HR local subject check with IdP fallback', () => {
     global.fetch = originalFetch;
   });
 
-  it('finds an IdP user who has never logged in and caches normalized emails per run', async () => {
+  it('finds an IdP user who has never logged in and dedupes concurrent normalized emails per run', async () => {
     const resolve = createHrIdentityResolver({ organizationId });
-    expect(await resolve({ email: ' Employee@Example.com ' })).toEqual(
-      identity,
-    );
-    expect(await resolve({ email: identity.email })).toEqual(identity);
+    // In-flight dedup only: the resolver evicts settled lookups so later
+    // retries re-execute instead of replaying a stale promise.
+    const [first, second] = await Promise.all([
+      resolve({ email: ' Employee@Example.com ' }),
+      resolve({ email: identity.email }),
+    ]);
+    expect(first).toEqual(identity);
+    expect(second).toEqual(identity);
     expect(mockFetch).toHaveBeenCalledTimes(1);
     const [url, options] = mockFetch.mock.calls[0];
     expect(String(url)).toContain(
@@ -116,32 +145,51 @@ describe('HR local subject check with IdP fallback', () => {
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
-  it('uses a tenant-linked local subject without an IdP call or remote credentials', async () => {
+  it('uses a tenant-owned local subject without an IdP call or remote credentials', async () => {
     delete process.env.GIDEON_INTERNAL_SERVICE_TOKEN;
     delete process.env.INTERNAL_SERVICE_TOKEN;
     mockFindUser.mockResolvedValue({
       email: identity.email,
       name: 'Employee',
       gideonSub: identity.id,
-      gideonTenantId: organizationId,
+      tenantId: organizationId,
     });
     const resolve = createHrIdentityResolver({ organizationId });
-    expect(await resolve({ email: ' Employee@Example.com ' })).toEqual({
+    // In-flight dedup only (see above): concurrent resolves share one lookup.
+    const [first, second] = await Promise.all([
+      resolve({ email: ' Employee@Example.com ' }),
+      resolve({ email: identity.email }),
+    ]);
+    expect(first).toEqual({
       id: identity.id,
       email: identity.email,
       display_name: 'Employee',
     });
-    await resolve({ email: identity.email });
+    expect(second).toEqual(first);
     expect(mockFetch).not.toHaveBeenCalled();
     expect(mockFindUser).toHaveBeenCalledTimes(1);
     expect(mockFindUser).toHaveBeenCalledWith({
       where: {
+        tenantId: organizationId,
         email: { equals: identity.email, mode: 'insensitive' },
         gideonSub: { not: null },
-        OR: [
-          { gideonTenantId: organizationId },
-          { gideonTenantId: null, members: { some: { organizationId } } },
-        ],
+      },
+    });
+  });
+
+  it('ignores another tenant’s same-email subject and calls the IdP', async () => {
+    mockFindUser.mockResolvedValue(null);
+    expect(
+      await createHrIdentityResolver({ organizationId })({
+        email: identity.email,
+      }),
+    ).toEqual(identity);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(mockFindUser).toHaveBeenCalledWith({
+      where: {
+        tenantId: organizationId,
+        email: { equals: identity.email, mode: 'insensitive' },
+        gideonSub: { not: null },
       },
     });
   });
@@ -161,7 +209,11 @@ describe('HR local subject check with IdP fallback', () => {
 });
 
 describe('HR local projection of existing IdP users', () => {
-  beforeEach(() => jest.resetAllMocks());
+  beforeEach(() => {
+    jest.resetAllMocks();
+    // Default: no expand-window candidates.
+    mockQueryRaw.mockResolvedValue([]);
+  });
 
   it('creates the local projection for an existing, never-logged-in IdP user', async () => {
     mockFindUser.mockResolvedValue(null);
@@ -177,14 +229,19 @@ describe('HR local projection of existing IdP users', () => {
         name: 'Employee',
         emailVerified: false,
         gideonSub: identity.id,
+        tenantId: organizationId,
         gideonTenantId: organizationId,
       },
     });
     expect(mockUpdateUser).not.toHaveBeenCalled();
   });
 
-  it('links an existing local user even without a prior IdP login', async () => {
-    mockFindUser.mockResolvedValue({ id: 'user_1', gideonSub: null });
+  it('links an existing same-tenant local user even without a prior IdP login', async () => {
+    mockFindUser.mockResolvedValue({
+      id: 'user_1',
+      gideonSub: null,
+      tenantId: organizationId,
+    });
     await getHrSyncUser({ identity, organizationId });
     expect(mockUpdateUser).toHaveBeenCalledWith({
       where: { id: 'user_1', AND: { gideonSub: null } },
@@ -193,35 +250,141 @@ describe('HR local projection of existing IdP users', () => {
     expect(mockCreateUser).not.toHaveBeenCalled();
   });
 
+  it('rejects linking a row owned by another tenant', async () => {
+    mockFindUserBySubject.mockResolvedValue({
+      id: 'user_other',
+      email: identity.email,
+      gideonSub: identity.id,
+      tenantId: 'other-tenant',
+    });
+    await expect(getHrSyncUser({ identity, organizationId })).rejects.toThrow(
+      'different tenant',
+    );
+    expect(mockUpdateUser).not.toHaveBeenCalled();
+    expect(mockCreateUser).not.toHaveBeenCalled();
+  });
+
+  it('claims an expand-window null-tenant row for the sync tenant', async () => {
+    // The tenant-scoped lookup excludes null ownership, so it misses; the
+    // global expand-window fallback finds the legacy row and claims it.
+    mockFindUser.mockResolvedValueOnce(null);
+    mockQueryRaw.mockResolvedValueOnce([
+      {
+        id: 'user_1',
+        gideonSub: null,
+        tenantId: null,
+      },
+    ]);
+    mockUpdateUser.mockResolvedValue({ id: 'user_1' });
+    await getHrSyncUser({ identity, organizationId });
+    expect(mockFindUser).toHaveBeenCalledWith({
+      where: {
+        tenantId: organizationId,
+        email: { equals: identity.email, mode: 'insensitive' },
+      },
+    });
+    expectExpandLookup(mockQueryRaw, identity.email);
+    expect(mockUpdateUser).toHaveBeenCalledWith({
+      where: { id: 'user_1', AND: { gideonSub: null } },
+      data: {
+        gideonSub: identity.id,
+        gideonTenantId: organizationId,
+        tenantId: organizationId,
+      },
+    });
+    expect(mockCreateUser).not.toHaveBeenCalled();
+  });
+
+  it('ignores an expand-window fallback row owned by another tenant and creates', async () => {
+    mockFindUser.mockResolvedValueOnce(null);
+    // Owned rows never match the tenant-less lookup, so the fallback misses
+    // and creation proceeds.
+    mockQueryRaw.mockResolvedValueOnce([]);
+    mockCreateUser.mockResolvedValue({ id: 'user_new' });
+    await getHrSyncUser({ identity, organizationId });
+    expect(mockCreateUser).toHaveBeenCalledWith({
+      data: expect.objectContaining({ tenantId: organizationId }),
+    });
+    expect(mockUpdateUser).not.toHaveBeenCalled();
+  });
+
   it('does not change a valid existing identity link', async () => {
     mockFindUser.mockResolvedValue({
       id: 'user_1',
       email: identity.email,
       gideonSub: identity.id,
+      tenantId: organizationId,
     });
     await getHrSyncUser({ identity, organizationId });
     expect(mockUpdateUser).not.toHaveBeenCalled();
     expect(mockCreateUser).not.toHaveBeenCalled();
   });
 
-  it.each([{ gideonSub: 'another-sub' }, { gideonSub: null, banned: true }])(
-    'rejects conflicting or disabled users %p',
-    async (fields) => {
-      mockFindUser.mockResolvedValue({ id: 'user_1', ...fields });
-      await expect(
-        getHrSyncUser({ identity, organizationId }),
-      ).rejects.toThrow();
-      expect(mockUpdateUser).not.toHaveBeenCalled();
-      expect(mockCreateUser).not.toHaveBeenCalled();
-    },
-  );
+  it('claims expand-window ownership on the already-linked fast path', async () => {
+    mockFindUserBySubject.mockResolvedValue({
+      id: 'user_1',
+      email: identity.email,
+      gideonSub: identity.id,
+      tenantId: null,
+    });
+    mockUpdateUser.mockResolvedValue({
+      id: 'user_1',
+      email: identity.email,
+      gideonSub: identity.id,
+      tenantId: organizationId,
+    });
+    await expect(getHrSyncUser({ identity, organizationId })).resolves.toEqual(
+      expect.objectContaining({ id: 'user_1', tenantId: organizationId }),
+    );
+    expect(mockUpdateUser).toHaveBeenCalledWith({
+      where: { id: 'user_1' },
+      data: { tenantId: organizationId },
+    });
+    expect(mockCreateUser).not.toHaveBeenCalled();
+  });
+
+  it('claims expand-window ownership when a collision keeps the existing email', async () => {
+    mockFindUserBySubject.mockResolvedValue({
+      id: 'user_1',
+      email: 'old@example.com',
+      gideonSub: identity.id,
+      tenantId: null,
+    });
+    mockFindUser.mockResolvedValue({ id: 'user_other' });
+    mockUpdateUser.mockResolvedValue({
+      id: 'user_1',
+      tenantId: organizationId,
+    });
+    await expect(getHrSyncUser({ identity, organizationId })).resolves.toEqual(
+      expect.objectContaining({ id: 'user_1', tenantId: organizationId }),
+    );
+    expect(mockUpdateUser).toHaveBeenCalledWith({
+      where: { id: 'user_1' },
+      data: { tenantId: organizationId },
+    });
+    expect(mockCreateUser).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { gideonSub: 'another-sub', tenantId: organizationId },
+    { gideonSub: null, banned: true, tenantId: organizationId },
+  ])('rejects conflicting or disabled users %p', async (fields) => {
+    mockFindUser.mockResolvedValue({ id: 'user_1', ...fields });
+    await expect(getHrSyncUser({ identity, organizationId })).rejects.toThrow();
+    expect(mockUpdateUser).not.toHaveBeenCalled();
+    expect(mockCreateUser).not.toHaveBeenCalled();
+  });
 
   it('recovers a concurrent local provision without replacing an identity link', async () => {
+    // Initial tenant-scoped miss, initial fallback miss, create races, and
+    // the recovery tenant-scoped re-read finds the winner already linked.
     mockFindUser.mockResolvedValueOnce(null).mockResolvedValueOnce({
       id: 'user_1',
       email: identity.email,
       gideonSub: identity.id,
+      tenantId: organizationId,
     });
+    mockQueryRaw.mockResolvedValue([]);
     mockCreateUser.mockRejectedValue(
       Object.assign(new Error('Unique constraint'), { code: 'P2002' }),
     );
@@ -229,8 +392,209 @@ describe('HR local projection of existing IdP users', () => {
       id: 'user_1',
       email: identity.email,
       gideonSub: identity.id,
+      tenantId: organizationId,
     });
     expect(mockUpdateUser).not.toHaveBeenCalled();
+  });
+  it('reports a retryable error when the race winner vanishes', async () => {
+    mockFindUser.mockResolvedValue(null);
+    mockFindUserBySubject.mockResolvedValue(null);
+    mockCreateUser.mockRejectedValue(
+      Object.assign(new Error('Unique constraint'), { code: 'P2002' }),
+    );
+    await expect(getHrSyncUser({ identity, organizationId })).rejects.toThrow(
+      'retry the sync',
+    );
+  });
+
+  it('claims an expand-window row on the P2002 race-recovery path', async () => {
+    // Initial tenant-scoped miss, initial fallback miss, create hits the
+    // legacy global key, recovery tenant-scoped re-read misses, and the
+    // recovery fallback claims the legacy row.
+    mockFindUser.mockResolvedValueOnce(null).mockResolvedValueOnce(null);
+    mockQueryRaw.mockResolvedValueOnce([]).mockResolvedValueOnce([
+      {
+        id: 'user_legacy',
+        gideonSub: null,
+        tenantId: null,
+      },
+    ]);
+    mockCreateUser.mockRejectedValue(
+      Object.assign(new Error('Unique constraint'), { code: 'P2002' }),
+    );
+    mockUpdateUser.mockResolvedValue({ id: 'user_legacy' });
+    await getHrSyncUser({ identity, organizationId });
+    expect(mockUpdateUser).toHaveBeenCalledWith({
+      where: { id: 'user_legacy', AND: { gideonSub: null } },
+      data: {
+        gideonSub: identity.id,
+        gideonTenantId: organizationId,
+        tenantId: organizationId,
+      },
+    });
+  });
+
+  it('converges on the subject holder when the link collides on the global subject key', async () => {
+    // A login claims this identity after our subject read missed: the
+    // conditional link raises P2002 from the global gideonSub key, not the
+    // composite email key. The email re-read returns the same still-unlinked
+    // row, so recovery must fall through to the subject holder instead of
+    // retrying the same write forever.
+    const unlinked = {
+      id: 'user_1',
+      email: identity.email,
+      gideonSub: null,
+      tenantId: organizationId,
+      banned: false,
+    };
+    const holder = {
+      id: 'user_2',
+      email: 'old@example.com',
+      gideonSub: identity.id,
+      tenantId: organizationId,
+      banned: false,
+    };
+    mockFindUserBySubject
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(holder);
+    mockFindUser
+      .mockResolvedValueOnce(unlinked)
+      .mockResolvedValueOnce(unlinked)
+      .mockResolvedValueOnce(null);
+    mockUpdateUser
+      .mockRejectedValueOnce(
+        Object.assign(new Error('Unique constraint'), { code: 'P2002' }),
+      )
+      .mockResolvedValueOnce({ ...holder, email: identity.email });
+    const result = await getHrSyncUser({ identity, organizationId });
+    expect(result).toEqual({ ...holder, email: identity.email });
+    // Exactly two writes: the failed link plus the adopt on the holder.
+    // A third write means the recovery looped on the same row.
+    expect(mockUpdateUser).toHaveBeenCalledTimes(2);
+    expect(mockUpdateUser).toHaveBeenNthCalledWith(2, {
+      where: { id: 'user_2', gideonSub: identity.id },
+      data: { email: identity.email },
+    });
+  });
+
+  it('excludes owned rows from the expand-window lookup so they cannot shadow the claim', async () => {
+    mockFindUser.mockResolvedValueOnce(null);
+    // Nulls-first ordering puts the tenant-less row at the head of the
+    // single-row page: an owned row sharing the address never reaches the
+    // claimant.
+    mockQueryRaw.mockResolvedValueOnce([
+      {
+        id: 'user_legacy',
+        gideonSub: null,
+        tenantId: null,
+      },
+    ]);
+    mockUpdateUser.mockResolvedValue({ id: 'user_legacy' });
+    await getHrSyncUser({ identity, organizationId });
+    expectExpandLookup(mockQueryRaw, identity.email);
+    expect(mockUpdateUser).toHaveBeenCalledWith({
+      where: { id: 'user_legacy', AND: { gideonSub: null } },
+      data: expect.objectContaining({ tenantId: organizationId }),
+    });
+    expect(mockCreateUser).not.toHaveBeenCalled();
+  });
+
+  it('fails loudly when the expand-window ownership claim collides', async () => {
+    mockFindUserBySubject.mockResolvedValue({
+      id: 'user_1',
+      email: identity.email,
+      gideonSub: identity.id,
+      tenantId: null,
+    });
+    mockFindUser.mockResolvedValue({ id: 'user_other' });
+    mockUpdateUser.mockRejectedValue(
+      Object.assign(new Error('Unique constraint'), { code: 'P2002' }),
+    );
+    await expect(getHrSyncUser({ identity, organizationId })).rejects.toThrow(
+      'conflicts with user',
+    );
+    expect(mockCreateUser).not.toHaveBeenCalled();
+  });
+
+  it('converges when a concurrent link wins the same identity (P2025)', async () => {
+    mockFindUser.mockResolvedValue({
+      id: 'user_1',
+      gideonSub: null,
+      tenantId: organizationId,
+    });
+    mockUpdateUser.mockRejectedValueOnce(
+      Object.assign(new Error('Record not found'), { code: 'P2025' }),
+    );
+    mockFindUserBySubject.mockResolvedValueOnce(null).mockResolvedValueOnce({
+      id: 'user_1',
+      email: identity.email,
+      gideonSub: identity.id,
+      tenantId: organizationId,
+    });
+    await expect(getHrSyncUser({ identity, organizationId })).resolves.toEqual(
+      expect.objectContaining({ id: 'user_1', gideonSub: identity.id }),
+    );
+    // No second write: the winner already reached the desired end state.
+    expect(mockUpdateUser).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects a P2025 loss when the winner linked a different identity', async () => {
+    mockFindUser.mockResolvedValue({
+      id: 'user_1',
+      gideonSub: null,
+      tenantId: organizationId,
+    });
+    mockUpdateUser.mockRejectedValueOnce(
+      Object.assign(new Error('Record not found'), { code: 'P2025' }),
+    );
+    mockFindUserBySubject.mockResolvedValueOnce(null).mockResolvedValueOnce({
+      id: 'user_1',
+      email: 'other@example.com',
+      gideonSub: 'other-sub',
+      tenantId: organizationId,
+    });
+    await expect(getHrSyncUser({ identity, organizationId })).rejects.toThrow(
+      'conflicts with the existing user link',
+    );
+  });
+
+  it('reports a retryable error when the P2025 winner vanishes', async () => {
+    mockFindUser.mockResolvedValue({
+      id: 'user_1',
+      gideonSub: null,
+      tenantId: organizationId,
+    });
+    mockUpdateUser.mockRejectedValueOnce(
+      Object.assign(new Error('Record not found'), { code: 'P2025' }),
+    );
+    mockFindUserBySubject.mockResolvedValue(null);
+    await expect(getHrSyncUser({ identity, organizationId })).rejects.toThrow(
+      'retry the sync',
+    );
+  });
+
+  it('retries the adopt write after a P2025 loss on a linked row', async () => {
+    const linked = {
+      id: 'user_1',
+      email: 'old@example.com',
+      gideonSub: identity.id,
+      tenantId: organizationId,
+    };
+    mockFindUserBySubject.mockResolvedValue(linked);
+    mockFindUser.mockResolvedValue(null);
+    mockUpdateUser
+      .mockRejectedValueOnce(
+        Object.assign(new Error('Record not found'), { code: 'P2025' }),
+      )
+      .mockResolvedValue({ ...linked, email: identity.email });
+    await expect(getHrSyncUser({ identity, organizationId })).resolves.toEqual(
+      expect.objectContaining({ email: identity.email }),
+    );
+    expect(mockUpdateUser).toHaveBeenCalledTimes(2);
+    expect(mockUpdateUser).toHaveBeenLastCalledWith({
+      where: { id: 'user_1', gideonSub: identity.id },
+      data: { email: identity.email },
+    });
   });
   it.each([false, true])(
     'preserves the user ID across an IdP email change (concurrent create: %p)',
@@ -239,6 +603,7 @@ describe('HR local projection of existing IdP users', () => {
         id: 'user_1',
         email: 'old@example.com',
         gideonSub: identity.id,
+        tenantId: organizationId,
         emailVerified: true,
         lastLogin: new Date('2026-10-01'),
       };
@@ -265,6 +630,52 @@ describe('HR local projection of existing IdP users', () => {
       if (!concurrent) expect(mockCreateUser).not.toHaveBeenCalled();
     },
   );
+
+  it('keeps the existing email when the IdP email collides within the tenant', async () => {
+    const existing = {
+      id: 'user_1',
+      email: 'old@example.com',
+      gideonSub: identity.id,
+      tenantId: organizationId,
+    };
+    mockFindUserBySubject.mockResolvedValue(existing);
+    mockFindUser.mockResolvedValue({ id: 'user_other' });
+    await expect(getHrSyncUser({ identity, organizationId })).resolves.toEqual(
+      existing,
+    );
+    expect(mockFindUser).toHaveBeenCalledWith({
+      where: {
+        tenantId: organizationId,
+        email: { equals: identity.email, mode: 'insensitive' },
+        id: { not: 'user_1' },
+      },
+      select: { id: true },
+    });
+    expect(mockUpdateUser).not.toHaveBeenCalled();
+    expect(mockCreateUser).not.toHaveBeenCalled();
+  });
+
+  it('keeps the existing email when adoption races a concurrent write', async () => {
+    const existing = {
+      id: 'user_1',
+      email: 'old@example.com',
+      gideonSub: identity.id,
+      tenantId: organizationId,
+    };
+    mockFindUserBySubject.mockResolvedValue(existing);
+    mockFindUser.mockResolvedValue(null);
+    mockUpdateUser.mockRejectedValue(
+      Object.assign(new Error('Unique constraint'), { code: 'P2002' }),
+    );
+    await expect(getHrSyncUser({ identity, organizationId })).resolves.toEqual(
+      existing,
+    );
+    expect(mockUpdateUser).toHaveBeenCalledWith({
+      where: { id: 'user_1', gideonSub: identity.id },
+      data: { email: identity.email },
+    });
+    expect(mockCreateUser).not.toHaveBeenCalled();
+  });
 
   it('does not rename a disabled user found by subject', async () => {
     mockFindUserBySubject.mockResolvedValue({

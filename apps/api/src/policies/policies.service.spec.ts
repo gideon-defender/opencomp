@@ -747,6 +747,7 @@ describe('PoliciesService', () => {
       db.member.findMany.mockResolvedValueOnce([
         {
           role: 'employee',
+          userId: 'usr_alice',
           user: { email: 'alice@example.com', name: 'Alice', role: null },
           organization: { id: orgId, name: 'Acme' },
         },
@@ -760,6 +761,7 @@ describe('PoliciesService', () => {
       mockedFilterComplianceMembers.mockResolvedValueOnce([
         {
           role: 'employee',
+          userId: 'usr_alice',
           user: { email: 'alice@example.com', name: 'Alice', role: null },
           organization: { id: orgId, name: 'Acme' },
         },
@@ -770,6 +772,7 @@ describe('PoliciesService', () => {
       expect(result.members).toEqual([
         {
           email: 'alice@example.com',
+          userId: 'usr_alice',
           userName: 'Alice',
           organizationName: 'Acme',
           organizationId: orgId,
@@ -913,6 +916,7 @@ describe('PoliciesService', () => {
         {
           id: 'mem_signed',
           role: 'employee',
+          userId: 'usr_signed',
           user: {
             email: 'signed@example.com',
             name: 'Signed User',
@@ -923,6 +927,7 @@ describe('PoliciesService', () => {
         {
           id: 'mem_unsigned',
           role: 'employee',
+          userId: 'usr_new',
           user: { email: 'new@example.com', name: 'New User', role: null },
           organization: { id: orgId, name: 'Acme' },
         },
@@ -942,6 +947,7 @@ describe('PoliciesService', () => {
       expect(result.members).toEqual([
         {
           email: 'signed@example.com',
+          userId: 'usr_signed',
           userName: 'Signed User',
           policyName: 'Background Screening',
           organizationId: orgId,
@@ -950,6 +956,7 @@ describe('PoliciesService', () => {
         },
         {
           email: 'new@example.com',
+          userId: 'usr_new',
           userName: 'New User',
           policyName: 'Background Screening',
           organizationId: orgId,

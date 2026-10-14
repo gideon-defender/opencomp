@@ -71,7 +71,7 @@ are checked for every tool, rather than accepted through replacement snapshots.
   and full nested static/dynamic schemas. The normalizer removes only proven
   schema representation differences; it preserves conflicting intersections,
   strict objects and meaningful constraints.
-- `compatibility/deltas.mjs` records 67 exact schema leaf differences with tool, path,
+- `compatibility/deltas.mjs` records 68 exact schema leaf differences with tool, path,
   old value and new value. They include current spec length/range/URI constraints
   and two strict DTOs. Unexpected changes or stale allowances fail the gate.
 - `compatibility/wire.test.mjs` compares all 412 representative requests and MCP results

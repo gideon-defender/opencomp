@@ -13,6 +13,8 @@ import {
   mockSuccessfulExchange,
   mockUserCreate,
   mockUserFindFirst,
+  mockUserFindMany,
+  mockQueryRaw,
   mockUserUpdate,
 } from './gideon-oidc.service.fixtures';
 import { GideonOidcService } from './gideon-oidc.service';
@@ -32,15 +34,22 @@ jest.mock('../redis/redis.client', () => ({
 }));
 
 jest.mock('@db', () => ({
+  normalizeEmail: jest.requireActual('@gideon-defender/email').normalizeEmail,
   db: {
     user: {
       findFirst: (...args: unknown[]) => mockUserFindFirst(...args),
+      findMany: (...args: unknown[]) => mockUserFindMany(...args),
       findUnique: jest.fn(),
       create: (...args: unknown[]) => mockUserCreate(...args),
       update: (...args: unknown[]) => mockUserUpdate(...args),
     },
+    $queryRaw: (...args: unknown[]) => mockQueryRaw(...args),
+    member: {
+      findFirst: async () => ({ id: 'mem_1' }),
+    },
     organization: {
       findFirst: (...args: unknown[]) => mockOrgFindFirst(...args),
+      findUnique: async () => ({ id: 'org_1' }),
     },
     session: {
       create: (...args: unknown[]) => mockSessionCreate(...args),
@@ -212,6 +221,7 @@ describe('GideonOidcService.peekStoredRedirect', () => {
       id: 'u_1',
       banned: false,
       gideonSub: null,
+      tenantId: 'org_1',
     });
     mockUserUpdate.mockResolvedValue({ id: 'u_1' });
 

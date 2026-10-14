@@ -10,6 +10,7 @@ interface EmailPreferences {
   unassignedItemsNotifications: boolean;
   taskMentions: boolean;
   taskAssignments: boolean;
+  findingNotifications: boolean;
 }
 
 const emailPreferencesKey = () => ['/v1/people/me/email-preferences'] as const;

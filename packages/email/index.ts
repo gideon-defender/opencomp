@@ -15,5 +15,8 @@ export * from './emails/verify-email';
 
 // Email sending functions
 export * from './lib/check-unsubscribe';
+export { resolveEmailPreferences } from './lib/email-preference-policy';
 export * from './lib/locale';
+export * from './lib/resolve-unsubscribe-user';
+export * from './lib/scope-unsubscribe-links';
 export * from './lib/unsubscribe';

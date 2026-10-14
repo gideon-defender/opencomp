@@ -27,6 +27,8 @@ interface FailedTaskItem {
 interface Props {
   toName: string;
   toEmail: string;
+  /** Recipient user id for a tenant-scoped unsubscribe link. */
+  userId?: string;
   organizationName: string;
   tasksUrl: string;
   tasks: FailedTaskItem[];
@@ -75,6 +77,7 @@ const copy = {
 export const AutomationBulkFailuresEmail = ({
   toName,
   toEmail,
+  userId,
   organizationName,
   tasksUrl,
   tasks,
@@ -82,7 +85,7 @@ export const AutomationBulkFailuresEmail = ({
 }: Props) => {
   const t = copy[locale];
 
-  const unsubscribeUrl = getUnsubscribeUrl(toEmail);
+  const unsubscribeUrl = getUnsubscribeUrl(toEmail, userId);
   const taskCount = tasks.length;
   const taskText = taskCount === 1 ? t.task : t.tasks;
   const displayedTasks = tasks.slice(0, MAX_DISPLAYED_TASKS);

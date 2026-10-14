@@ -15,6 +15,8 @@ import {
   mockSuccessfulExchange,
   mockUserCreate,
   mockUserFindFirst,
+  mockUserFindMany,
+  mockQueryRaw,
   mockUserFindUnique,
   mockUserUpdate,
 } from './gideon-oidc.service.fixtures';
@@ -51,13 +53,16 @@ jest.mock('../redis/redis.client', () => ({
 }));
 
 jest.mock('@db', () => ({
+  normalizeEmail: jest.requireActual('@gideon-defender/email').normalizeEmail,
   db: {
     user: {
       findFirst: (...args: unknown[]) => mockUserFindFirst(...args),
+      findMany: (...args: unknown[]) => mockUserFindMany(...args),
       findUnique: (...args: unknown[]) => mockUserFindUnique(...args),
       create: (...args: unknown[]) => mockUserCreate(...args),
       update: (...args: unknown[]) => mockUserUpdate(...args),
     },
+    $queryRaw: (...args: unknown[]) => mockQueryRaw(...args),
     member: {
       findFirst: (...args: unknown[]) => mockMemberFindFirst(...args),
     },
@@ -108,6 +113,7 @@ describe('GideonOidcService', () => {
           email: 'ada@example.com',
           emailVerified: true,
           gideonSub: 'gideon-sub-1',
+          tenantId: 'org_1',
         }),
       });
       expect(result.userId).toBe('usr_new');
@@ -115,19 +121,23 @@ describe('GideonOidcService', () => {
 
     it('retries the link path on a concurrent-insert P2002', async () => {
       mockSuccessfulExchange();
+      // Initial tenant-scoped miss, initial expand-window fallback miss, then
+      // the P2002 recovery tenant-scoped re-read links the winner.
       mockUserFindFirst.mockResolvedValueOnce(null).mockResolvedValueOnce({
         id: 'usr_raced',
         email: 'ada@example.com',
         gideonSub: null,
         banned: false,
+        tenantId: 'org_1',
       });
+      mockQueryRaw.mockResolvedValue([]);
       mockUserCreate.mockRejectedValue({ code: 'P2002' });
       mockUserUpdate.mockResolvedValue({ id: 'usr_raced' });
 
       const result = await service.handleCallback({ callbackUrl });
 
       expect(mockUserUpdate).toHaveBeenCalledWith({
-        where: { id: 'usr_raced' },
+        where: { id: 'usr_raced', AND: { gideonSub: null } },
         data: expect.objectContaining({ gideonSub: 'gideon-sub-1' }),
       });
       expect(result.userId).toBe('usr_raced');
@@ -142,6 +152,7 @@ describe('GideonOidcService', () => {
         email: 'old@example.com',
         banned: false,
         gideonSub: 'gideon-sub-1',
+        tenantId: 'org_1',
       });
       mockUserUpdate.mockResolvedValue({ id: 'usr_old' });
 
@@ -161,6 +172,7 @@ describe('GideonOidcService', () => {
         email: 'ada@example.com',
         gideonSub: null,
         banned: true,
+        tenantId: 'org_1',
       });
 
       await expect(service.handleCallback({ callbackUrl })).rejects.toThrow(
@@ -184,7 +196,7 @@ describe('GideonOidcService', () => {
         nonce: 'nonce-123',
       });
       mockAuthorizationCodeGrant.mockResolvedValue({
-        access_token: 'access-1',
+        access_token: expect.any(String),
         claims: () => ({ sub: 'gideon-sub-1' }),
       });
       mockFetchUserInfo.mockResolvedValue({
@@ -206,6 +218,7 @@ describe('GideonOidcService', () => {
         email: 'ada@example.com',
         gideonSub: 'other-sub',
         banned: false,
+        tenantId: 'org_1',
       });
 
       await expect(service.handleCallback({ callbackUrl })).rejects.toThrow(

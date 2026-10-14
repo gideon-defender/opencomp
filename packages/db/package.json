@@ -57,6 +57,7 @@
     "db:generate": "node scripts/generate-prisma-client-js.js",
     "db:migrate": "prisma migrate dev",
     "db:migrate:reset": "prisma migrate reset",
+    "db:prebuild-tenant-indexes": "psql $DATABASE_URL -f scripts/prebuild-user-tenant-indexes.sql",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed/seed.ts",
     "db:studio": "prisma studio",

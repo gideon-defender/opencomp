@@ -3,10 +3,10 @@ import {
   ReceiveMessageCommand,
   type Message,
 } from '@aws-sdk/client-sqs';
-import { generateUnsubscribeToken } from '@gideon-defender/email';
 import '../config/load-env';
 import { EMAIL_SQS_QUEUE_URL, sqsClient } from '../email/aws';
 import { emailMessageSchema, type EmailMessage } from '../email/email-message';
+import { buildUnsubscribeHeaders } from './unsubscribe-headers';
 import { resolveFromAddress } from '../email/from-address';
 import { sendEmailViaSes } from '../email/ses-client';
 
@@ -30,18 +30,6 @@ function log(
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function buildUnsubscribeHeaders(to: string): Record<string, string> {
-  const apiBaseUrl =
-    process.env.NEXT_PUBLIC_API_URL || 'https://api.gideondefender.com';
-  const token = generateUnsubscribeToken(to);
-  const oneClickUrl = `${apiBaseUrl}/v1/email/unsubscribe?email=${encodeURIComponent(to)}&token=${encodeURIComponent(token)}`;
-
-  return {
-    'List-Unsubscribe': `<${oneClickUrl}>`,
-    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-  };
 }
 
 async function processMessage(message: Message): Promise<void> {
@@ -77,7 +65,13 @@ async function processMessage(message: Message): Promise<void> {
     html: email.html,
     cc: email.cc,
     replyTo,
-    headers: buildUnsubscribeHeaders(email.to),
+    headers: buildUnsubscribeHeaders({
+      to: email.to,
+      userId: email.userId,
+      organizationId: email.organizationId,
+      apiBaseUrl:
+        process.env.NEXT_PUBLIC_API_URL || 'https://api.gideondefender.com',
+    }),
     attachments: email.attachments,
   });
 

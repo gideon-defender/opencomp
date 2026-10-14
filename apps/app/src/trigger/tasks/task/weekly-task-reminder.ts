@@ -99,6 +99,7 @@ export const weeklyTaskReminder = schedules.task({
         emailPayloads.push({
           payload: {
             email: member.user.email,
+            userId: member.user.id,
             userName: member.user.name,
             organizationName: org.name,
             organizationId: org.id,
