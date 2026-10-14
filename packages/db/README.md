@@ -87,8 +87,12 @@ checksums. It recovers the known failed atomic contract attempt only when the
 legacy global email key still exists and tenant ownership remains nullable.
 Other failed migrations require inspection; the workflow does not clear them.
 
-The workflow then deploys the new images, verifies each requested task definition,
-and checks that old tasks have stopped, including tasks with desired status
+The workflow then deploys the new images and verifies each requested task
+definition.
+After AWS's stability waiter returns, bounded polling waits for explicit
+`rolloutState=COMPLETED`; stability alone can precede rollout completion. The
+workflow then checks that old tasks have stopped, including tasks with desired
+status
 STOPPED that are still alive. Only then does the second migrator task approve and
 apply the contract, validation, session cleanup, and later pending migrations.
 Approval exists only in that task's database connection. Large-table and
@@ -101,9 +105,13 @@ the dev cluster. Terraform manages this in
 The workflow checks this permission before image builds start.
 
 If rollout verification fails, expansion remains applied and contract does not
-run. Fix the rollout and rerun the workflow. Do not manually approve contract
-while old tasks remain alive. The manual commands below remain available for
-other environments and inspected recovery cases.
+run, even if services become healthy later. After merging a rollout-waiter fix,
+start a new **Deploy to Dev** run on the current `main` commit. Rerunning an old
+job uses its original commit and script. The new run preserves completed
+expansion migrations and proceeds to contract only after rollout verification.
+Do not manually approve contract while old tasks remain alive. The manual
+commands below remain available for other environments and inspected recovery
+cases.
 
 An ordinary `pnpm exec prisma migrate deploy` stops at the contract approval
 gate on populated databases. Prisma records that migration as failed. After

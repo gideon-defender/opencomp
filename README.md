@@ -617,8 +617,11 @@ Tenant migration runs in three stages:
    `20261013000004_user_tenant_enforce`, preserving the global email key while
    normalizing emails, backfilling tenant ownership, and building indexes.
 2. **Service rollout:** deploy the new images, verify each requested task
-   definition, and wait for old tasks to stop. A service rollback or an old task
-   that remains alive blocks the contract phase.
+   definition, wait for explicit rollout completion, and wait for old tasks to
+   stop. AWS's `services-stable` waiter can return before `rolloutState` changes
+   to `COMPLETED`, so the workflow polls that state with bounded retries. A
+   failed deployment, service rollback, timeout, or old task that remains alive
+   blocks the contract phase.
 3. **Contract:** the second migrator sets `app.tenant_contract_approved=yes` only
    in its database connection. It splits shared users into tenant accounts,
    enforces ownership and email constraints, validates them, removes stale
@@ -636,9 +639,15 @@ approval failures require an explicit approval-rejection message for automatic
 recovery. Other migration failures stop the workflow for inspection.
 
 If service rollout fails, expansion remains applied and contract does not run.
-Fix the rollout and rerun the workflow. Do not enable contract approval on the
-first migrator or run contract manually while old tasks remain alive. Large-table
-index and large-split approval gates still apply. See the
+If services become healthy after the waiter exits, the skipped contract step
+still needs to run. After merging a waiter fix into `main`, start a **new Deploy
+to Dev run** on the current `main` commit. Rerunning an old job checks out its
+original commit and uses the old script. The new run retains completed expansion
+migrations and applies contract only after rollout verification passes.
+
+Do not enable contract approval on the first migrator or run contract manually
+while old tasks remain alive. Large-table index and large-split approval gates
+still apply. See the
 [database recovery guide](packages/db/README.md#tenant-contract-approval-recovery)
 for manual recovery outside this workflow.
 
