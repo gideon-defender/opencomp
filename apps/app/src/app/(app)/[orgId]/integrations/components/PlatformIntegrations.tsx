@@ -9,7 +9,7 @@ import {
 } from '@/hooks/use-integration-platform';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useVendors } from '@/hooks/use-vendors';
-import { api } from '@/lib/api-client';
+import { api, apiClient } from '@/lib/api-client';
 import { Badge } from '@gideon-defender/ui/badge';
 import { Button } from '@gideon-defender/ui/button';
 import {
@@ -50,7 +50,9 @@ import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import useSWR from 'swr';
 import { CATEGORIES, type Integration, type IntegrationCategory } from '../data/integrations';
+import { CHECKR_CATEGORY, CheckrCatalogCard, type CheckrReadiness } from './CheckrCatalogCard';
 import { matchesIntegrationNameSearch } from './integration-search';
 import { SearchInput } from './SearchInput';
 import { TaskCard, TaskCardSkeleton } from './TaskCard';
@@ -88,7 +90,8 @@ interface RelevantTask {
 
 type UnifiedIntegration =
   | { type: 'platform'; provider: IntegrationProvider; connection?: ConnectionListItem }
-  | { type: 'custom'; integration: Integration };
+  | { type: 'custom'; integration: Integration }
+  | { type: 'checkr' };
 
 interface PlatformIntegrationsProps {
   className?: string;
@@ -136,6 +139,22 @@ export function PlatformIntegrations({ className, taskTemplates }: PlatformInteg
   const { connections, isLoading: loadingConnections } = useIntegrationConnections();
   const { hasPermission } = usePermissions();
   const canCreate = hasPermission('integration', 'create');
+
+  // Checkr intake readiness drives the Checkr card status badge. The endpoint
+  // requires backgroundCheck:create, so the badge only renders for viewers
+  // who can read it; the card itself stays discoverable for everyone.
+  const canReadCheckrStatus = hasPermission('backgroundCheck', 'create');
+  const { data: checkrReadiness } = useSWR(
+    canReadCheckrStatus && orgId
+      ? (['/v1/people/candidate-screenings/readiness', orgId] as const)
+      : null,
+    async ([endpoint, id]: readonly [string, string]) => {
+      const res = await apiClient.get<CheckrReadiness>(endpoint, id);
+      if (res.error || !res.data) throw new Error('Could not check Checkr readiness.');
+      return res.data;
+    },
+    { revalidateOnFocus: false },
+  );
   const { startOAuth } = useIntegrationMutations();
   const { data: vendorsResponse } = useVendors();
 
@@ -236,8 +255,10 @@ export function PlatformIntegrations({ className, taskTemplates }: PlatformInteg
         return a.provider.name.localeCompare(b.provider.name);
       });
 
-    // AI Agent integrations are hidden — they are not real integrations
-    const allIntegrations = [...platformIntegrations];
+    // AI Agent integrations are hidden — they are not real integrations.
+    // Checkr is a frontend-owned catalog entry (dedicated details route at
+    // /integrations/checkr); it is not a platform provider.
+    const allIntegrations: UnifiedIntegration[] = [...platformIntegrations, { type: 'checkr' }];
     if (vendorNames.size === 0) {
       return allIntegrations;
     }
@@ -249,7 +270,9 @@ export function PlatformIntegrations({ className, taskTemplates }: PlatformInteg
       const candidateNames =
         integration.type === 'platform'
           ? [integration.provider.name, integration.provider.id]
-          : [integration.integration.name, integration.integration.id];
+          : integration.type === 'checkr'
+            ? ['Checkr', 'checkr']
+            : [integration.integration.name, integration.integration.id];
 
       const isVendorListed = candidateNames
         .map((candidateName) => normalizeIntegrationName(candidateName))
@@ -300,6 +323,9 @@ export function PlatformIntegrations({ className, taskTemplates }: PlatformInteg
         if (item.type === 'platform') {
           return item.provider.category === selectedCategory;
         }
+        if (item.type === 'checkr') {
+          return CHECKR_CATEGORY === selectedCategory;
+        }
         return item.integration.category === selectedCategory;
       });
     }
@@ -309,7 +335,12 @@ export function PlatformIntegrations({ className, taskTemplates }: PlatformInteg
       const query = searchQuery.trim();
 
       filtered = filtered.filter((item) => {
-        const name = item.type === 'platform' ? item.provider.name : item.integration.name;
+        const name =
+          item.type === 'platform'
+            ? item.provider.name
+            : item.type === 'checkr'
+              ? 'Checkr'
+              : item.integration.name;
 
         return matchesIntegrationNameSearch(name, query);
       });
@@ -531,6 +562,17 @@ export function PlatformIntegrations({ className, taskTemplates }: PlatformInteg
         {filteredIntegrations.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredIntegrations.map((item) => {
+              if (item.type === 'checkr') {
+                return (
+                  <CheckrCatalogCard
+                    key="checkr"
+                    orgId={orgId}
+                    readiness={checkrReadiness}
+                    canReadStatus={canReadCheckrStatus}
+                  />
+                );
+              }
+
               if (item.type === 'platform') {
                 const { provider, connection } = item;
                 const isConnected = connection?.status === 'active';

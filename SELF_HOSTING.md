@@ -23,7 +23,7 @@ For a functional deployment:
 
 - **Database**: `DATABASE_URL` in all three env files
 - **Auth**: `AUTH_SECRET`, `SECRET_KEY`, `BETTER_AUTH_URL`, `NEXT_PUBLIC_BETTER_AUTH_URL` (app); `BETTER_AUTH_SECRET` (portal)
-- **Email**: `RESEND_API_KEY` in app and portal
+- **Email**: `EMAIL_SQS_QUEUE_URL`, `EMAIL_FROM_*` in api (SES via SQS)
 - **Workflows**: `TRIGGER_SECRET_KEY` in app
 - **Misc**: `REVALIDATION_SECRET`, `NEXT_PUBLIC_PORTAL_URL` in app
 
@@ -37,7 +37,7 @@ For a functional deployment:
 
 - Docker Desktop or Docker Engine
 - External PostgreSQL 15+ with SSL (pgvector; compose pins pg16/pg17 images)
-- [Resend](https://resend.com) account for email
+- AWS SES identity for email (verified sender domain)
 
 ### Build & Run
 

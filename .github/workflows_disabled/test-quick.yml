@@ -92,5 +92,4 @@ jobs:
           # Dummy values for build to succeed
           UPSTASH_REDIS_REST_URL: https://dummy.upstash.io
           UPSTASH_REDIS_REST_TOKEN: dummy-token
-          RESEND_API_KEY: dummy-resend-key
           TRIGGER_SECRET_KEY: dummy-trigger-key
