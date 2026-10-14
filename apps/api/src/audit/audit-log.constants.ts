@@ -40,7 +40,9 @@ export const SENSITIVE_KEY_PATTERN =
  * only `app:read`. For these we log the action (Created/Updated/Deleted) with no
  * payload, keeping plaintext out of a store that bypasses `secret:read`.
  */
-export const REDACT_BODY_RESOURCES = new Set(['secret']);
+// Screening input contains candidate PII. Keep it in the permission-scoped
+// screening records, rather than duplicating it into general audit payloads.
+export const REDACT_BODY_RESOURCES = new Set(['secret', 'backgroundCheck']);
 
 export const RESOURCE_TO_ENTITY_TYPE: Record<
   string,
@@ -48,6 +50,7 @@ export const RESOURCE_TO_ENTITY_TYPE: Record<
 > = {
   organization: AuditLogEntityType.organization,
   member: AuditLogEntityType.people,
+  backgroundCheck: AuditLogEntityType.people,
   invitation: AuditLogEntityType.people,
   control: AuditLogEntityType.control,
   evidence: AuditLogEntityType.task,

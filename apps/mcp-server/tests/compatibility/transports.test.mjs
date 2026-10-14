@@ -15,7 +15,7 @@ import {
   toolText,
   withClientTransport,
 } from '../runtime.mjs';
-import { baseline, registry } from '../runtime/fixtures.mjs';
+import { baseline, expectedToolCount, expectedToolNames, registry } from '../runtime/fixtures.mjs';
 import { binary, withHttp, withStdio } from './processes.mjs';
 
 test(
@@ -30,18 +30,14 @@ test(
           assert.equal(client.getServerCapabilities().prompts, undefined);
           assert.equal(client.getServerCapabilities().resources, undefined);
           const tools = (await client.listTools()).tools;
-          assert.deepEqual(
-            tools.map((tool) => tool.name).sort(),
-            baseline.tools.map((tool) => tool.name).sort(),
-          );
+          assert.deepEqual(tools.map((tool) => tool.name).sort(), expectedToolNames);
           for (const tool of tools) {
             const expected = registry.tools.find((candidate) => candidate.name === tool.name);
             assert.deepEqual(tool.inputSchema, expected.staticInputSchema);
             assert.deepEqual(tool.annotations, expected.annotations);
-            assert.deepEqual(
-              tool.execution,
-              baseline.tools.find((candidate) => candidate.name === tool.name).execution,
-            );
+            const captured = baseline.tools.find((candidate) => candidate.name === tool.name);
+            if (captured) assert.deepEqual(tool.execution, captured.execution);
+            else assert.deepEqual(tool.execution, { taskSupport: 'forbidden' });
           }
           assert.equal(
             toolText(await client.callTool({ name: 'get-tasks', arguments: {} })),
@@ -60,7 +56,7 @@ test(
           const listed = JSON.parse(
             toolText(await client.callTool({ name: 'list_tools', arguments: {} })),
           );
-          assert.equal(listed.length, 412);
+          assert.equal(listed.length, expectedToolCount);
           for (let offset = 0; offset < listed.length; offset += 25) {
             const names = listed.slice(offset, offset + 25).map((tool) => tool.name);
             const schemas = parseDescriptions({

@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { runStagedMigration } from './staged-migrate.mjs';
 import {
   approveContractUrl,
@@ -19,6 +21,16 @@ const failedGate = {
   rolledBack: false,
 };
 const expanded = { legacyEmailKey: true, nullableTenant: true };
+
+test('CLI invocation actually runs the driver and rejects missing configuration', () => {
+  const result = spawnSync(
+    process.execPath,
+    [fileURLToPath(new URL('./staged-migrate.mjs', import.meta.url)), 'expand'],
+    { encoding: 'utf8', env: { ...process.env, DATABASE_URL: '' } },
+  );
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /DATABASE_URL is required/);
+});
 
 test('recovers the observed aborted transaction only before contract DDL commits', () => {
   assert.deepEqual(

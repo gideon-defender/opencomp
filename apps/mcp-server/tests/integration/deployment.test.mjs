@@ -105,7 +105,15 @@ test('dev deploy stages migrations around a verified rollout and blocks contract
     assert(waiter.includes(required), `Missing rollout check: ${required}`);
 
   const migrator = read('.github/scripts/run-dev-migrations.sh');
-  assert(migrator.includes('staged-migrate.mjs'));
+  assert(migrator.includes('aws ecs describe-task-definition'));
+  assert(
+    migrator.includes('jq --arg phase "$phase" -f .github/scripts/migrator-overrides.jq'),
+    'Build overrides from the actual task definition to preserve its bootstrap',
+  );
+  const overrides = read('.github/scripts/migrator-overrides.jq');
+  assert(overrides.includes('packages/db/scripts/staged-migrate.mjs'));
+  assert(overrides.includes('Unsupported migrator bootstrap command'));
+  assert(overrides.includes('Unsupported migrator entrypoint'));
   assert(migrator.includes('if [ "$exit_code" != 0 ]; then'));
   for (const path of [
     '.github/scripts/deploy-dev.sh',

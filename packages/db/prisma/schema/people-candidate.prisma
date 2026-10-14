@@ -1,0 +1,79 @@
+// Intake records are not identities and never confer application access.
+model PeopleCandidate {
+  id             String   @id @default(dbgenerated("generate_prefixed_cuid('pcd'::text)"))
+  organizationId String
+  email          String
+  firstName      String
+  lastName       String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  screenings   CandidateScreening[]
+
+  @@unique([organizationId, email])
+  @@unique([id, organizationId])
+  @@map("people_candidates")
+}
+
+model CheckrIntakeConnection {
+  id             String   @id @default(dbgenerated("generate_prefixed_cuid('ckc'::text)"))
+  organizationId String   @unique
+  accountId      String   @unique
+  apiKeySecretId String
+  environment    String
+  package        String
+  node           String?
+  enabled        Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  screenings   CandidateScreening[]
+  apiKeySecret Secret               @relation(fields: [apiKeySecretId, organizationId], references: [id, organizationId], onDelete: Restrict, onUpdate: NoAction, map: "checkr_intake_secret_tenant_fk")
+
+  @@unique([id, organizationId])
+  @@map("checkr_intake_connections")
+}
+
+// Durable dispatch outbox: frozen identity/vendor inputs, billing and vendor
+// pointers survive a process crash. Completion/provisioning is IdP-owned.
+model CandidateScreening {
+  id                 String    @id @default(dbgenerated("generate_prefixed_cuid('pcs'::text)"))
+  organizationId     String
+  candidateId        String
+  connectionId       String
+  operationId        String
+  email              String
+  firstName          String
+  lastName           String
+  country            String
+  state              String?
+  city               String?
+  package            String
+  node               String?
+  status             String    @default("queued")
+  candidateKey       String    @default(dbgenerated("gen_random_uuid()::text"))
+  invitationKey      String    @default(dbgenerated("gen_random_uuid()::text"))
+  checkrCandidateId  String?
+  checkrInvitationId String?
+  chargedAt          DateTime?
+  dispatchedAt       DateTime?
+  firstDispatchAt    DateTime?
+  attempts           Int       @default(0)
+  leaseToken         String?
+  leaseUntil         DateTime?
+  nextAttemptAt      DateTime  @default(now())
+  errorCode          String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  organization Organization           @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  candidate    PeopleCandidate        @relation(fields: [candidateId, organizationId], references: [id, organizationId], onDelete: Restrict)
+  connection   CheckrIntakeConnection @relation(fields: [connectionId, organizationId], references: [id, organizationId], onDelete: Restrict)
+
+  @@unique([organizationId, operationId])
+  @@index([organizationId, createdAt])
+  @@index([status, nextAttemptAt])
+  @@map("candidate_screenings")
+}

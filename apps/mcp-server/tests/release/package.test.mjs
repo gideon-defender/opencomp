@@ -18,7 +18,7 @@ import {
   toolText,
   withClientTransport,
 } from '../runtime.mjs';
-import { baseline } from '../runtime/fixtures.mjs';
+import { expectedToolCount, expectedToolNames } from '../runtime/fixtures.mjs';
 
 test(
   'the publish tarball installs offline in isolation and exposes only the bundled contract and entry points',
@@ -81,7 +81,7 @@ test(
         await readFile(resolve(installed, 'contract-revision.json'), 'utf8'),
       );
       assert.equal(revision.sourceSha256, release.fingerprint);
-      assert.equal(revision.tools, baseline.tools.length);
+      assert.equal(revision.tools, expectedToolCount);
       // Resolution from the consumer must not find the repo's SDK, tsx or spec.
       await exec(
         process.execPath,
@@ -132,7 +132,7 @@ test(
               if (mode === 'static') {
                 assert.deepEqual(
                   (await client.listTools()).tools.map((tool) => tool.name).sort(),
-                  baseline.tools.map((tool) => tool.name).sort(),
+                  expectedToolNames,
                 );
                 assert.equal(
                   toolText(await client.callTool({ name: 'get-tasks', arguments: {} })),
@@ -147,7 +147,7 @@ test(
               assert.equal(
                 JSON.parse(toolText(await client.callTool({ name: 'list_tools', arguments: {} })))
                   .length,
-                baseline.tools.length,
+                expectedToolCount,
               );
               assert.equal(
                 toolText(

@@ -1,5 +1,6 @@
 import type { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { closeIntakeRequestSchemas } from './closed-intake-schemas';
 import {
   applyPublicOpenApiMetadata,
   PUBLIC_OPENAPI_DESCRIPTION,
@@ -23,6 +24,7 @@ export function createPublicDocument(app: INestApplication) {
     )
     .build();
   const document = SwaggerModule.createDocument(app, config);
+  closeIntakeRequestSchemas(document);
   applyPublicOpenApiMetadata(document);
   return document;
 }

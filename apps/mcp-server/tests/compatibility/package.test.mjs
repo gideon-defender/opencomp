@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { releaseFingerprint } from '../../scripts/release-fingerprint.mjs';
 import { childEnvironment, startMockApi, toolText } from '../runtime.mjs';
-import { baseline } from '../runtime/fixtures.mjs';
+import { expectedToolCount, expectedToolNames, registry } from '../runtime/fixtures.mjs';
 import { withStdio } from './processes.mjs';
 
 test(
@@ -40,20 +40,17 @@ test(
         await readFile(resolve(candidate, 'contract-revision.json'), 'utf8'),
       );
       assert.deepEqual(manifest.tools, names);
-      assert.deepEqual(
-        names.map((tool) => tool.name).sort(),
-        baseline.tools.map((tool) => tool.name).sort(),
-      );
+      assert.deepEqual(names.map((tool) => tool.name).sort(), expectedToolNames);
       for (const tool of names)
         assert.equal(
           tool.description,
-          baseline.tools.find((old) => old.name === tool.name).description,
+          registry.tools.find((item) => item.name === tool.name).description,
         );
       const spec = await readFile(resolve(packageDir, '../../packages/docs/openapi.json'));
       assert.equal(revision.specSha256, createHash('sha256').update(spec).digest('hex'));
       const overlay = await readFile(resolve(packageDir, 'mcp-overlay.yaml'));
       assert.equal(revision.overlaySha256, createHash('sha256').update(overlay).digest('hex'));
-      assert.equal(revision.tools, 412);
+      assert.equal(revision.tools, expectedToolCount);
       assert.equal(revision.sourceSha256, await releaseFingerprint());
       assert.equal(
         await unpackExtension({ mcpbPath: `${candidate}.mcpb`, outputDir: unpacked, silent: true }),
@@ -72,7 +69,7 @@ test(
           apiUrl: mock.url,
           entrypoint: binary,
           run: async (client) => {
-            assert.equal((await client.listTools()).tools.length, 412);
+            assert.equal((await client.listTools()).tools.length, expectedToolCount);
             assert.equal(
               toolText(await client.callTool({ name: 'get-tasks', arguments: {} })),
               '{"phase0Mock":true}',

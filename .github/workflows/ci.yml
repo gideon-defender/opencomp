@@ -101,6 +101,11 @@ jobs:
       - name: Apply migrations
         working-directory: packages/db
         run: pnpm exec prisma migrate deploy
+      - name: Test candidate intake migration isolation
+        working-directory: packages/db
+        env:
+          CANDIDATE_INTAKE_TEST_DATABASE_URL: ${{ env.DATABASE_URL }}
+        run: pnpm exec vitest run src/candidate-intake-migration.spec.ts
       - name: Run API unit tests
         working-directory: apps/api
         # --forceExit: specs that load the real Prisma client leak an open connection

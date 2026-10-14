@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { serializeRequest } from '../../src/request/serialize.ts';
 import { compileTools } from '../../src/tools.ts';
-import { baseline, emptyOverlay, registry, tiny, tool } from './fixtures.mjs';
+import { baseline, emptyOverlay, tiny, tool } from './fixtures.mjs';
 
 const serialize = ({ name, input }) => {
   const actual = tool(name);
@@ -25,8 +25,8 @@ test('all captured request envelope keys and requiredness are preserved, includi
     requestKeys: Object.keys(schema.properties?.request?.properties ?? {}).sort(),
     requestRequired: (schema.properties?.request?.required ?? []).slice().sort(),
   });
-  for (const actual of registry.tools) {
-    const captured = baseline.tools.find((candidate) => candidate.name === actual.name);
+  for (const captured of baseline.tools) {
+    const actual = tool(captured.name);
     assert.deepEqual(
       envelope(actual.staticInputSchema),
       envelope(captured.inputSchema),
