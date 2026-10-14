@@ -2,51 +2,6 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RolesTable, type CustomRole } from './RolesTable';
 
-// Mock the API client
-vi.mock('@/lib/api-client', () => ({
-  api: {
-    delete: vi.fn(),
-  },
-}));
-
-// Mock useRoles so ActionsCell doesn't trigger a real SWR fetch on mount
-vi.mock('../hooks/useRoles', () => ({
-  useRoles: () => ({
-    deleteRole: vi.fn(),
-  }),
-}));
-
-// Mock Next.js router
-const mockPush = vi.fn();
-const mockRefresh = vi.fn();
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: mockPush,
-    refresh: mockRefresh,
-  }),
-  useParams: () => ({
-    orgId: 'test-org-id',
-  }),
-}));
-
-// Mock sonner toast
-vi.mock('sonner', () => ({
-  toast: {
-    success: vi.fn(),
-    error: vi.fn(),
-  },
-}));
-
-// Mock usePermissions to grant manage permissions
-vi.mock('@/hooks/use-permissions', () => ({
-  usePermissions: () => ({
-    permissions: { member: ['create', 'read', 'update', 'delete'] },
-    obligations: {},
-    hasPermission: (resource: string, action: string) =>
-      resource === 'member' && ['create', 'read', 'update', 'delete'].includes(action),
-  }),
-}));
-
 const mockRoles: CustomRole[] = [
   {
     id: 'role-1',
@@ -87,7 +42,9 @@ describe('RolesTable', () => {
       expect(screen.getByText('NAME')).toBeInTheDocument();
       expect(screen.getByText('PERMISSIONS')).toBeInTheDocument();
       expect(screen.getByText('CREATED')).toBeInTheDocument();
-      expect(screen.getByText('ACTIONS')).toBeInTheDocument();
+      // IdP-owned: no local actions column; list is read-only.
+      expect(screen.queryByText('ACTIONS')).not.toBeInTheDocument();
+      expect(screen.getByText(/OpenComp defines role permissions/)).toBeInTheDocument();
     });
 
     it('renders all roles in the table', () => {
@@ -112,11 +69,11 @@ describe('RolesTable', () => {
       expect(screen.getByText('Feb 1, 2024')).toBeInTheDocument();
     });
 
-    it('renders the Create Role button', () => {
+    it('does not render a Create Role button (Gideon-synced, read-only)', () => {
       render(<RolesTable roles={mockRoles} />);
 
-      const createButton = screen.getByRole('button', { name: /Create Role/i });
-      expect(createButton).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Create Role/i })).not.toBeInTheDocument();
+      expect(screen.getByText(/OpenComp defines role permissions/)).toBeInTheDocument();
     });
 
     it('renders the search input', () => {
@@ -177,12 +134,11 @@ describe('RolesTable', () => {
   });
 
   describe('Actions', () => {
-    it('renders action buttons for each role', () => {
+    it('renders no action buttons (read-only)', () => {
       render(<RolesTable roles={mockRoles} />);
 
-      // There should be 2 action menu triggers (one for each role)
-      const menuTriggers = screen.getAllByRole('button');
-      expect(menuTriggers.length).toBeGreaterThanOrEqual(2);
+      // Only the search input renders; no row action menu triggers remain.
+      expect(screen.queryAllByRole('button').length).toBe(0);
     });
   });
 });

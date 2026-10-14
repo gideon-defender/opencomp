@@ -36,56 +36,12 @@ export function useRoles({ initialData }: UseRolesOptions = {}) {
 
   const roles = Array.isArray(data) ? data : [];
 
-  const createRole = async (body: {
-    name: string;
-    permissions: Record<string, string[]>;
-    obligations?: Record<string, boolean>;
-  }) => {
-    const response = await apiClient.post<CustomRole>('/v1/roles', body);
-    if (response.error) throw new Error(response.error);
-    await mutate();
-    return response.data!;
-  };
-
-  const updateRole = async (
-    id: string,
-    body: {
-      name: string;
-      permissions: Record<string, string[]>;
-      obligations?: Record<string, boolean>;
-    },
-  ) => {
-    const response = await apiClient.patch<CustomRole>(`/v1/roles/${id}`, body);
-    if (response.error) throw new Error(response.error);
-    await mutate();
-    return response.data!;
-  };
-
-  const deleteRole = async (id: string) => {
-    const previous = roles;
-
-    await mutate(
-      roles.filter((r) => r.id !== id),
-      false,
-    );
-
-    try {
-      const response = await apiClient.delete(`/v1/roles/${id}`);
-      if (response.error) throw new Error(response.error);
-      await mutate();
-    } catch (err) {
-      await mutate(previous, false);
-      throw err;
-    }
-  };
-
+  // IdP-owned user management: role writes are Gideon-synced (server returns
+  // 410 on POST/PATCH/DELETE /v1/roles). No local mutation helpers — read-only.
   return {
     roles,
     isLoading: !data && !error && !initialData,
     error,
     mutate,
-    createRole,
-    updateRole,
-    deleteRole,
   };
 }

@@ -7,10 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { useApi } from '@/hooks/use-api';
 import { usePeopleActions } from '@/hooks/use-people-api';
-import { parseRolesString } from '@/lib/permissions';
-import { authClient } from '@/utils/auth-client';
 import type { Invitation } from '@db';
 import {
   Empty,
@@ -36,9 +33,7 @@ import {
   TableRow,
 } from '@trycompai/design-system';
 import { InProgress, Search, SettingsAdjust } from '@trycompai/design-system/icons';
-import useSWR from 'swr';
 
-import { apiClient } from '@/lib/api-client';
 import { useMemo } from 'react';
 import { useAgentDevices } from '../../devices/hooks/useAgentDevices';
 import { useFleetHosts } from '../../devices/hooks/useFleetHosts';
@@ -144,21 +139,7 @@ export function TeamMembersClient({
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(25);
 
-  const { unlinkDevice, removeMember, reactivateMember, resendPortalInvite } = usePeopleActions();
-  const api = useApi();
-
-  // Fetch custom roles for the role combobox
-  const { data: rolesData } = useSWR(`/v1/roles`, async (endpoint: string) => {
-    const res = await api.get<{
-      customRoles: Array<{ id: string; name: string; permissions: Record<string, string[]> }>;
-    }>(endpoint);
-    return res.data?.customRoles ?? [];
-  });
-  const customRoles = (rolesData ?? []).map((r) => ({
-    id: r.id,
-    name: r.name,
-    permissions: r.permissions,
-  }));
+  const { unlinkDevice } = usePeopleActions();
 
   // Employee sync hook with server-fetched initial data
   const {
@@ -254,90 +235,18 @@ export function TeamMembersClient({
 
   const pageSizeOptions = [10, 25, 50, 100];
 
-  const handleCancelInvitation = async (invitationId: string) => {
-    try {
-      const response = await apiClient.delete(`/v1/auth/invitations/${invitationId}`);
-      if (response.error) {
-        toast.error(response.error);
-        return;
-      }
-      toast.success(t('team.invitationCancelled'));
-      router.refresh();
-    } catch (error) {
-      console.error('Cancel Invitation Error:', error);
-      toast.error(t('team.failedToCancelInvitation'));
-    }
-  };
-
-  const handleRemoveMember = async (memberId: string, options: { skipOffboarding: boolean }) => {
-    try {
-      await removeMember(memberId, options);
-      toast.success(t('team.memberRemoved'));
-      router.refresh();
-    } catch (error) {
-      console.error('Remove Member Error:', error);
-      toast.error(error instanceof Error ? error.message : t('team.failedToRemoveMember'));
-    }
-  };
-
-  const handleReactivateMember = async (memberId: string) => {
-    try {
-      await reactivateMember(memberId);
-      toast.success(t('team.memberReinstated'));
-      router.refresh();
-    } catch (error) {
-      console.error('Reactivate Member Error:', error);
-      toast.error(error instanceof Error ? error.message : t('team.failedToReinstateMember'));
-    }
-  };
-
   const handleRemoveDevice = async (memberId: string) => {
     await unlinkDevice(memberId);
     toast.success(t('team.deviceUnlinked'));
     router.refresh(); // Revalidate data to update UI
   };
 
-  // Update handleUpdateRole to use authClient and add toasts
-  const handleUpdateRole = async (memberId: string, roles: string[]) => {
-    const rolesArray = Array.isArray(roles) ? roles : [roles];
-    const member = data.members.find((m) => m.id === memberId);
-
-    // Client-side check (optional, robust check should be server-side in authClient)
-    const memberRoles = parseRolesString(member?.role);
-    if (member && memberRoles.includes('owner') && !rolesArray.includes('owner')) {
-      // Show toast error directly, no need to return an error object
-      toast.error(t('team.ownerRoleCannotBeRemoved'));
-      return;
-    }
-
-    // Ensure at least one role is selected
-    if (rolesArray.length === 0) {
-      toast.warning(t('team.selectAtLeastOneRoleWarning'));
-      return;
-    }
-
-    try {
-      // Use authClient directly
-      await authClient.organization.updateMemberRole({
-        memberId: memberId,
-        role: rolesArray, // Pass the array of roles
-      });
-      toast.success(t('team.memberRolesUpdated'));
-      router.refresh(); // Revalidate data
-    } catch (error) {
-      console.error('Update Role Error:', error);
-      // Attempt to get a meaningful error message from the caught error
-
-      if (error instanceof Error) {
-        toast.error(error.message);
-        return;
-      }
-      toast.error(t('team.failedToUpdateRoles'));
-    }
-  };
-
   return (
     <Stack gap="4">
+      <div className="rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground">
+        Access is synced from Gideon. Roles, invitations, and membership changes happen in Gideon —
+        this directory is read-only for access.
+      </div>
       {/* Search and Filters */}
       {/* Left = query (search, filters); right = view configuration (data
           sources) — the Linear/Stripe toolbar convention. */}
@@ -602,7 +511,9 @@ export function TeamMembersClient({
               {searchQuery ? t('team.noPeopleFound') : t('team.noEmployeesYet')}
             </EmptyTitle>
             <EmptyDescription>
-              {searchQuery ? t('team.tryAdjustingSearch') : t('team.getStartedInvite')}
+              {searchQuery
+                ? t('team.tryAdjustingSearch')
+                : 'No people yet. Membership is provisioned from Gideon assignments.'}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
@@ -642,14 +553,8 @@ export function TeamMembersClient({
                 <MemberRow
                   key={item.displayId}
                   member={item as MemberWithUser}
-                  onRemove={handleRemoveMember}
                   onRemoveDevice={handleRemoveDevice}
-                  onUpdateRole={handleUpdateRole}
-                  onReactivate={handleReactivateMember}
-                  onResendPortalInvite={resendPortalInvite}
-                  canEdit={canManageMembers}
                   isCurrentUserOwner={isCurrentUserOwner}
-                  customRoles={customRoles}
                   taskCompletion={taskCompletionMap[(item as MemberWithUser).id]}
                   deviceStatus={deviceStatusMap[(item as MemberWithUser).id]}
                   isDeviceStatusLoading={isDeviceStatusLoading}
@@ -665,8 +570,6 @@ export function TeamMembersClient({
                   key={item.displayId}
                   requirementColumnCount={requirementColumns.length}
                   invitation={item as Invitation}
-                  onCancel={handleCancelInvitation}
-                  canCancel={canManageMembers}
                 />
               ),
             )}

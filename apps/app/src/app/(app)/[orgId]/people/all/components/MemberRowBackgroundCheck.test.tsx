@@ -17,9 +17,7 @@ vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
 
-vi.mock('./MultiRoleCombobox', () => ({ MultiRoleCombobox: () => null }));
 vi.mock('./RemoveDeviceAlert', () => ({ RemoveDeviceAlert: () => null }));
-vi.mock('./RemoveMemberAlert', () => ({ RemoveMemberAlert: () => null }));
 
 const member = {
   id: 'mem_1',
@@ -58,11 +56,7 @@ function renderRow({
       <tbody>
         <MemberRow
           member={{ ...member, role }}
-          onRemove={noop}
           onRemoveDevice={noop}
-          onUpdateRole={noop}
-          onReactivate={noop}
-          canEdit={false}
           isCurrentUserOwner={false}
           backgroundCheckStatus={backgroundCheckStatus}
         />

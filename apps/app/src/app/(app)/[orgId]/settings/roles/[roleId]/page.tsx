@@ -33,7 +33,7 @@ export default async function EditRolePage({
         ]}
       />
       <PageHeader title={`Edit Role: ${role.name}`} />
-      <EditRolePageClient orgId={orgId} roleId={roleId} initialData={role} />
+      <EditRolePageClient orgId={orgId} initialData={role} />
     </PageLayout>
   );
 }

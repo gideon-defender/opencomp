@@ -20,14 +20,8 @@ vi.mock('sonner', () => ({
 }));
 
 // Mock child components that aren't relevant
-vi.mock('./MultiRoleCombobox', () => ({
-  MultiRoleCombobox: () => null,
-}));
 vi.mock('./RemoveDeviceAlert', () => ({
   RemoveDeviceAlert: () => null,
-}));
-vi.mock('./RemoveMemberAlert', () => ({
-  RemoveMemberAlert: () => null,
 }));
 
 import { MemberRow } from './MemberRow';
@@ -66,11 +60,7 @@ function renderMemberRow(deviceStatus?: 'compliant' | 'non-compliant' | 'stale' 
       <tbody>
         <MemberRow
           member={baseMember}
-          onRemove={noop}
           onRemoveDevice={noop}
-          onUpdateRole={noop}
-          onReactivate={noop}
-          canEdit={false}
           isCurrentUserOwner={false}
           deviceStatus={deviceStatus}
         />
@@ -125,11 +115,7 @@ describe('MemberRow device status', () => {
         <tbody>
           <MemberRow
             member={deactivatedMember}
-            onRemove={noop}
             onRemoveDevice={noop}
-            onUpdateRole={noop}
-            onReactivate={noop}
-            canEdit={false}
             isCurrentUserOwner={false}
             deviceStatus="non-compliant"
           />
@@ -151,11 +137,7 @@ describe('MemberRow device status', () => {
         <tbody>
           <MemberRow
             member={auditorMember}
-            onRemove={noop}
             onRemoveDevice={noop}
-            onUpdateRole={noop}
-            onReactivate={noop}
-            canEdit={false}
             isCurrentUserOwner={false}
             // deviceStatus intentionally omitted — auditor won't be in the map
           />
@@ -177,11 +159,7 @@ describe('MemberRow device status', () => {
         <tbody>
           <MemberRow
             member={employeeMember}
-            onRemove={noop}
             onRemoveDevice={noop}
-            onUpdateRole={noop}
-            onReactivate={noop}
-            canEdit={false}
             isCurrentUserOwner={false}
             deviceStatus="compliant"
           />
@@ -198,11 +176,7 @@ describe('MemberRow device status', () => {
         <tbody>
           <MemberRow
             member={baseMember}
-            onRemove={noop}
             onRemoveDevice={noop}
-            onUpdateRole={noop}
-            onReactivate={noop}
-            canEdit={false}
             isCurrentUserOwner={false}
             backgroundCheckStatus="completed"
             backgroundCheckStepEnabled={false}
@@ -230,11 +204,7 @@ describe('MemberRow device status', () => {
           <MemberRow
             {...{
               member: { ...baseMember, backgroundCheckExempt: true },
-              onRemove: noop,
               onRemoveDevice: noop,
-              onUpdateRole: noop,
-              onReactivate: noop,
-              canEdit: false,
               isCurrentUserOwner: false,
               backgroundCheckStatus: 'completed' as const,
               backgroundCheckStepEnabled: true,
@@ -262,11 +232,7 @@ describe('MemberRow device status', () => {
         <tbody>
           <MemberRow
             member={baseMember}
-            onRemove={noop}
             onRemoveDevice={noop}
-            onUpdateRole={noop}
-            onReactivate={noop}
-            canEdit={false}
             isCurrentUserOwner={false}
             taskCompletion={{
               completed: 0,
@@ -296,11 +262,7 @@ describe('MemberRow 2FA status', () => {
         <tbody>
           <MemberRow
             member={member}
-            onRemove={noop}
             onRemoveDevice={noop}
-            onUpdateRole={noop}
-            onReactivate={noop}
-            canEdit={false}
             isCurrentUserOwner={false}
             twoFactorStatus={twoFactorStatus}
           />
@@ -336,5 +298,80 @@ describe('MemberRow 2FA status', () => {
 
     render2fa({ member: deactivatedMember, twoFactorStatus: 'missing' });
     expect(screen.queryByTestId('requirement-2FA')).not.toBeInTheDocument();
+  });
+});
+
+describe('MemberRow access actions (Gideon-synced, device-only)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function renderActions({
+    member = baseMember,
+    isCurrentUserOwner = true,
+    deviceStatus = 'compliant' as const,
+  }: {
+    member?: MemberWithUser;
+    isCurrentUserOwner?: boolean;
+    deviceStatus?: 'compliant' | 'non-compliant' | 'stale' | 'not-installed';
+  }) {
+    return render(
+      <table>
+        <tbody>
+          <MemberRow
+            member={member}
+            onRemoveDevice={noop}
+            isCurrentUserOwner={isCurrentUserOwner}
+            deviceStatus={deviceStatus}
+          />
+        </tbody>
+      </table>,
+    );
+  }
+
+  it('renders role badges as read-only with Gideon guidance', () => {
+    renderActions({});
+    const badge = screen.getByText('Employee');
+    expect(badge).toHaveAttribute('title', 'Access is synced from Gideon');
+  });
+
+  it('shows the device menu for an owner when a device is linked', () => {
+    renderActions({});
+    expect(screen.getAllByRole('button').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('shows a read-only dash for a non-owner even with a device linked', () => {
+    renderActions({ isCurrentUserOwner: false });
+    expect(screen.queryAllByRole('button').length).toBe(0);
+  });
+
+  it('shows a read-only dash when no device is linked', () => {
+    const memberWithoutDevice = {
+      ...baseMember,
+      fleetDmLabelId: null,
+    } as MemberWithUser;
+    render(
+      <table>
+        <tbody>
+          <MemberRow
+            member={memberWithoutDevice}
+            onRemoveDevice={noop}
+            isCurrentUserOwner={true}
+            deviceStatus="not-installed"
+          />
+        </tbody>
+      </table>,
+    );
+    expect(screen.queryAllByRole('button').length).toBe(0);
+  });
+
+  it('shows a read-only dash for a deactivated member with a device', () => {
+    const deactivatedMember = {
+      ...baseMember,
+      deactivated: true,
+      fleetDmLabelId: 'label_123',
+    } as unknown as MemberWithUser;
+    renderActions({ member: deactivatedMember });
+    expect(screen.queryAllByRole('button').length).toBe(0);
   });
 });
