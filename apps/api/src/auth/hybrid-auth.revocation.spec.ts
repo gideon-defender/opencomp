@@ -4,7 +4,7 @@ import type { ExecutionContext } from '@nestjs/common';
 import { revokeSsoMember } from './sso-member-sync';
 import { HybridAuthGuard } from './hybrid-auth.guard';
 import { ApiKeyService } from './api-key.service';
-import { GideonJwtService } from './gideon-jwt.service';
+import { OidcJwtService } from './oidc-jwt.service';
 import { NativeSessionService } from './native-session.service';
 
 const mockUserFindUnique = jest.fn();
@@ -96,7 +96,7 @@ for (const mode of ['gideon', 'session', 'mcp']) {
           { provide: ApiKeyService, useValue: {} },
           { provide: Reflector, useValue: { getAllAndOverride: () => false } },
           {
-            provide: GideonJwtService,
+            provide: OidcJwtService,
             useValue: {
               isConfigured: () => mode === 'gideon',
               isEnforceMode: () => true,
@@ -104,7 +104,7 @@ for (const mode of ['gideon', 'session', 'mcp']) {
               verify: async () => ({ payload: { sub: 'sub_1', tid: 'org_1' } }),
               resolveTenantClaim: () => ({ ok: true, tenantId: 'org_1' }),
               resolveUserId: () => 'sub_1',
-              isGideonToken: () => false,
+              isOidcToken: () => false,
               isMisconfigured: () => false,
             },
           },

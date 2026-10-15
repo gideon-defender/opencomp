@@ -1,6 +1,6 @@
 import type { BetterAuthOptions } from 'better-auth';
 import { db } from '@db';
-import { resolveActiveOrganizationId } from './gideon-oidc-provisioning';
+import { resolveActiveOrganizationId } from './oidc-provisioning';
 
 export const authDatabaseHooks: NonNullable<
   BetterAuthOptions['databaseHooks']

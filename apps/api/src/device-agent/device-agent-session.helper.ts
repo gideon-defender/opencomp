@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { db } from '@db';
-import { resolveActiveOrganizationId } from '../auth/gideon-oidc-provisioning';
+import { resolveActiveOrganizationId } from '../auth/oidc-provisioning';
 
 /** One year in milliseconds. */
 export const DEVICE_AGENT_SESSION_TTL_MS = 365 * 24 * 60 * 60 * 1000;

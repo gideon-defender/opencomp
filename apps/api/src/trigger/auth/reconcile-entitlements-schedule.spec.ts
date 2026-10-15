@@ -137,27 +137,65 @@ it('pages on inventory failure rather than treating it as an empty tenant', asyn
   );
 });
 
-it('does not mutate any memberships on configuration failure and pages if configured', async () => {
-  const old = process.env.GIDEON_ENTITLEMENTS_PAGERDUTY_ROUTING_KEY;
-  process.env.GIDEON_ENTITLEMENTS_PAGERDUTY_ROUTING_KEY = 'config-page-key';
-  mockConfig.mockImplementationOnce(() => {
-    throw new Error('bad configuration');
-  });
-  try {
-    await expect(runEntitlementReconciliation()).rejects.toThrow(
-      'configuration is invalid',
+describe.each(['configuration', 'tenant discovery'])(
+  '%s failure',
+  (failure) => {
+    it.each([
+      {
+        primary: 'oidc-page-key',
+        legacy: undefined,
+        expected: 'oidc-page-key',
+      },
+      {
+        primary: undefined,
+        legacy: 'legacy-page-key',
+        expected: 'legacy-page-key',
+      },
+      {
+        primary: 'oidc-page-key',
+        legacy: 'legacy-page-key',
+        expected: 'oidc-page-key',
+      },
+    ])(
+      'pages with $expected before any membership changes',
+      async ({ primary, legacy, expected }) => {
+        const oldEnv = process.env;
+        process.env = { ...oldEnv };
+        delete process.env.OIDC_ENTITLEMENTS_PAGERDUTY_ROUTING_KEY;
+        delete process.env.GIDEON_ENTITLEMENTS_PAGERDUTY_ROUTING_KEY;
+        if (primary)
+          process.env.OIDC_ENTITLEMENTS_PAGERDUTY_ROUTING_KEY = primary;
+        if (legacy)
+          process.env.GIDEON_ENTITLEMENTS_PAGERDUTY_ROUTING_KEY = legacy;
+        if (failure === 'configuration') {
+          mockConfig.mockImplementationOnce(() => {
+            throw new Error('bad configuration');
+          });
+        } else {
+          mockConfig.mockReturnValue({ ...config, allTenants: true });
+          mockTenants.mockRejectedValue(new Error('inventory unavailable'));
+        }
+        try {
+          await expect(runEntitlementReconciliation()).rejects.toThrow(
+            'configuration is invalid',
+          );
+          expect(mockInventory).not.toHaveBeenCalled();
+          expect(mockReconcile).not.toHaveBeenCalled();
+          expect(mockPage).toHaveBeenCalledTimes(1);
+          expect(mockPage).toHaveBeenCalledWith({
+            tenantId: 'configuration',
+            readerHost: 'configuration',
+            failures: 1,
+            resolved: false,
+            routingKey: expected,
+          });
+        } finally {
+          process.env = oldEnv;
+        }
+      },
     );
-    expect(mockInventory).not.toHaveBeenCalled();
-    expect(mockReconcile).not.toHaveBeenCalled();
-    expect(mockPage).toHaveBeenCalledWith(
-      expect.objectContaining({ tenantId: 'configuration', resolved: false }),
-    );
-  } finally {
-    if (old === undefined)
-      delete process.env.GIDEON_ENTITLEMENTS_PAGERDUTY_ROUTING_KEY;
-    else process.env.GIDEON_ENTITLEMENTS_PAGERDUTY_ROUTING_KEY = old;
-  }
-});
+  },
+);
 
 it.each([false, true])(
   'continues all members and tenants when alert delivery fails (member failure=%s)',

@@ -8,7 +8,7 @@ import { NotificationBell } from '@/components/notifications/notification-bell';
 import { OrganizationBadge } from '@/components/organization-badge';
 import { SidebarProvider, useSidebar } from '@/context/sidebar-context';
 import type { UserPermissions } from '@/lib/permissions';
-import { signOutFromGideon } from '@/utils/gideon-sign-out';
+import { signOutFromOidc } from '@/utils/oidc-sign-out';
 import type { Onboarding, Organization } from '@db';
 import { Avatar, AvatarFallback, AvatarImage } from '@gideon-defender/ui/avatar';
 import { BrandLogo } from '@gideon-defender/ui/brand-logo';
@@ -205,7 +205,7 @@ function AppShellWrapperContent({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={async () => {
-                      await signOutFromGideon();
+                      await signOutFromOidc();
                     }}
                   >
                     <Logout size={16} />

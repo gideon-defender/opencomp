@@ -2,7 +2,7 @@ import { ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { HybridAuthGuard } from './hybrid-auth.guard';
 import { ApiKeyService } from './api-key.service';
-import { GideonJwtService } from './gideon-jwt.service';
+import { OidcJwtService } from './oidc-jwt.service';
 import type { AuthenticatedRequest } from './types';
 
 const mockUser = jest.fn();
@@ -38,7 +38,7 @@ describe('Gideon bearer access through HybridAuthGuard', () => {
       department: null,
     });
     mockBinding.mockResolvedValue(null);
-    const jwt = new GideonJwtService();
+    const jwt = new OidcJwtService();
     jest.spyOn(jwt, 'isConfigured').mockReturnValue(true);
     jest.spyOn(jwt, 'verify').mockResolvedValue({
       payload: { sub: 'sub_a', tid: 'tenant_a' },
@@ -73,7 +73,7 @@ describe('Gideon bearer access through HybridAuthGuard', () => {
       where: { userId: 'usr_a' },
       select: { organizationId: true },
     });
-    expect(request.isGideonJwt).toBeUndefined();
+    expect(request.isOidcJwt).toBeUndefined();
     expect(mockLegacy).not.toHaveBeenCalled();
   });
 
@@ -85,7 +85,7 @@ describe('Gideon bearer access through HybridAuthGuard', () => {
       await expect(guard.canActivate(context(request))).rejects.toThrow(
         ForbiddenException,
       );
-      expect(request.isGideonJwt).toBeUndefined();
+      expect(request.isOidcJwt).toBeUndefined();
       expect(mockLegacy).not.toHaveBeenCalled();
     },
   );
@@ -97,7 +97,7 @@ describe('Gideon bearer access through HybridAuthGuard', () => {
       const request = bearer();
       await expect(guard.canActivate(context(request))).resolves.toBe(true);
       expect(request.organizationId).toBe('tenant_a');
-      expect(request.isGideonJwt).toBe(true);
+      expect(request.isOidcJwt).toBe(true);
       expect(mockLegacy).not.toHaveBeenCalled();
     },
   );

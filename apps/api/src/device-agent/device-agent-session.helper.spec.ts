@@ -14,7 +14,7 @@ jest.mock('@db', () => ({
   },
 }));
 
-jest.mock('../auth/gideon-oidc-provisioning', () => ({
+jest.mock('../auth/oidc-provisioning', () => ({
   resolveActiveOrganizationId: (...args: unknown[]) =>
     resolveActiveOrgMock(...args),
 }));

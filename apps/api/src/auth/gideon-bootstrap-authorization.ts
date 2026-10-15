@@ -1,7 +1,7 @@
 import { ForbiddenException } from '@nestjs/common';
 import { z } from 'zod';
 import { redisClient } from '../redis/redis.client';
-import { isBootstrapEnforced } from './gideon-oidc-gates';
+import { isBootstrapEnforced } from './oidc-gates';
 
 const proofSchema = z.object({ userId: z.string(), tenantId: z.string() });
 const proofKey = (sessionId: string) => `app:gideon-bootstrap:${sessionId}`;

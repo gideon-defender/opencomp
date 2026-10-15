@@ -3,7 +3,7 @@ import { findLegacySharedUser } from './legacy-shared-user';
 import { lookupGideonTenantIdentity } from './gideon-tenant-identity';
 import type { EntitlementReconciliationConfig } from './entitlement-reconciliation-config';
 import { fetchEntitlementSnapshot } from './entitlement-snapshot';
-import { parseEntitlementsClaim } from './gideon-oidc-entitlements';
+import { parseEntitlementsClaim } from './oidc-entitlements';
 import { readSsoEntitlementRoles } from './sso-entitlement-roles';
 
 /** Serialize with membership writes; commit role changes and audit together. */

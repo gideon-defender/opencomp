@@ -20,6 +20,11 @@ export default defineConfig({
     // `@db`/`@db/server` prisma aliases. `@db/server` must precede `@db` so the
     // more specific alias wins. (Modules importing prisma are mocked in tests.)
     alias: {
+      // Use source so component tests do not require a UI package build.
+      '@gideon-defender/ui/button': resolve(
+        __dirname,
+        '../../packages/ui/src/components/button.tsx',
+      ),
       '@db/server': resolve(__dirname, './prisma/server'),
       '@db': resolve(__dirname, './prisma'),
       '@': resolve(__dirname, './src'),

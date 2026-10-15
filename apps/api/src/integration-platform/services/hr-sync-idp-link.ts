@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { db, normalizeEmail } from '@db';
 import type { User } from '@db';
-import { resolveAdoptEmail } from '../../auth/gideon-oidc-link';
+import { resolveAdoptEmail } from '../../auth/oidc-link';
 import { findLegacySharedUser } from '../../auth/legacy-shared-user';
 import type { HrIdentity } from './hr-sync-idp';
 

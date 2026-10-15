@@ -3,9 +3,9 @@ import { db } from '@db';
 import { auth } from './auth.server';
 import { populateLegacyMcpRequest } from './legacy-mcp-request';
 import { authenticateGideonMcpToken } from './gideon-mcp-tenant-gate';
-import { isJwtShaped } from './gideon-tenant-claim';
+import { isJwtShaped } from './oidc-tenant-claim';
 import type { AuthenticatedRequest } from './types';
-import type { GideonJwtService } from './gideon-jwt.service';
+import type { OidcJwtService } from './oidc-jwt.service';
 import type {
   NativeSessionService,
   NativeSessionResult,
@@ -14,14 +14,14 @@ import type {
 export class HybridSessionAuth {
   private readonly logger = new Logger('HybridAuthGuard');
   private readonly nativeSessionService?: NativeSessionService;
-  private readonly gideonJwtService?: GideonJwtService;
+  private readonly gideonJwtService?: OidcJwtService;
 
   constructor({
     nativeSessionService,
     gideonJwtService,
   }: {
     nativeSessionService?: NativeSessionService;
-    gideonJwtService?: GideonJwtService;
+    gideonJwtService?: OidcJwtService;
   }) {
     this.nativeSessionService = nativeSessionService;
     this.gideonJwtService = gideonJwtService;
@@ -203,7 +203,7 @@ export class HybridSessionAuth {
       // partial Gideon configuration (endpoint set, issuer/audience missing)
       // that cannot identify tokens also fails closed here.
       if (
-        this.gideonJwtService.isGideonToken(raw) ||
+        this.gideonJwtService.isOidcToken(raw) ||
         this.gideonJwtService.isMisconfigured()
       ) {
         this.logger.warn(

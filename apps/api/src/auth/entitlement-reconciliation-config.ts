@@ -1,7 +1,18 @@
 import { z } from 'zod';
+import {
+  oidcClientId,
+  oidcEnforcementAllTenants,
+  oidcEnforcementTenants,
+  oidcIdentityUrl,
+  oidcReconciliationEnabled,
+  oidcReconciliationPagerdutyKey,
+  oidcReconciliationReaderUrl,
+  oidcReconciliationReadToken,
+  oidcReconciliationSkipPaging,
+} from './oidc-env';
 
-// Gideon's bootstrap UUID is deliberately not an RFC-versioned UUID.
-export const gideonUuidSchema = z
+// The bootstrap tenant UUID is deliberately not an RFC-versioned UUID.
+export const oidcUuidSchema = z
   .string()
   .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
 
@@ -16,28 +27,25 @@ export interface EntitlementReconciliationConfig {
 
 /** Off by default. A rollback stops polling without restoring old grants. */
 export function reconciliationEnabled(): boolean {
-  return process.env.GIDEON_ENTITLEMENTS_RECONCILIATION_ENABLED === 'true';
+  return oidcReconciliationEnabled();
 }
 
 export function readReconciliationConfig(): EntitlementReconciliationConfig {
-  const allTenants = process.env.GIDEON_ENFORCEMENT_ALL_TENANTS === 'true';
-  const tenantIds = z.array(gideonUuidSchema).parse([
+  const allTenants = oidcEnforcementAllTenants();
+  const tenantIds = z.array(oidcUuidSchema).parse([
     ...new Set(
-      (allTenants ? '' : (process.env.GIDEON_ENFORCEMENT_TENANTS ?? ''))
+      (allTenants ? '' : oidcEnforcementTenants())
         .split(',')
         .map((value) => value.trim())
         .filter(Boolean),
     ),
   ]);
-  const readerUrl =
-    process.env.GIDEON_ENTITLEMENTS_READER_URL ??
-    process.env.GIDEON_IDENTITY_URL;
-  const readerToken = process.env.GIDEON_ENTITLEMENTS_READ_TOKEN;
-  const clientId = process.env.GIDEON_OIDC_CLIENT_ID;
-  const pagerDutyKey = process.env.GIDEON_ENTITLEMENTS_PAGERDUTY_ROUTING_KEY;
+  const readerUrl = oidcReconciliationReaderUrl() || oidcIdentityUrl();
+  const readerToken = oidcReconciliationReadToken();
+  const clientId = oidcClientId();
+  const pagerDutyKey = oidcReconciliationPagerdutyKey();
   const skipPaging =
-    process.env.GIDEON_ENTITLEMENTS_SKIP_PAGING === 'true' &&
-    process.env.GIDEON_ENVIRONMENT === 'dev';
+    oidcReconciliationSkipPaging() && process.env.GIDEON_ENVIRONMENT === 'dev';
   if (
     !readerUrl ||
     !readerToken?.trim() ||

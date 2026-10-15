@@ -1,10 +1,10 @@
 import { z } from 'zod';
 import type { EntitlementReconciliationConfig } from './entitlement-reconciliation-config';
-import { gideonUuidSchema } from './entitlement-reconciliation-config';
+import { oidcUuidSchema } from './entitlement-reconciliation-config';
 
 const snapshotSchema = z.object({
-  tenant_id: gideonUuidSchema,
-  user_id: gideonUuidSchema,
+  tenant_id: oidcUuidSchema,
+  user_id: oidcUuidSchema,
   client_id: z.string().min(1),
   complete: z.literal(true),
   channel: z.literal('oidc'),

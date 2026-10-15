@@ -1,5 +1,5 @@
 import { HybridSessionAuth } from './hybrid-session-auth';
-import { resolveGideonTenantClaim } from './gideon-tenant-claim';
+import { resolveOidcTenantClaim } from './oidc-tenant-claim';
 import type { AuthenticatedRequest } from './types';
 
 /**
@@ -9,7 +9,7 @@ import type { AuthenticatedRequest } from './types';
  * fallback: only genuinely non-Gideon bearers may use the legacy path.
  */
 export const mockVerify = jest.fn();
-export const mockIsGideonToken = jest.fn();
+export const mockIsOidcToken = jest.fn();
 export const mockGetMcpSession = jest.fn();
 export const mockUser = jest.fn();
 export const mockMemberFirst = jest.fn();
@@ -27,13 +27,13 @@ export function gideonAuth() {
     isConfigured: () => mockIsConfigured(),
     isEnforceMode: () => mockIsEnforceMode(),
     verify: (...args: unknown[]) => mockVerify(...args),
-    isGideonToken: (...args: unknown[]) => mockIsGideonToken(...args),
+    isOidcToken: (...args: unknown[]) => mockIsOidcToken(...args),
     isMisconfigured: () => mockIsMisconfigured(),
     resolveTenantClaim: (payload: Record<string, unknown>) =>
-      resolveGideonTenantClaim(payload),
+      resolveOidcTenantClaim(payload),
     resolveUserId: (payload: { sub?: string }) =>
       typeof payload.sub === 'string' && payload.sub ? payload.sub : null,
-  } as unknown as import('./gideon-jwt.service').GideonJwtService;
+  } as unknown as import('./oidc-jwt.service').OidcJwtService;
   return new HybridSessionAuth({ gideonJwtService: service });
 }
 
@@ -74,7 +74,7 @@ export function resetGateMocks() {
   // clearAllMocks is the auth-dir norm; the defaults below replace any
   // implementation a previous test set.
   jest.clearAllMocks();
-  mockIsGideonToken.mockReturnValue(false);
+  mockIsOidcToken.mockReturnValue(false);
   mockIsMisconfigured.mockReturnValue(false);
   mockIsConfigured.mockReturnValue(true);
   mockIsEnforceMode.mockReturnValue(false);

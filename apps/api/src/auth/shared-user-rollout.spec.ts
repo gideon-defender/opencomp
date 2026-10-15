@@ -1,5 +1,5 @@
 import { ForbiddenException } from '@nestjs/common';
-import { provisionGideonUser } from './gideon-oidc-provisioning';
+import { provisionOidcUser } from './oidc-provisioning';
 import { getHrSyncUser } from '../integration-platform/services/hr-sync-idp';
 import { findLegacySharedUser } from './legacy-shared-user';
 
@@ -45,7 +45,8 @@ describe('shared identity during the expand window', () => {
     );
     const beforeWrite = jest.fn();
     await expect(
-      provisionGideonUser({
+      provisionOidcUser({
+        emailVerified: true,
         sub: shared.gideonSub,
         email: shared.email,
         tenantId: 'secondary',
@@ -63,7 +64,8 @@ describe('shared identity during the expand window', () => {
     );
     const beforeWrite = jest.fn();
     await expect(
-      provisionGideonUser({
+      provisionOidcUser({
+        emailVerified: true,
         sub: identity.id,
         email: shared.email,
         tenantId: 'secondary',
@@ -79,7 +81,8 @@ describe('shared identity during the expand window', () => {
       shared as Awaited<ReturnType<typeof findLegacySharedUser>>,
     );
     await expect(
-      provisionGideonUser({
+      provisionOidcUser({
+        emailVerified: true,
         sub: shared.gideonSub,
         email: shared.email,
         tenantId: 'secondary',
@@ -93,7 +96,8 @@ describe('shared identity during the expand window', () => {
   it('rejects the other tenant once the compatibility guard no longer returns a shared user', async () => {
     mockFindSubject.mockResolvedValue(shared);
     await expect(
-      provisionGideonUser({
+      provisionOidcUser({
+        emailVerified: true,
         sub: shared.gideonSub,
         email: shared.email,
         tenantId: 'secondary',

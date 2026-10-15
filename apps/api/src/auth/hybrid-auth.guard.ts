@@ -15,9 +15,9 @@ import { IS_PUBLIC_KEY } from './public.decorator';
 import { SKIP_ORG_CHECK_KEY } from './skip-org-check.decorator';
 import { resolveServiceByToken } from './service-token.config';
 import { stripControlChars } from './app-access';
-import { tryGideonJwtAuth } from './gideon-jwt-request-auth';
+import { tryOidcJwtAuth } from './gideon-jwt-request-auth';
 import { AuthenticatedRequest } from './types';
-import { GideonJwtService } from './gideon-jwt.service';
+import { OidcJwtService } from './oidc-jwt.service';
 import { GideonShadowService } from '../gideon/gideon-shadow.service';
 import { NativeSessionService } from './native-session.service';
 
@@ -28,7 +28,7 @@ export class HybridAuthGuard implements CanActivate {
   constructor(
     private readonly apiKeyService: ApiKeyService,
     private readonly reflector: Reflector,
-    @Optional() private readonly gideonJwtService?: GideonJwtService,
+    @Optional() private readonly gideonJwtService?: OidcJwtService,
     @Optional() private readonly gideonShadowService?: GideonShadowService,
     // Keep the runtime injection token when the dependency is optional.
     @Optional()
@@ -57,7 +57,7 @@ export class HybridAuthGuard implements CanActivate {
 
     // Phase 0 — Gideon JWT shadow/verify (x-api-key → x-service-token → Gideon JWT → cookie)
     // Behind flag: when GIDEON_JWT_ENABLED=false and no identityUrl, this returns null and falls through
-    const gideonResult = await tryGideonJwtAuth({
+    const gideonResult = await tryOidcJwtAuth({
       request,
       gideonJwtService: this.gideonJwtService,
       gideonShadowService: this.gideonShadowService,

@@ -5,9 +5,9 @@ import {
 } from '@nestjs/common';
 import { db } from '@db';
 import { hasAppAccess, stripControlChars } from './app-access';
-import { resolveGideonAal } from './gideon-tenant-claim';
+import { resolveOidcAal } from './oidc-tenant-claim';
 import type { AuthenticatedRequest } from './types';
-import type { GideonJwtPayload, GideonJwtService } from './gideon-jwt.service';
+import type { OidcJwtPayload, OidcJwtService } from './oidc-jwt.service';
 
 export interface TenantLinkedUser {
   id: string;
@@ -82,8 +82,8 @@ export async function authenticateGideonMcpToken({
   logger,
 }: {
   request: AuthenticatedRequest;
-  payload: GideonJwtPayload;
-  gideonJwtService: GideonJwtService;
+  payload: OidcJwtPayload;
+  gideonJwtService: OidcJwtService;
   logger: Logger;
 }): Promise<boolean> {
   const tenantClaim = gideonJwtService.resolveTenantClaim(payload);
@@ -139,11 +139,11 @@ export async function authenticateGideonMcpToken({
       'Gideon account user record is no longer available',
     );
   }
-  const aal = resolveGideonAal(payload.aal);
+  const aal = resolveOidcAal(payload.aal);
   if (aal !== undefined) {
-    request.gideonAal = aal;
+    request.oidcAal = aal;
   }
-  request.isGideonJwt = true;
+  request.isOidcJwt = true;
   return true;
 }
 

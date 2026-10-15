@@ -6,7 +6,7 @@ import { fetchEntitlementSnapshot } from './entitlement-snapshot';
 import {
   EntitlementsDeniedError,
   parseEntitlementsClaim,
-} from './gideon-oidc-entitlements';
+} from './oidc-entitlements';
 
 export async function readSsoEntitlementRoles({
   tx,

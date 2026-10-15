@@ -8,7 +8,7 @@ import { Reflector } from '@nestjs/core';
 import { HybridAuthGuard } from './hybrid-auth.guard';
 import { ApiKeyService } from './api-key.service';
 import { SKIP_ORG_CHECK_KEY } from './skip-org-check.decorator';
-import { resolveGideonTenantClaim } from './gideon-tenant-claim';
+import { resolveOidcTenantClaim } from './oidc-tenant-claim';
 
 // Mock auth.server — only the legacy MCP session resolver the guard still
 // uses as fallback for Gram-issued OAuth tokens.
@@ -438,7 +438,7 @@ describe('HybridAuthGuard — Gideon JWT (Milestone 2 enforce)', () => {
   let misconfigured = false;
   let configured = true;
   const mockVerify = jest.fn();
-  const mockIsGideonToken = jest.fn();
+  const mockIsOidcToken = jest.fn();
   const mockLogMismatch = jest.fn();
   const mockNativeResolve = jest.fn();
 
@@ -481,15 +481,15 @@ describe('HybridAuthGuard — Gideon JWT (Milestone 2 enforce)', () => {
       isEnforceMode: () => enforce,
       isShadowMode: () => !enforce,
       verify: (...args: unknown[]) => mockVerify(...args),
-      isGideonToken: (...args: unknown[]) => mockIsGideonToken(...args),
+      isOidcToken: (...args: unknown[]) => mockIsOidcToken(...args),
       isMisconfigured: () => misconfigured,
       // Delegate to the real strict resolver so guard tests pin the same
       // contract the gate enforces (missing/malformed/conflict).
       resolveTenantClaim: (payload: Record<string, unknown>) =>
-        resolveGideonTenantClaim(payload),
+        resolveOidcTenantClaim(payload),
       resolveUserId: (payload: { sub?: string }) =>
         typeof payload.sub === 'string' && payload.sub ? payload.sub : null,
-    } as unknown as import('./gideon-jwt.service').GideonJwtService;
+    } as unknown as import('./oidc-jwt.service').OidcJwtService;
     const gideonShadowService = {
       logTenantOperationsMismatch: (...args: unknown[]) =>
         mockLogMismatch(...args),
@@ -507,7 +507,7 @@ describe('HybridAuthGuard — Gideon JWT (Milestone 2 enforce)', () => {
     mockLogMismatch.mockResolvedValue(undefined);
     // No native/MCP session by default; individual tests opt in.
     // Tokens present as non-Gideon by default; enforce-failure tests opt in.
-    mockIsGideonToken.mockReturnValue(false);
+    mockIsOidcToken.mockReturnValue(false);
     mockNativeResolve.mockResolvedValue(null);
     mockGetMcpSession.mockResolvedValue(null);
     mockMcpBindingFindUnique.mockResolvedValue(null);
@@ -549,7 +549,7 @@ describe('HybridAuthGuard — Gideon JWT (Milestone 2 enforce)', () => {
       select: { id: true, email: true, tenantId: true },
     });
     expect(request.authType).toBe('gideon');
-    expect(request.isGideonJwt).toBe(true);
+    expect(request.isOidcJwt).toBe(true);
     expect(request.organizationId).toBe('org_1');
     expect(request.userId).toBe('usr_1');
     expect(request.userEmail).toBe('gin@acme.com');
@@ -582,7 +582,7 @@ describe('HybridAuthGuard — Gideon JWT (Milestone 2 enforce)', () => {
     await expect(guard.canActivate(context)).resolves.toBe(true);
     expect(request.authType).toBe('session');
     expect(request.userId).toBe('usr_9');
-    expect(request.isGideonJwt).toBeUndefined();
+    expect(request.isOidcJwt).toBeUndefined();
   });
 
   it('shadow mode: unlinked sub falls through to session (dual-run fallback)', async () => {
@@ -651,7 +651,7 @@ describe('HybridAuthGuard — Gideon JWT (Milestone 2 enforce)', () => {
       await expect(guard.canActivate(context)).resolves.toBe(true);
       expect(request.authType).toBe('session');
       expect(request.userId).toBe('usr_9');
-      expect(request.isGideonJwt).toBeUndefined();
+      expect(request.isOidcJwt).toBeUndefined();
     },
   );
 
@@ -690,7 +690,7 @@ describe('HybridAuthGuard — Gideon JWT (Milestone 2 enforce)', () => {
     await expect(guard.canActivate(context)).resolves.toBe(true);
     expect(request.authType).toBe('session');
     expect(request.userId).toBe('usr_9');
-    expect(request.isGideonJwt).toBeUndefined();
+    expect(request.isOidcJwt).toBeUndefined();
   });
 
   it('shadow mode: non-member of token org falls through to session', async () => {
@@ -730,7 +730,7 @@ describe('HybridAuthGuard — Gideon JWT (Milestone 2 enforce)', () => {
     await expect(guard.canActivate(context)).resolves.toBe(true);
     expect(request.authType).toBe('session');
     expect(request.userId).toBe('usr_9');
-    expect(request.isGideonJwt).toBeUndefined();
+    expect(request.isOidcJwt).toBeUndefined();
   });
 
   it('enforce mode: invalid Gideon token is a 401 with no session fallback', async () => {
@@ -738,7 +738,7 @@ describe('HybridAuthGuard — Gideon JWT (Milestone 2 enforce)', () => {
     mockVerify.mockResolvedValue(null);
     // Forged token presents as a Gideon JWT (JWT-shaped, matching iss) but
     // fails verification → hard 401.
-    mockIsGideonToken.mockReturnValue(true);
+    mockIsOidcToken.mockReturnValue(true);
 
     const { context } = createContext({
       authorization: 'Bearer forged.jwt.token',
@@ -753,7 +753,7 @@ describe('HybridAuthGuard — Gideon JWT (Milestone 2 enforce)', () => {
   it('enforce mode: opaque session bearer falls through to session (dual-run)', async () => {
     enforce = true;
     mockVerify.mockResolvedValue(null);
-    mockIsGideonToken.mockReturnValue(false);
+    mockIsOidcToken.mockReturnValue(false);
     mockNativeResolve.mockResolvedValue({
       user: { id: 'usr_9', email: 'legacy@acme.com', role: 'user' },
       session: {
@@ -776,13 +776,13 @@ describe('HybridAuthGuard — Gideon JWT (Milestone 2 enforce)', () => {
     await expect(guard.canActivate(context)).resolves.toBe(true);
     expect(request.authType).toBe('session');
     expect(request.userId).toBe('usr_9');
-    expect(request.isGideonJwt).toBeUndefined();
+    expect(request.isOidcJwt).toBeUndefined();
   });
 
   it('enforce mode: foreign-issuer JWT falls through to session', async () => {
     enforce = true;
     mockVerify.mockResolvedValue(null);
-    mockIsGideonToken.mockReturnValue(false);
+    mockIsOidcToken.mockReturnValue(false);
     mockNativeResolve.mockResolvedValue({
       user: { id: 'usr_9', email: 'legacy@acme.com', role: 'user' },
       session: {
@@ -972,7 +972,7 @@ describe('HybridAuthGuard — Gideon JWT (Milestone 2 enforce)', () => {
     enforce = true;
     misconfigured = true;
     mockVerify.mockResolvedValue(null);
-    mockIsGideonToken.mockReturnValue(false);
+    mockIsOidcToken.mockReturnValue(false);
 
     const { context } = createContext({
       authorization: 'Bearer opaque.jwt.token',
@@ -988,7 +988,7 @@ describe('HybridAuthGuard — Gideon JWT (Milestone 2 enforce)', () => {
     misconfigured = true;
     enforce = true;
     mockVerify.mockResolvedValue(null);
-    mockIsGideonToken.mockReturnValue(false);
+    mockIsOidcToken.mockReturnValue(false);
     mockNativeResolve.mockResolvedValue({
       user: { id: 'usr_9', email: 'legacy@acme.com', role: 'user' },
       session: {
@@ -1056,7 +1056,7 @@ describe('HybridAuthGuard — Gideon JWT (Milestone 2 enforce)', () => {
 
     await expect(guard.canActivate(context)).resolves.toBe(true);
     expect(request.authType).toBe('session');
-    expect(request.isGideonJwt).toBeUndefined();
+    expect(request.isOidcJwt).toBeUndefined();
   });
 
   it('falls back to the linked user email when the verified email claim is not a string', async () => {
@@ -1398,14 +1398,14 @@ describe('HybridAuthGuard — MCP via Gideon JWT (Milestone 3)', () => {
       verify: (...args: unknown[]) => mockVerify(...args),
       // Non-Gideon by default so verify-failures fall through to legacy;
       // Gideon-failure tests opt into `true` to assert fail-closed.
-      isGideonToken: () => false,
+      isOidcToken: () => false,
       isMisconfigured: () => false,
       // Delegate to the real strict resolver (see enforce describe).
       resolveTenantClaim: (payload: Record<string, unknown>) =>
-        resolveGideonTenantClaim(payload),
+        resolveOidcTenantClaim(payload),
       resolveUserId: (payload: { sub?: string }) =>
         typeof payload.sub === 'string' && payload.sub ? payload.sub : null,
-    } as unknown as import('./gideon-jwt.service').GideonJwtService;
+    } as unknown as import('./oidc-jwt.service').OidcJwtService;
     guard = new HybridAuthGuard(
       apiKeyService,
       reflector,
@@ -1453,8 +1453,8 @@ describe('HybridAuthGuard — MCP via Gideon JWT (Milestone 3)', () => {
     expect(mockVerify).toHaveBeenCalledWith('gideon.mcp.jwt');
     expect(mockGetMcpSession).not.toHaveBeenCalled();
     expect(request.authType).toBe('gideon');
-    expect(request.isGideonJwt).toBe(true);
-    expect(request.gideonAal).toBe(2);
+    expect(request.isOidcJwt).toBe(true);
+    expect(request.oidcAal).toBe(2);
     expect(request.userId).toBe('usr_mcp');
     expect(request.organizationId).toBe('org_1');
     expect(request.userRoles).toEqual(['admin']);
@@ -1535,7 +1535,7 @@ describe('HybridAuthGuard — MCP via Gideon JWT (Milestone 3)', () => {
     await expect(guard.canActivate(context)).resolves.toBe(true);
     expect(mockGetMcpSession).toHaveBeenCalledTimes(1);
     expect(request.isMcpOAuth).toBe(true);
-    expect(request.isGideonJwt).toBeUndefined();
+    expect(request.isOidcJwt).toBeUndefined();
     expect(request.userId).toBe('usr_legacy');
   });
 });
