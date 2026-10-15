@@ -1,0 +1,177 @@
+# Set up MCP
+
+Connect an AI assistant to OpenComp to read evidence, review framework
+coverage, and inspect Trust Center information. Start with a read-only key
+and verify one read before asking the assistant to make changes.
+
+## Before you start
+
+You need an OpenComp organization, an API key for that organization, and an
+MCP client that supports one of the connection methods below. Ask an owner
+or administrator to create a scoped key if you cannot access API Keys.
+
+Create a key under **Settings → API Keys → Add API Key**. Choose **Read Only**
+or select the required scopes with **Custom**, set an expiration, and copy
+the key once into your approved secret store. See
+[API key management](automation-and-api.md#create-a-scoped-api-key) for details.
+
+For the examples, the key needs `task:read`, `framework:read`, and
+`trust:read`. A connection can authenticate successfully while lacking
+permission for a particular operation.
+
+## Choose a connection method
+
+| Method                    | Use when                                                 | What you need                                                             |
+| ------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Hosted HTTP               | Your client supports Streamable HTTP with custom headers | MCP endpoint and organization API key; no local server installation       |
+| Local stdio               | Your client launches command-based MCP servers           | Approved server bundle, Node.js, API URL, and organization API key        |
+| Existing OAuth connection | Your client requires OAuth                               | The separately configured OAuth connection supplied by your administrator |
+
+The hosted API-key endpoint below does not offer OAuth. An existing
+OAuth/Gram connection has separate setup and authentication; do not replace
+its credentials or URL with these API-key settings.
+
+## Option 1: hosted Streamable HTTP
+
+1. In your AI client's MCP settings, add a remote HTTP server named **OpenComp**.
+2. Select **Streamable HTTP**, if the client asks for a transport.
+3. Enter the MCP endpoint supplied for your deployment.
+4. Add the custom authentication header `apikey` with your organization API key.
+   Store its value in the client's protected credential field where available.
+5. Save, enable the connection, and refresh the client's tool list or start
+   a new conversation as required by that client.
+6. Run the [connection check](#verify-the-connection).
+
+The development service verified on October 15, 2026 uses:
+
+| Setting      | Value                                    |
+| ------------ | ---------------------------------------- |
+| Endpoint     | `https://mcp.dev.gideondefender.com/mcp` |
+| Transport    | Streamable HTTP                          |
+| Header name  | `apikey`                                 |
+| Header value | Your organization's API key              |
+
+Use your administrator's endpoint for production. A key and URL must belong
+to the same deployment. The server expects the `apikey` header on every
+request. Do not put the key in the URL or substitute an OAuth bearer token.
+
+The hosted server forwards authenticated operations to OpenComp's API.
+For direct API calls, the header is `x-api-key`; for this hosted MCP
+connection, the client sends `apikey`.
+
+If your client only accepts a URL and OAuth, use an approved OAuth connection
+or a compatible client. A successful web-browser visit is not an MCP check:
+the client must initialize the protocol and discover tools.
+
+## Option 2: local stdio
+
+Your client launches a server process, which sends requests to the OpenComp
+API. Ask your administrator for an approved bundle or a verified package
+version and its setup instructions. Pin the supplied version so updates are
+reviewable; a package version in source does not prove it has been published.
+
+For an approved local bundle, clients supporting a `mcpServers` JSON
+configuration can use this example. Replace both paths, the API URL, and the
+credential placeholder before enabling it. Other clients may present these
+same settings as separate command, arguments, and environment fields.
+
+```json
+{
+  "mcpServers": {
+    "opencomp": {
+      "command": "/absolute/path/to/node",
+      "args": [
+        "/absolute/path/to/mcp-server.js",
+        "start",
+        "--mode",
+        "dynamic",
+        "--server-url",
+        "https://opencomp-api.dev.gideondefender.com",
+        "--tool",
+        "get-tasks",
+        "--tool",
+        "frameworks-find-all",
+        "--tool",
+        "get-overview"
+      ],
+      "env": {
+        "COMPAI_APIKEY": "REPLACE_WITH_YOUR_ORGANIZATION_API_KEY"
+      }
+    }
+  }
+}
+```
+
+The API URL above is development. Replace it with the API origin supplied
+for your deployment, rather than the hosted MCP URL ending in `/mcp`.
+Use a Node.js version supported by your bundle; this repository requires
+Node.js 22 or newer. Absolute paths help desktop clients find Node and the
+server when their environment differs from your terminal.
+
+`COMPAI_APIKEY` is the server's credential environment variable. It does not
+automatically read an `OPENCOMP_API_KEY` variable from a project's `.env`.
+Avoid putting the key in command arguments, which can appear in process
+listings. Use your client's secret or environment settings and protect any
+configuration file containing credentials.
+
+The repeatable `--tool` options expose only the three read operations used
+here. They restrict tool availability, while API-key scopes control actual
+access. Add operations deliberately when a workflow needs them. Dynamic mode
+exposes the discovery sequence used in the examples; static mode instead
+exposes each selected business tool directly.
+
+If your administrator supplies a registry package, use their verified version
+with `pnpm dlx @gideon-defender/mcp-server@VERSION start` and the approved
+arguments. Replace `VERSION` with that exact version. The client needs pnpm
+and network access to retrieve a package that is not already cached.
+
+## Verify the connection
+
+Ask your assistant:
+
+> Use OpenComp to list my compliance tasks. Read only; do not change records.
+> Discover the task tool and inspect its input schema before executing it.
+> Report the returned count and summarize the tasks.
+
+In hosted dynamic mode, expect this sequence:
+
+1. `list_tools` discovers `get-tasks`.
+2. `describe_tool_input` returns its schema.
+3. `execute_tool` runs `get-tasks` using that schema.
+4. The assistant reports the result or an explicit error. A successful empty
+   list is valid when your organization has no tasks.
+
+A connected indicator or tool list proves discovery, not API execution.
+Compare the result with **Compliance → Evidence** in the same organization.
+See [worked examples](mcp-examples.md) for exact calls and result handling.
+
+## Manage access after setup
+
+Keep a named owner for the key and review its expiration, scopes, and last
+use. For planned rotation, create a replacement, update the client's stored
+credential, verify a read, then revoke the old key. Reconnect after changing
+credentials if the client caches them. Revoke an exposed key promptly.
+
+The assistant can act within the API key's permissions. Review the target
+organization and records before requesting mutations, especially bulk actions
+or sharing. Credentials travel to the configured MCP service and OpenComp
+API; check your AI client's own data-handling policy for returned content.
+
+## Troubleshooting
+
+| Symptom                         | What to do                                                                                                                         |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Cannot connect or DNS/TLS error | Verify the hostname, network access, and deployment with your administrator. Do not bypass certificate warnings.                   |
+| HTTP 401                        | Check the correct deployment, `apikey` header, full key value, expiration, and revocation status. Reconnect after replacing a key. |
+| HTTP 403                        | Check the key's scopes for that operation and the organization's feature access. Successful discovery does not grant permissions.  |
+| HTTP 503                        | Retry a read after the service recovers; report persistent failures with time, endpoint, and error code.                           |
+| Only three tools appear         | Expected in dynamic mode. Use `list_tools` to find business operations.                                                            |
+| Unknown tool                    | Discover its current name; a local `--tool` allowlist may exclude it.                                                              |
+| Invalid input                   | Call `describe_tool_input`; preserve required types and the `request` wrapper.                                                     |
+| Local command not found         | Check absolute executable paths, supported Node.js, and the environment available to the desktop client.                           |
+| Local authentication fails      | Set `COMPAI_APIKEY` in the child process; the root `.env` is not loaded automatically.                                             |
+| Wrong or empty results          | Verify deployment, organization, selected operation, and response. An empty result is not a connection failure.                    |
+
+When reporting a problem, include the client name/version, transport, server
+version if shown, operation name, timestamp, and sanitized error. Remove API
+keys, authentication headers, employee records, and private document content.

@@ -75,6 +75,7 @@
               "security-questionnaire-extension",
               "penetration-tests",
               "mcp-server",
+              "mcp-server/examples",
               {
                 "group": "Trust",
                 "pages": ["trust-access"]

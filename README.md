@@ -35,6 +35,17 @@
 
 OpenComp is the fastest way to get compliant with SOC 2, ISO 27001, HIPAA, GDPR and other regulatory frameworks. OpenComp automates evidence collection, policy management, and control implementation while keeping you in control of your data and infrastructure.
 
+## Documentation
+
+- [User guide](docs/user-guide/README.md) — end-user documentation for
+  administrators, compliance and security teams, and employees: getting
+  started, roles and access, compliance, people, risk and vendors, security
+  testing, Trust Center, integrations, the employee portal, FAQ, and glossary.
+- [Hosted documentation](https://gideondefender.com/docs) — guides, cloud
+  test references, integration guides, and API reference.
+- [API reference](packages/docs/api-reference/overview.mdx) — generated
+  OpenAPI reference (`packages/docs/openapi.json`).
+
 ### Built With
 
 - [NestJS](https://nestjs.com/?ref=gideondefender.com)

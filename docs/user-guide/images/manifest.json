@@ -1,0 +1,402 @@
+[
+  {
+    "image": "api-key-create.png",
+    "captured": "2026-10-15",
+    "environment": "OpenComp development, existing Chrome session",
+    "crop": [
+      2672,
+      294,
+      3424,
+      944
+    ],
+    "redacted": false,
+    "size": [
+      752,
+      650
+    ]
+  },
+  {
+    "image": "cloud-add-provider.png",
+    "captured": "2026-10-15",
+    "environment": "OpenComp development, existing Chrome session",
+    "crop": [
+      0,
+      174,
+      3452,
+      1100
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      463
+    ]
+  },
+  {
+    "image": "cloud-tests.png",
+    "captured": "2026-10-15",
+    "environment": "OpenComp development, existing Chrome session",
+    "crop": [
+      0,
+      174,
+      3452,
+      1640
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      733
+    ]
+  },
+  {
+    "image": "context-entry.png",
+    "captured": "2026-10-15",
+    "environment": "OpenComp development, existing Chrome session",
+    "crop": [
+      2672,
+      294,
+      3424,
+      1194
+    ],
+    "redacted": false,
+    "size": [
+      752,
+      900
+    ]
+  },
+  {
+    "image": "devices.png",
+    "captured": "2026-10-15",
+    "environment": "OpenComp development, existing Chrome session",
+    "crop": [
+      0,
+      174,
+      3452,
+      1050
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      438
+    ]
+  },
+  {
+    "image": "documents-tabs.png",
+    "captured": "2026-10-15",
+    "environment": "OpenComp development, existing Chrome session",
+    "crop": [
+      0,
+      174,
+      3452,
+      2030
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      928
+    ]
+  },
+  {
+    "image": "framework-controls.png",
+    "captured": "2026-10-15",
+    "environment": "OpenComp development, existing Chrome session",
+    "crop": [
+      0,
+      174,
+      3452,
+      2030
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      928
+    ]
+  },
+  {
+    "image": "frameworks-list.png",
+    "captured": "2026-10-15",
+    "environment": "OpenComp development, existing Chrome session",
+    "crop": [
+      0,
+      174,
+      3452,
+      1100
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      463
+    ]
+  },
+  {
+    "image": "integrations.png",
+    "captured": "2026-10-15",
+    "environment": "OpenComp development, existing Chrome session",
+    "crop": [
+      0,
+      174,
+      3452,
+      2030
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      928
+    ]
+  },
+  {
+    "image": "overview-dashboard.png",
+    "captured": "2026-10-15",
+    "environment": "OpenComp development, existing Chrome session",
+    "crop": [
+      0,
+      174,
+      3452,
+      2030
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      928
+    ]
+  },
+  {
+    "image": "pentest-access.png",
+    "captured": "2026-10-15",
+    "environment": "OpenComp development, existing Chrome session",
+    "crop": [
+      0,
+      174,
+      3452,
+      2030
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      928
+    ]
+  },
+  {
+    "image": "people-directory.png",
+    "captured": "2026-10-15",
+    "environment": "OpenComp development, existing Chrome session",
+    "crop": [
+      0,
+      174,
+      3452,
+      1240
+    ],
+    "redacted": true,
+    "size": [
+      1726,
+      533
+    ]
+  },
+  {
+    "image": "policies-list.png",
+    "captured": "2026-10-15",
+    "environment": "OpenComp development, existing Chrome session",
+    "crop": [
+      0,
+      174,
+      3452,
+      2030
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      928
+    ]
+  },
+  {
+    "image": "policy-detail.png",
+    "captured": "2026-10-15",
+    "environment": "OpenComp development, existing Chrome session",
+    "crop": [
+      0,
+      174,
+      3452,
+      1200
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      513
+    ]
+  },
+  {
+    "image": "portal-settings.png",
+    "captured": "2026-10-15",
+    "environment": "OpenComp development, existing Chrome session",
+    "crop": [
+      0,
+      174,
+      3452,
+      1100
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      463
+    ]
+  },
+  {
+    "image": "risk-create.png",
+    "captured": "2026-10-15",
+    "environment": "OpenComp development, existing Chrome session",
+    "crop": [
+      2672,
+      294,
+      3424,
+      1394
+    ],
+    "redacted": false,
+    "size": [
+      752,
+      1100
+    ]
+  },
+  {
+    "image": "roles.png",
+    "captured": "2026-10-15",
+    "environment": "OpenComp development, existing Chrome session",
+    "crop": [
+      0,
+      174,
+      3452,
+      1550
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      688
+    ]
+  },
+  {
+    "image": "settings-general.png",
+    "captured": "2026-10-15",
+    "environment": "OpenComp development, existing Chrome session",
+    "crop": [
+      0,
+      174,
+      3452,
+      1950
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      888
+    ]
+  },
+  {
+    "image": "task-detail.png",
+    "captured": "2026-10-15",
+    "environment": "OpenComp development, existing Chrome session",
+    "crop": [
+      0,
+      174,
+      3452,
+      2030
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      928
+    ]
+  },
+  {
+    "image": "tasks-list.png",
+    "captured": "2026-10-15",
+    "environment": "OpenComp development, existing Chrome session",
+    "crop": [
+      0,
+      174,
+      3452,
+      2030
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      928
+    ]
+  },
+  {
+    "image": "trust-access-requests.png",
+    "captured": "2026-10-15",
+    "environment": "OpenComp development, existing Chrome session",
+    "crop": [
+      0,
+      174,
+      3452,
+      1120
+    ],
+    "redacted": true,
+    "size": [
+      1726,
+      473
+    ]
+  },
+  {
+    "image": "trust-config.png",
+    "captured": "2026-10-15",
+    "environment": "OpenComp development, existing Chrome session",
+    "crop": [
+      0,
+      174,
+      3452,
+      2030
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      928
+    ]
+  },
+  {
+    "image": "vendor-create.png",
+    "captured": "2026-10-15",
+    "environment": "OpenComp development, existing Chrome session",
+    "crop": [
+      2672,
+      294,
+      3424,
+      1544
+    ],
+    "redacted": false,
+    "size": [
+      752,
+      1250
+    ]
+  },
+  {
+    "image": "trust-public-overview.png",
+    "captured": "2026-10-15",
+    "environment": "Public development Trust Center, existing Chrome session",
+    "crop": [
+      470,
+      174,
+      2990,
+      2030
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      1271
+    ]
+  },
+  {
+    "image": "trust-public-request.png",
+    "captured": "2026-10-15",
+    "environment": "Public development Trust Center, existing Chrome session",
+    "crop": [
+      1280,
+      470,
+      2170,
+      1772
+    ],
+    "redacted": false,
+    "size": [
+      890,
+      1302
+    ]
+  }
+]
