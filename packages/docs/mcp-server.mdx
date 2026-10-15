@@ -1,342 +1,180 @@
 ---
-title: 'MCP Server'
-description: 'Drive your OpenComp compliance program from any AI assistant — Claude Desktop, Cursor, ChatGPT, Codex, Gemini, VS Code, Windsurf — using just your OpenComp API key.'
+title: 'MCP setup'
+description: 'Connect an AI assistant to OpenComp over hosted Streamable HTTP or local stdio, verify a read, and manage scoped API credentials.'
 ---
 
-The OpenComp MCP server lets you and your team operate your entire compliance program from inside any modern AI assistant. Ask in plain language; the AI uses real OpenComp tools to read evidence, manage tasks, generate questionnaire answers, connect cloud accounts, and more — all under your existing API key and permissions.
+Connect an AI assistant to OpenComp to read evidence, review framework
+coverage, and inspect Trust Center information. Start with a read-only key
+and verify one read before asking the assistant to make changes.
 
-> Built on the [Model Context Protocol](https://modelcontextprotocol.io/) — an open standard that lets AI clients talk to external tools. The OpenComp MCP server publishes hundreds of tools spanning evidence, policies, integrations, frameworks, cloud security, vendors, risks, people, and tasks.
+## Before you start
 
-## Why use it
+You need an OpenComp organization, an API key for that organization, and an
+MCP client that supports one of the connection methods below. Ask an owner
+or administrator to create a scoped key if you cannot access API Keys.
 
-Compliance work is full of repetitive, multi-step actions: gathering evidence, answering questionnaires, reviewing tasks, connecting cloud accounts. The MCP server collapses those into one-line natural-language requests. Examples your team can run today:
+Create a key under **Settings → API Keys → Add API Key**. Choose **Read Only**
+or select the required scopes with **Custom**, set an expiration, and copy
+the key once into your approved secret store. See
+[API key management](/api-reference/overview) for details.
 
-- _"Show me my open SOC 2 controls and tell me which ones are missing evidence."_
-- _"Upload this vendor security questionnaire and generate the answers from our policies."_
-- _"Connect our production AWS account for monitoring."_
-- _"List employees who haven't completed offboarding yet."_
-- _"Mark the AWS audit task on Sarah's account as done."_
-- _"Export our SOC 2 evidence bundle for the upcoming audit."_
+For the examples, the key needs `task:read`, `framework:read`, and
+`trust:read`. A connection can authenticate successfully while lacking
+permission for a particular operation.
 
-The AI assistant figures out which tools to call. Your team types the request and reviews the result.
+## Choose a connection method
 
-## Get an API key
+| Method                    | Use when                                                 | What you need                                                             |
+| ------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Hosted HTTP               | Your client supports Streamable HTTP with custom headers | MCP endpoint and organization API key; no local server installation       |
+| Local stdio               | Your client launches command-based MCP servers           | Approved server bundle, Node.js, API URL, and organization API key        |
+| Existing OAuth connection | Your client requires OAuth                               | The separately configured OAuth connection supplied by your administrator |
 
-1. Sign in to [OpenComp](https://app.gideondefender.com).
-2. Open **Settings → API Keys**.
-3. Click **Create new key**. Scope it to the actions the AI assistant should be allowed to take.
-4. Copy the key (it starts with `comp_`) — you will paste it into your AI client's config once. Copy the full string exactly, with no extra characters, spaces, or line breaks.
+The hosted API-key endpoint below does not offer OAuth. An existing
+OAuth/Gram connection has separate setup and authentication; do not replace
+its credentials or URL with these API-key settings.
 
-The API key carries your existing RBAC and permissions. The AI assistant can only do what _your_ role can do in the dashboard.
+## Option 1: hosted Streamable HTTP
 
-## Install per AI client
+1. In your AI client's MCP settings, add a remote HTTP server named **OpenComp**.
+2. Select **Streamable HTTP**, if the client asks for a transport.
+3. Enter the MCP endpoint supplied for your deployment.
+4. Add the custom authentication header `apikey` with your organization API key.
+   Store its value in the client's protected credential field where available.
+5. Save, enable the connection, and refresh the client's tool list or start
+   a new conversation as required by that client.
+6. Run the [connection check](#verify-the-connection).
 
-You don't manually download anything. The OpenComp MCP server is distributed as a public npm package — [`@gideon-defender/mcp-server`](https://www.npmjs.com/package/@gideon-defender/mcp-server) — and every install path below uses `npx -y` (or a one-click button / drag-and-drop bundle) to fetch it on demand the first time your AI client starts a session. New versions are picked up automatically on the next session.
+The development service verified on October 15, 2026 uses:
 
-Pick the tab for your client. Each tab shows the easiest install path first, with a manual JSON option below for advanced setups.
+| Setting      | Value                                    |
+| ------------ | ---------------------------------------- |
+| Endpoint     | `https://mcp.dev.gideondefender.com/mcp` |
+| Transport    | Streamable HTTP                          |
+| Header name  | `apikey`                                 |
+| Header value | Your organization's API key              |
 
-<Note>
-  The `npx -y @gideon-defender/mcp-server` command you'll see throughout is what handles the
-  download. Your AI client runs it in the background when you start a chat; npm fetches the latest
-  published version from [npmjs.com](https://www.npmjs.com/package/@gideon-defender/mcp-server) and
-  caches it locally. Nothing for you to install manually.
-</Note>
+Use your administrator's endpoint for production. A key and URL must belong
+to the same deployment. The server expects the `apikey` header on every
+request. Do not put the key in the URL or substitute an OAuth bearer token.
 
-<Tabs>
+The hosted server forwards authenticated operations to OpenComp's API.
+For direct API calls, the header is `x-api-key`; for this hosted MCP
+connection, the client sends `apikey`.
 
-<Tab title="Claude Desktop">
+If your client only accepts a URL and OAuth, use an approved OAuth connection
+or a compatible client. A successful web-browser visit is not an MCP check:
+the client must initialize the protocol and discover tools.
 
-**Easiest path — drag-and-drop install:**
+## Option 2: local stdio
 
-<Card
-  title="Download for Claude Desktop"
-  icon="download"
-  href="https://api.gideondefender.com/mcp/download/claude-desktop"
->
-  Always serves the latest OpenComp MCP bundle (`.mcpb`) — no version hunting.
-</Card>
+Your client launches a server process, which sends requests to the OpenComp
+API. Ask your administrator for an approved bundle or a verified package
+version and its setup instructions. Pin the supplied version so updates are
+reviewable; a package version in source does not prove it has been published.
 
-1. Click **Download for Claude Desktop** above to get the latest `mcp-server.mcpb` bundle.
-2. Drag the downloaded `.mcpb` file directly onto the Claude Desktop window.
-3. Claude Desktop shows an install prompt — confirm, then paste your OpenComp API key in the extension settings.
-4. Restart any open chats. OpenComp tools are now available.
-
-No JSON editing required.
-
-<Accordion title="Advanced — manual JSON config">
-If you prefer to manage `claude_desktop_config.json` yourself, open **Settings → Developer → Edit Config** and merge:
+For an approved local bundle, clients supporting a `mcpServers` JSON
+configuration can use this example. Replace both paths, the API URL, and the
+credential placeholder before enabling it. Other clients may present these
+same settings as separate command, arguments, and environment fields.
 
 ```json
 {
   "mcpServers": {
-    "comp-ai": {
-      "command": "npx",
-      "args": ["-y", "@gideon-defender/mcp-server", "start", "--apikey", "comp_your_api_key_here"]
+    "opencomp": {
+      "command": "/absolute/path/to/node",
+      "args": [
+        "/absolute/path/to/mcp-server.js",
+        "start",
+        "--mode",
+        "dynamic",
+        "--server-url",
+        "https://opencomp-api.dev.gideondefender.com",
+        "--tool",
+        "get-tasks",
+        "--tool",
+        "frameworks-find-all",
+        "--tool",
+        "get-overview"
+      ],
+      "env": {
+        "COMPAI_APIKEY": "REPLACE_WITH_YOUR_ORGANIZATION_API_KEY"
+      }
     }
   }
 }
 ```
 
-Fully quit and reopen Claude Desktop.
+The API URL above is development. Replace it with the API origin supplied
+for your deployment, rather than the hosted MCP URL ending in `/mcp`.
+Use a Node.js version supported by your bundle; this repository requires
+Node.js 22 or newer. Absolute paths help desktop clients find Node and the
+server when their environment differs from your terminal.
 
-</Accordion>
+`COMPAI_APIKEY` is the server's credential environment variable. It does not
+automatically read an `OPENCOMP_API_KEY` variable from a project's `.env`.
+Avoid putting the key in command arguments, which can appear in process
+listings. Use your client's secret or environment settings and protect any
+configuration file containing credentials.
 
-</Tab>
+The repeatable `--tool` options expose only the three read operations used
+here. They restrict tool availability, while API-key scopes control actual
+access. Add operations deliberately when a workflow needs them. Dynamic mode
+exposes the discovery sequence used in the examples; static mode instead
+exposes each selected business tool directly.
 
-<Tab title="Cursor">
+If your administrator supplies a registry package, use their verified version
+with `pnpm dlx @gideon-defender/mcp-server@VERSION start` and the approved
+arguments. Replace `VERSION` with that exact version. The client needs pnpm
+and network access to retrieve a package that is not already cached.
 
-**Easiest path — one-click install:**
+## Verify the connection
 
-[![Install in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](cursor://anysphere.cursor-deeplink/mcp/install?name=CompAi&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyJAdHJ5Y29tcGFpL21jcC1zZXJ2ZXIiLCJzdGFydCIsIi0tYXBpa2V5IiwiIl19)
+Ask your assistant:
 
-Click the button above, confirm in Cursor, then paste your OpenComp API key when prompted.
+> Use OpenComp to list my compliance tasks. Read only; do not change records.
+> Discover the task tool and inspect its input schema before executing it.
+> Report the returned count and summarize the tasks.
 
-<Accordion title="Advanced — manual JSON config">
-Open **Cursor → Settings → Tools and Integrations → New MCP Server** and paste:
+In hosted dynamic mode, expect this sequence:
 
-```json
-{
-  "command": "npx",
-  "args": ["-y", "@gideon-defender/mcp-server", "start", "--apikey", "comp_your_api_key_here"]
-}
-```
+1. `list_tools` discovers `get-tasks`.
+2. `describe_tool_input` returns its schema.
+3. `execute_tool` runs `get-tasks` using that schema.
+4. The assistant reports the result or an explicit error. A successful empty
+   list is valid when your organization has no tasks.
 
-Save and reload Cursor.
+A connected indicator or tool list proves discovery, not API execution.
+Compare the result with **Compliance → Evidence** in the same organization.
+See [worked examples](/mcp-server/examples) for exact calls and result handling.
 
-</Accordion>
+## Manage access after setup
 
-</Tab>
+Keep a named owner for the key and review its expiration, scopes, and last
+use. For planned rotation, create a replacement, update the client's stored
+credential, verify a read, then revoke the old key. Reconnect after changing
+credentials if the client caches them. Revoke an exposed key promptly.
 
-<Tab title="VS Code">
-
-**Easiest path — one-click install:**
-
-[![Install in VS Code](https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install%20CompAi%20MCP&color=0098FF)](vscode://ms-vscode.vscode-mcp/install?name=CompAi&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyJAdHJ5Y29tcGFpL21jcC1zZXJ2ZXIiLCJzdGFydCIsIi0tYXBpa2V5IiwiIl19)
-
-Click the button above, confirm in VS Code, then paste your OpenComp API key when prompted.
-
-<Accordion title="Advanced — manual JSON config">
-Open the **Command Palette → MCP: Open User Configuration** and paste:
-
-```json
-{
-  "command": "npx",
-  "args": ["-y", "@gideon-defender/mcp-server", "start", "--apikey", "comp_your_api_key_here"]
-}
-```
-
-</Accordion>
-
-</Tab>
-
-<Tab title="Claude Code (CLI)">
-
-Install with one command:
-
-```bash
-claude mcp add CompAI -- npx -y @gideon-defender/mcp-server start --apikey comp_your_api_key_here
-```
-
-Claude Code registers the server immediately — OpenComp tools become available in your next session.
-
-</Tab>
-
-<Tab title="Codex CLI">
-
-Install with one command:
-
-```bash
-codex mcp add comp-ai -- npx -y @gideon-defender/mcp-server start --apikey comp_your_api_key_here
-```
-
-Codex registers the server immediately — OpenComp tools become available in your next session.
-
-For ChatGPT desktop / web with MCP support, follow OpenAI's MCP integration docs and use the same `command` + `args` shape shown in the manual JSON sections of the other tabs.
-
-</Tab>
-
-<Tab title="Gemini CLI">
-
-Install with one command:
-
-```bash
-gemini mcp add CompAI -- npx -y @gideon-defender/mcp-server start --apikey comp_your_api_key_here
-```
-
-</Tab>
-
-<Tab title="Windsurf">
-
-Open **Windsurf → Settings → Cascade → Manage MCPs → View raw config** and paste:
-
-```json
-{
-  "mcpServers": {
-    "comp-ai": {
-      "command": "npx",
-      "args": ["-y", "@gideon-defender/mcp-server", "start", "--apikey", "comp_your_api_key_here"]
-    }
-  }
-}
-```
-
-Save and reload Windsurf.
-
-</Tab>
-
-</Tabs>
-
-That's it. The first time you start a chat in your AI client after install, the assistant will discover the OpenComp tools and start using them.
-
-## Verify it worked
-
-Open a fresh chat in your AI client and ask:
-
-> _"List my open compliance tasks."_
-
-If the install succeeded, the AI will call OpenComp's `list-tasks` tool and return tasks from your organization. If you see no tool calls or an authentication error, jump to **Troubleshooting** below.
+The assistant can act within the API key's permissions. Review the target
+organization and records before requesting mutations, especially bulk actions
+or sharing. Credentials travel to the configured MCP service and OpenComp
+API; check your AI client's own data-handling policy for returned content.
 
 ## Troubleshooting
 
-<AccordionGroup>
+| Symptom                         | What to do                                                                                                                         |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Cannot connect or DNS/TLS error | Verify the hostname, network access, and deployment with your administrator. Do not bypass certificate warnings.                   |
+| HTTP 401                        | Check the correct deployment, `apikey` header, full key value, expiration, and revocation status. Reconnect after replacing a key. |
+| HTTP 403                        | Check the key's scopes for that operation and the organization's feature access. Successful discovery does not grant permissions.  |
+| HTTP 503                        | Retry a read after the service recovers; report persistent failures with time, endpoint, and error code.                           |
+| Only three tools appear         | Expected in dynamic mode. Use `list_tools` to find business operations.                                                            |
+| Unknown tool                    | Discover its current name; a local `--tool` allowlist may exclude it.                                                              |
+| Invalid input                   | Call `describe_tool_input`; preserve required types and the `request` wrapper.                                                     |
+| Local command not found         | Check absolute executable paths, supported Node.js, and the environment available to the desktop client.                           |
+| Local authentication fails      | Set `COMPAI_APIKEY` in the child process; the root `.env` is not loaded automatically.                                             |
+| Wrong or empty results          | Verify deployment, organization, selected operation, and response. An empty result is not a connection failure.                    |
 
-<Accordion title="The AI says it doesn't have OpenComp tools available">
-  Most common causes: - You didn't fully quit and reopen your AI client after the install. Closing
-  the window isn't enough — quit it from the menu / dock and reopen. - The JSON config has a syntax
-  error. Mintlify can validate this if you paste it into any JSON linter. - For Claude Desktop:
-  confirm `claude_desktop_config.json` was saved to the right path: `~/Library/Application
-  Support/Claude/` on macOS, `%APPDATA%\Claude\` on Windows.
-</Accordion>
-
-<Accordion title="401 / authentication error">
-  - Confirm your API key starts with `comp_` and you copied the full string (these keys are long). -
-  Confirm the key hasn't been revoked in **OpenComp → Settings → API Keys**. - Confirm the key's
-  role has permission for the action you're asking the AI to take.
-</Accordion>
-
-<Accordion title="Every tool call fails with an encoding error (e.g. “character … value 8230”)">
-This means the API key in your config contains a stray non-standard character — most often an ellipsis (`…`) accidentally pasted in place of the real key. HTTP headers only allow plain characters, so the request can't be sent.
-
-Fix it by re-entering the key cleanly:
-
-1. In **OpenComp → Settings → API Keys**, copy your key again (or create a new one).
-2. In your config, replace the entire `--apikey` value so it's just your real key — `comp_` followed by letters and numbers, with **no `…`, spaces, or line breaks**.
-3. Fully quit and reopen your AI client.
-   </Accordion>
-
-<Accordion title="`npx` or `command not found`">
-  The MCP server runs via [npm](https://npmjs.com) + [Node.js](https://nodejs.org). If your machine
-  doesn't have Node 18+ installed, install it from [nodejs.org](https://nodejs.org/) and restart
-  your AI client.
-</Accordion>
-
-<Accordion title="Tools show up but actions fail">
-  Open Chrome / Safari DevTools (or your client's debug log) and inspect the network response.
-  Common causes: - Your role lacks the permission for that endpoint (RBAC enforced server-side). -
-  You're on a custom plan that doesn't include the feature being called. - The OpenComp API is
-  briefly unavailable — try again in a moment or check status.
-</Accordion>
-
-</AccordionGroup>
-
-## What your AI assistant can do
-
-The MCP server publishes tools across the OpenComp surface:
-
-| Area                                | Examples                                                                    |
-| ----------------------------------- | --------------------------------------------------------------------------- |
-| **Evidence and tasks**              | List tasks, upload evidence, complete checklist items, export audit bundles |
-| **Policies**                        | List policies, generate drafts, publish versions, attach PDFs               |
-| **Security questionnaires**         | Upload, parse questions, generate answers, export reviewer-ready files      |
-| **Frameworks and controls**         | Inspect SOC 2 / ISO 27001 / HIPAA / GDPR coverage and missing evidence      |
-| **Integrations and cloud security** | Connect AWS, Azure, GCP and other providers; run checks; review findings    |
-| **Vendors and risks**               | List vendors, manage assessments, track risk and remediation                |
-| **People and devices**              | Invite members, manage offboarding, inspect device compliance               |
-| **Trust Center**                    | Review and approve Trust Access requests, manage shared documents           |
-
-Some endpoints are intentionally **not** exposed to AI clients for security or compatibility reasons — for example, anything that rotates raw credentials, and a small number of long-lived streaming endpoints that don't fit the request/response shape AI clients expect. The web UI continues to support those flows directly.
-
-## Common workflows
-
-<CardGroup cols={2}>
-  <Card title="Generate questionnaire answers" icon="file-question" href="/security-questionnaire">
-    Ask your AI to upload a vendor questionnaire and produce answers grounded in your policies.
-  </Card>
-
-<Card title="Connect a cloud account" icon="cloud" href="/cloud-tests">
-  Ask the AI to connect AWS, Azure, or GCP — you provide the auditor role ARN; the AI handles the
-  rest.
-</Card>
-
-<Card title="Run integration checks" icon="circle-check" href="/integrations">
-  Trigger and inspect compliance checks across your connected providers in plain language.
-</Card>
-
-  <Card title="Manage tasks and evidence" icon="clipboard-check" href="/automated-evidence">
-    Pull open tasks, attach evidence, and mark items complete from inside your AI assistant.
-  </Card>
-</CardGroup>
-
-## Security
-
-- **Your API key, your scope.** The MCP server runs locally on your machine and authenticates to the OpenComp API using the key you paste. It carries the same permissions you configured for that key — no escalation.
-- **Multi-tenant safety.** Every request is scoped to the organization the API key belongs to. The AI cannot read or modify data belonging to other OpenComp organizations.
-- **Secrets stay on your machine.** Your API key lives in your AI client's local config file. It is never sent to OpenComp, npm, or any third party except your own AI client's vendor.
-- **Sensitive endpoints are hidden.** Endpoints that handle raw secrets (credential rotation, vault material) are deliberately excluded from the MCP tool surface. They remain available in the OpenComp web UI for human operators only.
-- **All actions are logged.** Mutations performed through the MCP server appear in your OpenComp audit log marked with API-key authentication, so you can review who did what.
-
-## When to use the MCP server vs the API
-
-| If you want to…                                                           | Use                                                  |
-| ------------------------------------------------------------------------- | ---------------------------------------------------- |
-| Operate your compliance program day-to-day with help from an AI assistant | **MCP server**                                       |
-| Build a custom internal tool, dashboard, or one-off automation            | **[OpenComp API](/api-reference/overview)** directly |
-| Pipe OpenComp data into your data warehouse on a schedule                 | **API** directly                                     |
-| Onboard a new auditor or external reviewer to your Trust Center           | **OpenComp web UI**                                  |
-
-The MCP server and the public API hit the same endpoints with the same RBAC — the only difference is the consumer (an AI assistant vs your own code).
-
-## FAQ
-
-<AccordionGroup>
-
-<Accordion title="Do I need to host the MCP server?">
-  No. The server runs locally on each user's machine via `npx`. OpenComp hosts nothing on your
-  behalf, and you do not need to deploy or maintain any infrastructure.
-</Accordion>
-
-<Accordion title="Does the MCP server work offline?">
-  No. The server is a thin translator between your AI client and the OpenComp API at
-  `https://api.gideondefender.com`. An internet connection is required.
-</Accordion>
-
-<Accordion title="Can multiple teammates use it at the same time?">
-  Yes. Each teammate installs the MCP server on their own machine with their own OpenComp API key.
-  Their actions are independently authenticated and audit-logged.
-</Accordion>
-
-<Accordion title="What if my AI client doesn't support MCP yet?">
-  You can still use the [OpenComp API](/api-reference/overview) directly. The MCP server is an
-  additional way to interact with the same endpoints — it doesn't replace anything.
-</Accordion>
-
-<Accordion title="How do new features show up?">
-  New tools and improvements ship with each OpenComp release. Because `npx -y` always pulls the
-  latest published version, your AI client picks up new tools automatically the next time it starts
-  the MCP server.
-</Accordion>
-
-<Accordion title="Where can I report an issue?">
-  Open an issue at
-  [github.com/gideon-security/opencomp/issues](https://github.com/gideon-security/opencomp/issues)
-  or email [hello@gideondefender.com](mailto:hello@gideondefender.com).
-</Accordion>
-
-</AccordionGroup>
-
-## Resources
-
-- **npm package:** [`@gideon-defender/mcp-server`](https://www.npmjs.com/package/@gideon-defender/mcp-server)
-- **Source:** [github.com/gideon-security/opencomp](https://github.com/gideon-security/opencomp/tree/main/apps/mcp-server)
-- **Direct API reference:** [OpenComp API](/api-reference/overview)
-- **Model Context Protocol overview:** [modelcontextprotocol.io](https://modelcontextprotocol.io/)
+When reporting a problem, include the client name/version, transport, server
+version if shown, operation name, timestamp, and sanitized error. Remove API
+keys, authentication headers, employee records, and private document content.
