@@ -12,7 +12,7 @@ export function toAuthContext(request: AuthenticatedRequest): AuthContextType {
     authType,
     isApiKey,
     isServiceToken,
-    isGideonJwt,
+    isOidcJwt,
     isMcpOAuth,
     serviceName,
     userId,
@@ -20,7 +20,7 @@ export function toAuthContext(request: AuthenticatedRequest): AuthContextType {
     userRoles,
     memberId,
     memberDepartment,
-    gideonAal,
+    oidcAal,
   } = request;
 
   if (organizationId === undefined || !authType) {
@@ -34,7 +34,7 @@ export function toAuthContext(request: AuthenticatedRequest): AuthContextType {
     authType,
     isApiKey,
     isServiceToken,
-    isGideonJwt,
+    isOidcJwt,
     isMcpOAuth,
     serviceName,
     userId,
@@ -42,7 +42,7 @@ export function toAuthContext(request: AuthenticatedRequest): AuthContextType {
     userRoles,
     memberId,
     memberDepartment,
-    gideonAal,
+    oidcAal,
   };
 }
 

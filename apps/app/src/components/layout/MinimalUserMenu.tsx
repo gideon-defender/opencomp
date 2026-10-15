@@ -1,6 +1,6 @@
 'use client';
 
-import { signOutFromGideon } from '@/utils/gideon-sign-out';
+import { signOutFromOidc } from '@/utils/oidc-sign-out';
 import { Avatar, AvatarFallback, AvatarImageNext } from '@gideon-defender/ui/avatar';
 import {
   DropdownMenu,
@@ -23,7 +23,7 @@ export function MinimalUserMenu({ user }: MinimalUserMenuProps) {
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
-    await signOutFromGideon();
+    await signOutFromOidc();
   };
 
   return (

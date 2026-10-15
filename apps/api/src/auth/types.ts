@@ -6,7 +6,7 @@ export interface AuthenticatedRequest extends Request {
   isApiKey: boolean;
   isServiceToken?: boolean;
   serviceName?: string;
-  isGideonJwt?: boolean;
+  isOidcJwt?: boolean;
   userId?: string;
   userEmail?: string;
   userRoles: string[] | null;
@@ -19,7 +19,7 @@ export interface AuthenticatedRequest extends Request {
   sessionId?: string; // Session ID (only set for session auth)
   sessionDeviceAgent?: boolean; // Whether the session is a device-agent session (only set for session auth)
   isMcpOAuth?: boolean; // True when authenticated via a hosted-MCP OAuth token (no real session). PermissionGuard checks RBAC from userRoles instead of better-auth's session-based hasPermission.
-  gideonAal?: number; // Assurance level from a Gideon JWT payload (only set for Gideon-JWT auth). Surfaced for a future aal >= 2 gate — no consumer enforces it yet.
+  oidcAal?: number; // Assurance level from an OIDC JWT payload (only set for OIDC-JWT auth). Surfaced for a future aal >= 2 gate — no consumer enforces it yet.
 }
 
 export interface AuthContext {
@@ -27,7 +27,7 @@ export interface AuthContext {
   authType: 'api-key' | 'session' | 'service' | 'gideon';
   isApiKey: boolean;
   isServiceToken?: boolean;
-  isGideonJwt?: boolean;
+  isOidcJwt?: boolean;
   isMcpOAuth?: boolean;
   serviceName?: string;
   userId?: string; // Only available for session auth
@@ -36,5 +36,5 @@ export interface AuthContext {
   memberId?: string; // Member ID for assignment filtering (only available for session auth)
   memberDepartment?: string; // Member department for visibility filtering (only available for session auth)
   apiKeyScopes?: string[]; // Scopes for API key auth (empty = legacy full access)
-  gideonAal?: number; // Assurance level from a Gideon JWT (only set for Gideon-JWT auth). Surfaced for a future aal >= 2 gate — no consumer enforces it yet.
+  oidcAal?: number; // Assurance level from an OIDC JWT (only set for OIDC-JWT auth). Surfaced for a future aal >= 2 gate — no consumer enforces it yet.
 }

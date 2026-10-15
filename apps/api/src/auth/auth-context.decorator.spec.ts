@@ -14,23 +14,23 @@ function request(overrides: Partial<AuthenticatedRequest> = {}) {
 describe('toAuthContext', () => {
   it('passes Gideon and MCP flags through to consumers', () => {
     const context = toAuthContext(
-      request({ isGideonJwt: true, isMcpOAuth: true }),
+      request({ isOidcJwt: true, isMcpOAuth: true }),
     );
-    expect(context.isGideonJwt).toBe(true);
+    expect(context.isOidcJwt).toBe(true);
     expect(context.isMcpOAuth).toBe(true);
     expect(context.organizationId).toBe('org_1');
   });
 
   it('passes the Gideon assurance level through to consumers', () => {
-    const context = toAuthContext(request({ isGideonJwt: true, gideonAal: 2 }));
-    expect(context.gideonAal).toBe(2);
+    const context = toAuthContext(request({ isOidcJwt: true, oidcAal: 2 }));
+    expect(context.oidcAal).toBe(2);
   });
 
   it('leaves the flags undefined for non-Gideon callers', () => {
     const context = toAuthContext(request());
-    expect(context.isGideonJwt).toBeUndefined();
+    expect(context.isOidcJwt).toBeUndefined();
     expect(context.isMcpOAuth).toBeUndefined();
-    expect(context.gideonAal).toBeUndefined();
+    expect(context.oidcAal).toBeUndefined();
   });
 
   it('throws without guard-populated auth context', () => {

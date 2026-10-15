@@ -43,7 +43,7 @@ export async function revokeSsoMember({
  * Runs inside a transaction and commits before the caller mints a session;
  * any throw means no session. A concurrent first login racing the create
  * surfaces as P2002 — re-read and fall through to the update path (same
- * pattern as `provisionGideonUser`). The @@unique([organizationId, userId])
+ * pattern as `provisionOidcUser`). The @@unique([organizationId, userId])
  * constraint makes this retry airtight: without it a raced create would
  * insert a duplicate member row instead of conflicting.
  */

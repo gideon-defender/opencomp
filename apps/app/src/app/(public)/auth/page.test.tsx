@@ -64,7 +64,7 @@ describe('Auth page invite routing', () => {
     expect(mockRedirect).toHaveBeenCalledWith('/');
   });
 
-  it.each(['no_role', 'gideon_unavailable', 'unknown_error'])(
+  it.each(['no_role', 'oidc_unavailable', 'unknown_error'])(
     'shows %s despite an existing owner session instead of redirecting',
     async (error) => {
       const existingSession = {

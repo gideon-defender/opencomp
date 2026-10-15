@@ -7,10 +7,10 @@ import { ApiKeyService } from './api-key.service';
 import { AuthController } from './auth.controller';
 import { HybridAuthGuard } from './hybrid-auth.guard';
 import { PermissionGuard } from './permission.guard';
-import { GideonJwtService } from './gideon-jwt.service';
-import { GideonOidcController } from './gideon-oidc.controller';
+import { OidcJwtService } from './oidc-jwt.service';
+import { OidcController } from './oidc.controller';
 import { GideonBootstrapController } from './gideon-bootstrap.controller';
-import { GideonOidcService } from './gideon-oidc.service';
+import { OidcService } from './oidc.service';
 import { NativeSessionService } from './native-session.service';
 import { GideonShadowService } from '../gideon/gideon-shadow.service';
 
@@ -30,19 +30,15 @@ import { GideonShadowService } from '../gideon/gideon-shadow.service';
       disableBodyParser: true,
     }),
   ],
-  controllers: [
-    AuthController,
-    GideonOidcController,
-    GideonBootstrapController,
-  ],
+  controllers: [AuthController, OidcController, GideonBootstrapController],
   providers: [
     ApiKeyService,
     ApiKeyGuard,
     HybridAuthGuard,
     PermissionGuard,
     ActingUserResolver,
-    GideonJwtService,
-    GideonOidcService,
+    OidcJwtService,
+    OidcService,
     GideonShadowService,
     NativeSessionService,
   ],
@@ -52,8 +48,8 @@ import { GideonShadowService } from '../gideon/gideon-shadow.service';
     HybridAuthGuard,
     PermissionGuard,
     ActingUserResolver,
-    GideonJwtService,
-    GideonOidcService,
+    OidcJwtService,
+    OidcService,
     GideonShadowService,
     NativeSessionService,
     BetterAuthModule,

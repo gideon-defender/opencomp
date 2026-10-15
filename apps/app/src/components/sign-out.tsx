@@ -1,6 +1,6 @@
 'use client';
 
-import { signOutFromGideon } from '@/utils/gideon-sign-out';
+import { signOutFromOidc } from '@/utils/oidc-sign-out';
 import { Button } from '@gideon-defender/ui/button';
 import { DropdownMenuItem } from '@gideon-defender/ui/dropdown-menu';
 import { useTranslations } from 'next-intl';
@@ -20,7 +20,7 @@ export function SignOut({
 
   const handleSignOut = async () => {
     setLoading(true);
-    await signOutFromGideon();
+    await signOutFromOidc();
   };
 
   if (asButton) {

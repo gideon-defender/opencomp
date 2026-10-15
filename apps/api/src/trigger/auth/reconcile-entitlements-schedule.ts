@@ -6,6 +6,7 @@ import {
   type EntitlementReconciliationConfig,
 } from '../../auth/entitlement-reconciliation-config';
 import { reconcileSsoMember } from '../../auth/reconcile-sso-member';
+import { oidcReconciliationPagerdutyKey } from '../../auth/oidc-env';
 import { reportReconciliationIncident } from './entitlement-reconciliation-alert';
 
 /** Re-read the tenant inventory each run so newly provisioned orgs are covered. */
@@ -50,7 +51,7 @@ export async function runEntitlementReconciliation() {
     if (config.allTenants)
       config = { ...config, tenantIds: await discoverTenantIds() };
   } catch {
-    const key = process.env.GIDEON_ENTITLEMENTS_PAGERDUTY_ROUTING_KEY;
+    const key = oidcReconciliationPagerdutyKey();
     if (key)
       await reportIncident({
         tenantId: 'configuration',

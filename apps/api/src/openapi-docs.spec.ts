@@ -70,8 +70,8 @@ jest.mock('@gideon-defender/auth', () => {
 });
 
 // Mock Gideon services to avoid real JWKS fetch / timers in openapi generation
-jest.mock('./auth/gideon-jwt.service', () => ({
-  GideonJwtService: jest.fn().mockImplementation(() => ({
+jest.mock('./auth/oidc-jwt.service', () => ({
+  OidcJwtService: jest.fn().mockImplementation(() => ({
     isConfigured: () => false,
     isShadowMode: () => false,
     isEnforceMode: () => false,

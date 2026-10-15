@@ -44,11 +44,11 @@ describe('Gideon MCP tenant isolation', () => {
     const auth = gideonAuth();
     const req = bearer();
     await expect(auth.handleSessionAuth(req)).resolves.toBe(true);
-    expect(req.isGideonJwt).toBe(true);
+    expect(req.isOidcJwt).toBe(true);
     expect(req.isMcpOAuth).toBe(true);
     expect(req.organizationId).toBe('org_1');
     expect(req.userId).toBe('usr_1');
-    expect(req.gideonAal).toBe(2);
+    expect(req.oidcAal).toBe(2);
     expect(mockGetMcpSession).not.toHaveBeenCalled();
   });
 
@@ -134,7 +134,7 @@ describe('Gideon MCP tenant isolation', () => {
     const req = bearer('opaque_legacy_token');
     await expect(gideonAuth().handleSessionAuth(req)).resolves.toBe(true);
     expect(req.userId).toBe('usr_legacy');
-    expect(req.isGideonJwt).toBeUndefined();
+    expect(req.isOidcJwt).toBeUndefined();
   });
 
   it('isolates same-email accounts across tenants by subject', async () => {

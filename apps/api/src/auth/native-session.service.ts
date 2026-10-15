@@ -30,7 +30,7 @@ export interface NativeSessionResult {
  * guard can resolve sessions without the better-auth library.
  *
  * Sessions minted by EITHER path (legacy better-auth logins and Gideon OIDC
- * logins via `mintGideonSession`) are plain `Session` rows keyed by the raw
+ * logins via `mintOidcSession`) are plain `Session` rows keyed by the raw
  * token — both resolve here identically.
  *
  * Never throws — returns null when no usable session is presented, letting

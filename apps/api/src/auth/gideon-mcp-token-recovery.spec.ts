@@ -1,7 +1,7 @@
 import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import {
   mockVerify,
-  mockIsGideonToken,
+  mockIsOidcToken,
   mockGetMcpSession,
   mockUser,
   mockMemberFirst,
@@ -89,7 +89,7 @@ describe('Gideon MCP token rejection and legacy recovery', () => {
     await expect(gideonAuth().handleSessionAuth(req)).rejects.toThrow(
       UnauthorizedException,
     );
-    expect(req.isGideonJwt).toBeUndefined();
+    expect(req.isOidcJwt).toBeUndefined();
     expect(mockGetMcpSession).not.toHaveBeenCalled();
   });
 
@@ -97,7 +97,7 @@ describe('Gideon MCP token rejection and legacy recovery', () => {
     // Expired, wrong audience, or bad signature all collapse to verify → null
     // here; the iss check is what separates Gideon-presenting from foreign.
     mockVerify.mockResolvedValue(null);
-    mockIsGideonToken.mockReturnValue(true);
+    mockIsOidcToken.mockReturnValue(true);
     await expect(gideonAuth().handleSessionAuth(bearer())).rejects.toThrow(
       UnauthorizedException,
     );
@@ -108,7 +108,7 @@ describe('Gideon MCP token rejection and legacy recovery', () => {
     // Endpoint set but issuer/audience missing: no token can be identified,
     // so JWT-shaped bearers fail closed while opaque legacy tokens still work.
     mockVerify.mockResolvedValue(null);
-    mockIsGideonToken.mockReturnValue(false);
+    mockIsOidcToken.mockReturnValue(false);
     mockIsMisconfigured.mockReturnValue(true);
     await expect(gideonAuth().handleSessionAuth(bearer())).rejects.toThrow(
       UnauthorizedException,
@@ -150,7 +150,7 @@ describe('Gideon MCP token rejection and legacy recovery', () => {
 
   it('preserves the legacy fallback for genuinely non-Gideon bearers', async () => {
     mockVerify.mockResolvedValue(null);
-    mockIsGideonToken.mockReturnValue(false);
+    mockIsOidcToken.mockReturnValue(false);
     mockGetMcpSession.mockResolvedValue({ userId: 'usr_legacy' });
     mockUser.mockResolvedValue({ id: 'usr_legacy', email: 'l@acme.com' });
     mockMembersMany.mockResolvedValue([
@@ -159,13 +159,13 @@ describe('Gideon MCP token rejection and legacy recovery', () => {
     const req = bearer('opaque_legacy_token');
     await expect(gideonAuth().handleSessionAuth(req)).resolves.toBe(true);
     expect(req.isMcpOAuth).toBe(true);
-    expect(req.isGideonJwt).toBeUndefined();
+    expect(req.isOidcJwt).toBeUndefined();
     expect(req.userId).toBe('usr_legacy');
   });
 
   it('preserves the opaque legacy fallback while Gideon is misconfigured', async () => {
     mockVerify.mockResolvedValue(null);
-    mockIsGideonToken.mockReturnValue(false);
+    mockIsOidcToken.mockReturnValue(false);
     mockIsMisconfigured.mockReturnValue(true);
     mockGetMcpSession.mockResolvedValue({ userId: 'usr_legacy' });
     mockUser.mockResolvedValue({ id: 'usr_legacy', email: 'l@acme.com' });
@@ -175,6 +175,6 @@ describe('Gideon MCP token rejection and legacy recovery', () => {
     const req = bearer('opaque_legacy_token');
     await expect(gideonAuth().handleSessionAuth(req)).resolves.toBe(true);
     expect(req.userId).toBe('usr_legacy');
-    expect(req.isGideonJwt).toBeUndefined();
+    expect(req.isOidcJwt).toBeUndefined();
   });
 });

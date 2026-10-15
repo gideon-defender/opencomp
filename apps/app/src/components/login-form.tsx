@@ -1,6 +1,6 @@
 'use client';
 
-import { GideonSignIn } from '@/components/gideon-sign-in';
+import { OidcSignIn } from '@/components/oidc-sign-in';
 
 interface LoginFormProps {
   inviteCode?: string;
@@ -14,7 +14,7 @@ interface LoginFormProps {
 export function LoginForm({ inviteCode, redirectTo }: LoginFormProps) {
   return (
     <div className="space-y-4">
-      <GideonSignIn inviteCode={inviteCode} redirectTo={redirectTo} />
+      <OidcSignIn inviteCode={inviteCode} redirectTo={redirectTo} />
     </div>
   );
 }

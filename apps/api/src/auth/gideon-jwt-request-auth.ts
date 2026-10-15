@@ -5,9 +5,9 @@ import {
   requireGideonBearerAccess,
   resolveTenantLinkedUser,
 } from './gideon-mcp-tenant-gate';
-import { isJwtShaped, resolveGideonAal } from './gideon-tenant-claim';
+import { isJwtShaped, resolveOidcAal } from './oidc-tenant-claim';
 import type { AuthenticatedRequest } from './types';
-import type { GideonJwtService } from './gideon-jwt.service';
+import type { OidcJwtService } from './oidc-jwt.service';
 import type { GideonShadowService } from '../gideon/gideon-shadow.service';
 
 /**
@@ -18,14 +18,14 @@ import type { GideonShadowService } from '../gideon/gideon-shadow.service';
  * Returns `true` on success, `'enforce_failed'` for a hard 401, or
  * `null` to fall through.
  */
-export async function tryGideonJwtAuth({
+export async function tryOidcJwtAuth({
   request,
   gideonJwtService,
   gideonShadowService,
   logger,
 }: {
   request: AuthenticatedRequest;
-  gideonJwtService?: GideonJwtService;
+  gideonJwtService?: OidcJwtService;
   gideonShadowService?: GideonShadowService;
   logger: Logger;
 }): Promise<true | 'enforce_failed' | null> {
@@ -61,7 +61,7 @@ export async function tryGideonJwtAuth({
     // falling back.
     if (
       gideonJwtService.isEnforceMode() &&
-      (gideonJwtService.isGideonToken(token) ||
+      (gideonJwtService.isOidcToken(token) ||
         (gideonJwtService.isMisconfigured() && isJwtShaped(token)))
     ) {
       logger.warn('[Gideon] JWT verify failed in enforce mode');
@@ -153,13 +153,13 @@ export async function tryGideonJwtAuth({
   request.authType = 'gideon';
   request.isApiKey = false;
   request.isServiceToken = false;
-  request.isGideonJwt = true;
+  request.isOidcJwt = true;
   // Surface the assurance level for a future aal >= 2 gate. Absent →
   // unknown. No consumer enforces it yet — treat the value as informational
   // until the cutover adds the check.
-  const aal = resolveGideonAal(result.payload.aal);
+  const aal = resolveOidcAal(result.payload.aal);
   if (aal !== undefined) {
-    request.gideonAal = aal;
+    request.oidcAal = aal;
   }
 
   if (gideonShadowService) {

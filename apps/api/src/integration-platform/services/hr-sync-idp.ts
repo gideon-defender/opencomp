@@ -1,7 +1,7 @@
 import { db, normalizeEmail } from '@db';
 import type { User } from '@db';
 import { lookupGideonTenantIdentity } from '../../auth/gideon-tenant-identity';
-import { findClaimableExpandRow } from '../../auth/gideon-oidc-link';
+import { findClaimableExpandRow } from '../../auth/oidc-link';
 import { findLegacySharedUser } from '../../auth/legacy-shared-user';
 import { linkIdentity } from './hr-sync-idp-link';
 

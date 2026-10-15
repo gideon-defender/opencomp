@@ -191,7 +191,7 @@ describe('resolveAssistantChatContext', () => {
 
     await expect(
       resolveAssistantChatContext({
-        auth: makeAuth({ isGideonJwt: true, organizationId: 'org_token' }),
+        auth: makeAuth({ isOidcJwt: true, organizationId: 'org_token' }),
         req: makeReq('org_other'),
         rolesService,
         logger,
@@ -206,7 +206,7 @@ describe('resolveAssistantChatContext', () => {
     await expect(
       resolveAssistantChatContext({
         auth: makeAuth({
-          isGideonJwt: true,
+          isOidcJwt: true,
           isMcpOAuth: true,
           organizationId: 'org_token',
         }),
@@ -220,7 +220,7 @@ describe('resolveAssistantChatContext', () => {
 
   it('serves Gideon callers on their token tenant when the header matches', async () => {
     const result = await resolveAssistantChatContext({
-      auth: makeAuth({ isGideonJwt: true, organizationId: 'org_token' }),
+      auth: makeAuth({ isOidcJwt: true, organizationId: 'org_token' }),
       req: makeReq('org_token'),
       rolesService,
       logger,

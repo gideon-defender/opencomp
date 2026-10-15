@@ -57,7 +57,7 @@ export async function resolveAssistantChatContext({
   // route parameters must not override or redirect that constraint — even
   // when the user holds memberships elsewhere, cross-tenant scoping requires
   // a token issued for that tenant.
-  if (requested && requested !== auth.organizationId && auth.isGideonJwt) {
+  if (requested && requested !== auth.organizationId && auth.isOidcJwt) {
     throw new ForbiddenException(
       'The requested organization does not match the authorized token tenant.',
     );

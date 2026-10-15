@@ -1,12 +1,12 @@
 import { normalizeEmail } from '@db';
 import { z } from 'zod';
-import { gideonUuidSchema } from './entitlement-reconciliation-config';
+import { oidcUuidSchema } from './entitlement-reconciliation-config';
 
 const lookupSchema = z.object({
-  tenant_id: gideonUuidSchema,
+  tenant_id: oidcUuidSchema,
   identity: z
     .object({
-      id: gideonUuidSchema,
+      id: oidcUuidSchema,
       email: z.string().email(),
       display_name: z.string().nullable(),
       status: z.enum([

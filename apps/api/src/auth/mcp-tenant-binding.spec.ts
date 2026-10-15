@@ -1,5 +1,5 @@
 import { ForbiddenException } from '@nestjs/common';
-import { GideonJwtService } from './gideon-jwt.service';
+import { OidcJwtService } from './oidc-jwt.service';
 import { HybridSessionAuth } from './hybrid-session-auth';
 import type { AuthenticatedRequest } from './types';
 
@@ -77,7 +77,7 @@ describe('MCP tenant binding after a shared-user split', () => {
     );
     mockOrg.mockResolvedValue({ id: 'secondary' });
     mockMemberFirst.mockResolvedValue(null); // no active membership in secondary
-    const jwt = new GideonJwtService();
+    const jwt = new OidcJwtService();
     jest.spyOn(jwt, 'isConfigured').mockReturnValue(true);
     jest.spyOn(jwt, 'verify').mockResolvedValue({
       payload: { sub: 'sub_shared', tid: 'secondary' },
