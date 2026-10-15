@@ -6,7 +6,7 @@ import { createSchemaCompiler } from '../../src/schema/compiler.ts';
 import { baseline, expectedToolCount, registry, tool } from './fixtures.mjs';
 
 const compile = (source) => createSchemaCompiler({})({ source, location: 'fixture' });
-test('compiles all 412 tools without changing names, descriptions, locations, or frozen fixtures', () => {
+test('compiles all 400 tools without changing names, descriptions, locations, or frozen fixtures', () => {
   assert.equal(registry.tools.length, expectedToolCount);
   for (const captured of baseline.tools) {
     const actual = tool(captured.name);

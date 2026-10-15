@@ -25,7 +25,6 @@ jest.mock('./permission.guard', () => ({
   PERMISSIONS_KEY: 'permissions',
 }));
 
-import { GoneException } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import type { AuthContext } from './types';
 
@@ -103,20 +102,5 @@ describe('AuthController.getMe — hasInactiveMembership (CS-569)', () => {
 
     expect(res.organizations).toHaveLength(1);
     expect(res.hasInactiveMembership).toBe(false);
-  });
-});
-
-describe('AuthController.deleteInvitation (IdP-owned, Phase 3-server)', () => {
-  const controller = new AuthController();
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
-  it('returns 410 without reading or deleting the invitation', async () => {
-    await expect(controller.deleteInvitation('inv_1', 'org_1')).rejects.toThrow(
-      GoneException,
-    );
-    expect(mockInvitationFindFirst).not.toHaveBeenCalled();
   });
 });

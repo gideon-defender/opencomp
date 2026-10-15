@@ -3,13 +3,11 @@
 import { usePermissions } from '@/hooks/use-permissions';
 import { apiClient } from '@/lib/api-client';
 import type { Member, User } from '@db';
-import { Stack } from '@trycompai/design-system';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { BackgroundCheckAdminActions } from './BackgroundCheckAdminActions';
 import type { AttachFormValues } from './BackgroundCheckAttachForm';
-import type { ExemptFormValues } from './BackgroundCheckExemptForm';
 import {
   BackgroundCheckDisabledNotice,
   BackgroundCheckExemptToggle,
@@ -38,7 +36,6 @@ interface EmployeeBackgroundCheckProps {
   initialBillingStatus: BackgroundCheckBillingStatus;
   backgroundCheckStepEnabled: boolean;
   memberBackgroundCheckExempt: boolean;
-  onMemberBackgroundCheckExemptChange?: (next: boolean) => void;
 }
 
 export function EmployeeBackgroundCheck({
@@ -48,7 +45,6 @@ export function EmployeeBackgroundCheck({
   initialBillingStatus,
   backgroundCheckStepEnabled,
   memberBackgroundCheckExempt,
-  onMemberBackgroundCheckExemptChange,
 }: EmployeeBackgroundCheckProps) {
   const t = useTranslations('people');
   const [selectedPath, setSelectedPath] = useState<SelectedPath>('order');
@@ -65,31 +61,12 @@ export function EmployeeBackgroundCheck({
     reportDate: '',
     file: null,
   });
-  const [exemptValues, setExemptValues] = useState<ExemptFormValues>({
-    reason: '',
-    justification: '',
-  });
 
   const [isOrderSubmitting, setIsOrderSubmitting] = useState(false);
   const [isAttachSubmitting, setIsAttachSubmitting] = useState(false);
-  const [isExemptSubmitting, setIsExemptSubmitting] = useState(false);
 
-  const [internalExempt, setInternalExempt] = useState(memberBackgroundCheckExempt);
-  const [lastSyncedExempt, setLastSyncedExempt] = useState(memberBackgroundCheckExempt);
-  if (memberBackgroundCheckExempt !== lastSyncedExempt) {
-    setLastSyncedExempt(memberBackgroundCheckExempt);
-    setInternalExempt(memberBackgroundCheckExempt);
-  }
-  const isExemptControlled = onMemberBackgroundCheckExemptChange !== undefined;
-  const exempt = isExemptControlled ? memberBackgroundCheckExempt : internalExempt;
-  const setExempt = (next: boolean) => {
-    if (isExemptControlled) {
-      onMemberBackgroundCheckExemptChange(next);
-    } else {
-      setInternalExempt(next);
-    }
-  };
-  const [savingExempt, setSavingExempt] = useState(false);
+  // The stored exemption is read-only: no local writer or Gideon sync exists.
+  const exempt = memberBackgroundCheckExempt;
   const { hasPermission } = usePermissions();
 
   const { data: backgroundCheck, mutate: mutateBackgroundCheck } = useBackgroundCheckRecord({
@@ -176,85 +153,39 @@ export function EmployeeBackgroundCheck({
     }
   };
 
-  const handleExemptSubmit = async () => {
-    setIsExemptSubmitting(true);
-    const res = await apiClient.patch(
-      `/v1/people/${employee.id}`,
-      {
-        backgroundCheckExempt: true,
-        backgroundCheckExemptReason: exemptValues.reason,
-        backgroundCheckExemptJustification: exemptValues.justification,
-      },
-      organizationId,
-    );
-    setIsExemptSubmitting(false);
-
-    if (res.error) {
-      toast.error(t('backgroundCheck.main.confirmExemptFailed'));
-      return;
-    }
-
-    setExempt(true);
-    toast.success(
-      t('backgroundCheck.main.exemptSuccess', {
-        name: employee.user.name ?? t('backgroundCheck.main.defaultEmployeeName'),
-      }),
-    );
-  };
-
-  const handleToggleExempt = async (next: boolean) => {
-    const previous = exempt;
-    setExempt(next);
-    setSavingExempt(true);
-
-    const res = await apiClient.patch(
-      `/v1/people/${employee.id}`,
-      { backgroundCheckExempt: next },
-      organizationId,
-    );
-
-    setSavingExempt(false);
-
-    if (res.error) {
-      setExempt(previous);
-      toast.error(t('backgroundCheck.main.updateExemptFailed'));
-      return;
-    }
-
-    toast.success(
-      next ? t('backgroundCheck.main.toggleExemptOn') : t('backgroundCheck.main.toggleExemptOff'),
-    );
-  };
-
   if (!backgroundCheckStepEnabled) {
     return <BackgroundCheckDisabledNotice />;
   }
 
   if (exempt) {
     return (
-      <Stack gap="md">
+      <div className="flex flex-col gap-4">
         <BackgroundCheckExemptToggle
           exempt={exempt}
-          saving={savingExempt}
-          canUpdate={canRequest}
-          onToggle={handleToggleExempt}
+          saving={false}
+          canUpdate={false}
+          onToggle={() => undefined}
         />
         <BackgroundCheckNotice
           title={t('backgroundCheck.main.exemptNoticeTitle')}
           body={t('backgroundCheck.main.exemptNoticeBody')}
         />
-      </Stack>
+        <BackgroundCheckNotice
+          title="Exemption changes are unavailable"
+          body="This member's stored exemption status is read-only. OpenComp does not sync exemption changes from Gideon."
+        />
+      </div>
     );
   }
 
   if (backgroundCheck) {
     return (
-      <Stack gap="md">
+      <div className="flex flex-col gap-4">
         <BackgroundCheckExemptToggle
           exempt={exempt}
-          saving={savingExempt}
-          canUpdate={canRequest}
-          onToggle={handleToggleExempt}
+          saving={false}
+          canUpdate={false}
+          onToggle={() => undefined}
         />
         <BackgroundCheckStatusView
           backgroundCheck={backgroundCheck}
@@ -271,7 +202,7 @@ export function EmployeeBackgroundCheck({
             />
           }
         />
-      </Stack>
+      </div>
     );
   }
 
@@ -293,10 +224,6 @@ export function EmployeeBackgroundCheck({
       onAttachChange={setAttachValues}
       onAttachSubmit={handleAttachSubmit}
       isAttachSubmitting={isAttachSubmitting}
-      exemptValues={exemptValues}
-      onExemptChange={setExemptValues}
-      onExemptSubmit={handleExemptSubmit}
-      isExemptSubmitting={isExemptSubmitting}
       canRequest={canRequest}
     />
   );

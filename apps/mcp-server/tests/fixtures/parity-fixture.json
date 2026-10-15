@@ -1,17 +1,17 @@
 {
   "generatedBy": "phase0 harness (MCP SDK client, tools/list over stdio) + openapi.json mapping",
-  "gitHEAD": "918938cc64039576494cd83e1dc6daffcbc52087",
+  "gitHEAD": "476592a381a54ab9e439f1915ea0a1a19f18ad71",
   "spec": {
     "version": "1.0",
     "paths": 341,
-    "sha256": "f2487e5999b954e00b57efaf4698822aa1dbd7a5357f69b2ac6e3f5e24a91456"
+    "sha256": "80864aff8d7f5be63846506a650432492cc234efe7b22d0316fa21a590f0ce2f"
   },
   "binary": {
     "sha256": "a058f0e031b27e86532dd74e07b7683efe2b32b744a3b4ef2241683c6c909cc4",
     "note": "committed esbuild bundle crashes on start/serve (Dynamic require of path); fixtures captured via tsx from identical source"
   },
   "counts": {
-    "tools": 412
+    "tools": 400
   },
   "tools": [
     {
@@ -641,82 +641,6 @@
         "path": "/v1/isms/documents/{id}/measurements/bulk",
         "summary": "Record measurements for several metrics/periods in one save (Metrics due / backfill)",
         "description": "Record measurements for several metrics/periods in one save (Metrics due / backfill) in OpenComp. Create and manage ISO 27001 ISMS documents, control mappings, register rows, and narratives, and run wizard-based setup, approval, and drift."
-      }
-    },
-    {
-      "name": "bulk-create-members",
-      "description": "Add multiple members to organization\n\nBulk adds multiple members to the authenticated organization. Each member must have a valid user ID that exists in the system. Members who already exist in the organization or have invalid data will be skipped with error details returned.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "request": {
-            "type": "object",
-            "properties": {
-              "members": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "department": {
-                      "description": "Member department. Built-in values: none, admin, gov, hr, it, itsm, qms. Custom department names are also accepted.",
-                      "type": "string"
-                    },
-                    "fleetDmLabelId": {
-                      "description": "FleetDM label ID for member devices",
-                      "type": "number"
-                    },
-                    "isActive": {
-                      "description": "Whether member is active",
-                      "type": "boolean"
-                    },
-                    "jobTitle": {
-                      "description": "Job title for the member",
-                      "type": "string"
-                    },
-                    "role": {
-                      "type": "string",
-                      "description": "Role for the member (built-in role name or custom role ID)"
-                    },
-                    "userId": {
-                      "type": "string",
-                      "description": "User ID to associate with this member"
-                    }
-                  },
-                  "required": [
-                    "role",
-                    "userId"
-                  ]
-                },
-                "description": "Array of members to create"
-              }
-            },
-            "required": [
-              "members"
-            ],
-            "description": "Bulk member creation data"
-          }
-        },
-        "required": [
-          "request"
-        ],
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "annotations": {
-        "title": "",
-        "readOnlyHint": false,
-        "destructiveHint": false,
-        "idempotentHint": false,
-        "openWorldHint": false
-      },
-      "execution": {
-        "taskSupport": "forbidden"
-      },
-      "envelope": {
-        "operationId": "PeopleController_bulkCreateMembers_v1",
-        "method": "post",
-        "path": "/v1/people/bulk",
-        "summary": "Add multiple members to organization",
-        "description": "Bulk adds multiple members to the authenticated organization. Each member must have a valid user ID that exists in the system. Members who already exist in the organization or have invalid data will be skipped with error details returned."
       }
     },
     {
@@ -1932,70 +1856,6 @@
       }
     },
     {
-      "name": "create-member",
-      "description": "Create a new member\n\nAdds a new member to the authenticated organization. The user must already exist in the system.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "request": {
-            "type": "object",
-            "properties": {
-              "department": {
-                "description": "Member department. Built-in values: none, admin, gov, hr, it, itsm, qms. Custom department names are also accepted.",
-                "type": "string"
-              },
-              "fleetDmLabelId": {
-                "description": "FleetDM label ID for member devices",
-                "type": "number"
-              },
-              "isActive": {
-                "description": "Whether member is active",
-                "type": "boolean"
-              },
-              "jobTitle": {
-                "description": "Job title for the member",
-                "type": "string"
-              },
-              "role": {
-                "type": "string",
-                "description": "Role for the member (built-in role name or custom role ID)"
-              },
-              "userId": {
-                "type": "string",
-                "description": "User ID to associate with this member"
-              }
-            },
-            "required": [
-              "role",
-              "userId"
-            ],
-            "description": "Member creation data"
-          }
-        },
-        "required": [
-          "request"
-        ],
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "annotations": {
-        "title": "",
-        "readOnlyHint": false,
-        "destructiveHint": false,
-        "idempotentHint": false,
-        "openWorldHint": false
-      },
-      "execution": {
-        "taskSupport": "forbidden"
-      },
-      "envelope": {
-        "operationId": "PeopleController_createMember_v1",
-        "method": "post",
-        "path": "/v1/people",
-        "summary": "Create a new member",
-        "description": "Adds a new member to the authenticated organization. The user must already exist in the system."
-      }
-    },
-    {
       "name": "create-policy",
       "description": "Create compliance policy\n\nCreate a policy record that can be reviewed, versioned, published, linked to controls, and used as source evidence for questionnaires.",
       "inputSchema": {
@@ -2386,64 +2246,6 @@
         "path": "/v1/risks",
         "summary": "Create organization risk",
         "description": "Create a risk record with ownership and context so compliance teams can track mitigation and remediation work."
-      }
-    },
-    {
-      "name": "create-role",
-      "description": "Create a custom role\n\nCreate a custom role in OpenComp. Create custom roles and resolve permission sets for organization-level access control.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "request": {
-            "type": "object",
-            "properties": {
-              "name": {
-                "type": "string",
-                "description": "Name of the custom role"
-              },
-              "obligations": {
-                "description": "Obligations for the role. Boolean flags for requirements like compliance.",
-                "type": "object",
-                "properties": {
-                  "compliance": {
-                    "description": "Whether the role must complete compliance tasks.",
-                    "type": "boolean"
-                  }
-                }
-              },
-              "permissions": {
-                "description": "Permissions for the role. Keys are resource names, values are arrays of allowed actions.",
-                "type": "object",
-                "properties": {}
-              }
-            },
-            "required": [
-              "name",
-              "permissions"
-            ]
-          }
-        },
-        "required": [
-          "request"
-        ],
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "annotations": {
-        "title": "",
-        "readOnlyHint": false,
-        "destructiveHint": false,
-        "idempotentHint": false,
-        "openWorldHint": false
-      },
-      "execution": {
-        "taskSupport": "forbidden"
-      },
-      "envelope": {
-        "operationId": "RolesController_createRole_v1",
-        "method": "post",
-        "path": "/v1/roles",
-        "summary": "Create a custom role",
-        "description": "Create a custom role in OpenComp. Create custom roles and resolve permission sets for organization-level access control."
       }
     },
     {
@@ -4052,52 +3854,6 @@
       }
     },
     {
-      "name": "delete-member",
-      "description": "Delete member\n\nPermanently removes a member from the organization. This action cannot be undone.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "request": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string",
-                "description": "Member ID"
-              },
-              "skipOffboarding": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "id",
-              "skipOffboarding"
-            ]
-          }
-        },
-        "required": [
-          "request"
-        ],
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "annotations": {
-        "title": "",
-        "readOnlyHint": false,
-        "destructiveHint": false,
-        "idempotentHint": false,
-        "openWorldHint": false
-      },
-      "execution": {
-        "taskSupport": "forbidden"
-      },
-      "envelope": {
-        "operationId": "PeopleController_deleteMember_v1",
-        "method": "delete",
-        "path": "/v1/people/{id}",
-        "summary": "Delete member",
-        "description": "Permanently removes a member from the organization. This action cannot be undone."
-      }
-    },
-    {
       "name": "delete-org-chart",
       "description": "Delete the organization chart\n\nDelete the organization chart in OpenComp. Manage organization chart metadata and evidence used for governance, accountability, and audit readiness.",
       "inputSchema": {
@@ -4390,48 +4146,6 @@
         "path": "/v1/risks/{id}",
         "summary": "Delete organization risk",
         "description": "Delete an organization risk that no longer needs active tracking in the risk register or compliance program."
-      }
-    },
-    {
-      "name": "delete-role",
-      "description": "Delete a custom role\n\nDelete a custom role in OpenComp. Create custom roles and resolve permission sets for organization-level access control.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "request": {
-            "type": "object",
-            "properties": {
-              "roleId": {
-                "type": "string",
-                "description": "Role ID"
-              }
-            },
-            "required": [
-              "roleId"
-            ]
-          }
-        },
-        "required": [
-          "request"
-        ],
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "annotations": {
-        "title": "",
-        "readOnlyHint": false,
-        "destructiveHint": false,
-        "idempotentHint": false,
-        "openWorldHint": false
-      },
-      "execution": {
-        "taskSupport": "forbidden"
-      },
-      "envelope": {
-        "operationId": "RolesController_deleteRole_v1",
-        "method": "delete",
-        "path": "/v1/roles/{roleId}",
-        "summary": "Delete a custom role",
-        "description": "Delete a custom role in OpenComp. Create custom roles and resolve permission sets for organization-level access control."
       }
     },
     {
@@ -11408,68 +11122,6 @@
       }
     },
     {
-      "name": "invite-members",
-      "description": "Invite workforce members\n\nInvite employees or contractors to complete portal tasks, training, device setup, and compliance evidence requirements.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "request": {
-            "type": "object",
-            "properties": {
-              "invites": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "email": {
-                      "type": "string"
-                    },
-                    "roles": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      }
-                    },
-                    "sendPortalEmail": {
-                      "type": "boolean"
-                    }
-                  },
-                  "required": [
-                    "email",
-                    "roles"
-                  ]
-                }
-              }
-            },
-            "required": [
-              "invites"
-            ]
-          }
-        },
-        "required": [
-          "request"
-        ],
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "annotations": {
-        "title": "",
-        "readOnlyHint": false,
-        "destructiveHint": false,
-        "idempotentHint": false,
-        "openWorldHint": false
-      },
-      "execution": {
-        "taskSupport": "forbidden"
-      },
-      "envelope": {
-        "operationId": "PeopleController_inviteMembers_v1",
-        "method": "post",
-        "path": "/v1/people/invite",
-        "summary": "Invite workforce members",
-        "description": "Invite employees or contractors to complete portal tasks, training, device setup, and compliance evidence requirements."
-      }
-    },
-    {
       "name": "isms-ensure-setup",
       "description": "Ensure ISMS foundational documents exist\n\nEnsure ISMS foundational documents exist in OpenComp. Create and manage ISO 27001 ISMS documents, control mappings, register rows, and narratives, and run wizard-based setup, approval, and drift review workflows.",
       "inputSchema": {
@@ -13343,48 +12995,6 @@
       }
     },
     {
-      "name": "reactivate-member",
-      "description": "Reactivate a deactivated member\n\nReactivate a deactivated member in OpenComp. Invite and manage workforce members, training status, device compliance, email preferences, and employee evidence records.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "request": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string",
-                "description": "Member ID"
-              }
-            },
-            "required": [
-              "id"
-            ]
-          }
-        },
-        "required": [
-          "request"
-        ],
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "annotations": {
-        "title": "",
-        "readOnlyHint": false,
-        "destructiveHint": false,
-        "idempotentHint": false,
-        "openWorldHint": false
-      },
-      "execution": {
-        "taskSupport": "forbidden"
-      },
-      "envelope": {
-        "operationId": "PeopleController_reactivateMember_v1",
-        "method": "patch",
-        "path": "/v1/people/{id}/reactivate",
-        "summary": "Reactivate a deactivated member",
-        "description": "Reactivate a deactivated member in OpenComp. Invite and manage workforce members, training status, device compliance, email preferences, and employee evidence records."
-      }
-    },
-    {
       "name": "reclaim-access",
       "description": "Reclaim Trust Access link\n\nRequest a fresh Trust Access link for a reviewer who already has an active grant on a published Trust Center.",
       "inputSchema": {
@@ -14283,48 +13893,6 @@
         "path": "/v1/trust-access/admin/requests/{id}/resend-nda",
         "summary": "Resend Trust Access NDA",
         "description": "Resend an NDA signing email for a Trust Access request that still requires reviewer signature."
-      }
-    },
-    {
-      "name": "resend-portal-invite",
-      "description": "Resend portal invite email to a member\n\nResend portal invite email to a member in OpenComp. Invite and manage workforce members, training status, device compliance, email preferences, and employee evidence records.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "request": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string",
-                "description": "Member ID"
-              }
-            },
-            "required": [
-              "id"
-            ]
-          }
-        },
-        "required": [
-          "request"
-        ],
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "annotations": {
-        "title": "",
-        "readOnlyHint": false,
-        "destructiveHint": false,
-        "idempotentHint": false,
-        "openWorldHint": false
-      },
-      "execution": {
-        "taskSupport": "forbidden"
-      },
-      "envelope": {
-        "operationId": "PeopleController_resendPortalInvite_v1",
-        "method": "post",
-        "path": "/v1/people/{id}/resend-portal-invite",
-        "summary": "Resend portal invite email to a member",
-        "description": "Resend portal invite email to a member in OpenComp. Invite and manage workforce members, training status, device compliance, email preferences, and employee evidence records."
       }
     },
     {
@@ -16398,53 +15966,6 @@
       }
     },
     {
-      "name": "transfer-ownership",
-      "description": "Transfer organization ownership\n\nTransfers organization ownership to another member. The current owner will become an admin and keep all other roles. The new owner will receive the owner role while keeping their existing roles. Only the current organization owner can.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "request": {
-            "type": "object",
-            "properties": {
-              "newOwnerId": {
-                "type": "string",
-                "description": "Member ID of the new owner"
-              },
-              "userId": {
-                "description": "User ID of the current owner initiating the transfer (required for API key auth, ignored for JWT auth)",
-                "type": "string"
-              }
-            },
-            "required": [
-              "newOwnerId"
-            ],
-            "description": "Transfer organization ownership to another member"
-          }
-        },
-        "required": [
-          "request"
-        ],
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "annotations": {
-        "title": "",
-        "readOnlyHint": false,
-        "destructiveHint": false,
-        "idempotentHint": false,
-        "openWorldHint": false
-      },
-      "execution": {
-        "taskSupport": "forbidden"
-      },
-      "envelope": {
-        "operationId": "OrganizationController_transferOwnership_v1",
-        "method": "post",
-        "path": "/v1/organization/transfer-ownership",
-        "summary": "Transfer organization ownership",
-        "description": "Transfers organization ownership to another member. The current owner will become an admin and keep all other roles. The new owner will receive the owner role while keeping their existing roles. Only the current organization owner can."
-      }
-    },
-    {
       "name": "trigger-assessment",
       "description": "Trigger vendor risk assessment\n\nTrigger a vendor risk assessment so OpenComp can update third-party risk evidence and vendor security review status.",
       "inputSchema": {
@@ -16933,67 +16454,6 @@
         "path": "/v1/cloud-security/connections/{connectionId}/scan-mode",
         "summary": "Switch the AWS scan engine for a connection (OpenComp scanners ↔ Security Hub)",
         "description": "Accepts session, API key, or service token auth. For API key / service token callers without an explicit user attribution, the action is attributed to the org's owner."
-      }
-    },
-    {
-      "name": "update-built-in-obligations",
-      "description": "Update obligations for a built-in role\n\nOverride the obligations for a built-in role (e.g., turn off the compliance obligation for owners). Permissions stay sourced from the hardcoded defaults.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "request": {
-            "type": "object",
-            "properties": {
-              "body": {
-                "type": "object",
-                "properties": {
-                  "obligations": {
-                    "description": "Obligations override for the built-in role.",
-                    "type": "object",
-                    "properties": {
-                      "compliance": {
-                        "description": "Whether the role must complete compliance tasks.",
-                        "type": "boolean"
-                      }
-                    }
-                  }
-                },
-                "required": [
-                  "obligations"
-                ]
-              },
-              "name": {
-                "type": "string",
-                "description": "Built-in role name"
-              }
-            },
-            "required": [
-              "body",
-              "name"
-            ]
-          }
-        },
-        "required": [
-          "request"
-        ],
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "annotations": {
-        "title": "",
-        "readOnlyHint": false,
-        "destructiveHint": false,
-        "idempotentHint": false,
-        "openWorldHint": false
-      },
-      "execution": {
-        "taskSupport": "forbidden"
-      },
-      "envelope": {
-        "operationId": "RolesController_updateBuiltInObligations_v1",
-        "method": "patch",
-        "path": "/v1/roles/built-in/{name}/obligations",
-        "summary": "Update obligations for a built-in role",
-        "description": "Override the obligations for a built-in role (e.g., turn off the compliance obligation for owners). Permissions stay sourced from the hardcoded defaults."
       }
     },
     {
@@ -17714,113 +17174,6 @@
       }
     },
     {
-      "name": "update-member",
-      "description": "Update workforce member\n\nUpdate a workforce member profile, role, department, or compliance metadata used for people-security controls.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "request": {
-            "type": "object",
-            "properties": {
-              "body": {
-                "type": "object",
-                "properties": {
-                  "backgroundCheckExempt": {
-                    "description": "When true, this member is exempt from the org-level background check requirement and will count as complete in people scores.",
-                    "type": "boolean"
-                  },
-                  "backgroundCheckExemptJustification": {
-                    "description": "Free-text justification for the exemption, attached to the audit log. Cleared when the member becomes non-exempt.",
-                    "type": "string"
-                  },
-                  "backgroundCheckExemptReason": {
-                    "description": "Reason code for the exemption (e.g. \"contractor_with_vendor_check\", \"other\"). Persisted alongside backgroundCheckExempt and cleared when the member becomes non-exempt.",
-                    "type": "string"
-                  },
-                  "createdAt": {
-                    "description": "Member join date (createdAt override)",
-                    "type": "string"
-                  },
-                  "department": {
-                    "description": "Member department. Built-in values: none, admin, gov, hr, it, itsm, qms. Custom department names are also accepted.",
-                    "type": "string"
-                  },
-                  "email": {
-                    "description": "Email of the associated user",
-                    "type": "string"
-                  },
-                  "fleetDmLabelId": {
-                    "description": "FleetDM label ID for member devices",
-                    "type": "number"
-                  },
-                  "isActive": {
-                    "description": "Whether to deactivate this member (soft delete)",
-                    "type": "boolean"
-                  },
-                  "jobTitle": {
-                    "description": "Job title for the member",
-                    "type": "string"
-                  },
-                  "name": {
-                    "description": "Name of the associated user",
-                    "type": "string"
-                  },
-                  "offboardDate": {
-                    "description": "Employee offboard date",
-                    "type": "object",
-                    "properties": {}
-                  },
-                  "onboardDate": {
-                    "description": "Employee onboard date",
-                    "type": "object",
-                    "properties": {}
-                  },
-                  "role": {
-                    "description": "Role for the member (built-in role name or custom role ID)",
-                    "type": "string"
-                  },
-                  "userId": {
-                    "description": "User ID to associate with this member",
-                    "type": "string"
-                  }
-                },
-                "description": "Member update data"
-              },
-              "id": {
-                "type": "string",
-                "description": "Member ID"
-              }
-            },
-            "required": [
-              "body",
-              "id"
-            ]
-          }
-        },
-        "required": [
-          "request"
-        ],
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "annotations": {
-        "title": "",
-        "readOnlyHint": false,
-        "destructiveHint": false,
-        "idempotentHint": false,
-        "openWorldHint": false
-      },
-      "execution": {
-        "taskSupport": "forbidden"
-      },
-      "envelope": {
-        "operationId": "PeopleController_updateMember_v1",
-        "method": "patch",
-        "path": "/v1/people/{id}",
-        "summary": "Update workforce member",
-        "description": "Update a workforce member profile, role, department, or compliance metadata used for people-security controls."
-      }
-    },
-    {
       "name": "update-organization",
       "description": "Update organization\n\nPartially updates the authenticated organization. Only provided fields will be updated.",
       "inputSchema": {
@@ -18338,73 +17691,6 @@
         "path": "/v1/risks/{id}",
         "summary": "Update organization risk",
         "description": "Update a risk record as mitigation work progresses so compliance reports reflect the current risk posture."
-      }
-    },
-    {
-      "name": "update-role",
-      "description": "Update a custom role\n\nUpdate a custom role in OpenComp. Create custom roles and resolve permission sets for organization-level access control.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "request": {
-            "type": "object",
-            "properties": {
-              "body": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "description": "New name for the custom role",
-                    "type": "string"
-                  },
-                  "obligations": {
-                    "description": "Updated obligations for the role.",
-                    "type": "object",
-                    "properties": {
-                      "compliance": {
-                        "description": "Whether the role must complete compliance tasks.",
-                        "type": "boolean"
-                      }
-                    }
-                  },
-                  "permissions": {
-                    "description": "Updated permissions for the role. Keys are resource names, values are arrays of allowed actions.",
-                    "type": "object",
-                    "properties": {}
-                  }
-                }
-              },
-              "roleId": {
-                "type": "string",
-                "description": "Role ID"
-              }
-            },
-            "required": [
-              "body",
-              "roleId"
-            ]
-          }
-        },
-        "required": [
-          "request"
-        ],
-        "$schema": "http://json-schema.org/draft-07/schema#"
-      },
-      "annotations": {
-        "title": "",
-        "readOnlyHint": false,
-        "destructiveHint": false,
-        "idempotentHint": false,
-        "openWorldHint": false
-      },
-      "execution": {
-        "taskSupport": "forbidden"
-      },
-      "envelope": {
-        "operationId": "RolesController_updateRole_v1",
-        "method": "patch",
-        "path": "/v1/roles/{roleId}",
-        "summary": "Update a custom role",
-        "description": "Update a custom role in OpenComp. Create custom roles and resolve permission sets for organization-level access control."
       }
     },
     {

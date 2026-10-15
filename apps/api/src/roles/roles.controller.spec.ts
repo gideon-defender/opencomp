@@ -1,9 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { GoneException } from '@nestjs/common';
 import { RolesService } from './roles.service';
-import type { AuthContext } from '../auth/types';
 import { HybridAuthGuard } from '../auth/hybrid-auth.guard';
-import { PERMISSIONS_KEY, PermissionGuard } from '../auth/permission.guard';
+import { PermissionGuard } from '../auth/permission.guard';
 
 import { RolesController } from './roles.controller';
 
@@ -29,25 +27,12 @@ describe('RolesController', () => {
   let rolesService: jest.Mocked<RolesService>;
 
   const mockRolesService = {
-    createRole: jest.fn(),
     listRoles: jest.fn(),
     getRole: jest.fn(),
-    updateRole: jest.fn(),
-    deleteRole: jest.fn(),
-    updateBuiltInObligations: jest.fn(),
   };
 
   // Mock guards that allow all requests
   const mockGuard = { canActivate: jest.fn().mockReturnValue(true) };
-
-  const mockAuthContext: AuthContext = {
-    organizationId: 'org_123',
-    authType: 'session',
-    isApiKey: false,
-    userId: 'usr_123',
-    userEmail: 'test@example.com',
-    userRoles: ['owner'],
-  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -64,27 +49,6 @@ describe('RolesController', () => {
     rolesService = module.get(RolesService);
 
     jest.clearAllMocks();
-  });
-
-  describe('createRole', () => {
-    it('returns 410 without creating (IdP owns roles)', async () => {
-      await expect(
-        controller.createRole('org_123', mockAuthContext, {
-          name: 'custom-role',
-          permissions: { control: ['read'] },
-        }),
-      ).rejects.toThrow(GoneException);
-      expect(mockRolesService.createRole).not.toHaveBeenCalled();
-    });
-
-    it('keeps @RequirePermission(ac, create) so 401/403 still precede the 410', () => {
-      expect(
-        Reflect.getMetadata(
-          PERMISSIONS_KEY,
-          RolesController.prototype.createRole,
-        ),
-      ).toEqual([{ resource: 'ac', actions: ['create'] }]);
-    });
   });
 
   describe('listRoles', () => {
@@ -120,37 +84,6 @@ describe('RolesController', () => {
 
       expect(result).toEqual(expectedRole);
       expect(rolesService.getRole).toHaveBeenCalledWith('org_123', 'rol_123');
-    });
-  });
-
-  describe('updateRole', () => {
-    it('returns 410 without updating (IdP owns roles)', async () => {
-      await expect(
-        controller.updateRole('org_123', mockAuthContext, 'rol_123', {
-          name: 'updated-name',
-        }),
-      ).rejects.toThrow(GoneException);
-      expect(mockRolesService.updateRole).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('deleteRole', () => {
-    it('returns 410 without deleting (IdP owns roles)', async () => {
-      await expect(controller.deleteRole('org_123', 'rol_123')).rejects.toThrow(
-        GoneException,
-      );
-      expect(mockRolesService.deleteRole).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('updateBuiltInObligations', () => {
-    it('returns 410 without updating (obligations ship as code)', async () => {
-      await expect(
-        controller.updateBuiltInObligations('org_123', 'owner', {
-          obligations: {},
-        }),
-      ).rejects.toThrow(GoneException);
-      expect(mockRolesService.updateBuiltInObligations).not.toHaveBeenCalled();
     });
   });
 });

@@ -5,7 +5,6 @@ import { EvidenceReviewRequestedEmail } from './evidence-review-requested';
 import { FindingNotificationEmail } from './finding-notification';
 import { HipaaTrainingCompletedEmail } from './hipaa-training-completed';
 import { TrainingCompletedEmail } from './training-completed';
-import { UnassignedItemsNotificationEmail } from './unassigned-items-notification';
 import { runLocaleCases, type LocaleCase } from './locale-cases';
 
 const completedAt = new Date('2026-12-31T00:00:00Z');
@@ -111,25 +110,6 @@ const cases: LocaleCase[] = [
           userName: 'Ada',
           organizationName: 'Acme',
           completedAt,
-          locale,
-        }),
-      ),
-  },
-  {
-    name: 'UnassignedItemsNotificationEmail',
-    enMarker: 'Items Require Reassignment',
-    esMarker: 'elementos requieren reasignación',
-    build: (locale) =>
-      renderToStaticMarkup(
-        UnassignedItemsNotificationEmail({
-          userName: 'Ada',
-          organizationName: 'Acme',
-          organizationId: 'o1',
-          removedMemberName: 'Bob',
-          unassignedItems: [
-            { type: 'task', id: 't1', name: 'Task one' },
-            { type: 'policy', id: 'p1', name: 'Policy one' },
-          ],
           locale,
         }),
       ),

@@ -21,8 +21,8 @@ export function TransferOwnership({ isOwner }: TransferOwnershipProps) {
     return null;
   }
 
-  // IdP-owned user management: ownership is a Gideon assignment (server
-  // returns 410 on POST /v1/organization/transfer-ownership). Read-only.
+  // IdP-owned user management: ownership is a Gideon assignment. There is
+  // no local transfer endpoint. Read-only.
   return (
     <Card className="border-dashed">
       <CardHeader>
@@ -36,7 +36,7 @@ export function TransferOwnership({ isOwner }: TransferOwnershipProps) {
       </CardHeader>
       <CardContent>
         <p className="text-muted-foreground text-sm">
-          The local transfer action is disabled. The server denies it with 410 Gone.
+          There is no local transfer action. Assign the owner role in Gideon.
         </p>
       </CardContent>
     </Card>

@@ -15,7 +15,6 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import {
-  ApiBody,
   ApiCreatedResponse,
   ApiExtension,
   ApiExtraModels,
@@ -29,33 +28,23 @@ import {
 import { AuthContext, OrganizationId } from '../auth/auth-context.decorator';
 import { AuditRead } from '../audit/skip-audit-log.decorator';
 import { HybridAuthGuard } from '../auth/hybrid-auth.guard';
-import { throwIdpManagedGone } from '../auth/idp-ownership-fence';
 import { PermissionGuard } from '../auth/permission.guard';
 import { RequirePermission } from '../auth/require-permission.decorator';
 import type { AuthContext as AuthContextType } from '../auth/types';
 import { statement } from '@gideon-defender/auth';
-import { CreatePeopleDto } from './dto/create-people.dto';
-import { UpdatePeopleDto } from './dto/update-people.dto';
-import { BulkCreatePeopleDto } from './dto/bulk-create-people.dto';
-import { InvitePeopleDto } from './dto/invite-people.dto';
 import { PeopleResponseDto, UserResponseDto } from './dto/people-responses.dto';
 import { UpdateEmailPreferencesDto } from './dto/update-email-preferences.dto';
 import { AttachmentsService } from '../attachments/attachments.service';
 import { UploadAttachmentDto } from '../attachments/upload-attachment.dto';
 import { AttachmentEntityType } from '@db';
 import { PeopleService } from './people.service';
-import { PeopleInviteService } from './people-invite.service';
 import { PeopleAccessService } from './people-access.service';
 import { GET_ALL_PEOPLE_RESPONSES } from './schemas/get-all-people.responses';
-import { CREATE_MEMBER_RESPONSES } from './schemas/create-member.responses';
-import { BULK_CREATE_MEMBERS_RESPONSES } from './schemas/bulk-create-members.responses';
 import { GET_PERSON_BY_ID_RESPONSES } from './schemas/get-person-by-id.responses';
-import { UPDATE_MEMBER_RESPONSES } from './schemas/update-member.responses';
-import { DELETE_MEMBER_RESPONSES } from './schemas/delete-member.responses';
 import { REMOVE_HOST_RESPONSES } from './schemas/remove-host.responses';
+import { UNLINK_DEVICE_RESPONSES } from './schemas/unlink-device.responses';
 import { PEOPLE_OPERATIONS } from './schemas/people-operations';
 import { PEOPLE_PARAMS } from './schemas/people-params';
-import { PEOPLE_BODIES } from './schemas/people-bodies';
 
 import { authEnvelope } from '@/utils/auth-response';
 import { ApiAuthErrors, ApiForbiddenError } from '../openapi/common-responses';
@@ -67,7 +56,6 @@ import { ApiAuthErrors, ApiForbiddenError } from '../openapi/common-responses';
 export class PeopleController {
   constructor(
     private readonly peopleService: PeopleService,
-    private readonly peopleInviteService: PeopleInviteService,
     private readonly peopleAccessService: PeopleAccessService,
     private readonly attachmentsService: AttachmentsService,
   ) {}
@@ -79,39 +67,6 @@ export class PeopleController {
     throw new BadRequestException(
       `Invalid event type "${eventType}". Must be "onboard" or "offboard".`,
     );
-  }
-
-  @Post('invite')
-  @RequirePermission('member', 'create')
-  @ApiOperation({
-    summary: 'Invite members to the organization',
-    description:
-      'Invite one or more people to the organization by email and assign them roles (e.g. admin, employee). Use this to add a teammate or send someone an invitation. Each invite takes an email and an array of role names.',
-  })
-  @ApiExtension('x-comp-mcp', { name: 'invite-members' })
-  @ApiCreatedResponse({ description: 'Workforce members invited successfully' })
-  @ApiAuthErrors()
-  async inviteMembers(
-    @Body() inviteData: InvitePeopleDto,
-    @OrganizationId() organizationId: string,
-    @AuthContext() authContext: AuthContextType,
-  ) {
-    // IdP-owned user management (Phase 3-server): invites are granted in
-    // Gideon. Fenced as 410; Phase 4 deletes the route + service.
-    throwIdpManagedGone();
-    const results = await this.peopleInviteService.inviteMembers({
-      organizationId,
-      invites: inviteData.invites,
-      callerUserId: authContext.userId ?? '',
-      callerRole: authContext.userRoles?.join(',') ?? '',
-      isApiKey: authContext.isApiKey,
-      apiKeyScopes: authContext.apiKeyScopes,
-    });
-
-    return {
-      results,
-      ...authEnvelope(authContext),
-    };
   }
 
   @Get()
@@ -221,60 +176,6 @@ export class PeopleController {
     };
   }
 
-  @Post()
-  @RequirePermission('member', 'create')
-  @ApiOperation(PEOPLE_OPERATIONS.createMember)
-  @ApiBody(PEOPLE_BODIES.createMember)
-  @ApiExtension('x-comp-mcp', { name: 'create-member' })
-  @ApiResponse(CREATE_MEMBER_RESPONSES[201])
-  @ApiResponse(CREATE_MEMBER_RESPONSES[400])
-  @ApiResponse(CREATE_MEMBER_RESPONSES[401])
-  @ApiResponse(CREATE_MEMBER_RESPONSES[404])
-  @ApiResponse(CREATE_MEMBER_RESPONSES[500])
-  @ApiForbiddenError()
-  async createMember(
-    @Body() createData: CreatePeopleDto,
-    @OrganizationId() organizationId: string,
-    @AuthContext() authContext: AuthContextType,
-  ) {
-    // IdP-owned user management (Phase 3-server): 410, see inviteMembers.
-    throwIdpManagedGone();
-    const member = await this.peopleService.create(organizationId, createData);
-
-    return {
-      ...member,
-      ...authEnvelope(authContext),
-    };
-  }
-
-  @Post('bulk')
-  @RequirePermission('member', 'create')
-  @ApiOperation(PEOPLE_OPERATIONS.bulkCreateMembers)
-  @ApiBody(PEOPLE_BODIES.bulkCreateMembers)
-  @ApiResponse(BULK_CREATE_MEMBERS_RESPONSES[201])
-  @ApiResponse(BULK_CREATE_MEMBERS_RESPONSES[400])
-  @ApiResponse(BULK_CREATE_MEMBERS_RESPONSES[401])
-  @ApiResponse(BULK_CREATE_MEMBERS_RESPONSES[404])
-  @ApiResponse(BULK_CREATE_MEMBERS_RESPONSES[500])
-  @ApiForbiddenError()
-  async bulkCreateMembers(
-    @Body() bulkCreateData: BulkCreatePeopleDto,
-    @OrganizationId() organizationId: string,
-    @AuthContext() authContext: AuthContextType,
-  ) {
-    // IdP-owned user management (Phase 3-server): 410, see inviteMembers.
-    throwIdpManagedGone();
-    const result = await this.peopleService.bulkCreate(
-      organizationId,
-      bulkCreateData,
-    );
-
-    return {
-      ...result,
-      ...authEnvelope(authContext),
-    };
-  }
-
   @Get('mentionable')
   @RequirePermission('member', 'read')
   @ApiOperation({
@@ -309,33 +210,6 @@ export class PeopleController {
     return {
       data: members,
       count: members.length,
-      ...authEnvelope(authContext),
-    };
-  }
-
-  @Patch(':id/reactivate')
-  @RequirePermission('member', 'update')
-  @ApiOperation({ summary: 'Reactivate a deactivated member' })
-  @ApiParam(PEOPLE_PARAMS.memberId)
-  @ApiExtension('x-comp-mcp', { name: 'reactivate-member' })
-  @ApiOkResponse({
-    description: 'Reactivate a deactivated member completed successfully',
-  })
-  @ApiAuthErrors()
-  async reactivateMember(
-    @Param('id') memberId: string,
-    @OrganizationId() organizationId: string,
-    @AuthContext() authContext: AuthContextType,
-  ) {
-    // IdP-owned user management (Phase 3-server): 410, see inviteMembers.
-    throwIdpManagedGone();
-    const member = await this.peopleService.reactivateById(
-      memberId,
-      organizationId,
-    );
-
-    return {
-      ...member,
       ...authEnvelope(authContext),
     };
   }
@@ -440,40 +314,6 @@ export class PeopleController {
     };
   }
 
-  @Patch(':id')
-  @RequirePermission('member', 'update')
-  @ApiOperation(PEOPLE_OPERATIONS.updateMember)
-  @ApiParam(PEOPLE_PARAMS.memberId)
-  @ApiBody(PEOPLE_BODIES.updateMember)
-  @ApiExtension('x-comp-mcp', { name: 'update-member' })
-  @ApiResponse(UPDATE_MEMBER_RESPONSES[200])
-  @ApiResponse(UPDATE_MEMBER_RESPONSES[400])
-  @ApiResponse(UPDATE_MEMBER_RESPONSES[401])
-  @ApiResponse(UPDATE_MEMBER_RESPONSES[404])
-  @ApiResponse(UPDATE_MEMBER_RESPONSES[409])
-  @ApiResponse(UPDATE_MEMBER_RESPONSES[500])
-  @ApiForbiddenError()
-  async updateMember(
-    @Param('id') memberId: string,
-    @Body() updateData: UpdatePeopleDto,
-    @OrganizationId() organizationId: string,
-    @AuthContext() authContext: AuthContextType,
-  ) {
-    // IdP-owned user management (Phase 3-server): 410, see inviteMembers.
-    throwIdpManagedGone();
-    const updatedMember = await this.peopleService.updateById(
-      memberId,
-      organizationId,
-      updateData,
-      authContext.userId,
-    );
-
-    return {
-      ...updatedMember,
-      ...authEnvelope(authContext),
-    };
-  }
-
   @Delete(':id/host/:hostId')
   @HttpCode(HttpStatus.OK)
   @RequirePermission('member', 'delete')
@@ -503,68 +343,16 @@ export class PeopleController {
     };
   }
 
-  @Post(':id/resend-portal-invite')
-  @RequirePermission('member', 'update')
-  @ApiOperation({ summary: 'Resend portal invite email to a member' })
-  @ApiParam(PEOPLE_PARAMS.memberId)
-  @ApiCreatedResponse({
-    description:
-      'Resend portal invite email to a member completed successfully',
-  })
-  @ApiAuthErrors()
-  async resendPortalInvite(
-    @Param('id') memberId: string,
-    @OrganizationId() organizationId: string,
-  ) {
-    // IdP-owned user management (Phase 3-server): 410, see inviteMembers.
-    throwIdpManagedGone();
-    return this.peopleInviteService.resendPortalInvite({
-      organizationId,
-      memberId,
-    });
-  }
-
-  @Delete(':id')
-  @RequirePermission('member', 'delete')
-  @ApiOperation(PEOPLE_OPERATIONS.deleteMember)
-  @ApiParam(PEOPLE_PARAMS.memberId)
-  @ApiExtension('x-comp-mcp', { name: 'delete-member' })
-  @ApiResponse(DELETE_MEMBER_RESPONSES[200])
-  @ApiResponse(DELETE_MEMBER_RESPONSES[401])
-  @ApiResponse(DELETE_MEMBER_RESPONSES[404])
-  @ApiResponse(DELETE_MEMBER_RESPONSES[500])
-  @ApiForbiddenError()
-  async deleteMember(
-    @Param('id') memberId: string,
-    @OrganizationId() organizationId: string,
-    @AuthContext() authContext: AuthContextType,
-    @Query('skipOffboarding') skipOffboarding?: string,
-  ) {
-    // IdP-owned user management (Phase 3-server): 410, see inviteMembers.
-    throwIdpManagedGone();
-    const result = await this.peopleService.deleteById(
-      memberId,
-      organizationId,
-      authContext.userId,
-      { skipOffboarding: skipOffboarding === 'true' },
-    );
-
-    return {
-      ...result,
-      ...authEnvelope(authContext),
-    };
-  }
-
   @Patch(':id/unlink-device')
   @HttpCode(HttpStatus.OK)
   @RequirePermission('member', 'update')
   @ApiOperation(PEOPLE_OPERATIONS.unlinkDevice)
   @ApiParam(PEOPLE_PARAMS.memberId)
-  @ApiResponse(UPDATE_MEMBER_RESPONSES[200])
-  @ApiResponse(UPDATE_MEMBER_RESPONSES[400])
-  @ApiResponse(UPDATE_MEMBER_RESPONSES[401])
-  @ApiResponse(UPDATE_MEMBER_RESPONSES[404])
-  @ApiResponse(UPDATE_MEMBER_RESPONSES[500])
+  @ApiResponse(UNLINK_DEVICE_RESPONSES[200])
+  @ApiResponse(UNLINK_DEVICE_RESPONSES[400])
+  @ApiResponse(UNLINK_DEVICE_RESPONSES[401])
+  @ApiResponse(UNLINK_DEVICE_RESPONSES[404])
+  @ApiResponse(UNLINK_DEVICE_RESPONSES[500])
   @ApiForbiddenError()
   async unlinkDevice(
     @Param('id') memberId: string,

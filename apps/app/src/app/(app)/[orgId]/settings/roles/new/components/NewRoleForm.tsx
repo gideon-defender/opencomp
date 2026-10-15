@@ -15,7 +15,7 @@ interface NewRoleFormProps {
 
 export function NewRoleForm({ orgId }: NewRoleFormProps) {
   // IdP-owned user management: role content ships as code and assignments
-  // live in Gideon (server returns 410 on POST /v1/roles). Read-only.
+  // live in Gideon. There is no local role-write endpoint. Read-only.
   return (
     <Card>
       <CardHeader>

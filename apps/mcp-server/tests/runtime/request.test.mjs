@@ -43,16 +43,16 @@ test('all captured request envelope keys and requiredness are preserved, includi
       assert(!fields.required.includes(field), `${name}.${field} must accept omission`);
   }
 });
-test('update-member preserves mixed path/body nesting and escapes path values', () => {
+test('update-risk preserves mixed path/body nesting and escapes path values', () => {
   const request = serialize({
-    name: 'update-member',
-    input: { request: { id: 'mem/a ?#é', body: { name: 'Ada' } } },
+    name: 'update-risk',
+    input: { request: { id: 'rsk/a ?#é', body: { title: 'R1' } } },
   });
-  assert.equal(request.path, '/v1/people/mem%2Fa%20%3F%23%C3%A9');
-  assert.deepEqual(JSON.parse(request.body), { name: 'Ada' });
+  assert.equal(request.path, '/v1/risks/rsk%2Fa%20%3F%23%C3%A9');
+  assert.equal(JSON.parse(request.body).title, 'R1');
   assert.equal(request.headers.get('content-type'), 'application/json');
   assert.throws(
-    () => serialize({ name: 'update-member', input: { request: { id: '..', body: {} } } }),
+    () => serialize({ name: 'update-risk', input: { request: { id: '..', body: {} } } }),
     /Dot path/,
   );
 });

@@ -1,29 +1,10 @@
-import { GoneException } from '@nestjs/common';
 import type { NextFunction, Request, Response } from 'express';
 import {
   BLOCKED_BETTER_AUTH_PATHS,
   IDP_MANAGED_MESSAGE,
   idpMembershipFencesMiddleware,
   isBlockedBetterAuthPath,
-  throwIdpManagedGone,
 } from './idp-ownership-fence';
-
-describe('throwIdpManagedGone', () => {
-  it('throws a 410 pointing at Gideon', () => {
-    try {
-      throwIdpManagedGone();
-      fail('expected to throw');
-    } catch (error) {
-      expect(error).toBeInstanceOf(GoneException);
-      expect((error as GoneException).getStatus()).toBe(410);
-      expect((error as GoneException).message).toContain('Gideon');
-    }
-  });
-
-  it('shares the middleware message', () => {
-    expect(IDP_MANAGED_MESSAGE).toContain('Gideon');
-  });
-});
 
 describe('isBlockedBetterAuthPath', () => {
   it('blocks the eleven legacy membership/role mutations', () => {

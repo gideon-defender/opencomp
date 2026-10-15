@@ -18,7 +18,7 @@ const ignoredHeaders = new Set([
   'sec-fetch-mode',
 ]);
 test(
-  'all 412 representative requests/results match the generated oracle against loopback, with fake credentials',
+  'all 400 representative requests/results match the generated oracle against loopback, with fake credentials',
   { timeout: 120000 },
   async () => {
     const records = [];

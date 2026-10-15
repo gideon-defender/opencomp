@@ -6,7 +6,6 @@ import { TimelinesModule } from '../timelines/timelines.module';
 import { FleetService } from '../lib/fleet.service';
 import { PeopleController } from './people.controller';
 import { PeopleService } from './people.service';
-import { PeopleInviteService } from './people-invite.service';
 import { PeopleAccessService } from './people-access.service';
 
 @Module({
@@ -17,12 +16,7 @@ import { PeopleAccessService } from './people-access.service';
     IntegrationPlatformModule,
   ],
   controllers: [PeopleController],
-  providers: [
-    PeopleService,
-    PeopleInviteService,
-    PeopleAccessService,
-    FleetService,
-  ],
+  providers: [PeopleService, PeopleAccessService, FleetService],
   exports: [PeopleService],
 })
 export class PeopleModule {}

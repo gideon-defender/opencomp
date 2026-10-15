@@ -1,10 +1,10 @@
 import { ApiResponseOptions } from '@nestjs/swagger';
 import { ApiErrorResponseDto } from '../../openapi/common-responses';
 
-export const UPDATE_MEMBER_RESPONSES: Record<string, ApiResponseOptions> = {
+export const UNLINK_DEVICE_RESPONSES: Record<string, ApiResponseOptions> = {
   200: {
     status: 200,
-    description: 'Member updated successfully',
+    description: 'Device unlinked successfully',
     content: {
       'application/json': {
         schema: { $ref: '#/components/schemas/PeopleResponseDto' },
@@ -16,7 +16,7 @@ export const UPDATE_MEMBER_RESPONSES: Record<string, ApiResponseOptions> = {
           createdAt: '2024-01-01T00:00:00Z',
           department: 'it',
           isActive: true,
-          fleetDmLabelId: 123,
+          fleetDmLabelId: null,
           user: {
             id: 'usr_abc123def456',
             name: 'John Doe',
@@ -33,7 +33,7 @@ export const UPDATE_MEMBER_RESPONSES: Record<string, ApiResponseOptions> = {
   },
   400: {
     status: 400,
-    description: 'Bad Request - Invalid update data or user conflict',
+    description: 'Bad Request - Invalid member data',
     type: ApiErrorResponseDto,
   },
   401: {
@@ -42,15 +42,9 @@ export const UPDATE_MEMBER_RESPONSES: Record<string, ApiResponseOptions> = {
       'Unauthorized - Invalid authentication or insufficient permissions',
     type: ApiErrorResponseDto,
   },
-  409: {
-    status: 409,
-    description:
-      'Conflict - Login email already used by another account, or the member belongs to other organizations',
-    type: ApiErrorResponseDto,
-  },
   404: {
     status: 404,
-    description: 'Organization, member, or user not found',
+    description: 'Organization or member not found',
     type: ApiErrorResponseDto,
   },
   500: {

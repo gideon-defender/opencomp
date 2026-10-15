@@ -1,6 +1,6 @@
 import { db } from '@db';
 import { logger, schedules } from '@gideon-defender/trigger-local';
-import { parseRoles } from '../../people/utils/role-authorization';
+import { parseRoles } from './parse-roles';
 import { TrustEmailService } from '../../trust-portal/email.service';
 
 const emailService = new TrustEmailService();

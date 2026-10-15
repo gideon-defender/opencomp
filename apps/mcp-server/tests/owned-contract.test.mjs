@@ -19,7 +19,7 @@ const emptyOverlay = { version: 1, schemas: [], operations: [] };
 const operation = (id) => ({ operationId: id, summary: 'Summary', description: 'Description' });
 const tinyDocument = (paths) => ({ openapi: '3.0.0', paths, components: { schemas: {} } });
 
-test('owned registry matches all 412 captured tool names, descriptions and wire locations', () => {
+test('owned registry matches all 400 captured tool names, descriptions and wire locations', () => {
   const before = structuredClone(source);
   const result = loadOpenApi({ source, overlay });
   assertReviewedRegistry({ tools: result.tools, baseline });

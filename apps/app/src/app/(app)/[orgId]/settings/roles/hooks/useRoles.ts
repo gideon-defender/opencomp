@@ -36,8 +36,8 @@ export function useRoles({ initialData }: UseRolesOptions = {}) {
 
   const roles = Array.isArray(data) ? data : [];
 
-  // IdP-owned user management: role writes are Gideon-synced (server returns
-  // 410 on POST/PATCH/DELETE /v1/roles). No local mutation helpers — read-only.
+  // IdP-owned user management: role writes are Gideon-synced. There is no
+  // local role-write endpoint. No local mutation helpers — read-only.
   return {
     roles,
     isLoading: !data && !error && !initialData,
