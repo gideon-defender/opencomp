@@ -48,6 +48,18 @@ export class CandidateScreeningsController {
     return this.config.readiness(organizationId);
   }
 
+  @Get('connection/readiness')
+  @RequirePermission('integration', 'update')
+  @ApiExtension('x-comp-mcp', { name: 'check-checkr-connection-readiness' })
+  @ApiOperation({
+    summary: 'Check Checkr connection health',
+    description:
+      'Checks this tenant’s Checkr account and credentials for integration editors. Use after configuration to verify intake readiness without screening permission. Returns no credentials or candidate data.',
+  })
+  connectionReadiness(@OrganizationId() organizationId: string) {
+    return this.config.readiness(organizationId);
+  }
+
   @Get()
   @RequirePermission('backgroundCheck', 'read')
   @ApiExtension('x-comp-mcp', { name: 'list-candidate-screenings' })

@@ -7,8 +7,8 @@ import {
   setMockPermissions,
 } from '@/test-utils/mocks/permissions';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SWRConfig } from 'swr';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 mockNextIntl();
 

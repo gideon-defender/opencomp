@@ -3,6 +3,7 @@ import { validate } from 'class-validator';
 import { rolesGrantPermissions } from '../auth/app-access';
 import { CandidateScreeningsController } from './candidate-screenings.controller';
 import { StartCandidateScreeningDto } from './dto/start-candidate-screening.dto';
+import { db } from '@db';
 
 jest.mock('@db', () => ({ db: { organizationRole: { findMany: jest.fn() } } }));
 // Contract tests inspect real permission metadata without starting session auth.
@@ -11,6 +12,47 @@ jest.mock('../auth/auth.server', () => ({
 }));
 
 describe('Candidate intake contract and permissions', () => {
+  it('allows an integration editor to read connection health without screening permission', async () => {
+    const required = Reflect.getMetadata(
+      'required_permissions',
+      CandidateScreeningsController.prototype.connectionReadiness,
+    );
+    expect(required).toEqual([
+      { resource: 'integration', actions: ['update'] },
+    ]);
+    jest.mocked(db.organizationRole.findMany).mockResolvedValueOnce([
+      {
+        id: 'rol_editor',
+        name: 'integration_editor',
+        organizationId: 'tenant_a',
+        permissions: JSON.stringify({ integration: ['read', 'update'] }),
+        obligations: '{}',
+        createdAt: new Date('2026-01-01'),
+        updatedAt: new Date('2026-01-01'),
+      },
+    ]);
+    await expect(
+      rolesGrantPermissions({
+        organizationId: 'tenant_a',
+        roles: ['integration_editor'],
+        required: { integration: ['update'] },
+      }),
+    ).resolves.toBe(true);
+    await expect(
+      rolesGrantPermissions({
+        organizationId: 'tenant_a',
+        roles: ['auditor'],
+        required: { integration: ['update'] },
+      }),
+    ).resolves.toBe(false);
+    expect(
+      Reflect.getMetadata(
+        'required_permissions',
+        CandidateScreeningsController.prototype.readiness,
+      ),
+    ).toEqual([{ resource: 'backgroundCheck', actions: ['create'] }]);
+  });
+
   it('permits admins to screen and gives auditors read-only access', async () => {
     await expect(
       rolesGrantPermissions({

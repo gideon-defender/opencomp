@@ -1,35 +1,10 @@
 import { mockNextIntl } from '@/test-utils/mocks/next-intl';
 import type { Member, User } from '@db';
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { toast } from 'sonner';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 import { EmployeeDetails } from './EmployeeDetails';
 
 mockNextIntl();
-
-const { mockPatch } = vi.hoisted(() => ({ mockPatch: vi.fn() }));
-
-vi.mock('@/hooks/use-api', () => ({
-  useApi: () => ({
-    organizationId: 'org_1',
-    patch: mockPatch,
-    get: vi.fn(),
-    post: vi.fn(),
-    put: vi.fn(),
-    delete: vi.fn(),
-  }),
-}));
-
-// DepartmentSelect pulls the runtime `Departments` enum from @db; its behaviour
-// is irrelevant to email editing.
-vi.mock('@/components/DepartmentSelect', () => ({
-  DepartmentSelect: () => null,
-}));
-
-vi.mock('sonner', () => ({
-  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
-}));
 
 const employee = {
   id: 'mem_1',
@@ -49,45 +24,27 @@ const employee = {
   },
 } as unknown as Member & { user: User };
 
-describe('EmployeeDetails email editing', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockPatch.mockResolvedValue({ data: {}, status: 200 });
+describe('EmployeeDetails read-only Gideon-synced profile', () => {
+  it('renders profile values with no editable fields or save action', () => {
+    render(<EmployeeDetails employee={employee} />);
+
+    expect(screen.getByText('Manoj Madhavan')).toBeInTheDocument();
+    expect(screen.getByText('manoj.madhavan@plurilock.com')).toBeInTheDocument();
+    expect(screen.getByText('Engineer')).toBeInTheDocument();
+    expect(screen.getByText('engineering')).toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'employeeDetails.save' })).not.toBeInTheDocument();
   });
 
-  it('lets an admin change the login email and PATCHes it to the people endpoint', async () => {
-    const user = userEvent.setup();
-    render(<EmployeeDetails employee={employee} canEdit />);
+  it('shows the Gideon sync notice', () => {
+    render(<EmployeeDetails employee={employee} />);
 
-    const emailInput = screen.getByLabelText('employeeDetails.email');
-    // Regression: the field used to be hardcoded disabled+readOnly.
-    expect(emailInput).not.toBeDisabled();
-
-    await user.clear(emailInput);
-    await user.type(emailInput, 'mmadhavan@aurorait.com');
-    await user.click(screen.getByRole('button', { name: 'employeeDetails.save' }));
-
-    await waitFor(() => {
-      expect(mockPatch).toHaveBeenCalledWith('/v1/people/mem_1', {
-        email: 'mmadhavan@aurorait.com',
-      });
-    });
+    expect(screen.getByText(/sync from Gideon/i)).toBeInTheDocument();
   });
 
-  it('disables the email field for read-only users', () => {
-    render(<EmployeeDetails employee={employee} canEdit={false} />);
-    expect(screen.getByLabelText('employeeDetails.email')).toBeDisabled();
-  });
+  it('renders the synced status label', () => {
+    render(<EmployeeDetails employee={employee} />);
 
-  it('blocks save and does not PATCH when the email is cleared', async () => {
-    const user = userEvent.setup();
-    render(<EmployeeDetails employee={employee} canEdit />);
-
-    const emailInput = screen.getByLabelText('employeeDetails.email');
-    await user.clear(emailInput);
-    await user.click(screen.getByRole('button', { name: 'employeeDetails.save' }));
-
-    expect(toast.error).toHaveBeenCalledWith('employeeDetails.emailRequired');
-    expect(mockPatch).not.toHaveBeenCalled();
+    expect(screen.getByText('employeeDetails.statusActive')).toBeInTheDocument();
   });
 });

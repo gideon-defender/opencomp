@@ -17,11 +17,14 @@ import {
   type CandidateScreeningsResponse,
 } from '../../../people/components/CandidateScreenings';
 import { CheckrStatusBadge, type CheckrReadiness } from '../../components/CheckrCatalogCard';
+import { ConfigureCheckrDialog } from './ConfigureCheckrDialog';
 
 interface CheckrDetailsClientProps {
   orgId: string;
   canStartScreening: boolean;
   canReadScreenings: boolean;
+  canConfigureCheckr: boolean;
+  canReadReadiness: boolean;
   initialScreenings?: CandidateScreeningsResponse;
   initialReadiness?: CheckrReadiness;
 }
@@ -30,10 +33,13 @@ export function CheckrDetailsClient({
   orgId,
   canStartScreening,
   canReadScreenings,
+  canConfigureCheckr,
+  canReadReadiness,
   initialScreenings,
   initialReadiness,
 }: CheckrDetailsClientProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [configureOpen, setConfigureOpen] = useState(false);
 
   return (
     <div className="space-y-4">
@@ -109,7 +115,14 @@ export function CheckrDetailsClient({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {!canStartScreening ? (
+          {canConfigureCheckr && (
+            <div className="mb-2 flex flex-wrap gap-2">
+              <Button variant="outline" onClick={() => setConfigureOpen(true)}>
+                Configure Checkr
+              </Button>
+            </div>
+          )}
+          {!canReadReadiness ? (
             <p className="text-sm text-muted-foreground">
               Configuration details require background check permission.
             </p>
@@ -138,6 +151,13 @@ export function CheckrDetailsClient({
           onOpenChange={setDialogOpen}
           organizationId={orgId}
           canStart={canStartScreening}
+        />
+      )}
+      {canConfigureCheckr && (
+        <ConfigureCheckrDialog
+          open={configureOpen}
+          onOpenChange={setConfigureOpen}
+          organizationId={orgId}
         />
       )}
     </div>

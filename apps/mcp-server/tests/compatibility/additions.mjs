@@ -10,6 +10,12 @@ export const reviewedToolAdditions = [
     operationId: 'CandidateScreeningsController_readiness_v1',
   },
   {
+    name: 'check-checkr-connection-readiness',
+    method: 'get',
+    path: '/v1/people/candidate-screenings/connection/readiness',
+    operationId: 'CandidateScreeningsController_connectionReadiness_v1',
+  },
+  {
     name: 'list-candidate-screenings',
     method: 'get',
     path: '/v1/people/candidate-screenings',
