@@ -51,9 +51,9 @@ export function validMocks() {
   });
   mockUser.mockImplementation(
     ({ where }: { where: Record<string, string> }) => {
-      // Route by query shape (gideonSub-link lookup vs id lookup) instead of
+      // Route by query shape (oidcSub-link lookup vs id lookup) instead of
       // call order — Once sequencing is order-fragile across tests.
-      if (where.gideonSub)
+      if (where.oidcSub)
         return Promise.resolve({ id: 'usr_1', tenantId: 'org_1' });
       if (where.id)
         return Promise.resolve({ id: 'usr_1', email: 'a@acme.com' });

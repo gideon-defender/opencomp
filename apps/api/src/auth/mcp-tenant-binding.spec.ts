@@ -65,7 +65,7 @@ describe('MCP tenant binding after a shared-user split', () => {
     // spuriously when prod adds or reorders a user lookup.
     mockUser.mockImplementation(
       ({ where }: { where: Record<string, string> }) => {
-        if (where.gideonSub === 'sub_shared')
+        if (where.oidcSub === 'sub_shared')
           return Promise.resolve({ id: 'usr_shared', tenantId: 'secondary' });
         if (where.id === 'usr_shared')
           return Promise.resolve({

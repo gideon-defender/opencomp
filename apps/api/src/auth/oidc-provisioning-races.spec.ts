@@ -55,7 +55,7 @@ describe('provisionOidcUser', () => {
     mockFindFirst.mockResolvedValueOnce(null).mockResolvedValueOnce({
       id: 'usr_raced',
       banned: false,
-      gideonSub: null,
+      oidcSub: null,
       tenantId: TENANT_A,
     });
     mockQueryRaw.mockResolvedValue([]);
@@ -74,7 +74,7 @@ describe('provisionOidcUser', () => {
     // through the tenant-scoped email re-read, never a second subject lookup.
     expect(mockFindUnique).toHaveBeenCalledTimes(1);
     expect(mockFindUnique).toHaveBeenCalledWith({
-      where: { gideonSub: 'sub-1' },
+      where: { oidcSub: 'sub-1' },
     });
   });
 
@@ -87,7 +87,7 @@ describe('provisionOidcUser', () => {
       {
         id: 'usr_legacy',
         banned: false,
-        gideonSub: null,
+        oidcSub: null,
         tenantId: null,
       },
     ]);
@@ -103,9 +103,9 @@ describe('provisionOidcUser', () => {
 
     expect(result).toEqual({ id: 'usr_legacy' });
     expect(mockUpdate).toHaveBeenCalledWith({
-      where: { id: 'usr_legacy', AND: { gideonSub: null } },
+      where: { id: 'usr_legacy', AND: { oidcSub: null } },
       data: expect.objectContaining({
-        gideonSub: 'sub-1',
+        oidcSub: 'sub-1',
         tenantId: TENANT_A,
       }),
     });
@@ -117,7 +117,7 @@ describe('provisionOidcUser', () => {
     mockFindFirst.mockResolvedValueOnce(null).mockResolvedValueOnce({
       id: 'usr_raced',
       banned: false,
-      gideonSub: null,
+      oidcSub: null,
       tenantId: TENANT_A,
     });
     mockQueryRaw.mockResolvedValue([]);
@@ -144,7 +144,7 @@ describe('provisionOidcUser', () => {
       id: 'usr_raced_sub',
       email: 'old@example.com',
       banned: false,
-      gideonSub: 'sub-1',
+      oidcSub: 'sub-1',
       tenantId: TENANT_A,
     });
     mockUpdate.mockResolvedValue({ id: 'usr_raced_sub' });
@@ -172,7 +172,7 @@ describe('provisionOidcUser', () => {
     mockFindUnique.mockResolvedValueOnce(null).mockResolvedValueOnce({
       id: 'usr_other_tenant',
       banned: false,
-      gideonSub: 'sub-1',
+      oidcSub: 'sub-1',
       tenantId: TENANT_B,
     });
 

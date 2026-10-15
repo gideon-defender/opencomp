@@ -63,35 +63,45 @@ test('dev deploy authorizes the current main SHA and keeps the selected commit p
   assert(deploySteps.includes('/healthz'));
 });
 
-test('dev deploy stages migrations around a verified rollout and blocks contract after failure', () => {
+test('dev deploy drains services before approved migrations and restores scaling only after verified rollout', () => {
   const workflow = parse(read('.github/workflows/deploy-dev.yml'));
   const steps = workflow.jobs.deploy.steps;
-  const expand = steps.findIndex((step) =>
+  const deploy = steps.findIndex((step) =>
     step.run?.includes('bash .github/scripts/deploy-dev.sh'),
   );
-  const drain = steps.findIndex((step) =>
+  const verify = steps.findIndex((step) =>
     step.run?.includes('bash .github/scripts/wait-dev-services.sh'),
   );
-  const contract = steps.findIndex((step) =>
-    step.run?.includes('bash .github/scripts/run-dev-migrations.sh contract'),
+  const restore = steps.findIndex((step) =>
+    step.run?.includes('bash .github/scripts/restore-dev-autoscaling.sh'),
   );
   const health = steps.findIndex((step) => step.run?.includes('/healthz'));
-  assert(expand >= 0, 'Expansion and rollout step is required');
-  assert(drain > expand, 'Verify the rollout after updating services');
-  assert(contract > drain, 'Contract must wait for old tasks to stop');
-  assert(health > contract, 'Check the hosted edge after contract completes');
-  assert.equal(steps[drain].if, undefined, 'Keep the default success-only execution');
-  assert.equal(steps[contract].if, undefined, 'A failed rollout must block contract');
+  assert(deploy >= 0, 'Maintenance deployment step is required');
+  assert(verify > deploy, 'Verify the rollout after starting the new images');
+  assert(restore > verify, 'Restore autoscaling only after a successful rollout');
+  assert(health > restore, 'Check the hosted edge after service recovery');
+  assert.equal(steps[verify].if, undefined, 'Keep the default success-only execution');
+  assert.equal(steps[restore].if, undefined, 'A failed rollout must block autoscaling restoration');
 
   const script = read('.github/scripts/deploy-dev.sh');
   assert(script.includes('gideon-dev-opencomp-mcp|$mcp_task_definition'));
-  const expansion = script.indexOf('bash .github/scripts/run-dev-migrations.sh expand');
+  const stop = script.indexOf('bash .github/scripts/stop-dev-services.sh');
+  const migration = script.indexOf('bash .github/scripts/run-dev-migrations.sh offline');
   const update = script.indexOf('aws ecs update-service');
-  assert(expansion >= 0 && update > expansion, 'Expansion must succeed before service updates');
-  assert(
-    !script.includes('run-dev-migrations.sh contract'),
-    'Do not contract before draining old tasks',
-  );
+  assert(stop >= 0 && migration > stop, 'All old services must stop before migration');
+  assert(update > migration, 'Migration must succeed before any service restarts');
+  assert(script.includes('rollback=false'), 'Do not roll back to images that use the old columns');
+
+  const drain = read('.github/scripts/stop-dev-services.sh');
+  for (const required of [
+    '--desired-count 0',
+    'RUNNING STOPPED',
+    '.lastStatus == "STOPPED"',
+    'opencomp-stopped-services',
+    'exit 1',
+  ]) {
+    assert(drain.includes(required), `Missing maintenance drain check: ${required}`);
+  }
 
   const waiter = read('.github/scripts/wait-dev-services.sh');
   for (const required of [
@@ -106,6 +116,10 @@ test('dev deploy stages migrations around a verified rollout and blocks contract
 
   const migrator = read('.github/scripts/run-dev-migrations.sh');
   assert(migrator.includes('aws ecs describe-task-definition'));
+  assert(migrator.includes('test -s "$RUNNER_TEMP/opencomp-stopped-services"'));
+  assert(
+    read('packages/db/scripts/tenant-migration-state.mjs').includes('app.oidc_rename_approved=yes'),
+  );
   assert(
     migrator.includes('jq --arg phase "$phase" -f .github/scripts/migrator-overrides.jq'),
     'Build overrides from the actual task definition to preserve its bootstrap',
@@ -119,6 +133,8 @@ test('dev deploy stages migrations around a verified rollout and blocks contract
     '.github/scripts/deploy-dev.sh',
     '.github/scripts/wait-dev-services.sh',
     '.github/scripts/run-dev-migrations.sh',
+    '.github/scripts/stop-dev-services.sh',
+    '.github/scripts/restore-dev-autoscaling.sh',
   ]) {
     assert.equal(spawnSync('bash', ['-n', fileURLToPath(new URL(path, root))]).status, 0);
   }

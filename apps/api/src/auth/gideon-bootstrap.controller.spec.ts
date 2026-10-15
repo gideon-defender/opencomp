@@ -82,7 +82,7 @@ describe('organization setup authorization endpoint', () => {
       controller.authorize(request({ sessionId: undefined })),
     ).rejects.toThrow('browser session');
     expect(mockUser).not.toHaveBeenCalled();
-    mockUser.mockResolvedValue({ tenantId: null, gideonTenantId: null });
+    mockUser.mockResolvedValue({ tenantId: null, oidcTenantId: null });
     await expect(controller.authorize(request())).rejects.toThrow(
       'Sign in with Gideon',
     );
@@ -92,7 +92,7 @@ describe('organization setup authorization endpoint', () => {
   it('claims an expand-window null-tenant stamp for setup instead of rejecting', async () => {
     mockUser.mockResolvedValue({
       tenantId: null,
-      gideonTenantId: 'tenant_1',
+      oidcTenantId: 'tenant_1',
     });
     await recordBootstrapOwner({
       sessionId: 'ses_1',

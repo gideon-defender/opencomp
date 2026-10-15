@@ -142,7 +142,7 @@ describe('OidcService Phase 1 enforcement (pilot tenant)', () => {
     mockUserFindFirst.mockResolvedValue({
       id: 'usr_1',
       email: 'ada@example.com',
-      gideonSub: null,
+      oidcSub: null,
       banned: false,
       tenantId: 'tenant-1',
     });
@@ -301,7 +301,7 @@ describe('OidcService Phase 1 enforcement (pilot tenant)', () => {
       mockUserFindFirst.mockResolvedValue({
         id: 'usr_1',
         email: 'ada@example.com',
-        gideonSub: null,
+        oidcSub: null,
         banned: false,
         tenantId: 'tenant-9',
       });

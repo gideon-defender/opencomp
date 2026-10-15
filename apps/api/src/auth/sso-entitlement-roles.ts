@@ -53,11 +53,11 @@ export async function refreshSsoLoginRoles({
     throw new Error('Tenant is not enabled for reconciliation');
   const user = await tx.user.findUnique({
     where: { id: userId },
-    select: { gideonSub: true, tenantId: true, email: true },
+    select: { oidcSub: true, tenantId: true, email: true },
   });
-  if (!user || (!user.gideonSub && !subject))
+  if (!user || (!user.oidcSub && !subject))
     throw new Error('SSO membership has no valid tenant-linked IdP subject');
-  let loginSubject = user.gideonSub;
+  let loginSubject = user.oidcSub;
   if (!user.tenantId) {
     // Expand-window row written by old code before the tenant backfill: the
     // login tenant claims ownership instead of this login failing. A P2002

@@ -148,7 +148,7 @@ describe('OidcService bootstrap gate (unknown tenants)', () => {
       return {
         id: 'usr_1',
         email: 'ada@example.com',
-        gideonSub: null,
+        oidcSub: null,
         banned: false,
         tenantId,
       };
@@ -268,7 +268,7 @@ describe('OidcService bootstrap gate (unknown tenants)', () => {
     const existingUser = {
       id: 'usr_1',
       email: 'ada@example.com',
-      gideonSub: 'sub-1',
+      oidcSub: 'sub-1',
       tenantId: 'tenant-existing',
       banned: false,
     };

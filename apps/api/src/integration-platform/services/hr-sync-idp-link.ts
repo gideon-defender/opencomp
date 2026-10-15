@@ -66,7 +66,7 @@ export async function linkIdentity({
     });
     if (shared?.id === existing.id) return shared;
   }
-  if (existing.gideonSub && existing.gideonSub !== identity.id)
+  if (existing.oidcSub && existing.oidcSub !== identity.id)
     throw new Error(
       'HR sync IdP identity conflicts with the existing user link',
     );
@@ -82,7 +82,7 @@ export async function linkIdentity({
     throw new Error(
       'HR sync IdP identity belongs to a different tenant than the existing user',
     );
-  if (existing.gideonSub) {
+  if (existing.oidcSub) {
     const email = normalizeEmail(identity.email);
     if (normalizeEmail(existing.email) === email)
       return claimExpandOwnership({ existing, organizationId });
@@ -101,7 +101,7 @@ export async function linkIdentity({
     }
     try {
       return await db.user.update({
-        where: { id: existing.id, gideonSub: identity.id },
+        where: { id: existing.id, oidcSub: identity.id },
         data: {
           email,
           ...(existing.tenantId ? {} : { tenantId: organizationId }),
@@ -127,10 +127,10 @@ export async function linkIdentity({
     // NOTE: `await` is load-bearing here — a bare `return` would let the
     // rejection bypass the P2025 catch below.
     return await db.user.update({
-      where: { id: existing.id, AND: { gideonSub: null } },
+      where: { id: existing.id, AND: { oidcSub: null } },
       data: {
-        gideonSub: identity.id,
-        gideonTenantId: organizationId,
+        oidcSub: identity.id,
+        oidcTenantId: organizationId,
         ...(existing.tenantId ? {} : { tenantId: organizationId }),
       },
     });
@@ -171,7 +171,7 @@ export async function linkIdentity({
           allowRaceRecovery,
         });
       const subHolder = await db.user.findUnique({
-        where: { gideonSub: identity.id },
+        where: { oidcSub: identity.id },
       });
       if (subHolder)
         return linkIdentity({

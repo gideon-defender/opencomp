@@ -64,7 +64,7 @@ describe('GenericEmployeeSyncService role validation', () => {
 
     // Default: user has a verified IdP link, no existing member,
     // no other org members (skip phase 2).
-    mockUserFindUnique.mockResolvedValue({ id: 'user_1', gideonSub: 'idp_1' });
+    mockUserFindUnique.mockResolvedValue({ id: 'user_1', oidcSub: 'idp_1' });
     mockUserCreate.mockResolvedValue({
       id: 'user_1',
       email: 'new-hire@example.com',
@@ -162,7 +162,7 @@ describe('GenericEmployeeSyncService role validation', () => {
   describe('limbo role self-heal on re-sync', () => {
     it('heals an existing member whose role is entirely invalid', async () => {
       mockUserFindUnique.mockResolvedValue({
-        gideonSub: 'idp_existing',
+        oidcSub: 'idp_existing',
         id: 'user_1',
         email: 'mc@example.com',
       });
@@ -188,7 +188,7 @@ describe('GenericEmployeeSyncService role validation', () => {
 
     it('heals an existing member whose role mixes valid + invalid tokens', async () => {
       mockUserFindUnique.mockResolvedValue({
-        gideonSub: 'idp_existing',
+        oidcSub: 'idp_existing',
         id: 'user_1',
         email: 'mc@example.com',
       });
@@ -211,7 +211,7 @@ describe('GenericEmployeeSyncService role validation', () => {
 
     it('does not touch an existing member whose role is already valid', async () => {
       mockUserFindUnique.mockResolvedValue({
-        gideonSub: 'idp_existing',
+        oidcSub: 'idp_existing',
         id: 'user_1',
         email: 'mc@example.com',
       });
@@ -231,7 +231,7 @@ describe('GenericEmployeeSyncService role validation', () => {
 
     it('heals AND reactivates a deactivated member with a limbo role', async () => {
       mockUserFindUnique.mockResolvedValue({
-        gideonSub: 'idp_existing',
+        oidcSub: 'idp_existing',
         id: 'user_1',
         email: 'mc@example.com',
       });
@@ -264,13 +264,13 @@ describe('GenericEmployeeSyncService role validation', () => {
       id: 'mem_existing',
       role: 'employee',
       offboardDate: null,
-      user: { gideonSub: 'idp_existing', email: 'still-here@example.com' },
+      user: { oidcSub: 'idp_existing', email: 'still-here@example.com' },
     };
 
     beforeEach(() => {
       // Returned employee already has a member row → goes to Phase 1 skip path
       mockUserFindUnique.mockResolvedValue({
-        gideonSub: 'idp_existing',
+        oidcSub: 'idp_existing',
         id: 'user_returned',
         email: 'returned@example.com',
       });
@@ -333,7 +333,7 @@ describe('GenericEmployeeSyncService role validation', () => {
         {
           ...existingOrgMember,
           user: {
-            gideonSub: 'idp_existing',
+            oidcSub: 'idp_existing',
             email: 'someone@other-domain.com',
           },
         },
@@ -423,13 +423,13 @@ describe('GenericEmployeeSyncService role validation', () => {
           id: 'mem_bob',
           role: 'employee',
           offboardDate: null,
-          user: { gideonSub: 'idp_existing', email: 'bob@example.com' },
+          user: { oidcSub: 'idp_existing', email: 'bob@example.com' },
         },
         {
           id: 'mem_carol',
           role: 'employee',
           offboardDate: null,
-          user: { gideonSub: 'idp_existing', email: 'carol@example.com' },
+          user: { oidcSub: 'idp_existing', email: 'carol@example.com' },
         },
       ]);
 

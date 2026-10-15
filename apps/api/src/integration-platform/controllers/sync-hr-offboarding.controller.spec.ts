@@ -70,12 +70,12 @@ describe('Provider offboarding error isolation', () => {
         {
           id: 'member_failed',
           role: 'employee',
-          user: { email, gideonSub: null },
+          user: { email, oidcSub: null },
         },
         {
           id: 'member_linked',
           role: 'employee',
-          user: { email: 'linked@example.com', gideonSub: 'idp_linked' },
+          user: { email: 'linked@example.com', oidcSub: 'idp_linked' },
         },
       ]);
       mockResolveHrIdentity
@@ -107,7 +107,7 @@ describe('Provider offboarding error isolation', () => {
       {
         id: 'member_existing',
         role: 'employee',
-        user: { email: currentEmail, gideonSub: 'idp_existing' },
+        user: { email: currentEmail, oidcSub: 'idp_existing' },
       },
     ]);
     (mockedDb.member.findFirst as jest.Mock).mockResolvedValue({
@@ -123,7 +123,7 @@ describe('Provider offboarding error isolation', () => {
     );
     mockGetHrSyncUser.mockImplementation(async () => {
       currentEmail = email;
-      return { id: 'user_existing', email, gideonSub: 'idp_existing' };
+      return { id: 'user_existing', email, oidcSub: 'idp_existing' };
     });
     const result = await fixture.runSync('rippling');
     expect(result.success).toBe(true);

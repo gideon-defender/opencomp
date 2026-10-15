@@ -148,7 +148,7 @@ describe('OidcService', () => {
       mockUserFindFirst.mockResolvedValue({
         id: 'usr_1',
         email: 'ada@example.com',
-        gideonSub: null,
+        oidcSub: null,
         banned: false,
         tenantId: 'org_1',
       });

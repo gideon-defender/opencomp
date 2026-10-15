@@ -58,7 +58,7 @@ describe('provisionOidcUser tenant ownership', () => {
     expect(mockCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({
         tenantId: 'tenant-1',
-        gideonTenantId: 'tenant-1',
+        oidcTenantId: 'tenant-1',
       }),
     });
   });
@@ -67,7 +67,7 @@ describe('provisionOidcUser tenant ownership', () => {
     mockFindFirst.mockResolvedValue({
       id: 'usr_1',
       banned: false,
-      gideonSub: null,
+      oidcSub: null,
       tenantId: 'tenant-1',
     });
     mockUpdate.mockResolvedValue({ id: 'usr_1' });
@@ -80,7 +80,7 @@ describe('provisionOidcUser tenant ownership', () => {
     });
 
     expect(mockUpdate).toHaveBeenCalledWith({
-      where: { id: 'usr_1', AND: { gideonSub: null } },
+      where: { id: 'usr_1', AND: { oidcSub: null } },
       data: expect.not.objectContaining({ tenantId: expect.anything() }),
     });
   });

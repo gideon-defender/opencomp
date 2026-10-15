@@ -46,7 +46,7 @@ describe('Gideon MCP token rejection and legacy recovery', () => {
     });
     mockUser.mockImplementation(
       ({ where }: { where: Record<string, string> }) => {
-        if (where.gideonSub)
+        if (where.oidcSub)
           return Promise.resolve({ id: 'usr_1', tenantId: 'org_1' });
         if (where.id)
           return Promise.resolve({ id: 'usr_1', email: 'a@acme.com' });
@@ -74,7 +74,7 @@ describe('Gideon MCP token rejection and legacy recovery', () => {
     });
     mockUser.mockImplementation(
       ({ where }: { where: Record<string, string> }) => {
-        if (where.gideonSub)
+        if (where.oidcSub)
           return Promise.resolve({ id: 'usr_1', tenantId: 'org_1' });
         return Promise.resolve(null);
       },

@@ -9,7 +9,7 @@ function fixture({ beforeLocks = () => {}, corruptWrite = false } = {}) {
     { memberId: 'new', email: 'new@example.com', role: 'employee' },
   ].map((member) => ({
     ...member,
-    gideonSub: member.email,
+    oidcSub: member.email,
     roleSource: 'local',
     idpAccessRevoked: false,
     deactivated: false,

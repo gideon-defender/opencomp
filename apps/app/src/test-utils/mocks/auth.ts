@@ -31,7 +31,7 @@ export const createMockSession = (overrides?: Partial<Session>): Session => ({
   userAgent: 'test-agent',
   activeOrganizationId: 'org_test123',
   deviceAgent: false,
-  gideonRefreshToken: null,
+  oidcRefreshToken: null,
   ...overrides,
 });
 
@@ -50,8 +50,8 @@ export const createMockUser = (overrides?: Partial<User>): User => ({
   banned: null,
   banReason: null,
   banExpires: null,
-  gideonSub: null,
-  gideonTenantId: null,
+  oidcSub: null,
+  oidcTenantId: null,
   tenantId: 'org_test123',
   ...overrides,
 });

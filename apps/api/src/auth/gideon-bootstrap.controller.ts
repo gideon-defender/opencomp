@@ -36,9 +36,9 @@ export class GideonBootstrapController {
     }
     const user = await db.user.findUnique({
       where: { id: request.userId },
-      select: { tenantId: true, gideonTenantId: true },
+      select: { tenantId: true, oidcTenantId: true },
     });
-    const tenantId = user?.tenantId ?? user?.gideonTenantId;
+    const tenantId = user?.tenantId ?? user?.oidcTenantId;
     if (!user || !tenantId) {
       throw new ForbiddenException(
         'Sign in with Gideon before creating an organization.',

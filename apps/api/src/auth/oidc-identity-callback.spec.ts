@@ -112,7 +112,7 @@ describe('OidcService', () => {
         data: expect.objectContaining({
           email: 'ada@example.com',
           emailVerified: true,
-          gideonSub: 'gideon-sub-1',
+          oidcSub: 'gideon-sub-1',
           tenantId: 'org_1',
         }),
       });
@@ -126,7 +126,7 @@ describe('OidcService', () => {
       mockUserFindFirst.mockResolvedValueOnce(null).mockResolvedValueOnce({
         id: 'usr_raced',
         email: 'ada@example.com',
-        gideonSub: null,
+        oidcSub: null,
         banned: false,
         tenantId: 'org_1',
       });
@@ -137,8 +137,8 @@ describe('OidcService', () => {
       const result = await service.handleCallback({ callbackUrl });
 
       expect(mockUserUpdate).toHaveBeenCalledWith({
-        where: { id: 'usr_raced', AND: { gideonSub: null } },
-        data: expect.objectContaining({ gideonSub: 'gideon-sub-1' }),
+        where: { id: 'usr_raced', AND: { oidcSub: null } },
+        data: expect.objectContaining({ oidcSub: 'gideon-sub-1' }),
       });
       expect(result.userId).toBe('usr_raced');
     });
@@ -151,7 +151,7 @@ describe('OidcService', () => {
         id: 'usr_old',
         email: 'old@example.com',
         banned: false,
-        gideonSub: 'gideon-sub-1',
+        oidcSub: 'gideon-sub-1',
         tenantId: 'org_1',
       });
       mockUserUpdate.mockResolvedValue({ id: 'usr_old' });
@@ -170,7 +170,7 @@ describe('OidcService', () => {
       mockUserFindFirst.mockResolvedValue({
         id: 'usr_1',
         email: 'ada@example.com',
-        gideonSub: null,
+        oidcSub: null,
         banned: true,
         tenantId: 'org_1',
       });
@@ -211,12 +211,12 @@ describe('OidcService', () => {
       expect(mockUserFindFirst).not.toHaveBeenCalled();
     });
 
-    it('rejects a conflicting gideonSub link', async () => {
+    it('rejects a conflicting oidcSub link', async () => {
       mockSuccessfulExchange();
       mockUserFindFirst.mockResolvedValue({
         id: 'usr_1',
         email: 'ada@example.com',
-        gideonSub: 'other-sub',
+        oidcSub: 'other-sub',
         banned: false,
         tenantId: 'org_1',
       });

@@ -65,9 +65,9 @@ describe('Generic employee sync IdP identity gate', () => {
 
   it.each([
     null,
-    { id: 'user_1', gideonSub: null },
-    { id: 'user_1', gideonSub: ' ' },
-    { id: 'user_1', gideonSub: 'old_idp_sub' },
+    { id: 'user_1', oidcSub: null },
+    { id: 'user_1', oidcSub: ' ' },
+    { id: 'user_1', oidcSub: 'old_idp_sub' },
   ])(
     'skips an employee absent from the IdP without creating or changing access: %p',
     async (user) => {
@@ -100,9 +100,9 @@ describe('Generic employee sync IdP identity gate', () => {
   it.each(['active', 'inactive'] as const)(
     'leaves %s members absent from the IdP unchanged during directory sync',
     async (status) => {
-      mockUserFindUnique.mockResolvedValue({ id: 'user_1', gideonSub: null });
+      mockUserFindUnique.mockResolvedValue({ id: 'user_1', oidcSub: null });
       mockMemberFindMany.mockResolvedValue([
-        { id: 'member_1', role: 'employee', user: { email, gideonSub: null } },
+        { id: 'member_1', role: 'employee', user: { email, oidcSub: null } },
       ]);
       const result = await service.processEmployees({
         organizationId: 'org_1',
@@ -117,8 +117,8 @@ describe('Generic employee sync IdP identity gate', () => {
 
   it('syncs a confirmed IdP employee before their first login', async () => {
     mockResolveHrIdentity.mockResolvedValue({ id: 'idp_1', email });
-    mockGetHrSyncUser.mockResolvedValue({ id: 'user_1', gideonSub: 'idp_1' });
-    mockUserFindUnique.mockResolvedValue({ id: 'user_1', gideonSub: 'idp_1' });
+    mockGetHrSyncUser.mockResolvedValue({ id: 'user_1', oidcSub: 'idp_1' });
+    mockUserFindUnique.mockResolvedValue({ id: 'user_1', oidcSub: 'idp_1' });
     const result = await service.processEmployees({
       organizationId: 'org_1',
       employees: [employee],
@@ -136,12 +136,12 @@ describe('Generic employee sync IdP identity gate', () => {
       {
         id: 'member_failed',
         role: 'employee',
-        user: { email, gideonSub: null },
+        user: { email, oidcSub: null },
       },
       {
         id: 'member_linked',
         role: 'employee',
-        user: { email: 'linked@example.com', gideonSub: 'idp_linked' },
+        user: { email: 'linked@example.com', oidcSub: 'idp_linked' },
       },
     ]);
     mockResolveHrIdentity

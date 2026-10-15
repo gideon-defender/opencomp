@@ -20,7 +20,7 @@ export type TenantLinkResult =
   | { ok: false; reason: 'unlinked' | 'cross-tenant' };
 
 /**
- * Link a Gideon subject to its OpenComp user through `User.gideonSub` only
+ * Link a Gideon subject to its OpenComp user through `User.oidcSub` only
  * (never email-global) and require the row's immutable `User.tenantId` to
  * equal the verified token tenant. Shared by the direct Gideon-JWT path and
  * the MCP tenant gate so the two cannot drift.
@@ -35,7 +35,7 @@ export async function resolveTenantLinkedUser({
   logger?: Logger;
 }): Promise<TenantLinkResult> {
   const linked = await db.user.findUnique({
-    where: { gideonSub: sub },
+    where: { oidcSub: sub },
     select: { id: true, email: true, tenantId: true },
   });
   if (!linked) {
@@ -66,7 +66,7 @@ export async function resolveTenantLinkedUser({
  * Contract (all failures throw — never fall back to legacy):
  * 1. Tenant resolves from verified claims via the strict claim contract
  *    (missing/malformed/conflicting → 401).
- * 2. Subject resolves through `User.gideonSub` only (never email-global);
+ * 2. Subject resolves through `User.oidcSub` only (never email-global);
  *    unlinked → 401.
  * 3. `User.tenantId` must equal the token tenant (cross-tenant subject →
  *    403). The same email in two tenants is two independent User rows.

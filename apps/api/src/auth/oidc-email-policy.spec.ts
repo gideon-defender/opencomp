@@ -103,7 +103,7 @@ describe('OidcService', () => {
       mockUserFindFirst.mockResolvedValue({
         id: 'usr_1',
         email: 'ada@example.com',
-        gideonSub: null,
+        oidcSub: null,
         banned: false,
         tenantId: 'org_1',
       });
@@ -149,7 +149,7 @@ describe('OidcService', () => {
         id: 'victim',
         email: 'ada@example.com',
         tenantId: 'org_1',
-        gideonSub: null,
+        oidcSub: null,
       },
     ])(
       'blocks an unverified email from linking tenant or expand-window accounts (%j)',
@@ -166,7 +166,7 @@ describe('OidcService', () => {
             id: 'victim',
             email: 'ada@example.com',
             tenantId: null,
-            gideonSub: null,
+            oidcSub: null,
           },
         ]);
 
@@ -192,7 +192,7 @@ describe('OidcService', () => {
         id: 'usr_1',
         email: 'ada@example.com',
         tenantId: 'org_1',
-        gideonSub: 'gideon-sub-1',
+        oidcSub: 'gideon-sub-1',
         banned: false,
       });
       mockUserUpdate.mockResolvedValue({
@@ -206,7 +206,7 @@ describe('OidcService', () => {
       expect(mockUserFindFirst).not.toHaveBeenCalled();
       expect(mockUserUpdate).toHaveBeenCalledWith({
         where: { id: 'usr_1' },
-        data: { lastLogin: expect.any(Date), gideonTenantId: 'org_1' },
+        data: { lastLogin: expect.any(Date), oidcTenantId: 'org_1' },
       });
     });
   });

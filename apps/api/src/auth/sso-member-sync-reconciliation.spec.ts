@@ -46,7 +46,7 @@ const initialMember = () => ({
   roleSource: 'sso',
   idpAccessRevoked: false,
   user: {
-    gideonSub: '67dc2bb3-7728-4dc5-b945-074aa1c118ef',
+    oidcSub: '67dc2bb3-7728-4dc5-b945-074aa1c118ef',
     tenantId,
     email: 'user@example.com',
   },

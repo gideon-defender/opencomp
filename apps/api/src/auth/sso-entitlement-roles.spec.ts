@@ -53,7 +53,7 @@ function refresh(userId = 'usr_1') {
 describe('refreshSsoLoginRoles', () => {
   it('claims an expand-window null-tenant row for the login tenant', async () => {
     mockFindUnique.mockResolvedValue({
-      gideonSub: 'sub-1',
+      oidcSub: 'sub-1',
       tenantId: null,
       email: 'person@example.com',
     });
@@ -67,7 +67,7 @@ describe('refreshSsoLoginRoles', () => {
 
   it('rejects a row owned by another tenant without writing', async () => {
     mockFindUnique.mockResolvedValue({
-      gideonSub: 'sub-1',
+      oidcSub: 'sub-1',
       tenantId: 'foreign-tenant',
       email: 'person@example.com',
     });
@@ -79,7 +79,7 @@ describe('refreshSsoLoginRoles', () => {
 
   it('refreshes a shared membership with the verified secondary login subject', async () => {
     mockFindUnique.mockResolvedValue({
-      gideonSub: 'primary-sub',
+      oidcSub: 'primary-sub',
       tenantId: 'primary',
       email: 'person@example.com',
     });
@@ -107,7 +107,7 @@ describe('refreshSsoLoginRoles', () => {
 
   it('rejects a row with no linked subject', async () => {
     mockFindUnique.mockResolvedValue({
-      gideonSub: null,
+      oidcSub: null,
       tenantId: organizationId,
       email: 'person@example.com',
     });
@@ -118,7 +118,7 @@ describe('refreshSsoLoginRoles', () => {
 
   it('surfaces a descriptive conflict when the ownership claim collides (P2002)', async () => {
     mockFindUnique.mockResolvedValue({
-      gideonSub: 'sub-1',
+      oidcSub: 'sub-1',
       tenantId: null,
       email: 'person@example.com',
     });
@@ -130,7 +130,7 @@ describe('refreshSsoLoginRoles', () => {
 
   it('rethrows non-unique errors from the ownership claim', async () => {
     mockFindUnique.mockResolvedValue({
-      gideonSub: 'sub-1',
+      oidcSub: 'sub-1',
       tenantId: null,
       email: 'person@example.com',
     });

@@ -100,7 +100,7 @@ describe('OidcService.handleCallback negatives', () => {
     mockUserFindFirst.mockResolvedValue({
       id: 'u_1',
       banned: false,
-      gideonSub: null,
+      oidcSub: null,
       tenantId: 'org_1',
     });
     mockUserUpdate.mockResolvedValue({ id: 'u_1' });
@@ -268,7 +268,7 @@ describe('OidcService.peekStoredRedirect', () => {
     mockUserFindFirst.mockResolvedValue({
       id: 'u_1',
       banned: false,
-      gideonSub: null,
+      oidcSub: null,
       tenantId: 'org_1',
     });
     mockUserUpdate.mockResolvedValue({ id: 'u_1' });

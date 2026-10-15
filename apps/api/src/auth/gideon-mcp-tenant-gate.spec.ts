@@ -80,7 +80,7 @@ describe('Gideon MCP tenant isolation', () => {
       UnauthorizedException,
     );
     expect(mockUser).toHaveBeenCalledWith({
-      where: { gideonSub: 'sub_unknown' },
+      where: { oidcSub: 'sub_unknown' },
       select: { id: true, email: true, tenantId: true },
     });
     expect(mockGetMcpSession).not.toHaveBeenCalled();
@@ -146,7 +146,7 @@ describe('Gideon MCP tenant isolation', () => {
     });
     mockUser.mockImplementation(
       ({ where }: { where: Record<string, string> }) => {
-        if (where.gideonSub === 'sub_b')
+        if (where.oidcSub === 'sub_b')
           return Promise.resolve({ id: 'usr_b', tenantId: 'org_b' });
         if (where.id === 'usr_b')
           return Promise.resolve({ id: 'usr_b', email: 'same@acme.com' });

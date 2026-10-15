@@ -519,7 +519,7 @@ describe('HybridAuthGuard — Gideon JWT (Milestone 2 enforce)', () => {
       payload: { sub: 'gideon-sub-1', tid: 'org_1', email: 'gin@acme.com' },
       protectedHeader: { kid: 'k1' },
     });
-    // gideonSub → OpenComp user link (provisioned at OIDC first login).
+    // oidcSub → OpenComp user link (provisioned at OIDC first login).
     // Phase 0: the linked row's immutable tenantId must equal the token tenant.
     mockUserFindUnique.mockResolvedValue({
       id: 'usr_1',
@@ -542,10 +542,10 @@ describe('HybridAuthGuard — Gideon JWT (Milestone 2 enforce)', () => {
     });
 
     await expect(guard.canActivate(context)).resolves.toBe(true);
-    // The Gideon `sub` must be resolved through User.gideonSub — never used
+    // The Gideon `sub` must be resolved through User.oidcSub — never used
     // directly as the OpenComp user id.
     expect(mockUserFindUnique).toHaveBeenCalledWith({
-      where: { gideonSub: 'gideon-sub-1' },
+      where: { oidcSub: 'gideon-sub-1' },
       select: { id: true, email: true, tenantId: true },
     });
     expect(request.authType).toBe('gideon');
@@ -1468,7 +1468,7 @@ describe('HybridAuthGuard — MCP via Gideon JWT (Milestone 3)', () => {
       payload: { sub: 'gideon-sub-unknown', tid: 'org_1', email: 'x@acme.com' },
       protectedHeader: { kid: 'k1' },
     });
-    mockUserFindUnique.mockResolvedValue(null); // no gideonSub link
+    mockUserFindUnique.mockResolvedValue(null); // no oidcSub link
 
     const { context } = createContext({
       authorization: 'Bearer gideon.unknown.jwt',

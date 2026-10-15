@@ -6,6 +6,7 @@ import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
   approveContractUrl,
+  approveOfflineUrl,
   CONTRACT_START,
   planTenantMigrations,
 } from './tenant-migration-state.mjs';
@@ -77,6 +78,7 @@ export async function runStagedMigration({
     }
     const commandEnv = { ...env, PRISMA_MIGRATIONS_PATH: migrationsPath };
     if (phase === 'contract') commandEnv.DATABASE_URL = approveContractUrl(env.DATABASE_URL);
+    if (phase === 'offline') commandEnv.DATABASE_URL = approveOfflineUrl(env.DATABASE_URL);
     console.log(`Applying ${phase} migrations`);
     execute({ args: ['migrate', 'deploy'], env: commandEnv, root });
   } finally {

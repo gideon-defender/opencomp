@@ -12,11 +12,11 @@ model User {
   banned                         Boolean?
   banReason                      String?
   banExpires                     DateTime?
-  // Stable Gideon Auth `sub` ↔ OpenComp user link for OIDC login (Phase 0/1).
+  // Stable OIDC `sub` ↔ OpenComp user link for SSO login (Phase 0/1).
   // Globally unique: the same normalized email in two tenants uses two
   // distinct subjects and therefore two independent User rows.
-  gideonSub                      String?   @unique
-  // Immutable tenant ownership: the Gideon tenant (== Organization.id) this
+  oidcSub                      String?   @unique
+  // Immutable tenant ownership: the IdP tenant (== Organization.id) this
   // user belongs to. Required, set once at creation, never updated — see the
   // `User_tenantId_immutable` trigger in
   // 20261013000004_user_tenant_enforce. One user belongs to exactly one
@@ -25,7 +25,7 @@ model User {
   // Legacy login stamp (decoded from the access token, refreshed on login).
   // Kept for backwards-compatible readers; `tenantId` is the ownership
   // boundary. New code must scope by `tenantId`, never by this column alone.
-  gideonTenantId                 String?
+  oidcTenantId                 String?
 
   accounts                   Account[]
   auditLog                   AuditLog[]
@@ -83,8 +83,8 @@ model Session {
 
   deviceAgent    Boolean  @default(false)
   deviceAgentFor Device[] @relation("DeviceAgentSession")
-  // Gideon OIDC refresh token for session renewal/revocation (Phase 1).
-  gideonRefreshToken String?
+  // OIDC refresh token for session renewal/revocation (Phase 1).
+  oidcRefreshToken String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

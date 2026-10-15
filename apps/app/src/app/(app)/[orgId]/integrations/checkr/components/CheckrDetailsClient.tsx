@@ -132,7 +132,7 @@ export function CheckrDetailsClient({
             </p>
           ) : (
             <div className="space-y-2">
-              <CheckrStatusBadge readiness={initialReadiness} />
+              <CheckrStatusBadge readiness={initialReadiness} status="loaded" />
               {!initialReadiness.ready && initialReadiness.message && (
                 <p className="text-sm text-muted-foreground">{initialReadiness.message}</p>
               )}

@@ -4,7 +4,7 @@ import { buildPilotConversionPlan } from './pilot-conversion-plan.mjs';
 
 const member = ({ email, ...overrides }) => ({
   email,
-  gideonSub: `sub-${email}`,
+  oidcSub: `sub-${email}`,
   role: 'owner',
   roleSource: 'local',
   idpAccessRevoked: false,
@@ -44,12 +44,12 @@ test('keeps an active owner and revokes members without assignments', () => {
   assert.equal(plan[1].revoke, true);
 });
 
-for (const gideonSub of [null, undefined, '', '   ']) {
-  test(`revokes assigned unlinked members: ${JSON.stringify(gideonSub)}`, () => {
+for (const oidcSub of [null, undefined, '', '   ']) {
+  test(`revokes assigned unlinked members: ${JSON.stringify(oidcSub)}`, () => {
     const { plan, owners } = buildPilotConversionPlan({
       members: [
         member({ email: 'owner@example.com' }),
-        member({ email: 'unlinked@example.com', gideonSub, role: 'admin', roleSource: 'sso' }),
+        member({ email: 'unlinked@example.com', oidcSub, role: 'admin', roleSource: 'sso' }),
       ],
       byEmail: new Map([
         ['owner@example.com', ['owner']],
@@ -62,11 +62,11 @@ for (const gideonSub of [null, undefined, '', '   ']) {
     assert.equal(plan[1].revoke, true);
   });
 
-  test(`refuses cutover if the only assigned owner is unlinked: ${JSON.stringify(gideonSub)}`, () => {
+  test(`refuses cutover if the only assigned owner is unlinked: ${JSON.stringify(oidcSub)}`, () => {
     assert.throws(
       () =>
         buildPilotConversionPlan({
-          members: [member({ email: 'owner@example.com', gideonSub })],
+          members: [member({ email: 'owner@example.com', oidcSub })],
           byEmail: new Map([['owner@example.com', ['owner']]]),
         }),
       /zero active owners/,

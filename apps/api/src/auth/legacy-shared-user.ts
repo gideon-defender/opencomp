@@ -22,7 +22,7 @@ export async function findLegacySharedUser({
       AND (${purpose === 'hr-sync'} OR (m."deactivated" = false AND m."isActive" = true))
       AND u."tenantId" IS NOT NULL AND u."tenantId" <> ${tenantId}
       -- Email can locate HR state, but must never authenticate another subject.
-      AND (u."gideonSub" = ${sub}
+      AND (u."oidcSub" = ${sub}
         OR (${purpose === 'hr-sync'} AND lower(u.email) = ${normalizedEmail}))
       AND EXISTS (
         SELECT 1 FROM pg_index i JOIN pg_class c ON c.oid = i.indexrelid

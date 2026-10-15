@@ -2,6 +2,7 @@ name: Deploy to Dev
 
 on:
   workflow_dispatch:
+    # Maintenance deployment: dev services stop while migrations run.
 
 permissions:
   contents: read
@@ -208,19 +209,19 @@ jobs:
         id: ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Apply expansion migrations and deploy tenant-aware services
+      - name: Stop dev services, apply approved migrations, and start the new version
         shell: bash
         run: |
           bash .github/scripts/deploy-dev.sh
 
-      - name: Verify the requested rollout and drain old ECS tasks
+      - name: Verify the new version is healthy
         shell: bash
         run: |
           bash .github/scripts/wait-dev-services.sh
 
-      - name: Apply approved tenant contract migrations
+      - name: Restore service autoscaling after successful rollout
         shell: bash
-        run: bash .github/scripts/run-dev-migrations.sh contract
+        run: bash .github/scripts/restore-dev-autoscaling.sh
 
       - name: Verify hosted MCP edge
         shell: bash
@@ -229,6 +230,25 @@ jobs:
           curl --fail --silent --show-error --retry 5 --retry-delay 5 https://mcp.dev.gideondefender.com/healthz
           status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' --request POST https://mcp.dev.gideondefender.com/mcp)"
           test "$status" = 401
+
+      - name: Report maintenance failure
+        if: failure()
+        shell: bash
+        run: |
+          echo 'Deployment failed. Do not restart old images against renamed columns.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Services can remain stopped and autoscaling suspended. Use the dev-maintenance artifact to recover original counts and scaling settings after fixing the new release.' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Save maintenance state for recovery
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-maintenance-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/opencomp-service-counts
+            ${{ runner.temp }}/opencomp-service-scaling.json
+            ${{ runner.temp }}/opencomp-stopped-services
+            ${{ runner.temp }}/opencomp-expected-tasks
+          if-no-files-found: ignore
 
       - name: Print deployment summary
         run: |

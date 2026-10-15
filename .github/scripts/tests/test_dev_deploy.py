@@ -32,38 +32,82 @@ elif args[:2] == ['ecs', 'run-task']:
         completed = subprocess.run(['/bin/sh', '-ec', *command], capture_output=True, text=True)
         if completed.returncode: raise SystemExit(completed.stderr)
     with trace.open('a') as f: f.write('migration:' + phase + '\\n')
+    if scenario in ['missing-count', 'duplicate-count', 'invalid-count']:
+        counts = Path(os.environ['RUNNER_TEMP']) / 'opencomp-service-counts'
+        lines = counts.read_text().splitlines()
+        if scenario == 'missing-count': lines = lines[:-1]
+        if scenario == 'duplicate-count': lines.append(lines[-1])
+        if scenario == 'invalid-count': lines[-1] = lines[-1].split('|')[0] + '|invalid'
+        counts.write_text('\\n'.join(lines) + '\\n')
     print('arn:task/' + phase)
+elif args[:2] == ['application-autoscaling', 'describe-scalable-targets']:
+    if scenario == 'scaling-denied': raise SystemExit('AccessDenied')
+    targets = [{'ResourceId': 'service/test/gideon-dev-opencomp-api',
+        'SuspendedState': {'DynamicScalingInSuspended': True,
+            'DynamicScalingOutSuspended': False, 'ScheduledScalingSuspended': False}}]
+    if scenario == 'missing-suspension': targets[0].pop('SuspendedState')
+    if scenario == 'null-suspension': targets[0]['SuspendedState'] = None
+    if scenario == 'partial-suspension': targets[0]['SuspendedState'] = {'DynamicScalingInSuspended': True}
+    emit({'ScalableTargets': targets})
+elif args[:2] == ['application-autoscaling', 'register-scalable-target']:
+    suspended = value('--suspended-state')
+    with trace.open('a') as f: f.write('scaling:' + suspended + '\\n')
 elif args[:2] == ['ecs', 'update-service']:
-    with trace.open('a') as f: f.write('update:' + value('--service') + '\\n')
+    service = value('--service')
+    restart = '--task-definition' in args
+    if restart:
+        assert 'rollback=false' in value('--deployment-configuration')
+        desired = '0' if service.endswith('email-worker') else '2' if service.endswith('-api') else '1'
+        assert value('--desired-count') == desired
+    with trace.open('a') as f: f.write(('restart:' if restart else 'stop:') + service + '\\n')
 elif args[:2] == ['ecs', 'describe-services']:
-    expected = 'arn:' + value('--services') + ':new'
-    if scenario == 'rollback': expected = 'old'
-    rollout = 'COMPLETED'
-    if scenario == 'rollout-lag':
-        marker = 'rollout-observed:' + value('--services')
-        if marker not in trace.read_text(): rollout = 'IN_PROGRESS'
-        with trace.open('a') as f: f.write(marker + '\\n')
-    if scenario == 'rollout-stuck': rollout = 'IN_PROGRESS'
-    if scenario == 'rollout-failed': rollout = 'FAILED'
-    emit({'services': [{'taskDefinition': expected, 'desiredCount': 1, 'runningCount': 1,
-        'pendingCount': 0, 'deployments': [{'taskDefinition': expected, 'rolloutState': rollout}]}]})
+    services = args[args.index('--services') + 1:]
+    states = []
+    for service in services:
+        expected = 'arn:' + service + ':new'
+        restarted = 'restart:' + service in trace.read_text()
+        stopped = 'stop:' + service in trace.read_text() and not restarted
+        if scenario == 'rollback' and restarted: expected = 'old'
+        rollout = 'COMPLETED'
+        if scenario == 'rollout-lag' and restarted:
+            marker = 'rollout-observed:' + service
+            if marker not in trace.read_text(): rollout = 'IN_PROGRESS'
+            with trace.open('a') as f: f.write(marker + '\\n')
+        if scenario == 'rollout-stuck' and restarted: rollout = 'IN_PROGRESS'
+        if scenario == 'rollout-failed' and restarted: rollout = 'FAILED'
+        desired = 0 if stopped or service.endswith('email-worker') else 2 if service.endswith('-api') else 1
+        states.append({'serviceName': service, 'status': 'ACTIVE', 'schedulingStrategy': 'REPLICA',
+            'taskDefinition': expected, 'desiredCount': desired, 'runningCount': desired,
+            'pendingCount': 0, 'deployments': [{'taskDefinition': expected, 'rolloutState': rollout}]})
+    emit({'services': states})
 elif args[:2] == ['ecs', 'list-tasks']:
     status = value('--desired-status')
-    print('arn:task/' + value('--service-name') + '/' + status)
+    assert '--no-paginate' not in args and '--max-items' not in args
+    if scenario == 'large-live':
+        print('\\t'.join('arn:task/' + str(i) + '/' + value('--service-name') + '/' + status for i in range(101)))
+    else:
+        print('arn:task/' + value('--service-name') + '/' + status)
 elif args[:2] == ['ecs', 'describe-tasks']:
     if '--query' in args:
-        print(1 if scenario == 'expand-failure' else 0)
+        print(1 if scenario == 'migration-failure' else 0)
     else:
-        task = args[args.index('--tasks') + 1]
-        service, desired = task.split('/')[-2:]
-        old = desired == 'STOPPED'
-        draining = scenario == 'old-alive'
-        if old and scenario == 'old-drains':
-            marker = 'old-observed:' + service
-            draining = marker not in trace.read_text()
-            with trace.open('a') as f: f.write(marker + '\\n')
-        emit({'tasks': [{'lastStatus': 'RUNNING' if not old or draining else 'STOPPED',
-            'taskDefinitionArn': 'old' if old else 'arn:' + service + ':new'}]})
+        task_arns = args[args.index('--tasks') + 1:]
+        assert len(task_arns) <= 100
+        if scenario == 'large-live':
+            with trace.open('a') as f: f.write('batch:' + str(len(task_arns)) + '\\n')
+        tasks = []
+        for task in task_arns:
+            service, desired = task.split('/')[-2:]
+            stopped = 'stop:' + service in trace.read_text() and 'restart:' + service not in trace.read_text()
+            old = stopped or desired == 'STOPPED'
+            draining = scenario == 'old-alive' or (scenario == 'large-live' and task.split('/')[-3] == '100')
+            if old and scenario == 'old-drains':
+                marker = 'old-observed:' + service
+                draining = marker not in trace.read_text()
+                with trace.open('a') as f: f.write(marker + '\\n')
+            tasks.append({'lastStatus': 'RUNNING' if not old or draining else 'STOPPED',
+                'taskDefinitionArn': 'old' if old else 'arn:' + service + ':new'})
+        emit({'tasks': tasks})
 elif args[:2] == ['ecs', 'wait']: pass
 elif args[:2] == ['logs', 'get-log-events']: print('migration failed')
 else: raise SystemExit('Unexpected AWS call: ' + repr(args))
@@ -79,6 +123,7 @@ class DevDeployTests(unittest.TestCase):
             aws.chmod(0o755)
             trace = temporary / 'trace'
             trace.touch()
+            (temporary / 'opencomp-stopped-services').write_text('stale drain receipt')
             node = temporary / 'node'
             node.write_text('#!/bin/sh\n'
                 'test "$1" = packages/db/scripts/staged-migrate.mjs || exit 1\n'
@@ -94,58 +139,103 @@ class DevDeployTests(unittest.TestCase):
             result = subprocess.run(['bash', '-c',
                 'set -e; bash .github/scripts/deploy-dev.sh; '
                 'bash .github/scripts/wait-dev-services.sh; '
-                'bash .github/scripts/run-dev-migrations.sh contract'],
+                'bash .github/scripts/restore-dev-autoscaling.sh'],
                 cwd=ROOT, env=env, capture_output=True, text=True)
             return result, trace.read_text().splitlines()
 
-    def test_expand_rollout_drain_then_contract(self):
+    def test_offline_migration_requires_a_completed_drain(self):
+        with tempfile.TemporaryDirectory() as directory:
+            result = subprocess.run(['bash', '.github/scripts/run-dev-migrations.sh', 'offline'],
+                cwd=ROOT, env=dict(os.environ, RUNNER_TEMP=directory),
+                capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn('requires a completed service drain', result.stdout)
+
+    def test_stop_drain_migrate_restart_and_restore_scaling(self):
         result, events = self.run_flow('')
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(events[0], 'migration:expand')
-        self.assertEqual(events[-1], 'migration:contract')
-        self.assertEqual(sum(event.startswith('update:') for event in events), 6)
+        migration = events.index('migration:offline')
+        self.assertEqual(sum(event.startswith('stop:') for event in events[:migration]), 5)
+        self.assertEqual(sum(event.startswith('restart:') for event in events[migration:]), 5)
+        self.assertTrue(events[0].startswith('scaling:DynamicScalingInSuspended=true'))
+        restored = json.loads(events[-1].removeprefix('scaling:'))
+        self.assertEqual(restored, {'DynamicScalingInSuspended': True,
+            'DynamicScalingOutSuspended': False, 'ScheduledScalingSuspended': False})
 
-    def test_failed_expansion_never_updates_services(self):
-        result, events = self.run_flow('expand-failure')
+    def test_invalid_count_snapshots_block_every_restart(self):
+        for scenario in ['missing-count', 'duplicate-count', 'invalid-count']:
+            with self.subTest(scenario=scenario):
+                result, events = self.run_flow(scenario)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn('Invalid or missing desired count', result.stdout)
+                self.assertFalse(any(event.startswith('restart:') for event in events))
+
+    def test_absent_and_partial_suspension_flags_have_explicit_defaults(self):
+        for scenario in ['missing-suspension', 'null-suspension', 'partial-suspension']:
+            with self.subTest(scenario=scenario):
+                result, events = self.run_flow(scenario)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                restored = json.loads(events[-1].removeprefix('scaling:'))
+                self.assertEqual(restored, {'DynamicScalingInSuspended': scenario == 'partial-suspension',
+                    'DynamicScalingOutSuspended': False, 'ScheduledScalingSuspended': False})
+
+    def test_live_task_after_first_hundred_blocks_migration(self):
+        result, events = self.run_flow('large-live')
         self.assertNotEqual(result.returncode, 0)
-        self.assertEqual(events, ['migration:expand'])
+        self.assertIn('batch:100', events)
+        self.assertIn('batch:1', events)
+        self.assertNotIn('migration:offline', events)
+        self.assertFalse(any(event.startswith('restart:') for event in events))
+
+    def test_failed_migration_leaves_services_stopped(self):
+        result, events = self.run_flow('migration-failure')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('migration:offline', events)
+        self.assertFalse(any(event.startswith('restart:') for event in events))
+        self.assertEqual(sum(event.startswith('scaling:') for event in events), 1)
 
     def test_shell_entrypoint_executes_driver_and_preserves_tls_bootstrap(self):
         result, events = self.run_flow('shell-entrypoint')
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(events[:3], ['tls-ready', 'driver:expand', 'migration:expand'])
-        self.assertEqual(events[-3:], ['tls-ready', 'driver:contract', 'migration:contract'])
+        migration = events.index('migration:offline')
+        self.assertEqual(events[migration-2:migration], ['tls-ready', 'driver:offline'])
 
-    def test_unknown_wrapper_fails_before_migrations_or_rollout(self):
+    def test_unknown_wrapper_blocks_migrations_and_restart(self):
         result, events = self.run_flow('bad-wrapper')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertNotIn('migration:offline', events)
+        self.assertFalse(any(event.startswith('restart:') for event in events))
+
+    def test_scaling_permission_failure_does_not_stop_services(self):
+        result, events = self.run_flow('scaling-denied')
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(events, [])
 
-    def test_waits_for_rollout_completion_after_aws_stability_waiter(self):
+    def test_waits_for_rollout_completion_before_restoring_scaling(self):
         result, events = self.run_flow('rollout-lag')
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(events[-1], 'migration:contract')
+        self.assertTrue(events[-1].startswith('scaling:{'))
         self.assertEqual(sum(event.startswith('rollout-observed:') for event in events), 10)
 
-    def test_failed_or_stuck_rollouts_block_contract(self):
-        for scenario in ['rollout-failed', 'rollout-stuck']:
+    def test_failed_or_stuck_rollouts_leave_scaling_suspended(self):
+        for scenario in ['rollout-failed', 'rollout-stuck', 'rollback']:
             with self.subTest(scenario=scenario):
                 result, events = self.run_flow(scenario)
                 self.assertNotEqual(result.returncode, 0)
-                self.assertNotIn('migration:contract', events)
+                self.assertEqual(sum(event.startswith('scaling:') for event in events), 1)
+                self.assertIn('autoscaling restoration is blocked', result.stdout)
 
-    def test_waits_until_old_tasks_actually_stop(self):
+    def test_waits_until_old_tasks_actually_stop_before_migration(self):
         result, events = self.run_flow('old-drains')
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(events[-1], 'migration:contract')
-        self.assertEqual(sum(event.startswith('old-observed:') for event in events), 10)
+        migration = events.index('migration:offline')
+        self.assertEqual(sum(event.startswith('old-observed:') for event in events[:migration]), 20)
 
-    def test_rollback_or_live_old_task_blocks_contract(self):
-        for scenario in ['rollback', 'old-alive']:
-            with self.subTest(scenario=scenario):
-                result, events = self.run_flow(scenario)
-                self.assertNotEqual(result.returncode, 0)
-                self.assertNotIn('migration:contract', events)
+    def test_live_old_tasks_block_migration_and_restart(self):
+        result, events = self.run_flow('old-alive')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertNotIn('migration:offline', events)
+        self.assertFalse(any(event.startswith('restart:') for event in events))
 
 
 if __name__ == '__main__':

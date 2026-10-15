@@ -144,7 +144,11 @@ export function PlatformIntegrations({ className, taskTemplates }: PlatformInteg
   // requires backgroundCheck:create, so the badge only renders for viewers
   // who can read it; the card itself stays discoverable for everyone.
   const canReadCheckrStatus = hasPermission('backgroundCheck', 'create');
-  const { data: checkrReadiness } = useSWR(
+  const {
+    data: checkrReadiness,
+    error: checkrReadinessError,
+    isLoading: checkrReadinessLoading,
+  } = useSWR(
     canReadCheckrStatus && orgId
       ? (['/v1/people/candidate-screenings/readiness', orgId] as const)
       : null,
@@ -155,6 +159,11 @@ export function PlatformIntegrations({ className, taskTemplates }: PlatformInteg
     },
     { revalidateOnFocus: false },
   );
+  const checkrReadinessStatus = checkrReadinessLoading
+    ? 'loading'
+    : checkrReadinessError
+      ? 'error'
+      : 'loaded';
   const { startOAuth } = useIntegrationMutations();
   const { data: vendorsResponse } = useVendors();
 
@@ -568,6 +577,7 @@ export function PlatformIntegrations({ className, taskTemplates }: PlatformInteg
                     key="checkr"
                     orgId={orgId}
                     readiness={checkrReadiness}
+                    readinessStatus={checkrReadinessStatus}
                     canReadStatus={canReadCheckrStatus}
                   />
                 );

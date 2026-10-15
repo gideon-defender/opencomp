@@ -34,7 +34,7 @@ export async function GET() {
         name: 'DB Test User',
         emailVerified: false,
         tenantId: testOrg.id,
-        gideonTenantId: testOrg.id,
+        oidcTenantId: testOrg.id,
         members: {
           create: {
             id: `test_member_${Date.now()}`,

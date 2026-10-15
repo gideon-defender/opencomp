@@ -43,7 +43,7 @@ const memberCols = [
   'm."isActive"',
   hasRoleSource ? 'm."roleSource"' : `'local' AS "roleSource"`,
   hasRevoked ? 'm."idpAccessRevoked"' : `false AS "idpAccessRevoked"`,
-  `CASE WHEN u."gideonSub" IS NULL THEN false ELSE true END AS "linked"`,
+  `CASE WHEN u."oidcSub" IS NULL THEN false ELSE true END AS "linked"`,
   'u."lastLogin"',
 ].join(', ');
 

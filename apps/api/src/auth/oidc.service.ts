@@ -201,11 +201,11 @@ export class OidcService {
   async revokeAndDeleteSession(sessionToken: string): Promise<void> {
     const session = await db.session.findUnique({
       where: { token: sessionToken },
-      select: { id: true, gideonRefreshToken: true },
+      select: { id: true, oidcRefreshToken: true },
     });
     if (!session) return;
-    if (session.gideonRefreshToken) {
-      await this.revokeToken(session.gideonRefreshToken);
+    if (session.oidcRefreshToken) {
+      await this.revokeToken(session.oidcRefreshToken);
     }
     try {
       await db.session.delete({ where: { id: session.id } });

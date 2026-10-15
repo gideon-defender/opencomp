@@ -47,7 +47,7 @@ import { GenericEmployeeSyncService } from './generic-employee-sync.service';
 describe('GenericEmployeeSyncService SSO role ownership', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUserFindUnique.mockResolvedValue({ id: 'user_1', gideonSub: 'idp_1' });
+    mockUserFindUnique.mockResolvedValue({ id: 'user_1', oidcSub: 'idp_1' });
     mockMemberFindMany.mockResolvedValue([]);
     mockOrgRoleFindMany.mockResolvedValue([]);
   });
