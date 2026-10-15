@@ -1,8 +1,7 @@
 'use client';
 
 import { useApi } from '@/hooks/use-api';
-import { Button } from '@trycompai/design-system';
-import { Add, Close, Edit, Locked, Save, Unlocked } from '@trycompai/design-system/icons';
+import { Button } from '@gideon-defender/ui/button';
 import {
   Background,
   BackgroundVariant,
@@ -18,6 +17,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { formatDistanceToNow } from 'date-fns';
+import { Loader2, Lock, LockOpen, Pencil, Plus, Save, X } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import type { OrgChartMember } from '../types';
@@ -132,26 +132,8 @@ export function OrgChartEditor({
         return;
       }
 
-      // Batch-persist job title changes to member records
-      const savedNodeMap = new Map<string, OrgChartNodeData>();
-      for (const n of savedStateRef.current.nodes) {
-        const d = n.data as OrgChartNodeData | undefined;
-        if (d?.memberId) savedNodeMap.set(d.memberId, d);
-      }
-      for (const n of nodes) {
-        const d = n.data as OrgChartNodeData | undefined;
-        if (d?.memberId) {
-          const prev = savedNodeMap.get(d.memberId);
-          const newTitle = (d.title ?? '').trim();
-          const oldTitle = (prev?.title ?? '').trim();
-          if (newTitle !== oldTitle) {
-            api.patch(`/v1/people/${d.memberId}`, { jobTitle: newTitle }).catch(() => {
-              // Non-critical: chart data already persisted with the title
-            });
-          }
-        }
-      }
-
+      // Job titles live in the chart payload itself. Member-record sync
+      // went away with PATCH /v1/people/:id (IdP-owned user management).
       savedStateRef.current = { nodes: [...nodes], edges: [...edges] };
       setIsLocked(true);
       setShowSidebar(false);
@@ -238,33 +220,23 @@ export function OrgChartEditor({
       <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
         <div className="flex items-center gap-2 overflow-hidden">
           {isLocked ? (
-            <Locked size={14} className="shrink-0 text-muted-foreground" />
+            <Lock size={14} className="shrink-0 text-muted-foreground" />
           ) : (
-            <Unlocked size={14} className="shrink-0 text-muted-foreground" />
+            <LockOpen size={14} className="shrink-0 text-muted-foreground" />
           )}
           <span className="truncate text-xs text-muted-foreground">{formattedLastSaved}</span>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {isLocked ? (
-            <Button
-              variant="outline"
-              size="sm"
-              iconLeft={<Edit size={16} />}
-              onClick={handleUnlock}
-            >
-              Edit Chart
+            <Button variant="outline" size="sm" onClick={handleUnlock}>
+              <Pencil size={16} /> Edit Chart
             </Button>
           ) : (
             <>
               {/* Mobile: toggle people sidebar */}
               <div className="md:hidden">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  iconLeft={<Add size={16} />}
-                  onClick={() => setShowSidebar(!showSidebar)}
-                >
-                  People
+                <Button variant="outline" size="sm" onClick={() => setShowSidebar(!showSidebar)}>
+                  <Plus size={16} /> People
                 </Button>
               </div>
               {hasSelectedElements && (
@@ -272,20 +244,11 @@ export function OrgChartEditor({
                   Delete
                 </Button>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                iconLeft={<Close size={16} />}
-                onClick={handleCancel}
-              >
-                <span className="hidden sm:inline">Cancel</span>
+              <Button variant="outline" size="sm" aria-label="Cancel" onClick={handleCancel}>
+                <X size={16} /> <span className="hidden sm:inline">Cancel</span>
               </Button>
-              <Button
-                size="sm"
-                iconLeft={<Save size={16} />}
-                onClick={handleSave}
-                loading={isSaving}
-              >
+              <Button size="sm" onClick={handleSave} disabled={isSaving}>
+                {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}{' '}
                 Save
               </Button>
             </>

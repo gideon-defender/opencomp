@@ -2,8 +2,6 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { AccessGrantedEmail } from './access-granted';
 import { AccessReclaimEmail } from './access-reclaim';
 import { AccessRequestNotificationEmail } from './access-request-notification';
-import { InviteEmail } from './invite-member';
-import { LoginEmailChangedEmail } from './login-email-changed';
 import { NdaSigningEmail } from './nda-signing';
 import { TrustDomainMisconfiguredEmail } from './trust-domain-misconfigured';
 import { runLocaleCases, type LocaleCase } from './locale-cases';
@@ -52,33 +50,6 @@ const cases: LocaleCase[] = [
           requesterName: 'Bob',
           requesterEmail: 'bob@example.com',
           reviewUrl: 'https://app.example.com/review',
-          locale,
-        }),
-      ),
-  },
-  {
-    name: 'InviteEmail',
-    enMarker: 'Get started',
-    esMarker: 'Comenzar',
-    build: (locale) =>
-      renderToStaticMarkup(
-        InviteEmail({
-          organizationName: 'Acme',
-          inviteLink: 'https://app.example.com/invite/1',
-          locale,
-        }),
-      ),
-  },
-  {
-    name: 'LoginEmailChangedEmail',
-    enMarker: 'Your login email was changed',
-    esMarker: 'Tu correo de inicio de sesión ha cambiado',
-    build: (locale) =>
-      renderToStaticMarkup(
-        LoginEmailChangedEmail({
-          organizationName: 'Acme',
-          oldEmail: 'old@example.com',
-          newEmail: 'new@example.com',
           locale,
         }),
       ),

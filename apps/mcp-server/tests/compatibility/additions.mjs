@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 
 // Additive API contracts have no generated predecessor. Preserve the frozen
-// 412-tool oracle and require these exact additions alongside full old parity.
+// 400-tool oracle (412 at Phase 3 minus the 12 IdP-owned writers deleted in
+// Phase 4) and require these exact additions alongside full old parity.
 export const reviewedToolAdditions = [
   {
     name: 'check-candidate-screening-readiness',

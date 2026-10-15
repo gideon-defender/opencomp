@@ -1,27 +1,19 @@
-import { GoneException, Logger } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import type { NextFunction, Request, Response } from 'express';
 
 const logger = new Logger('IdpOwnershipFence');
 
 /**
- * Phase 3 (IdP-owned user management): human membership and role writes are
- * owned by the Gideon identity service. Legacy OpenComp writers stay routed
- * for one release but return 410 Gone with this message (readable for
- * MCP/agent callers) instead of mutating. Phase 4 deletes them.
+ * IdP-owned user management: human membership and role writes are owned by
+ * the Gideon identity service. Phase 4 deleted the legacy OpenComp writers;
+ * what remains here is permanent edge protection for the framework-generated
+ * better-auth organization routes (which cannot be deleted, only blocked)
+ * plus the shared message.
  */
 export const IDP_MANAGED_MESSAGE =
   'User and role management is owned by the Gideon identity service. ' +
   'Manage members, invitations, and role assignments in Gideon — ' +
   'this OpenComp endpoint returns 410 Gone.';
-
-/**
- * Fence for NestJS controllers: guards (401/403) still run first.
- * Returns void (not never) so the fenced handler body left in place for
- * Phase 4 deletion still typechecks below the fence call.
- */
-export function throwIdpManagedGone(): void {
-  throw new GoneException(IDP_MANAGED_MESSAGE);
-}
 
 /**
  * Better Auth organization mutations blocked at the HTTP edge, verified

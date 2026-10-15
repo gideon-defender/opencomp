@@ -86,16 +86,17 @@ describe('EmployeeBackgroundCheck — V1 two-paths', () => {
       },
       status: 200,
     });
-    vi.mocked(apiClient.patch).mockResolvedValue({ data: { id: 'mem_1' }, status: 200 });
   });
 
-  it('renders the three paths with Order selected by default', () => {
+  it('renders the two paths with Order selected by default', () => {
     renderSection();
 
     expect(screen.getByText('How would you like to proceed?')).toBeInTheDocument();
     expect(screen.getByText('Order a new check')).toBeInTheDocument();
     expect(screen.getByText('Attach an existing report')).toBeInTheDocument();
-    expect(screen.getByText('Mark as exempt')).toBeInTheDocument();
+    // IdP-owned user management: exemptions are Gideon-synced, so the
+    // exempt path is not offered locally.
+    expect(screen.queryByText('Mark as exempt')).not.toBeInTheDocument();
     expect(screen.queryByText('Logs a compliance exception')).not.toBeInTheDocument();
 
     const orderCard = screen.getByRole('radio', { name: /Order a new check/i });
@@ -130,27 +131,27 @@ describe('EmployeeBackgroundCheck — V1 two-paths', () => {
     expect(screen.getByRole('button', { name: /Attach report/i })).toBeDisabled();
   });
 
-  it('switches to the Exempt form and warns about compliance exception', async () => {
+  it('does not offer an exempt path (exemptions are Gideon-managed)', async () => {
     const user = userEvent.setup();
     renderSection();
 
-    await user.click(screen.getByRole('radio', { name: /Mark as exempt/i }));
+    expect(screen.queryByRole('radio', { name: /Mark as exempt/i })).not.toBeInTheDocument();
 
-    expect(screen.getByText('Exemptions create a compliance exception')).toBeInTheDocument();
-    expect(screen.getByText(/Reason for exemption/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Confirm exemption/i })).toBeDisabled();
+    await user.click(screen.getByRole('radio', { name: /Attach an existing report/i }));
+    expect(screen.queryByRole('radio', { name: /Mark as exempt/i })).not.toBeInTheDocument();
+    expect(apiClient.patch).not.toHaveBeenCalled();
   });
 
-  it('hides the scope panel on the Exempt path and shows it on Order and Attach', async () => {
+  it('always shows the scope panel on both paths', async () => {
     const user = userEvent.setup();
     renderSection();
 
     expect(screen.getByText(/What's verified in this check/)).toBeInTheDocument();
 
-    await user.click(screen.getByRole('radio', { name: /Mark as exempt/i }));
-    expect(screen.queryByText(/What's verified in this check/)).not.toBeInTheDocument();
-
     await user.click(screen.getByRole('radio', { name: /Attach an existing report/i }));
+    expect(screen.getByText(/What's verified in this check/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('radio', { name: /Order a new check/i }));
     expect(screen.getByText(/What's verified in this check/)).toBeInTheDocument();
   });
 
@@ -200,31 +201,21 @@ describe('EmployeeBackgroundCheck — V1 two-paths', () => {
     expect(screen.getByRole('button', { name: /Send invite/i })).toBeDisabled();
   });
 
-  it('PATCHes /v1/people/:id with exempt + reason when Confirm exemption is clicked', async () => {
+  it('renders the exempt toggle read-only and never PATCHes the member', async () => {
     const user = userEvent.setup();
-    renderSection();
+    renderSection({ memberBackgroundCheckExempt: true });
 
-    await user.click(screen.getByRole('radio', { name: /Mark as exempt/i }));
+    expect(screen.getByText(/backgroundCheck\.main\.exemptNoticeTitle/i)).toBeInTheDocument();
+    expect(screen.getByText('Exemption changes are unavailable')).toBeInTheDocument();
+    expect(screen.getByText(/does not sync exemption changes from Gideon/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Update it in Gideon/i)).not.toBeInTheDocument();
 
-    // open Select dropdown and pick a reason via keyboard
-    const trigger = screen.getByRole('combobox');
-    await user.click(trigger);
-    // The options render in a portal after the menu opens — wait for them
-    // instead of querying synchronously, which flakes under full-suite load.
-    await user.click(await screen.findByRole('option', { name: /Local law prohibits check/i }));
+    const toggle = screen.getByRole('switch', { name: /exempt this employee/i });
+    // Base UI marks the locked switch with data-disabled (no native disabled attr).
+    expect(toggle).toHaveAttribute('data-disabled');
 
-    await user.click(screen.getByRole('button', { name: /Confirm exemption/i }));
-
-    await waitFor(() => {
-      expect(apiClient.patch).toHaveBeenCalledWith(
-        '/v1/people/mem_1',
-        expect.objectContaining({
-          backgroundCheckExempt: true,
-          backgroundCheckExemptReason: 'local_law_prohibits',
-        }),
-        'org_1',
-      );
-    });
+    await user.click(toggle);
+    expect(apiClient.patch).not.toHaveBeenCalled();
   });
 
   it('preserves Order form values when switching paths and returning', async () => {
@@ -355,7 +346,7 @@ describe('EmployeeBackgroundCheck — V1 two-paths', () => {
     expect(screen.queryByText('How would you like to proceed?')).not.toBeInTheDocument();
   });
 
-  it('resyncs internal exempt state when the prop flips to true', () => {
+  it('reflects the exempt prop when it flips to true', () => {
     const { rerender } = render(
       <EmployeeBackgroundCheck
         employee={employee}

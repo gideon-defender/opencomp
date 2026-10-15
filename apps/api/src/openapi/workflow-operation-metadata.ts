@@ -74,11 +74,6 @@ export const WORKFLOW_OPERATION_METADATA: Record<
     description:
       'List employees and contractors with onboarding, training, device, and compliance status used for people-security controls.',
   },
-  PeopleController_inviteMembers_v1: {
-    summary: 'Invite workforce members',
-    description:
-      'Invite employees or contractors to complete portal tasks, training, device setup, and compliance evidence requirements.',
-  },
   PeopleController_getFleetCompliance_v1: {
     summary: 'Get fleet compliance',
     description:

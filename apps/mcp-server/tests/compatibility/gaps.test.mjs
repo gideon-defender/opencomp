@@ -52,7 +52,7 @@ test('strict DTOs reject extras and current spec constraints cannot silently wea
     false,
   );
   assert.equal(
-    tool('create-role').plan.input.safeParse({ request: { name: 'x', permissions: {} } }).success,
+    tool('create-task').plan.input.safeParse({ request: {} }).success,
     false,
   );
 });

@@ -11,7 +11,7 @@ import {
   TabsTrigger,
 } from '@trycompai/design-system';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import type { DeviceWithChecks, FleetPolicy, Host } from '../../devices/types';
 import type { BackgroundCheckBillingStatus, BackgroundCheckRecord } from './backgroundCheckTypes';
 import { EmployeeAccess } from './EmployeeAccess';
@@ -124,14 +124,6 @@ export function Employee({
     [pathname, router, searchParams],
   );
 
-  const [memberExempt, setMemberExempt] = useState(memberBackgroundCheckExempt);
-  const [lastSyncedExempt, setLastSyncedExempt] = useState(memberBackgroundCheckExempt);
-
-  if (memberBackgroundCheckExempt !== lastSyncedExempt) {
-    setLastSyncedExempt(memberBackgroundCheckExempt);
-    setMemberExempt(memberBackgroundCheckExempt);
-  }
-
   return (
     <PageLayout
       header={
@@ -140,7 +132,7 @@ export function Employee({
           orgId={orgId}
           backgroundCheck={initialBackgroundCheck}
           backgroundCheckStepEnabled={showBackgroundCheck}
-          memberBackgroundCheckExempt={memberExempt}
+          memberBackgroundCheckExempt={memberBackgroundCheckExempt}
         />
       }
     >
@@ -213,8 +205,7 @@ export function Employee({
                 initialBackgroundCheck={initialBackgroundCheck}
                 initialBillingStatus={initialBackgroundCheckBillingStatus}
                 backgroundCheckStepEnabled={backgroundCheckStepEnabled}
-                memberBackgroundCheckExempt={memberExempt}
-                onMemberBackgroundCheckExemptChange={setMemberExempt}
+                memberBackgroundCheckExempt={memberBackgroundCheckExempt}
               />
             </TabsContent>
           )}

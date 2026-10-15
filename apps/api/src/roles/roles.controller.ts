@@ -1,31 +1,15 @@
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
-import {
-  ApiBody,
   ApiOperation,
   ApiParam,
   ApiResponse,
   ApiSecurity,
   ApiTags,
 } from '@nestjs/swagger';
-import { AuthContext, OrganizationId } from '../auth/auth-context.decorator';
+import { OrganizationId } from '../auth/auth-context.decorator';
 import { HybridAuthGuard } from '../auth/hybrid-auth.guard';
-import { throwIdpManagedGone } from '../auth/idp-ownership-fence';
 import { PermissionGuard } from '../auth/permission.guard';
 import { RequirePermission } from '../auth/require-permission.decorator';
-import type { AuthContext as AuthContextType } from '../auth/types';
-import { CreateRoleDto } from './dto/create-role.dto';
-import { UpdateBuiltInObligationsDto } from './dto/update-built-in-obligations.dto';
-import { UpdateRoleDto } from './dto/update-role.dto';
 import { RolesService } from './roles.service';
 import { ApiAuthErrors, ApiForbiddenError } from '../openapi/common-responses';
 
@@ -35,59 +19,6 @@ import { ApiAuthErrors, ApiForbiddenError } from '../openapi/common-responses';
 @ApiSecurity('apikey')
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
-
-  @Post()
-  @RequirePermission('ac', 'create')
-  @ApiOperation({
-    summary: 'Create a custom role',
-    description:
-      'Create a new custom role with specified permissions. Only admins and owners can create roles.',
-  })
-  @ApiBody({ type: CreateRoleDto })
-  @ApiResponse({
-    status: 201,
-    description: 'Role created successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        id: { type: 'string', example: 'rol_abc123' },
-        name: { type: 'string', example: 'compliance-lead' },
-        permissions: {
-          type: 'object',
-          additionalProperties: {
-            type: 'array',
-            items: { type: 'string' },
-          },
-        },
-        isBuiltIn: { type: 'boolean', example: false },
-        createdAt: { type: 'string', format: 'date-time' },
-        updatedAt: { type: 'string', format: 'date-time' },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid role data or role already exists',
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - cannot grant permissions you do not have',
-  })
-  async createRole(
-    @OrganizationId() organizationId: string,
-    @AuthContext() authContext: AuthContextType,
-    @Body() dto: CreateRoleDto,
-  ) {
-    // IdP-owned user management (Phase 3-server): role content ships as code
-    // (permissions.ts), assignments live in Gideon. 410; Phase 4 deletes.
-    throwIdpManagedGone();
-    return this.rolesService.createRole(
-      organizationId,
-      dto,
-      authContext.userRoles || ['employee'],
-    );
-  }
 
   @Get()
   @RequirePermission('ac', 'read')
@@ -218,49 +149,6 @@ export class RolesController {
     return { name, obligations };
   }
 
-  @Patch('built-in/:name/obligations')
-  @RequirePermission('ac', 'update')
-  @ApiOperation({
-    summary: 'Update obligations for a built-in role',
-    description:
-      'Override the obligations for a built-in role (e.g., turn off the compliance obligation for owners). Permissions stay sourced from the hardcoded defaults.',
-  })
-  @ApiParam({
-    name: 'name',
-    description: 'Built-in role name',
-    example: 'owner',
-  })
-  @ApiBody({ type: UpdateBuiltInObligationsDto })
-  @ApiResponse({
-    status: 200,
-    description: 'Obligations updated',
-    schema: {
-      type: 'object',
-      properties: {
-        name: { type: 'string' },
-        obligations: {
-          type: 'object',
-          properties: { compliance: { type: 'boolean' } },
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 400, description: 'Not a built-in role' })
-  @ApiAuthErrors()
-  async updateBuiltInObligations(
-    @OrganizationId() organizationId: string,
-    @Param('name') name: string,
-    @Body() dto: UpdateBuiltInObligationsDto,
-  ) {
-    // IdP-owned user management (Phase 3-server): 410, see createRole.
-    throwIdpManagedGone();
-    return this.rolesService.updateBuiltInObligations(
-      organizationId,
-      name,
-      dto.obligations,
-    );
-  }
-
   @Get(':roleId')
   @RequirePermission('ac', 'read')
   @ApiOperation({
@@ -291,92 +179,5 @@ export class RolesController {
     @Param('roleId') roleId: string,
   ) {
     return this.rolesService.getRole(organizationId, roleId);
-  }
-
-  @Patch(':roleId')
-  @RequirePermission('ac', 'update')
-  @ApiOperation({
-    summary: 'Update a custom role',
-    description:
-      'Update the name or permissions of a custom role. Cannot modify built-in roles.',
-  })
-  @ApiParam({ name: 'roleId', description: 'Role ID', example: 'rol_abc123' })
-  @ApiBody({ type: UpdateRoleDto })
-  @ApiResponse({
-    status: 200,
-    description: 'Role updated successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        id: { type: 'string' },
-        name: { type: 'string' },
-        permissions: { type: 'object' },
-        isBuiltIn: { type: 'boolean' },
-        createdAt: { type: 'string', format: 'date-time' },
-        updatedAt: { type: 'string', format: 'date-time' },
-      },
-    },
-  })
-  @ApiResponse({ status: 400, description: 'Invalid role data' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - cannot grant permissions you do not have',
-  })
-  @ApiResponse({ status: 404, description: 'Role not found' })
-  @ApiResponse({
-    status: 409,
-    description:
-      'Role was modified by another request since it was read. Retry the update.',
-  })
-  async updateRole(
-    @OrganizationId() organizationId: string,
-    @AuthContext() authContext: AuthContextType,
-    @Param('roleId') roleId: string,
-    @Body() dto: UpdateRoleDto,
-  ) {
-    // IdP-owned user management (Phase 3-server): 410, see createRole.
-    throwIdpManagedGone();
-    return this.rolesService.updateRole(
-      organizationId,
-      roleId,
-      dto,
-      authContext.userRoles || ['employee'],
-    );
-  }
-
-  @Delete(':roleId')
-  @RequirePermission('ac', 'delete')
-  @ApiOperation({
-    summary: 'Delete a custom role',
-    description:
-      'Delete a custom role. Cannot delete if members are still assigned to it.',
-  })
-  @ApiParam({ name: 'roleId', description: 'Role ID', example: 'rol_abc123' })
-  @ApiResponse({
-    status: 200,
-    description: 'Role deleted successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean' },
-        message: { type: 'string' },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Cannot delete - members assigned to role',
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 404, description: 'Role not found' })
-  @ApiForbiddenError()
-  async deleteRole(
-    @OrganizationId() organizationId: string,
-    @Param('roleId') roleId: string,
-  ) {
-    // IdP-owned user management (Phase 3-server): 410, see createRole.
-    throwIdpManagedGone();
-    return this.rolesService.deleteRole(organizationId, roleId);
   }
 }

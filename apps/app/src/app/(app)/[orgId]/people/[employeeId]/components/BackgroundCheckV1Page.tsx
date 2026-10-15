@@ -1,16 +1,14 @@
 'use client';
 
-import { Text } from '@trycompai/design-system';
-import { Attachment, Flash, Security } from '@trycompai/design-system/icons';
+import { Paperclip, Zap } from 'lucide-react';
 import { useState } from 'react';
 import { BackgroundCheckAttachForm, type AttachFormValues } from './BackgroundCheckAttachForm';
-import { BackgroundCheckExemptForm, type ExemptFormValues } from './BackgroundCheckExemptForm';
 import { BackgroundCheckOrderForm, type OrderFormValues } from './BackgroundCheckOrderForm';
 import { BackgroundCheckPathCard } from './BackgroundCheckPathCard';
 import { BackgroundCheckScopePanel } from './BackgroundCheckScopePanel';
 import { BackgroundCheckStatusStrip } from './BackgroundCheckStatusStrip';
 
-export type SelectedPath = 'order' | 'attach' | 'exempt';
+export type SelectedPath = 'order' | 'attach';
 
 interface V1PageProps {
   selectedPath: SelectedPath;
@@ -36,16 +34,10 @@ interface V1PageProps {
   onAttachSubmit: () => void;
   isAttachSubmitting: boolean;
 
-  // Exempt
-  exemptValues: ExemptFormValues;
-  onExemptChange: (next: ExemptFormValues) => void;
-  onExemptSubmit: () => void;
-  isExemptSubmitting: boolean;
-
   canRequest: boolean;
 }
 
-const PATH_ORDER: SelectedPath[] = ['order', 'attach', 'exempt'];
+const PATH_ORDER: SelectedPath[] = ['order', 'attach'];
 
 export function BackgroundCheckV1Page(props: V1PageProps) {
   const { selectedPath, onSelectedPathChange } = props;
@@ -84,13 +76,13 @@ export function BackgroundCheckV1Page(props: V1PageProps) {
       <div
         role="radiogroup"
         aria-label="How would you like to proceed?"
-        className="mb-6 grid gap-3 md:grid-cols-3"
+        className="mb-6 grid gap-3 md:grid-cols-2"
       >
         <BackgroundCheckPathCard
           selected={selectedPath === 'order'}
           onSelect={() => handleSelect('order')}
           onNavigate={navigateRelative}
-          icon={Flash}
+          icon={Zap}
           title="Order a new check"
           description="OpenComp runs the check end-to-end via our vendor."
           meta={<span className="text-muted-foreground">1 credit · 3–5 business days</span>}
@@ -99,18 +91,10 @@ export function BackgroundCheckV1Page(props: V1PageProps) {
           selected={selectedPath === 'attach'}
           onSelect={() => handleSelect('attach')}
           onNavigate={navigateRelative}
-          icon={Attachment}
+          icon={Paperclip}
           title="Attach an existing report"
           description="Upload a report from Checkr, Sterling, or another vendor."
           meta={<span className="text-muted-foreground">Free · Instant</span>}
-        />
-        <BackgroundCheckPathCard
-          selected={selectedPath === 'exempt'}
-          onSelect={() => handleSelect('exempt')}
-          onNavigate={navigateRelative}
-          icon={Security}
-          title="Mark as exempt"
-          description="This employee won't be required to pass a check."
         />
       </div>
 
@@ -149,25 +133,16 @@ export function BackgroundCheckV1Page(props: V1PageProps) {
               }
             />
           )}
-          {selectedPath === 'exempt' && (
-            <BackgroundCheckExemptForm
-              values={props.exemptValues}
-              onChange={props.onExemptChange}
-              onSubmit={props.onExemptSubmit}
-              submitting={props.isExemptSubmitting}
-              canSubmit={props.canRequest && Boolean(props.exemptValues.reason)}
-            />
-          )}
         </div>
       </div>
 
-      {selectedPath !== 'exempt' && <BackgroundCheckScopePanel />}
+      <BackgroundCheckScopePanel />
 
       {!props.canRequest && (
         <div className="mt-4">
-          <Text size="xs" variant="muted">
+          <p className="text-xs text-muted-foreground">
             You don&apos;t have permission to take this action.
-          </Text>
+          </p>
         </div>
       )}
     </div>

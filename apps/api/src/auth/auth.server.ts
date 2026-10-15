@@ -182,11 +182,11 @@ export const auth = betterAuth({
     organization({
       membershipLimit: 100000000000,
       sendInvitationEmail(data): Promise<void> {
-        // IdP-owned user management (Phase 3-server): invitations are dead.
-        // The /api/auth/organization/* invite paths are fenced with 410
-        // before better-auth runs; this rejects fail-closed so any residual
-        // path fails loudly instead of sending a local invite email.
-        // Phase 4 deletes the template + this callback.
+        // IdP-owned user management: invitations are dead. The
+        // /api/auth/organization/* invite paths are fenced with 410 before
+        // better-auth runs; this rejects fail-closed so any residual path
+        // fails loudly instead of sending a local invite email. Permanent
+        // guardrail — keep even though Phase 4 deleted the OpenComp writers.
         return Promise.reject(
           new GoneException(
             `Invitation ${data.invitation.id} for ${data.email}: membership is managed in the Gideon identity service.`,

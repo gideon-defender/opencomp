@@ -8,13 +8,13 @@ function add({ tools, field, keyword, value, before }) {
 const direct = 'properties';
 const body = 'properties/body/properties';
 add({
-  tools: 'update-organization,transfer-ownership',
+  tools: 'update-organization',
   field: '',
   keyword: 'additionalProperties',
   value: false,
 });
 add({
-  tools: 'create-member,get-all-risks,create-risk,create-task',
+  tools: 'get-all-risks,create-risk,create-task',
   field: `${direct}/department`,
   keyword: 'maxLength',
   value: 64,
@@ -23,13 +23,7 @@ add({
 entries.find((item) => item.tool === 'create-task').path =
   '/properties/request/properties/department/anyOf/0/maxLength';
 add({
-  tools: 'bulk-create-members',
-  field: 'properties/members/items/properties/department',
-  keyword: 'maxLength',
-  value: 64,
-});
-add({
-  tools: 'update-member,update-risk,create-policy,update-policy,update-task',
+  tools: 'update-risk,create-policy,update-policy,update-task',
   field: `${body}/department`,
   keyword: 'maxLength',
   value: 64,
@@ -117,13 +111,6 @@ add({
 });
 add({ tools: 'create-finding', field: `${direct}/content`, keyword: 'maxLength', value: 5000 });
 add({ tools: 'update-finding', field: `${body}/content`, keyword: 'maxLength', value: 5000 });
-for (const [keyword, value] of [
-  ['minLength', 2],
-  ['maxLength', 50],
-]) {
-  add({ tools: 'create-role', field: `${direct}/name`, keyword, value });
-  add({ tools: 'update-role', field: `${body}/name`, keyword, value });
-}
 add({
   tools: 'answer-single-question',
   field: `${direct}/questionIndex`,

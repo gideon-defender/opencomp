@@ -41,7 +41,7 @@ async function withClient({ options = {}, run }) {
   }
 }
 
-test('MCP SDK static mode lists all 412 tools with owned descriptions and semantic annotations', async () => {
+test('MCP SDK static mode lists all 400 tools with owned descriptions and semantic annotations', async () => {
   await withClient({
     run: async ({ client }) => {
       const result = await client.listTools();

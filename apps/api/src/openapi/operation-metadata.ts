@@ -245,11 +245,6 @@ const CORE_OPERATION_METADATA: Record<string, PublicOperationMetadata> = {
     description:
       'Create an AI-powered penetration test run for an approved target and track the resulting findings and report artifacts.',
   },
-  PeopleController_updateMember_v1: {
-    summary: 'Update workforce member',
-    description:
-      'Update a workforce member profile, role, department, or compliance metadata used for people-security controls.',
-  },
   VendorsController_triggerAssessment_v1: {
     summary: 'Trigger vendor risk assessment',
     description:
