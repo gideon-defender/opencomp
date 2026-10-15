@@ -4,10 +4,7 @@ import { db } from '@db/server';
 import { getTranslations } from 'next-intl/server';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { AcceptInvite } from '../../setup/components/accept-invite';
-import { InviteNotMatchCard } from './components/InviteNotMatchCard';
 import { InviteStatusCard } from './components/InviteStatusCard';
-import { maskEmail } from './utils';
 
 interface InvitePageProps {
   params: Promise<{ code: string }>;
@@ -90,25 +87,18 @@ export default async function InvitePage({ params }: InvitePageProps) {
     );
   }
 
-  if (invitation.email !== session.user.email) {
-    return (
-      <OnboardingLayout variant="setup" currentOrganization={null}>
-        <div className="flex min-h-[calc(100dvh-80px)] w-full items-center justify-center p-4">
-          <InviteNotMatchCard
-            currentEmail={session.user.email}
-            invitedEmail={maskEmail(invitation.email)}
-          />
-        </div>
-      </OnboardingLayout>
-    );
-  }
-
+  // Invitation acceptance is retired: access is granted in Gideon, never
+  // through an invite link. Every pending link renders the retired notice,
+  // regardless of which signed-in user opens it, so the page never reveals
+  // the invited email.
   return (
     <OnboardingLayout variant="setup" currentOrganization={null}>
       <div className="flex min-h-[calc(100dvh-80px)] w-full items-center justify-center p-4">
-        <AcceptInvite
-          inviteCode={invitation.id}
-          organizationName={invitation.organization.name || ''}
+        <InviteStatusCard
+          title={t('inviteRetired')}
+          description={t('inviteRetiredDescription')}
+          primaryHref="/"
+          primaryLabel={t('goHome')}
         />
       </div>
     </OnboardingLayout>
