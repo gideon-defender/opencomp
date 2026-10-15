@@ -164,7 +164,7 @@ export function Employee({
             {employee.offboardDate && <TabsTrigger value="offboarding">Offboarding</TabsTrigger>}
           </TabsList>
           <TabsContent value="details">
-            <EmployeeDetails employee={employee} canEdit={canEdit} />
+            <EmployeeDetails employee={employee} />
           </TabsContent>
           <TabsContent value="policies">
             <EmployeePolicies employee={employee} policies={policies} />

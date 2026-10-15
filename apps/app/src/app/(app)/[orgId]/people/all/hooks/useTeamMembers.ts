@@ -2,8 +2,7 @@
 
 import { usePeopleActions } from '@/hooks/use-people-api';
 import { apiClient } from '@/lib/api-client';
-import { authClient } from '@/utils/auth-client';
-import type { Invitation, Member, Role, User } from '@db';
+import type { Invitation, Member, User } from '@db';
 import { useCallback } from 'react';
 import useSWR from 'swr';
 
@@ -48,7 +47,7 @@ async function fetchTeamMembers(): Promise<TeamMembersData> {
 }
 
 export function useTeamMembers({ organizationId, initialData }: UseTeamMembersOptions) {
-  const { removeMember: removeMemberAction, unlinkDevice } = usePeopleActions();
+  const { unlinkDevice } = usePeopleActions();
 
   const { data, error, isLoading, mutate } = useSWR<TeamMembersData>(
     organizationId ? ['team-members', organizationId] : null,
@@ -63,42 +62,12 @@ export function useTeamMembers({ organizationId, initialData }: UseTeamMembersOp
   const members = Array.isArray(data?.members) ? data.members : [];
   const pendingInvitations = Array.isArray(data?.pendingInvitations) ? data.pendingInvitations : [];
 
-  const removeMember = useCallback(
-    async (memberId: string) => {
-      await removeMemberAction(memberId);
-      await mutate();
-    },
-    [removeMemberAction, mutate],
-  );
-
   const removeDevice = useCallback(
     async (memberId: string) => {
       await unlinkDevice(memberId);
       await mutate();
     },
     [unlinkDevice, mutate],
-  );
-
-  const updateMemberRole = useCallback(
-    async (memberId: string, roles: Role[]) => {
-      await authClient.organization.updateMemberRole({
-        memberId,
-        role: roles,
-      });
-      await mutate();
-    },
-    [mutate],
-  );
-
-  const cancelInvitation = useCallback(
-    async (invitationId: string) => {
-      const response = await apiClient.delete(`/v1/auth/invitations/${invitationId}`);
-      if (response.error) {
-        throw new Error(response.error);
-      }
-      await mutate();
-    },
-    [mutate],
   );
 
   const revalidate = useCallback(() => mutate(), [mutate]);
@@ -108,10 +77,7 @@ export function useTeamMembers({ organizationId, initialData }: UseTeamMembersOp
     pendingInvitations,
     isLoading,
     error,
-    removeMember,
     removeDevice,
-    updateMemberRole,
-    cancelInvitation,
     revalidate,
   };
 }

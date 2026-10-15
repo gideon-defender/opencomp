@@ -34855,6 +34855,42 @@
         }
       }
     },
+    "/v1/people/candidate-screenings/connection/readiness": {
+      "get": {
+        "description": "Checks this tenant’s Checkr account and credentials for integration editors. Use after configuration to verify intake readiness without screening permission. Returns no credentials or candidate data.",
+        "operationId": "CandidateScreeningsController_connectionReadiness_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "apikey": []
+          }
+        ],
+        "summary": "Check Checkr connection health",
+        "tags": [
+          "Candidate Screenings"
+        ],
+        "x-comp-mcp": {
+          "name": "check-checkr-connection-readiness"
+        },
+        "x-mint": {
+          "metadata": {
+            "title": "Check Checkr connection health | OpenComp API",
+            "sidebarTitle": "Check Checkr connection health",
+            "description": "Checks this tenant’s Checkr account and credentials for integration editors. Use after configuration to verify intake readiness without screening.",
+            "og:title": "Check Checkr connection health | OpenComp API",
+            "og:description": "Checks this tenant’s Checkr account and credentials for integration editors. Use after configuration to verify intake readiness without screening."
+          }
+        },
+        "x-speakeasy-mcp": {
+          "name": "check-checkr-connection-readiness"
+        }
+      }
+    },
     "/v1/people/candidate-screenings": {
       "get": {
         "description": "Lists the latest 100 screening attempts for this tenant. Use to follow queued dispatches and Checkr invitation delivery; this does not report IdP provisioning or grant access.",
