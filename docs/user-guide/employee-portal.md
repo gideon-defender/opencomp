@@ -28,8 +28,7 @@ outstanding items follow you until done.
 
 ## Devices
 
-Check device health and Fleet policy status. Install the device agent from
-the portal download when asked, and sign in to enroll the machine. A healthy
+Check device health and Fleet policy status. A healthy
 device keeps you compliant without further action.
 
 ## Access requests and whistleblower reports
