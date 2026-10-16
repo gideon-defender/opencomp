@@ -1,12 +1,13 @@
 'use client';
 
-import { publicApiBase } from '@/lib/api';
+import { publicApiBase, serverMessage } from '@/lib/api';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FileCheck, KeyRound, X } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { errorClassName, inputClassName } from './formStyles';
 
 const requestAccessSchema = z.object({
   name: z.string().trim().min(1, 'Full name is required').max(100),
@@ -17,11 +18,6 @@ const requestAccessSchema = z.object({
 });
 
 type RequestAccessForm = z.infer<typeof requestAccessSchema>;
-
-const inputClassName =
-  'min-h-10 w-full rounded-md border border-line bg-white px-3 text-[15px] outline-none transition-colors placeholder:text-muted focus:border-primary';
-
-const errorClassName = 'mt-1 text-[13px] text-danger';
 
 /**
  * Hero action buttons + request-access dialog. The security questionnaire
@@ -82,21 +78,11 @@ export function RequestAccessActions({
       return;
     }
     if (!response.ok) {
-      const serverMessage = await response
+      const serverError = await response
         .json()
-        .then((body: unknown) => {
-          if (typeof body === 'object' && body !== null && 'message' in body) {
-            const message = (body as { message?: unknown }).message;
-            if (typeof message === 'string' && message) return message;
-            if (Array.isArray(message)) {
-              const first = message.find((item): item is string => typeof item === 'string');
-              if (first) return first;
-            }
-          }
-          return null;
-        })
+        .then((body: unknown) => serverMessage(body))
         .catch(() => null);
-      toast.error(serverMessage ?? 'Could not send the request — try again later');
+      toast.error(serverError ?? 'Could not send the request — try again later');
       return;
     }
     toast.success('Access request sent');

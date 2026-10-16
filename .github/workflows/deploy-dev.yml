@@ -74,7 +74,9 @@ jobs:
             echo 'Provision terraform/opencomp MCP infrastructure in everything-as-code before deploying this branch.'
             exit 1
           fi
-          # The contract phase must verify old tasks stopped before it runs.
+          aws application-autoscaling describe-scalable-targets --region "$AWS_REGION" \
+            --service-namespace ecs --query 'ScalableTargets[].ResourceId' --output text >/dev/null
+          # Maintenance must verify old tasks stopped before migrations run.
           aws ecs list-tasks --region "$AWS_REGION" --cluster "$ECS_CLUSTER" \
             --service-name gideon-dev-opencomp-api --desired-status RUNNING \
             --query taskArns --output text >/dev/null

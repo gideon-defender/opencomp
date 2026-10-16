@@ -58,8 +58,12 @@ function DownloadLink({ href, label }: { href: string; label: string }) {
   );
 }
 
-export default async function GrantAccessPage({ params }: { params: Promise<{ token: string }> }) {
-  const { token } = await params;
+export default async function GrantAccessPage({
+  params,
+}: {
+  params: Promise<{ token: string; friendlyUrl?: string }>;
+}) {
+  const { token, friendlyUrl } = await params;
   let base: string;
   try {
     base = publicApiBase();
@@ -73,7 +77,7 @@ export default async function GrantAccessPage({ params }: { params: Promise<{ to
   } catch {
     grant = null;
   }
-  if (!grant) notFound();
+  if (!grant || (friendlyUrl && grant.friendlyUrl !== friendlyUrl)) notFound();
 
   // A 500 here means the token check itself failed — render 404 instead
   // of crashing the page.

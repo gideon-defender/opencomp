@@ -156,6 +156,10 @@ export class TrustAccessService {
     return this.ndaService.previewNdaByToken(token);
   }
 
+  async getPreviewNdaPdfByToken(token: string) {
+    return this.ndaService.getPreviewNdaPdfByToken(token);
+  }
+
   /**
    * Token-gated grant reads and downloads live in focused services
    * (TrustGrantReadsService, Trust*DownloadService). These delegates keep

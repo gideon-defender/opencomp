@@ -1,4 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundException } from '@nestjs/common';
+import { IS_PUBLIC_KEY } from '../auth/public.decorator';
 import { TrustAccessNdaController } from './trust-access-nda.controller';
 import { TrustAccessService } from './trust-access.service';
 import { ReclaimAccessDto } from './dto/trust-access.dto';
@@ -21,6 +23,7 @@ describe('TrustAccessNdaController', () => {
   const mockService = {
     getNdaByToken: jest.fn(),
     previewNdaByToken: jest.fn(),
+    getPreviewNdaPdfByToken: jest.fn(),
     signNda: jest.fn(),
     reclaimAccess: jest.fn(),
     getGrantByAccessToken: jest.fn(),
@@ -55,6 +58,40 @@ describe('TrustAccessNdaController', () => {
 
       expect(result).toEqual(mockResult);
       expect(service.getNdaByToken).toHaveBeenCalledWith('token_abc');
+    });
+  });
+
+  describe('streamPreviewNdaByToken', () => {
+    it('returns the token-validated PDF with inline headers', async () => {
+      const buffer = Buffer.from('%PDF-preview');
+      mockService.getPreviewNdaPdfByToken.mockResolvedValue({
+        buffer,
+        filename: 'nda_preview_nda1.pdf',
+      });
+
+      const file = await controller.streamPreviewNdaByToken('sign-token');
+
+      expect(service.getPreviewNdaPdfByToken).toHaveBeenCalledWith(
+        'sign-token',
+      );
+      expect(file.getHeaders()).toEqual({
+        type: 'application/pdf',
+        disposition: 'inline; filename="nda_preview_nda1.pdf"',
+        length: buffer.length,
+      });
+      expect(file.getStream().read()).toEqual(buffer);
+      expect(
+        Reflect.getMetadata(IS_PUBLIC_KEY, controller.streamPreviewNdaByToken),
+      ).toBe(true);
+    });
+
+    it('rejects invalid tokens instead of returning a PDF', async () => {
+      mockService.getPreviewNdaPdfByToken.mockRejectedValueOnce(
+        new NotFoundException('NDA not found'),
+      );
+      await expect(
+        controller.streamPreviewNdaByToken('missing'),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
