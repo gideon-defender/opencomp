@@ -221,20 +221,22 @@ Some environment variables may not load correctly from `.env` — in such cases,
 
 ### Cloud & Auth Configuration
 
-#### 1. Gideon OIDC login
+#### 1. OIDC login
 
-Sign-in is handled by the external Gideon identity provider (OIDC) — there is
+Sign-in is handled by the external OIDC identity provider (currently Gideon) — there is
 no per-developer OAuth client setup. Legacy logins (Google/GitHub/Microsoft
 social, magic link) were removed; their `AUTH_*` variables no longer exist.
 
-The API needs a Gideon OIDC client registration (ask the auth team for the
+The API needs an OIDC client registration (ask the auth team for the
 per-environment client ID). Configure it in `opencomp/apps/api/.env` (see the
-documented `GIDEON_OIDC_*` block in `apps/api/.env.example`):
+documented `OIDC_*` block in `apps/api/.env.example`). `GIDEON_OIDC_*` names
+remain as deprecated one-release aliases; the callback keeps the legacy
+`/v1/auth/gideon/*` route as an alias of `/v1/auth/oidc/*`.
 
 ```env
-GIDEON_OIDC_CLIENT_ID=""     # e.g. opencomp-local (registered with auth team)
-GIDEON_OIDC_REDIRECT_URI=""  # e.g. http://localhost:3333/v1/auth/gideon/callback
-# GIDEON_OIDC_CLIENT_SECRET="" # only for confidential apps; public apps use PKCE
+OIDC_CLIENT_ID=""     # e.g. opencomp-local (registered with auth team)
+OIDC_REDIRECT_URI=""  # e.g. http://localhost:3333/v1/auth/oidc/callback
+# OIDC_CLIENT_SECRET="" # only for confidential apps; public apps use PKCE
 ```
 
 #### 2. OIDC entitlements and access management
@@ -261,18 +263,19 @@ organization products or configure integration OAuth credentials.
 
 With both enforcement controls unset, the default is **audit mode**: logins
 evaluate the verified ID-token `entitlements` claim and log what enforcement
-_would_ do, then mint sessions as before. Configure enforcement explicitly:
+_would_ do, then mint sessions as before. Configure enforcement explicitly
+(`GIDEON_*` names below are deprecated aliases of the `OIDC_*` primaries):
 
 ```env
 # Pilot enforcement (comma-separated tenant IDs).
 # This allowlist applies only when all-tenant mode is off.
-GIDEON_ENFORCEMENT_TENANTS=""
+OIDC_ENFORCEMENT_TENANTS=""
 # Enforce all tenants, including future provisioned organizations; takes precedence.
-GIDEON_ENFORCEMENT_ALL_TENANTS=false
+OIDC_ENFORCEMENT_ALL_TENANTS=false
 # Phase 5 bootstrap gate (deny unknown-tenant setup without a verified IdP
 # `owner` assignment). Enable only after IdP provisioning seeds an owner per
 # new tenant — otherwise new signups brick.
-GIDEON_BOOTSTRAP_ENFORCED=""  # set to "true" to enable
+OIDC_BOOTSTRAP_ENFORCED=""  # set to "true" to enable
 ```
 
 | Phase                                                                                                       | Status                                                                                                                                   |
@@ -284,7 +287,7 @@ GIDEON_BOOTSTRAP_ENFORCED=""  # set to "true" to enable
 | 4 — Deletion of retired endpoints/services                                                                  | Pending                                                                                                                                  |
 | 5 — Bootstrap + break-glass prerequisites (owner gate, runbooks)                                            | Gate and runbooks shipped; per-tenant IdP owner seeding still required before enabling                                                   |
 
-Set `GIDEON_ENFORCEMENT_ALL_TENANTS=true` to enforce every identified tenant.
+Set `OIDC_ENFORCEMENT_ALL_TENANTS=true` to enforce every identified tenant.
 Unknown tenants are denied until their OpenComp organization exists; this mode
 does not enable self-service owner bootstrap. Existing local memberships must
 be converted using verified IdP assignments before expanding enforcement.
@@ -295,8 +298,8 @@ role-editing controls cannot grant it.
 For all-tenant enforcement and between-login reconciliation, configure both:
 
 ```env
-GIDEON_ENFORCEMENT_ALL_TENANTS=true
-GIDEON_ENTITLEMENTS_RECONCILIATION_ENABLED=true
+OIDC_ENFORCEMENT_ALL_TENANTS=true
+OIDC_ENTITLEMENTS_RECONCILIATION_ENABLED=true
 ```
 
 The all-tenant flag takes precedence over the pilot allowlist. To return to
@@ -305,8 +308,8 @@ returns login to audit mode and removes reconciliation scope; neither rollback
 restores revoked roles or deleted sessions.
 
 Between-login reconciliation processes only SSO-owned memberships in
-`GIDEON_ENFORCEMENT_TENANTS`, or discovers all organizations each run when
-`GIDEON_ENFORCEMENT_ALL_TENANTS=true`. It reads fresh, complete entitlements
+`OIDC_ENFORCEMENT_TENANTS`, or discovers all organizations each run when
+`OIDC_ENFORCEMENT_ALL_TENANTS=true`. It reads fresh, complete entitlements
 from Gideon Auth's dedicated client-scoped reader, overwrites cached roles, and revokes
 tenant-scoped sessions when no valid role remains. Role changes, session
 deletion, and audit records commit together. Independent HR offboarding fields
@@ -319,11 +322,11 @@ session: the user must perform a fresh OIDC login.
 Configure the API/local Trigger worker through the deployment's secret store:
 
 ```env
-GIDEON_ENTITLEMENTS_RECONCILIATION_ENABLED=false # enable after reader preflight
-GIDEON_ENTITLEMENTS_READER_URL=https://gideon.dev.gideondefender.com
-GIDEON_ENTITLEMENTS_READ_TOKEN="" # dedicated reader secret; never commit it
-GIDEON_ENTITLEMENTS_PAGERDUTY_ROUTING_KEY="" # required unless dev explicitly opts out
-# GIDEON_OIDC_CLIENT_ID pins the app; enforcement controls define tenant scope.
+OIDC_ENTITLEMENTS_RECONCILIATION_ENABLED=false # enable after reader preflight
+OIDC_ENTITLEMENTS_READER_URL=https://gideon.dev.gideondefender.com
+OIDC_ENTITLEMENTS_READ_TOKEN="" # dedicated reader secret; never commit it
+OIDC_ENTITLEMENTS_PAGERDUTY_ROUTING_KEY="" # required unless dev explicitly opts out
+# OIDC_CLIENT_ID pins the app; enforcement controls define tenant scope.
 ```
 
 Gideon Auth must receive the same secret as `ENTITLEMENTS_READ_TOKEN`, with

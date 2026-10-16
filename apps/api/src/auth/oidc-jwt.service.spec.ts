@@ -5,6 +5,8 @@ const mockJwtVerify = jest.fn();
 const mockCreateRemoteJWKSet = jest.fn(() => 'mock-jwks');
 const mockDecodeJwt = jest.fn();
 const mockDecodeProtectedHeader = jest.fn();
+const mockFetch = jest.fn();
+const realFetch = globalThis.fetch;
 
 jest.mock('jose', () => ({
   createRemoteJWKSet: (...args: unknown[]) =>
@@ -49,13 +51,24 @@ describe('OidcJwtService', () => {
       providers: [OidcJwtService],
     }).compile();
     service = module.get(OidcJwtService);
-    // Reset private jwks cache between tests
+    // Reset private JWKS/discovery caches between tests
     (service as unknown as { jwks: unknown }).jwks = null;
+    (service as unknown as { jwksSourceUrl: unknown }).jwksSourceUrl = null;
+    (
+      service as unknown as {
+        jwksResolver: { resetForTests: () => void };
+      }
+    ).jwksResolver.resetForTests();
     (service as unknown as { warnedDisabled: boolean }).warnedDisabled = false;
+    // Discovery fetch defaults to unreachable so existing tests exercise the
+    // legacy `/.well-known/jwks.json` fallback without real network access.
+    globalThis.fetch = mockFetch;
+    mockFetch.mockResolvedValue({ ok: false, status: 404 });
   });
 
   afterEach(() => {
     process.env = OLD_ENV;
+    globalThis.fetch = realFetch;
   });
 
   describe('isConfigured / isShadowMode / isEnforceMode', () => {
@@ -236,6 +249,83 @@ describe('OidcJwtService', () => {
 
       const result = await service.verify('token');
       expect(result?.payload.aal).toBe(1);
+    });
+  });
+
+  describe('jwks discovery', () => {
+    function configuredService() {
+      process.env.OIDC_ISSUER_URL = 'https://auth.example.com';
+      process.env.OIDC_JWT_ISSUER = 'https://auth.example.com';
+      process.env.OIDC_JWT_AUDIENCE = 'https://api.example.com';
+      mockDecodeJwt.mockReturnValue({ iss: 'https://auth.example.com' });
+      mockDecodeProtectedHeader.mockReturnValue({ kid: 'k1' });
+      mockJwtVerify.mockResolvedValue({
+        payload: { sub: 'usr_1', tid: 'org_1', aal: 2 } as never,
+        protectedHeader: { kid: 'k1' } as never,
+      });
+    }
+
+    function jwksArg(): URL {
+      const calls = mockCreateRemoteJWKSet.mock.calls as unknown as unknown[][];
+      return calls[0][0] as URL;
+    }
+
+    it('uses jwks_uri from discovery when available', async () => {
+      configuredService();
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            issuer: 'https://auth.example.com',
+            jwks_uri: 'https://auth.example.com/oauth/v2/keys',
+          }),
+      });
+
+      const result = await service.verify('valid.jwt.token');
+
+      expect(result).not.toBeNull();
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://auth.example.com/.well-known/openid-configuration',
+        expect.anything(),
+      );
+      expect(jwksArg().href).toBe('https://auth.example.com/oauth/v2/keys');
+    });
+
+    it('falls back to the legacy path when discovery is unreachable', async () => {
+      configuredService();
+      mockFetch.mockRejectedValue(new Error('network down'));
+
+      const result = await service.verify('valid.jwt.token');
+
+      expect(result).not.toBeNull();
+      expect(jwksArg().href).toBe(
+        'https://auth.example.com/.well-known/jwks.json',
+      );
+    });
+
+    it('returns null without network access for plain-HTTP non-loopback issuers', async () => {
+      process.env.OIDC_ISSUER_URL = 'http://auth.example.com';
+      process.env.OIDC_JWT_ISSUER = 'http://auth.example.com';
+      process.env.OIDC_JWT_AUDIENCE = 'https://api.example.com';
+
+      const result = await service.verify('header.payload.sig');
+
+      expect(result).toBeNull();
+      expect(mockFetch).not.toHaveBeenCalled();
+      expect(mockCreateRemoteJWKSet).not.toHaveBeenCalled();
+      expect(mockJwtVerify).not.toHaveBeenCalled();
+    });
+
+    it('reads issuer/audience from deprecated GIDEON_* aliases', () => {
+      process.env.OIDC_ISSUER_URL = 'https://auth.example.com';
+      delete process.env.OIDC_JWT_ISSUER;
+      process.env.GIDEON_JWT_ISSUER = 'https://auth.example.com';
+      delete process.env.OIDC_JWT_AUDIENCE;
+      process.env.GIDEON_JWT_AUDIENCE = 'my-app';
+      mockDecodeJwt.mockReturnValue({ iss: 'https://auth.example.com' });
+
+      expect(service.isMisconfigured()).toBe(false);
+      expect(service.isOidcToken('header.payload.sig')).toBe(true);
     });
   });
 

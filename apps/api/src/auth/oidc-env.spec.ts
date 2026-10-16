@@ -2,6 +2,7 @@ import { Logger } from '@nestjs/common';
 import {
   oidcEnv,
   oidcEnvBool,
+  oidcJwksCacheTtl,
   oidcJwtAudience,
   oidcJwtIssuer,
   oidcRequireEmailVerified,
@@ -144,9 +145,39 @@ describe('oidc-env', () => {
     expect(warn).not.toHaveBeenCalled();
   });
 
+  it('falls back to deprecated GIDEON_* issuer/audience with warning', () => {
+    delete process.env.OIDC_JWT_ISSUER;
+    process.env.GIDEON_JWT_ISSUER = 'https://auth.example.com';
+    delete process.env.JWT_ISSUER;
+    delete process.env.OIDC_JWT_AUDIENCE;
+    process.env.GIDEON_JWT_AUDIENCE = 'my-app';
+    delete process.env.JWT_AUDIENCE;
+    expect(oidcJwtIssuer()).toBe('https://auth.example.com');
+    expect(oidcJwtAudience()).toBe('my-app');
+    expect(warn).toHaveBeenCalled();
+  });
+
   it('honors the legacy email-verified opt-out', () => {
     delete process.env.OIDC_REQUIRE_EMAIL_VERIFIED;
     process.env.GIDEON_REQUIRE_EMAIL_VERIFIED = 'false';
     expect(oidcRequireEmailVerified()).toBe(false);
+  });
+
+  it('defaults the JWKS cache TTL to 300s when unset', () => {
+    delete process.env.OIDC_JWKS_CACHE_TTL_SECS;
+    delete process.env.GIDEON_JWKS_CACHE_TTL_SECS;
+    delete process.env.AUTH__JWKS_CACHE_TTL_SECS;
+    expect(oidcJwksCacheTtl()).toBe(300);
+  });
+
+  it('parses the JWKS cache TTL, falling back on invalid values', () => {
+    process.env.OIDC_JWKS_CACHE_TTL_SECS = '60';
+    expect(oidcJwksCacheTtl()).toBe(60);
+    process.env.OIDC_JWKS_CACHE_TTL_SECS = '0';
+    expect(oidcJwksCacheTtl()).toBe(300);
+    process.env.OIDC_JWKS_CACHE_TTL_SECS = '-5';
+    expect(oidcJwksCacheTtl()).toBe(300);
+    process.env.OIDC_JWKS_CACHE_TTL_SECS = 'not-a-number';
+    expect(oidcJwksCacheTtl()).toBe(300);
   });
 });

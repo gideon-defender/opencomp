@@ -44,6 +44,21 @@ export function oidcEnvBool(primary: string, legacy?: string): boolean {
   return oidcEnv(primary, legacy) === 'true';
 }
 
+/**
+ * Loopback hosts where plain-HTTP OIDC endpoints are tolerated (local dev).
+ * Shared by login discovery and JWT JWKS discovery — one rule, one place.
+ */
+export function isLoopbackHost(hostname: string): boolean {
+  // Node's WHATWG URL keeps IPv6 brackets (`[::1]`); accept both forms.
+  return (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname === '::1' ||
+    hostname === '[::1]' ||
+    hostname.endsWith('.localhost')
+  );
+}
+
 /** Issuer base URL used for discovery + JWKS. */
 export function oidcIdentityUrl(): string | undefined {
   return oidcEnv(
@@ -102,6 +117,13 @@ export function oidcJwksCacheTtlSecs(): string | undefined {
     'GIDEON_JWKS_CACHE_TTL_SECS',
     'AUTH__JWKS_CACHE_TTL_SECS',
   );
+}
+
+/** Parsed JWKS cache TTL in seconds (defaults to 300 on unset/invalid). */
+export function oidcJwksCacheTtl(): number {
+  const raw = oidcJwksCacheTtlSecs();
+  const parsed = raw ? parseInt(raw, 10) : 300;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 300;
 }
 
 /** All-tenant enforcement takes precedence over the pilot allowlist. */
