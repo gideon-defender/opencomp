@@ -34,12 +34,12 @@ export function createHrIdentityResolver({
         where: {
           tenantId: organizationId,
           email: { equals: normalizedEmail, mode: 'insensitive' },
-          gideonSub: { not: null },
+          oidcSub: { not: null },
         },
       });
-      if (local?.gideonSub?.trim()) {
+      if (local?.oidcSub?.trim()) {
         return {
-          id: local.gideonSub,
+          id: local.oidcSub,
           email: local.email,
           display_name: local.name,
         };
@@ -80,7 +80,7 @@ export async function getHrSyncUser({
 }): Promise<User> {
   const email = normalizeEmail(identity.email);
   const bySubject = await db.user.findUnique({
-    where: { gideonSub: identity.id },
+    where: { oidcSub: identity.id },
   });
   if (bySubject)
     return linkIdentity({ existing: bySubject, identity, organizationId });
@@ -105,9 +105,9 @@ export async function getHrSyncUser({
         email,
         name: identity.display_name || email.split('@')[0] || email,
         emailVerified: false,
-        gideonSub: identity.id,
+        oidcSub: identity.id,
         tenantId: organizationId,
-        gideonTenantId: organizationId,
+        oidcTenantId: organizationId,
       },
     });
   } catch (error) {
@@ -142,7 +142,7 @@ export async function getHrSyncUser({
         organizationId,
       });
     const bySubject = await db.user.findUnique({
-      where: { gideonSub: identity.id },
+      where: { oidcSub: identity.id },
     });
     if (!bySubject) {
       // The conflicting row vanished concurrently: report a retryable

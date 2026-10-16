@@ -1,7 +1,7 @@
 export function buildPilotConversionPlan({ members, byEmail }) {
   const plan = members.map((member) => {
     const assigned = byEmail.get(String(member.email).trim().toLowerCase());
-    const linked = typeof member.gideonSub === 'string' && member.gideonSub.trim() !== '';
+    const linked = typeof member.oidcSub === 'string' && member.oidcSub.trim() !== '';
     if (!assigned || !linked) {
       return { ...member, action: 'revoke', newRole: '', revoke: true };
     }

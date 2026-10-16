@@ -71,7 +71,7 @@ describe('provisionOidcUser', () => {
       id: 'usr_a',
       email: 'person@example.com',
       banned: false,
-      gideonSub: 'sub-a',
+      oidcSub: 'sub-a',
       tenantId: TENANT_A,
     });
     mockUpdate.mockResolvedValue({ id: 'usr_a' });
@@ -84,7 +84,7 @@ describe('provisionOidcUser', () => {
     });
 
     expect(mockFindUnique).toHaveBeenCalledWith({
-      where: { gideonSub: 'sub-a' },
+      where: { oidcSub: 'sub-a' },
     });
     expect(mockFindFirst).not.toHaveBeenCalled();
     expect(mockCreate).not.toHaveBeenCalled();
@@ -95,7 +95,7 @@ describe('provisionOidcUser', () => {
       id: 'usr_a',
       email: 'person@example.com',
       banned: false,
-      gideonSub: 'sub-a',
+      oidcSub: 'sub-a',
       tenantId: TENANT_A,
     });
 
@@ -116,7 +116,7 @@ describe('provisionOidcUser', () => {
       id: 'usr_window',
       email: 'person@example.com',
       banned: false,
-      gideonSub: 'sub-window',
+      oidcSub: 'sub-window',
       tenantId: null,
     });
     mockUpdate.mockResolvedValue({ id: 'usr_window' });
@@ -144,7 +144,7 @@ describe('provisionOidcUser', () => {
       {
         id: 'usr_legacy',
         banned: false,
-        gideonSub: null,
+        oidcSub: null,
         tenantId: null,
       },
     ]);
@@ -165,9 +165,9 @@ describe('provisionOidcUser', () => {
     });
     expectExpandLookup(mockQueryRaw, 'person@example.com');
     expect(mockUpdate).toHaveBeenCalledWith({
-      where: { id: 'usr_legacy', AND: { gideonSub: null } },
+      where: { id: 'usr_legacy', AND: { oidcSub: null } },
       data: expect.objectContaining({
-        gideonSub: 'sub-1',
+        oidcSub: 'sub-1',
         tenantId: TENANT_A,
       }),
     });
@@ -184,7 +184,7 @@ describe('provisionOidcUser', () => {
       {
         id: 'usr_legacy',
         banned: false,
-        gideonSub: null,
+        oidcSub: null,
         tenantId: null,
       },
     ]);
@@ -199,9 +199,9 @@ describe('provisionOidcUser', () => {
 
     expectExpandLookup(mockQueryRaw, 'person@example.com');
     expect(mockUpdate).toHaveBeenCalledWith({
-      where: { id: 'usr_legacy', AND: { gideonSub: null } },
+      where: { id: 'usr_legacy', AND: { oidcSub: null } },
       data: expect.objectContaining({
-        gideonSub: 'sub-1',
+        oidcSub: 'sub-1',
         tenantId: TENANT_A,
       }),
     });
@@ -237,7 +237,7 @@ describe('provisionOidcUser', () => {
       {
         id: 'usr_legacy',
         banned: false,
-        gideonSub: 'sub-other',
+        oidcSub: 'sub-other',
         tenantId: null,
       },
     ]);
@@ -259,7 +259,7 @@ describe('provisionOidcUser', () => {
       id: 'usr_a',
       email: 'person@example.com',
       banned: false,
-      gideonSub: 'sub-a',
+      oidcSub: 'sub-a',
       tenantId: TENANT_A,
     });
     mockUpdate.mockResolvedValue({ id: 'usr_a' });

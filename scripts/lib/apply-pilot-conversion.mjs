@@ -1,6 +1,6 @@
 import { buildPilotConversionPlan } from './pilot-conversion-plan.mjs';
 
-const memberQuery = `SELECT m.id AS "memberId", u.email, u."gideonSub", u.banned,
+const memberQuery = `SELECT m.id AS "memberId", u.email, u."oidcSub", u.banned,
   m.role, m."roleSource", m."idpAccessRevoked", m.deactivated, m."isActive"
   FROM "Member" m JOIN "User" u ON u.id = m."userId"
   WHERE m."organizationId"=$1 ORDER BY u.id, m.id`;
@@ -39,8 +39,8 @@ export async function applyPilotConversion({ client, tenantId, byEmail }) {
         !member.deactivated &&
         member.isActive === true &&
         member.banned !== true &&
-        typeof member.gideonSub === 'string' &&
-        member.gideonSub.trim() &&
+        typeof member.oidcSub === 'string' &&
+        member.oidcSub.trim() &&
         member.role.split(',').includes('owner'),
     ).length;
     if (owners < 1)

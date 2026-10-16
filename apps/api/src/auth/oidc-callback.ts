@@ -155,7 +155,7 @@ export async function handleOidcCallback({
   //
   // Phase 1 (pilot): allowlisted tenants enforce — deny mints no session,
   // valid assignments JIT-sync the Member row before the session commits.
-  // Identity gates above (email_verified, banned, gideonSub) run first.
+  // Identity gates above (email_verified, banned, oidcSub) run first.
   if (isEnforcementEnabledFor(tenantId) && tenantId) {
     const { matched } = await enforceOidcEntitlements({
       claims,

@@ -87,14 +87,14 @@ export async function resolveActiveOrganizationId({
  * users with separate roles, sessions, and HR state.
  *
  * Resolution order:
- *   1. Canonical subject (`gideonSub`): the authoritative link. A hit
+ *   1. Canonical subject (`oidcSub`): the authoritative link. A hit
  *      returns the linked row after a tenant-consistency check — a subject
  *      issued by tenant A never authenticates as a user owned by tenant B.
  *      Before contract, existing secondary memberships can read their shared
  *      row while the legacy global key exists; this path never changes it.
  *   2. Tenant-scoped legacy email link (`tenantId`, normalized email): only
  *      rows owned by the authenticated tenant are eligible. A null
- *      `gideonSub` is linked; a conflicting non-null subject is rejected,
+ *      `oidcSub` is linked; a conflicting non-null subject is rejected,
  *      never overwritten (no hijack across identity-provider accounts).
  *   2b. Expand-window fallback: rows written by old code before the tenant
  *      backfill carry no ownership, so they never match the tenant-scoped
@@ -106,7 +106,7 @@ export async function resolveActiveOrganizationId({
  *      email. Creation without a tenant is refused — ownership is required.
  *
  * `User.tenantId` is immutable and never updated here; only the legacy
- * `gideonTenantId` stamp is refreshed. A concurrent first login racing this
+ * `oidcTenantId` stamp is refreshed. A concurrent first login racing this
  * one surfaces as P2002 — re-read tenant-scoped state and fall through to
  * the link path instead of failing the login.
  */
@@ -132,7 +132,7 @@ export async function provisionOidcUser({
     await beforeWrite?.();
   };
 
-  const bySub = await db.user.findUnique({ where: { gideonSub: sub } });
+  const bySub = await db.user.findUnique({ where: { oidcSub: sub } });
   if (bySub) {
     if (bySub.banned) {
       throw new ForbiddenException('Account is disabled');
@@ -237,9 +237,9 @@ export async function provisionOidcUser({
         emailVerified: true,
         name: name ?? normalizedEmail.split('@')[0] ?? normalizedEmail,
         ...(image ? { image } : {}),
-        gideonSub: sub,
+        oidcSub: sub,
         tenantId,
-        gideonTenantId: tenantId,
+        oidcTenantId: tenantId,
         lastLogin: new Date(),
       },
     });
@@ -251,7 +251,7 @@ export async function provisionOidcUser({
       sub,
     });
     if (shared) {
-      if (shared.gideonSub !== sub) {
+      if (shared.oidcSub !== sub) {
         throw new ForbiddenException(
           'Identity account is linked to a different user',
         );
@@ -289,7 +289,7 @@ export async function mintOidcSession({
         userId,
         tenantId,
       }),
-      ...(refreshToken ? { gideonRefreshToken: refreshToken } : {}),
+      ...(refreshToken ? { oidcRefreshToken: refreshToken } : {}),
     },
   });
 }

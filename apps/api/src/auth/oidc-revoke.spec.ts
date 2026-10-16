@@ -47,7 +47,7 @@ describe('OidcService.revokeAndDeleteSession', () => {
   it('revokes the refresh token then deletes the session', async () => {
     mockSessionFindUnique.mockResolvedValue({
       id: 'ses_1',
-      gideonRefreshToken: 'refresh-1',
+      oidcRefreshToken: 'refresh-1',
     });
     mockSessionDelete.mockResolvedValue({ id: 'ses_1' });
 
@@ -65,7 +65,7 @@ describe('OidcService.revokeAndDeleteSession', () => {
   it('still deletes the session when revocation fails', async () => {
     mockSessionFindUnique.mockResolvedValue({
       id: 'ses_1',
-      gideonRefreshToken: 'refresh-1',
+      oidcRefreshToken: 'refresh-1',
     });
     mockTokenRevocation.mockRejectedValue(new Error('revoke down'));
     mockSessionDelete.mockResolvedValue({ id: 'ses_1' });
@@ -80,7 +80,7 @@ describe('OidcService.revokeAndDeleteSession', () => {
   it('deletes the session even without a stored refresh token', async () => {
     mockSessionFindUnique.mockResolvedValue({
       id: 'ses_1',
-      gideonRefreshToken: null,
+      oidcRefreshToken: null,
     });
     mockSessionDelete.mockResolvedValue({ id: 'ses_1' });
 
@@ -102,7 +102,7 @@ describe('OidcService.revokeAndDeleteSession', () => {
   it('swallows a concurrent-delete race instead of failing logout', async () => {
     mockSessionFindUnique.mockResolvedValue({
       id: 'ses_1',
-      gideonRefreshToken: null,
+      oidcRefreshToken: null,
     });
     mockSessionDelete.mockRejectedValue({ code: 'P2025' });
 
@@ -114,7 +114,7 @@ describe('OidcService.revokeAndDeleteSession', () => {
   it('rethrows unexpected delete failures', async () => {
     mockSessionFindUnique.mockResolvedValue({
       id: 'ses_1',
-      gideonRefreshToken: null,
+      oidcRefreshToken: null,
     });
     mockSessionDelete.mockRejectedValue(new Error('db down'));
 

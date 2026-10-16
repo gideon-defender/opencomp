@@ -151,7 +151,7 @@ describe('HR local subject check with IdP fallback', () => {
     mockFindUser.mockResolvedValue({
       email: identity.email,
       name: 'Employee',
-      gideonSub: identity.id,
+      oidcSub: identity.id,
       tenantId: organizationId,
     });
     const resolve = createHrIdentityResolver({ organizationId });
@@ -172,7 +172,7 @@ describe('HR local subject check with IdP fallback', () => {
       where: {
         tenantId: organizationId,
         email: { equals: identity.email, mode: 'insensitive' },
-        gideonSub: { not: null },
+        oidcSub: { not: null },
       },
     });
   });
@@ -189,15 +189,15 @@ describe('HR local subject check with IdP fallback', () => {
       where: {
         tenantId: organizationId,
         email: { equals: identity.email, mode: 'insensitive' },
-        gideonSub: { not: null },
+        oidcSub: { not: null },
       },
     });
   });
 
   it.each([null, ' '])(
     'calls the IdP when the local subject is unavailable (%p)',
-    async (gideonSub) => {
-      mockFindUser.mockResolvedValue({ gideonSub });
+    async (oidcSub) => {
+      mockFindUser.mockResolvedValue({ oidcSub });
       expect(
         await createHrIdentityResolver({ organizationId })({
           email: identity.email,
@@ -220,7 +220,7 @@ describe('HR local projection of existing IdP users', () => {
     mockCreateUser.mockResolvedValue({
       id: 'user_1',
       email: identity.email,
-      gideonSub: identity.id,
+      oidcSub: identity.id,
     });
     await getHrSyncUser({ identity, organizationId });
     expect(mockCreateUser).toHaveBeenCalledWith({
@@ -228,9 +228,9 @@ describe('HR local projection of existing IdP users', () => {
         email: identity.email,
         name: 'Employee',
         emailVerified: false,
-        gideonSub: identity.id,
+        oidcSub: identity.id,
         tenantId: organizationId,
-        gideonTenantId: organizationId,
+        oidcTenantId: organizationId,
       },
     });
     expect(mockUpdateUser).not.toHaveBeenCalled();
@@ -239,13 +239,13 @@ describe('HR local projection of existing IdP users', () => {
   it('links an existing same-tenant local user even without a prior IdP login', async () => {
     mockFindUser.mockResolvedValue({
       id: 'user_1',
-      gideonSub: null,
+      oidcSub: null,
       tenantId: organizationId,
     });
     await getHrSyncUser({ identity, organizationId });
     expect(mockUpdateUser).toHaveBeenCalledWith({
-      where: { id: 'user_1', AND: { gideonSub: null } },
-      data: { gideonSub: identity.id, gideonTenantId: organizationId },
+      where: { id: 'user_1', AND: { oidcSub: null } },
+      data: { oidcSub: identity.id, oidcTenantId: organizationId },
     });
     expect(mockCreateUser).not.toHaveBeenCalled();
   });
@@ -254,7 +254,7 @@ describe('HR local projection of existing IdP users', () => {
     mockFindUserBySubject.mockResolvedValue({
       id: 'user_other',
       email: identity.email,
-      gideonSub: identity.id,
+      oidcSub: identity.id,
       tenantId: 'other-tenant',
     });
     await expect(getHrSyncUser({ identity, organizationId })).rejects.toThrow(
@@ -271,7 +271,7 @@ describe('HR local projection of existing IdP users', () => {
     mockQueryRaw.mockResolvedValueOnce([
       {
         id: 'user_1',
-        gideonSub: null,
+        oidcSub: null,
         tenantId: null,
       },
     ]);
@@ -285,10 +285,10 @@ describe('HR local projection of existing IdP users', () => {
     });
     expectExpandLookup(mockQueryRaw, identity.email);
     expect(mockUpdateUser).toHaveBeenCalledWith({
-      where: { id: 'user_1', AND: { gideonSub: null } },
+      where: { id: 'user_1', AND: { oidcSub: null } },
       data: {
-        gideonSub: identity.id,
-        gideonTenantId: organizationId,
+        oidcSub: identity.id,
+        oidcTenantId: organizationId,
         tenantId: organizationId,
       },
     });
@@ -312,7 +312,7 @@ describe('HR local projection of existing IdP users', () => {
     mockFindUser.mockResolvedValue({
       id: 'user_1',
       email: identity.email,
-      gideonSub: identity.id,
+      oidcSub: identity.id,
       tenantId: organizationId,
     });
     await getHrSyncUser({ identity, organizationId });
@@ -324,13 +324,13 @@ describe('HR local projection of existing IdP users', () => {
     mockFindUserBySubject.mockResolvedValue({
       id: 'user_1',
       email: identity.email,
-      gideonSub: identity.id,
+      oidcSub: identity.id,
       tenantId: null,
     });
     mockUpdateUser.mockResolvedValue({
       id: 'user_1',
       email: identity.email,
-      gideonSub: identity.id,
+      oidcSub: identity.id,
       tenantId: organizationId,
     });
     await expect(getHrSyncUser({ identity, organizationId })).resolves.toEqual(
@@ -347,7 +347,7 @@ describe('HR local projection of existing IdP users', () => {
     mockFindUserBySubject.mockResolvedValue({
       id: 'user_1',
       email: 'old@example.com',
-      gideonSub: identity.id,
+      oidcSub: identity.id,
       tenantId: null,
     });
     mockFindUser.mockResolvedValue({ id: 'user_other' });
@@ -366,8 +366,8 @@ describe('HR local projection of existing IdP users', () => {
   });
 
   it.each([
-    { gideonSub: 'another-sub', tenantId: organizationId },
-    { gideonSub: null, banned: true, tenantId: organizationId },
+    { oidcSub: 'another-sub', tenantId: organizationId },
+    { oidcSub: null, banned: true, tenantId: organizationId },
   ])('rejects conflicting or disabled users %p', async (fields) => {
     mockFindUser.mockResolvedValue({ id: 'user_1', ...fields });
     await expect(getHrSyncUser({ identity, organizationId })).rejects.toThrow();
@@ -381,7 +381,7 @@ describe('HR local projection of existing IdP users', () => {
     mockFindUser.mockResolvedValueOnce(null).mockResolvedValueOnce({
       id: 'user_1',
       email: identity.email,
-      gideonSub: identity.id,
+      oidcSub: identity.id,
       tenantId: organizationId,
     });
     mockQueryRaw.mockResolvedValue([]);
@@ -391,7 +391,7 @@ describe('HR local projection of existing IdP users', () => {
     expect(await getHrSyncUser({ identity, organizationId })).toEqual({
       id: 'user_1',
       email: identity.email,
-      gideonSub: identity.id,
+      oidcSub: identity.id,
       tenantId: organizationId,
     });
     expect(mockUpdateUser).not.toHaveBeenCalled();
@@ -415,7 +415,7 @@ describe('HR local projection of existing IdP users', () => {
     mockQueryRaw.mockResolvedValueOnce([]).mockResolvedValueOnce([
       {
         id: 'user_legacy',
-        gideonSub: null,
+        oidcSub: null,
         tenantId: null,
       },
     ]);
@@ -425,10 +425,10 @@ describe('HR local projection of existing IdP users', () => {
     mockUpdateUser.mockResolvedValue({ id: 'user_legacy' });
     await getHrSyncUser({ identity, organizationId });
     expect(mockUpdateUser).toHaveBeenCalledWith({
-      where: { id: 'user_legacy', AND: { gideonSub: null } },
+      where: { id: 'user_legacy', AND: { oidcSub: null } },
       data: {
-        gideonSub: identity.id,
-        gideonTenantId: organizationId,
+        oidcSub: identity.id,
+        oidcTenantId: organizationId,
         tenantId: organizationId,
       },
     });
@@ -436,21 +436,21 @@ describe('HR local projection of existing IdP users', () => {
 
   it('converges on the subject holder when the link collides on the global subject key', async () => {
     // A login claims this identity after our subject read missed: the
-    // conditional link raises P2002 from the global gideonSub key, not the
+    // conditional link raises P2002 from the global oidcSub key, not the
     // composite email key. The email re-read returns the same still-unlinked
     // row, so recovery must fall through to the subject holder instead of
     // retrying the same write forever.
     const unlinked = {
       id: 'user_1',
       email: identity.email,
-      gideonSub: null,
+      oidcSub: null,
       tenantId: organizationId,
       banned: false,
     };
     const holder = {
       id: 'user_2',
       email: 'old@example.com',
-      gideonSub: identity.id,
+      oidcSub: identity.id,
       tenantId: organizationId,
       banned: false,
     };
@@ -472,7 +472,7 @@ describe('HR local projection of existing IdP users', () => {
     // A third write means the recovery looped on the same row.
     expect(mockUpdateUser).toHaveBeenCalledTimes(2);
     expect(mockUpdateUser).toHaveBeenNthCalledWith(2, {
-      where: { id: 'user_2', gideonSub: identity.id },
+      where: { id: 'user_2', oidcSub: identity.id },
       data: { email: identity.email },
     });
   });
@@ -485,7 +485,7 @@ describe('HR local projection of existing IdP users', () => {
     mockQueryRaw.mockResolvedValueOnce([
       {
         id: 'user_legacy',
-        gideonSub: null,
+        oidcSub: null,
         tenantId: null,
       },
     ]);
@@ -493,7 +493,7 @@ describe('HR local projection of existing IdP users', () => {
     await getHrSyncUser({ identity, organizationId });
     expectExpandLookup(mockQueryRaw, identity.email);
     expect(mockUpdateUser).toHaveBeenCalledWith({
-      where: { id: 'user_legacy', AND: { gideonSub: null } },
+      where: { id: 'user_legacy', AND: { oidcSub: null } },
       data: expect.objectContaining({ tenantId: organizationId }),
     });
     expect(mockCreateUser).not.toHaveBeenCalled();
@@ -503,7 +503,7 @@ describe('HR local projection of existing IdP users', () => {
     mockFindUserBySubject.mockResolvedValue({
       id: 'user_1',
       email: identity.email,
-      gideonSub: identity.id,
+      oidcSub: identity.id,
       tenantId: null,
     });
     mockFindUser.mockResolvedValue({ id: 'user_other' });
@@ -519,7 +519,7 @@ describe('HR local projection of existing IdP users', () => {
   it('converges when a concurrent link wins the same identity (P2025)', async () => {
     mockFindUser.mockResolvedValue({
       id: 'user_1',
-      gideonSub: null,
+      oidcSub: null,
       tenantId: organizationId,
     });
     mockUpdateUser.mockRejectedValueOnce(
@@ -528,11 +528,11 @@ describe('HR local projection of existing IdP users', () => {
     mockFindUserBySubject.mockResolvedValueOnce(null).mockResolvedValueOnce({
       id: 'user_1',
       email: identity.email,
-      gideonSub: identity.id,
+      oidcSub: identity.id,
       tenantId: organizationId,
     });
     await expect(getHrSyncUser({ identity, organizationId })).resolves.toEqual(
-      expect.objectContaining({ id: 'user_1', gideonSub: identity.id }),
+      expect.objectContaining({ id: 'user_1', oidcSub: identity.id }),
     );
     // No second write: the winner already reached the desired end state.
     expect(mockUpdateUser).toHaveBeenCalledTimes(1);
@@ -541,7 +541,7 @@ describe('HR local projection of existing IdP users', () => {
   it('rejects a P2025 loss when the winner linked a different identity', async () => {
     mockFindUser.mockResolvedValue({
       id: 'user_1',
-      gideonSub: null,
+      oidcSub: null,
       tenantId: organizationId,
     });
     mockUpdateUser.mockRejectedValueOnce(
@@ -550,7 +550,7 @@ describe('HR local projection of existing IdP users', () => {
     mockFindUserBySubject.mockResolvedValueOnce(null).mockResolvedValueOnce({
       id: 'user_1',
       email: 'other@example.com',
-      gideonSub: 'other-sub',
+      oidcSub: 'other-sub',
       tenantId: organizationId,
     });
     await expect(getHrSyncUser({ identity, organizationId })).rejects.toThrow(
@@ -561,7 +561,7 @@ describe('HR local projection of existing IdP users', () => {
   it('reports a retryable error when the P2025 winner vanishes', async () => {
     mockFindUser.mockResolvedValue({
       id: 'user_1',
-      gideonSub: null,
+      oidcSub: null,
       tenantId: organizationId,
     });
     mockUpdateUser.mockRejectedValueOnce(
@@ -577,7 +577,7 @@ describe('HR local projection of existing IdP users', () => {
     const linked = {
       id: 'user_1',
       email: 'old@example.com',
-      gideonSub: identity.id,
+      oidcSub: identity.id,
       tenantId: organizationId,
     };
     mockFindUserBySubject.mockResolvedValue(linked);
@@ -592,7 +592,7 @@ describe('HR local projection of existing IdP users', () => {
     );
     expect(mockUpdateUser).toHaveBeenCalledTimes(2);
     expect(mockUpdateUser).toHaveBeenLastCalledWith({
-      where: { id: 'user_1', gideonSub: identity.id },
+      where: { id: 'user_1', oidcSub: identity.id },
       data: { email: identity.email },
     });
   });
@@ -602,7 +602,7 @@ describe('HR local projection of existing IdP users', () => {
       const existing = {
         id: 'user_1',
         email: 'old@example.com',
-        gideonSub: identity.id,
+        oidcSub: identity.id,
         tenantId: organizationId,
         emailVerified: true,
         lastLogin: new Date('2026-10-01'),
@@ -624,7 +624,7 @@ describe('HR local projection of existing IdP users', () => {
         email: identity.email,
       });
       expect(mockUpdateUser).toHaveBeenCalledWith({
-        where: { id: 'user_1', gideonSub: identity.id },
+        where: { id: 'user_1', oidcSub: identity.id },
         data: { email: identity.email },
       });
       if (!concurrent) expect(mockCreateUser).not.toHaveBeenCalled();
@@ -635,7 +635,7 @@ describe('HR local projection of existing IdP users', () => {
     const existing = {
       id: 'user_1',
       email: 'old@example.com',
-      gideonSub: identity.id,
+      oidcSub: identity.id,
       tenantId: organizationId,
     };
     mockFindUserBySubject.mockResolvedValue(existing);
@@ -659,7 +659,7 @@ describe('HR local projection of existing IdP users', () => {
     const existing = {
       id: 'user_1',
       email: 'old@example.com',
-      gideonSub: identity.id,
+      oidcSub: identity.id,
       tenantId: organizationId,
     };
     mockFindUserBySubject.mockResolvedValue(existing);
@@ -671,7 +671,7 @@ describe('HR local projection of existing IdP users', () => {
       existing,
     );
     expect(mockUpdateUser).toHaveBeenCalledWith({
-      where: { id: 'user_1', gideonSub: identity.id },
+      where: { id: 'user_1', oidcSub: identity.id },
       data: { email: identity.email },
     });
     expect(mockCreateUser).not.toHaveBeenCalled();
@@ -681,7 +681,7 @@ describe('HR local projection of existing IdP users', () => {
     mockFindUserBySubject.mockResolvedValue({
       id: 'user_1',
       email: 'old@example.com',
-      gideonSub: identity.id,
+      oidcSub: identity.id,
       banned: true,
     });
     await expect(getHrSyncUser({ identity, organizationId })).rejects.toThrow(

@@ -59,7 +59,7 @@ const initialMember = () => ({
   onboardDate: new Date('2020-01-01'),
   offboardDate: null,
   user: {
-    gideonSub: '67dc2bb3-7728-4dc5-b945-074aa1c118ef',
+    oidcSub: '67dc2bb3-7728-4dc5-b945-074aa1c118ef',
     tenantId,
     email: 'shared@example.com',
   },

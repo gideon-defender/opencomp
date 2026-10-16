@@ -105,7 +105,7 @@ try {
 
   const members = (
     await client.query(
-      `SELECT m.id AS "memberId", u.email, u."gideonSub", u.banned, m.role, m."roleSource", m."idpAccessRevoked", m.deactivated, m."isActive"
+      `SELECT m.id AS "memberId", u.email, u."oidcSub", u.banned, m.role, m."roleSource", m."idpAccessRevoked", m.deactivated, m."isActive"
        FROM "Member" m JOIN "User" u ON u.id = m."userId"
        WHERE m."organizationId"=$1 ORDER BY u.email`,
       [tenantId],

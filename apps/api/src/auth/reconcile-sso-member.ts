@@ -24,11 +24,11 @@ export async function reconcileSsoMember({
       const member = await tx.member.findFirst({
         where: { id: memberId, organizationId: tenantId, roleSource: 'sso' },
         include: {
-          user: { select: { gideonSub: true, tenantId: true, email: true } },
+          user: { select: { oidcSub: true, tenantId: true, email: true } },
         },
       });
       if (!member) return 'skipped';
-      let subject = member.user.gideonSub;
+      let subject = member.user.oidcSub;
       let identityMissing = false;
       if (!subject) {
         throw new Error(

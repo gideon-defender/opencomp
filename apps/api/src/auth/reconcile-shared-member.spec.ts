@@ -21,7 +21,7 @@ const member = {
   role: 'admin',
   idpAccessRevoked: false,
   user: {
-    gideonSub: 'primary-sub',
+    oidcSub: 'primary-sub',
     tenantId: 'primary',
     email: 'shared@example.com',
   },
@@ -62,7 +62,7 @@ beforeEach(() => {
     banned: false,
     banReason: null,
     banExpires: null,
-    gideonTenantId: 'primary',
+    oidcTenantId: 'primary',
   });
   jest.mocked(lookupGideonTenantIdentity).mockResolvedValue({
     id: 'secondary-sub',

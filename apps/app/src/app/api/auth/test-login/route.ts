@@ -43,7 +43,7 @@ async function handleLogin(request: NextRequest) {
     name?: string;
     hasAccess?: boolean;
     skipOrg?: boolean;
-    gideonTenantId?: string;
+    oidcTenantId?: string;
   };
   try {
     body = await request.json();
@@ -58,7 +58,7 @@ async function handleLogin(request: NextRequest) {
   const email = body.email ?? `test-e2e-${Date.now()}@example.com`;
   const name = body.name ?? `Test User ${Date.now()}`;
   // Tenant is the org: test orgs are created under an explicit test tid.
-  const tenantId = body.gideonTenantId ?? `tid_test_${Date.now()}`;
+  const tenantId = body.oidcTenantId ?? `tid_test_${Date.now()}`;
 
   const secret = process.env.SECRET_KEY;
   if (!secret) {
@@ -90,7 +90,7 @@ async function handleLogin(request: NextRequest) {
         name,
         emailVerified: true,
         tenantId,
-        gideonTenantId: tenantId,
+        oidcTenantId: tenantId,
       },
     });
   } catch (err) {

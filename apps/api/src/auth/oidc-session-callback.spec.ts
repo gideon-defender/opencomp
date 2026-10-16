@@ -98,12 +98,12 @@ describe('OidcService', () => {
   describe('handleCallback', () => {
     const callbackUrl = CALLBACK_URL;
 
-    it('links gideonSub on an existing user and mints a session', async () => {
+    it('links oidcSub on an existing user and mints a session', async () => {
       mockSuccessfulExchange();
       mockUserFindFirst.mockResolvedValue({
         id: 'usr_1',
         email: 'ada@example.com',
-        gideonSub: null,
+        oidcSub: null,
         banned: false,
         tenantId: 'org_1',
       });
@@ -117,14 +117,14 @@ describe('OidcService', () => {
         'gideon-sub-1',
       );
       expect(mockUserUpdate).toHaveBeenCalledWith({
-        where: { id: 'usr_1', AND: { gideonSub: null } },
-        data: expect.objectContaining({ gideonSub: 'gideon-sub-1' }),
+        where: { id: 'usr_1', AND: { oidcSub: null } },
+        data: expect.objectContaining({ oidcSub: 'gideon-sub-1' }),
       });
       expect(mockSessionCreate).toHaveBeenCalledWith({
         data: expect.objectContaining({
           userId: 'usr_1',
           activeOrganizationId: 'org_1',
-          gideonRefreshToken: 'refresh-1',
+          oidcRefreshToken: 'refresh-1',
         }),
       });
       expect(result.sessionToken).toBe('ses-token');
@@ -136,7 +136,7 @@ describe('OidcService', () => {
       mockUserFindFirst.mockResolvedValue({
         id: 'usr_1',
         email: 'ada@example.com',
-        gideonSub: null,
+        oidcSub: null,
         banned: false,
         tenantId: 'org_1',
       });
@@ -158,7 +158,7 @@ describe('OidcService', () => {
       mockUserFindFirst.mockResolvedValue({
         id: 'usr_1',
         email: 'ada@example.com',
-        gideonSub: null,
+        oidcSub: null,
         banned: false,
         tenantId: 'org_1',
       });
@@ -193,7 +193,7 @@ describe('OidcService', () => {
       mockUserFindFirst.mockResolvedValue({
         id: 'usr_1',
         email: 'ada@example.com',
-        gideonSub: null,
+        oidcSub: null,
         banned: false,
         tenantId: 'tenant-9',
       });
@@ -202,8 +202,8 @@ describe('OidcService', () => {
       await service.handleCallback({ callbackUrl });
 
       expect(mockUserUpdate).toHaveBeenCalledWith({
-        where: { id: 'usr_1', AND: { gideonSub: null } },
-        data: expect.objectContaining({ gideonTenantId: 'tenant-9' }),
+        where: { id: 'usr_1', AND: { oidcSub: null } },
+        data: expect.objectContaining({ oidcTenantId: 'tenant-9' }),
       });
     });
 
@@ -223,7 +223,7 @@ describe('OidcService', () => {
       mockUserFindFirst.mockResolvedValue({
         id: 'usr_1',
         email: 'ada@example.com',
-        gideonSub: null,
+        oidcSub: null,
         banned: false,
         tenantId: 'tenant-9',
       });

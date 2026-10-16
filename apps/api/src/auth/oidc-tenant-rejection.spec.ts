@@ -58,7 +58,7 @@ describe('OIDC invalid tenant claims with all-tenant enforcement', () => {
     mockUserFindUnique.mockResolvedValue({
       id: 'usr_existing',
       email: 'ada@example.com',
-      gideonSub: 'gideon-sub-1',
+      oidcSub: 'gideon-sub-1',
       tenantId: 'tenant_a',
       banned: false,
     });

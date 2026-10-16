@@ -6,7 +6,8 @@ const approvalFailures = new Map([
 ]);
 
 export function planTenantMigrations({ phase, history, schema }) {
-  if (!['expand', 'contract'].includes(phase)) throw new Error('Expected expand or contract phase');
+  if (!['expand', 'contract', 'offline'].includes(phase))
+    throw new Error('Expected expand, contract, or offline phase');
   const recover = [];
   for (const row of history.filter((entry) => !entry.finished && !entry.rolledBack)) {
     // Prisma cannot always save the gate error inside the aborted transaction.
@@ -42,5 +43,14 @@ export function approveContractUrl(databaseUrl) {
     'options',
     `${options ? `${options} ` : ''}-c app.tenant_contract_approved=yes`,
   );
-  return url.toString();
+  return url.toString().replaceAll('+', '%20');
+}
+
+export function approveOfflineUrl(databaseUrl) {
+  const url = new URL(approveContractUrl(databaseUrl));
+  url.searchParams.set(
+    'options',
+    `${url.searchParams.get('options')} -c app.oidc_rename_approved=yes`,
+  );
+  return url.toString().replaceAll('+', '%20');
 }

@@ -58,7 +58,7 @@ describe('provisionOidcUser', () => {
     mockFindFirst.mockResolvedValue({
       id: 'usr_legacy',
       banned: false,
-      gideonSub: null,
+      oidcSub: null,
       tenantId: TENANT_A,
     });
     mockUpdate.mockResolvedValue({ id: 'usr_legacy' });
@@ -77,8 +77,8 @@ describe('provisionOidcUser', () => {
       },
     });
     expect(mockUpdate).toHaveBeenCalledWith({
-      where: { id: 'usr_legacy', AND: { gideonSub: null } },
-      data: expect.objectContaining({ gideonSub: 'sub-1' }),
+      where: { id: 'usr_legacy', AND: { oidcSub: null } },
+      data: expect.objectContaining({ oidcSub: 'sub-1' }),
     });
     expect(mockCreate).not.toHaveBeenCalled();
   });
@@ -88,7 +88,7 @@ describe('provisionOidcUser', () => {
     mockFindFirst.mockResolvedValue({
       id: 'usr_other',
       banned: false,
-      gideonSub: 'sub-other',
+      oidcSub: 'sub-other',
       tenantId: TENANT_A,
     });
 
@@ -112,7 +112,7 @@ describe('provisionOidcUser', () => {
     mockFindFirst.mockResolvedValue({
       id: 'usr_legacy',
       banned: false,
-      gideonSub: null,
+      oidcSub: null,
       tenantId: TENANT_A,
     });
     mockUpdate.mockRejectedValue({ code: 'P2025' });
@@ -126,8 +126,8 @@ describe('provisionOidcUser', () => {
       }),
     ).rejects.toThrow(ConflictException);
     expect(mockUpdate).toHaveBeenCalledWith({
-      where: { id: 'usr_legacy', AND: { gideonSub: null } },
-      data: expect.objectContaining({ gideonSub: 'sub-1' }),
+      where: { id: 'usr_legacy', AND: { oidcSub: null } },
+      data: expect.objectContaining({ oidcSub: 'sub-1' }),
     });
     expect(mockCreate).not.toHaveBeenCalled();
   });
@@ -155,7 +155,7 @@ describe('provisionOidcUser', () => {
     expect(mockCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({
         email: 'person@example.com',
-        gideonSub: 'sub-b',
+        oidcSub: 'sub-b',
         tenantId: TENANT_B,
       }),
     });

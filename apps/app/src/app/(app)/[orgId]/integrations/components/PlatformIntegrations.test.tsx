@@ -6,7 +6,7 @@ import {
   mockHasPermission,
   setMockPermissions,
 } from '@/test-utils/mocks/permissions';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { SWRConfig } from 'swr';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -153,10 +153,13 @@ vi.mock('lucide-react', () => ({
   AlertTriangle: () => <span data-testid="alert-triangle-icon" />,
   ArrowRight: () => <span data-testid="arrow-right-icon" />,
   CheckCircle2: () => <span data-testid="check-circle-icon" />,
+  CloudOff: () => <span data-testid="cloud-off-icon" />,
   Loader2: () => <span data-testid="loader-icon" />,
+  Lock: () => <span data-testid="lock-icon" />,
   Plug: () => <span data-testid="plug-icon" />,
   Settings2: () => <span data-testid="settings-icon" />,
   Sparkles: () => <span data-testid="sparkles-icon" />,
+  Unplug: () => <span data-testid="unplug-icon" />,
   Zap: () => <span data-testid="zap-icon" />,
 }));
 
@@ -585,7 +588,25 @@ describe('PlatformIntegrations', () => {
       );
     });
 
-    it('hides the status badge for read-only users without calling readiness', () => {
+    it('shows a loading placeholder instead of Not configured while readiness loads', () => {
+      mockApiClientGet.mockReturnValue(new Promise(() => {}));
+      renderWithCheckr();
+
+      const card = screen.getByRole('link', { name: /Open Checkr/ });
+      expect(within(card).getByTestId('skeleton')).toBeInTheDocument();
+      expect(within(card).queryByText('Not configured')).not.toBeInTheDocument();
+      expect(within(card).queryByText('Ready')).not.toBeInTheDocument();
+    });
+
+    it('shows Unavailable when the readiness fetch fails', async () => {
+      mockApiClientGet.mockRejectedValue(new Error('readiness down'));
+      renderWithCheckr();
+
+      expect(await screen.findByText('Unavailable')).toBeInTheDocument();
+      expect(screen.queryByText('Not configured')).not.toBeInTheDocument();
+    });
+
+    it('shows Restricted for read-only users without calling readiness', () => {
       setMockPermissions(AUDITOR_PERMISSIONS);
       render(
         <SWRConfig value={{ provider: () => new Map(), errorRetryCount: 0 }}>
@@ -594,8 +615,10 @@ describe('PlatformIntegrations', () => {
       );
 
       expect(screen.getByRole('link', { name: /Open Checkr/ })).toBeInTheDocument();
+      expect(screen.getByText('Restricted')).toBeInTheDocument();
       expect(screen.queryByText('Ready')).not.toBeInTheDocument();
       expect(screen.queryByText('Setup required')).not.toBeInTheDocument();
+      expect(screen.queryByText('Not configured')).not.toBeInTheDocument();
       expect(mockApiClientGet).not.toHaveBeenCalled();
     });
 

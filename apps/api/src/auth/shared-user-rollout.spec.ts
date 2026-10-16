@@ -22,7 +22,7 @@ jest.mock('./legacy-shared-user', () => ({ findLegacySharedUser: jest.fn() }));
 const shared = {
   id: 'usr_shared',
   tenantId: 'primary',
-  gideonSub: 'sub_primary',
+  oidcSub: 'sub_primary',
   email: 'shared@example.com',
   banned: false,
 };
@@ -47,7 +47,7 @@ describe('shared identity during the expand window', () => {
     await expect(
       provisionOidcUser({
         emailVerified: true,
-        sub: shared.gideonSub,
+        sub: shared.oidcSub,
         email: shared.email,
         tenantId: 'secondary',
         beforeWrite,
@@ -83,7 +83,7 @@ describe('shared identity during the expand window', () => {
     await expect(
       provisionOidcUser({
         emailVerified: true,
-        sub: shared.gideonSub,
+        sub: shared.oidcSub,
         email: shared.email,
         tenantId: 'secondary',
         beforeWrite: async () => {
@@ -98,7 +98,7 @@ describe('shared identity during the expand window', () => {
     await expect(
       provisionOidcUser({
         emailVerified: true,
-        sub: shared.gideonSub,
+        sub: shared.oidcSub,
         email: shared.email,
         tenantId: 'secondary',
       }),
@@ -111,7 +111,7 @@ describe('shared identity during the expand window', () => {
     );
     await expect(
       getHrSyncUser({
-        identity: { ...identity, id: shared.gideonSub },
+        identity: { ...identity, id: shared.oidcSub },
         organizationId: 'secondary',
       }),
     ).resolves.toEqual(shared);

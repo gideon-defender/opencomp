@@ -66,8 +66,8 @@ describe('Provider employee sync IdP identity gate', () => {
     (provider) => {
       it.each([
         null,
-        { id: 'user_1', gideonSub: null },
-        { id: 'user_1', gideonSub: ' ' },
+        { id: 'user_1', oidcSub: null },
+        { id: 'user_1', oidcSub: ' ' },
       ])(
         'skips import and reactivation for an absent IdP identity %p',
         async (user) => {
@@ -104,7 +104,7 @@ describe('Provider employee sync IdP identity gate', () => {
           {
             id: 'member_1',
             role: 'employee',
-            user: { email, gideonSub: null },
+            user: { email, oidcSub: null },
           },
         ]);
         const result = await fixture.runSync(provider);
@@ -117,12 +117,12 @@ describe('Provider employee sync IdP identity gate', () => {
         mockResolveHrIdentity.mockResolvedValue({ id: 'idp_1', email });
         mockGetHrSyncUser.mockResolvedValue({
           id: 'user_1',
-          gideonSub: 'idp_1',
+          oidcSub: 'idp_1',
         });
         fixture.setupProvider({ provider });
         (mockedDb.user.findUnique as jest.Mock).mockResolvedValue({
           id: 'user_1',
-          gideonSub: 'idp_1',
+          oidcSub: 'idp_1',
         });
         const result = await fixture.runSync(provider);
         expect(result.imported).toBe(1);
@@ -135,7 +135,7 @@ describe('Provider employee sync IdP identity gate', () => {
   it('skips excluded, Google Workspace members absent from the IdP', async () => {
     fixture.setupProvider({ provider: 'google-workspace', excluded: true });
     (mockedDb.member.findMany as jest.Mock).mockResolvedValue([
-      { id: 'member_1', role: 'employee', user: { email, gideonSub: null } },
+      { id: 'member_1', role: 'employee', user: { email, oidcSub: null } },
     ]);
     const result = await fixture.runSync('google-workspace');
     expect(result.skipped).toBe(1);

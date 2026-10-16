@@ -42,7 +42,7 @@ jobs:
           node --test packages/db/scripts/staged-migrate.test.mjs
           node --test packages/db/scripts/staged-migrate.integration.test.mjs
           python3 .github/scripts/tests/test_dev_deploy.py
-          for script in .github/scripts/deploy-dev.sh .github/scripts/run-dev-migrations.sh .github/scripts/wait-dev-services.sh; do
+          for script in .github/scripts/deploy-dev.sh .github/scripts/run-dev-migrations.sh .github/scripts/wait-dev-services.sh .github/scripts/stop-dev-services.sh .github/scripts/restore-dev-autoscaling.sh; do
             bash -n "$script"
           done
 

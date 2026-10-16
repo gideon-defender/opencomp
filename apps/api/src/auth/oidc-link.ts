@@ -9,7 +9,7 @@ export interface LinkOidcSubParams {
   existing: {
     id: string;
     banned: boolean | null;
-    gideonSub: string | null;
+    oidcSub: string | null;
     // Nullable during the expand-window rollout: rows written by old code
     // before the tenant backfill carry no ownership yet and are claimed by
     // the first login/sync that presents them (see linkOidcSub).
@@ -112,7 +112,7 @@ export async function updateLoginState(params: {
       data: {
         lastLogin: new Date(),
         ...(adoptEmail ? { email: adoptEmail } : {}),
-        ...(tenantId ? { gideonTenantId: tenantId } : {}),
+        ...(tenantId ? { oidcTenantId: tenantId } : {}),
         ...(claimTenantId ? { tenantId: claimTenantId } : {}),
       },
     });
@@ -129,7 +129,7 @@ export async function updateLoginState(params: {
         where: { id: userId },
         data: {
           lastLogin: new Date(),
-          ...(tenantId ? { gideonTenantId: tenantId } : {}),
+          ...(tenantId ? { oidcTenantId: tenantId } : {}),
           ...(claimTenantId ? { tenantId: claimTenantId } : {}),
         },
       });
@@ -143,7 +143,7 @@ export async function updateLoginState(params: {
         where: { id: userId },
         data: {
           lastLogin: new Date(),
-          ...(tenantId ? { gideonTenantId: tenantId } : {}),
+          ...(tenantId ? { oidcTenantId: tenantId } : {}),
         },
       });
     }
@@ -173,7 +173,7 @@ export async function linkOidcSub({
       'Identity account belongs to a different organization',
     );
   }
-  if (existing.gideonSub && existing.gideonSub !== sub) {
+  if (existing.oidcSub && existing.oidcSub !== sub) {
     logger.warn(
       `Identity sub mismatch for user ${existing.id} — not overwriting existing link`,
     );
@@ -187,16 +187,16 @@ export async function linkOidcSub({
   // still unlinked. A lost race surfaces as P2025 (no rows matched) instead
   // of silently overwriting the winner's subject and locking them out.
   // Mirrors the HR-sync link path (hr-sync-idp-link.ts).
-  const linkingSub = !existing.gideonSub;
+  const linkingSub = !existing.oidcSub;
   try {
     return await db.user.update({
       where: linkingSub
-        ? { id: existing.id, AND: { gideonSub: null } }
+        ? { id: existing.id, AND: { oidcSub: null } }
         : { id: existing.id },
       data: {
         lastLogin: new Date(),
-        ...(existing.gideonSub ? {} : { gideonSub: sub }),
-        gideonTenantId: tenantId,
+        ...(existing.oidcSub ? {} : { oidcSub: sub }),
+        oidcTenantId: tenantId,
         ...(existing.tenantId ? {} : { tenantId }),
       },
     });
@@ -218,7 +218,7 @@ export async function linkOidcSub({
     // resolution, not a "different user" verdict. Tell them apart before
     // responding so the error points at the real remediation.
     const subHolder = await db.user.findUnique({
-      where: { gideonSub: sub },
+      where: { oidcSub: sub },
       select: { id: true },
     });
     if (subHolder && subHolder.id !== existing.id) {
@@ -281,7 +281,7 @@ export async function recoverRacedProvision(params: {
       beforeWrite,
     });
   }
-  const bySubRaced = await db.user.findUnique({ where: { gideonSub: sub } });
+  const bySubRaced = await db.user.findUnique({ where: { oidcSub: sub } });
   if (!bySubRaced) {
     throw new ConflictException(
       'Sign-in hit a concurrent account change; please try again',

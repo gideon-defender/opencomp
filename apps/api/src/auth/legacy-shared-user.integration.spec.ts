@@ -45,7 +45,7 @@ suite('legacy shared-user PostgreSQL guard', () => {
     mockFindSubject.mockReset();
     schema = 'review_' + randomUUID().replaceAll('-', '');
     query(`CREATE SCHEMA "${schema}";
-      CREATE TABLE "User" (id TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL, "tenantId" TEXT, "gideonSub" TEXT, banned BOOLEAN);
+      CREATE TABLE "User" (id TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL, "tenantId" TEXT, "oidcSub" TEXT, banned BOOLEAN);
       CREATE TABLE "Member" ("userId" TEXT, "organizationId" TEXT, deactivated BOOLEAN, "isActive" BOOLEAN);
       INSERT INTO "User" VALUES ('shared', 'shared@example.com', 'primary', 'sub_primary', false);
       ALTER TABLE "User" ADD COLUMN "createdAt" TIMESTAMPTZ DEFAULT now();
@@ -118,7 +118,7 @@ suite('legacy shared-user PostgreSQL guard', () => {
         mockFindSubject.mockResolvedValue({
           id: 'shared',
           tenantId: 'primary',
-          gideonSub: sub,
+          oidcSub: sub,
           email: 'shared@example.com',
           banned: false,
         });

@@ -74,8 +74,8 @@ export async function tryOidcJwtAuth({
   }
 
   const tenantClaim = gideonJwtService.resolveTenantClaim(result.payload);
-  const gideonSub = gideonJwtService.resolveUserId(result.payload);
-  if (!tenantClaim.ok || !gideonSub) {
+  const oidcSub = gideonJwtService.resolveUserId(result.payload);
+  if (!tenantClaim.ok || !oidcSub) {
     logger.warn(
       `[Gideon] JWT rejected: ${!tenantClaim.ok ? `tenant claim ${tenantClaim.reason}` : 'missing sub'}`,
     );
@@ -85,12 +85,12 @@ export async function tryOidcJwtAuth({
   const tenantId = tenantClaim.tenantId;
 
   // The Gideon `sub` is not the OpenComp user id (the link lives on
-  // `User.gideonSub`, set by OIDC JIT provisioning). An unlinked sub holds
+  // `User.oidcSub`, set by OIDC JIT provisioning). An unlinked sub holds
   // no memberships: fall through in shadow, 401 in enforce. Phase 0 also
   // requires `User.tenantId` to equal the verified tenant (same-email
   // two-tenants isolation) — see `resolveTenantLinkedUser`.
   const link = await resolveTenantLinkedUser({
-    sub: gideonSub,
+    sub: oidcSub,
     tenantId,
     logger,
   });

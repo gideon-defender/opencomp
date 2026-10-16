@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { runStagedMigration } from './staged-migrate.mjs';
 import {
   approveContractUrl,
+  approveOfflineUrl,
   CONTRACT_END,
   CONTRACT_START,
   planTenantMigrations,
@@ -95,7 +96,9 @@ test('normal future deploys apply all migrations once the tenant contract is com
 test('contract approval preserves other connection options without modifying the original URL', () => {
   const original =
     'postgres://user:password@localhost/db?sslmode=require&options=-c%20statement_timeout%3D30000';
-  const approved = new URL(approveContractUrl(original));
+  const encoded = approveContractUrl(original);
+  assert.ok(!encoded.includes('+'), 'libpq requires percent-encoded spaces');
+  const approved = new URL(encoded);
   assert.equal(approved.searchParams.get('sslmode'), 'require');
   assert.equal(
     approved.searchParams.get('options'),
@@ -150,6 +153,41 @@ test('expansion preserves SQL bytes, excludes contract and later files, and reso
         assert.equal(
           new URL(call.env.DATABASE_URL).searchParams.get('options'),
           '-c app.tenant_contract_approved=yes',
+        );
+      },
+    });
+    assert.equal(env.DATABASE_URL, 'postgres://localhost/db');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('offline approval preserves connection options and grants both migration gates', () => {
+  const original = 'postgres://localhost/db?options=-c%20statement_timeout%3D30000';
+  const value = approveOfflineUrl(original);
+  assert.equal(
+    new URL(value).searchParams.get('options'),
+    '-c statement_timeout=30000 -c app.tenant_contract_approved=yes -c app.oidc_rename_approved=yes',
+  );
+  assert.ok(!value.includes('+'), 'libpq requires percent-encoded spaces');
+  assert.equal(new URL(original).searchParams.get('options'), '-c statement_timeout=30000');
+});
+
+test('offline driver applies the full migration set with approval only on the deploy connection', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'offline-migrate-test-'));
+  const env = { DATABASE_URL: 'postgres://localhost/db' };
+  try {
+    await runStagedMigration({
+      phase: 'offline',
+      root,
+      env,
+      readState: async () => ({ history: [], schema: {} }),
+      execute: ({ args, env: connection }) => {
+        assert.deepEqual(args, ['migrate', 'deploy']);
+        assert.equal(connection.PRISMA_MIGRATIONS_PATH, join(root, 'packages/db/dist/migrations'));
+        assert.match(
+          new URL(connection.DATABASE_URL).searchParams.get('options'),
+          /app.oidc_rename_approved=yes/,
         );
       },
     });

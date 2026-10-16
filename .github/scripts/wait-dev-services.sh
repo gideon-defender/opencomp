@@ -27,7 +27,7 @@ while IFS='|' read -r service expected; do
       all(.services[]; .taskDefinition == $expected and
         all(.deployments[]; .rolloutState != "FAILED"))
     ' <<< "$state" >/dev/null; then
-      echo "$service rolled back or failed the requested rollout; contract migrations are blocked"
+      echo "$service rolled back or failed the requested rollout; autoscaling restoration is blocked"
       exit 1
     fi
     if jq -e --arg expected "$expected" '
@@ -46,7 +46,7 @@ while IFS='|' read -r service expected; do
   if [ "$completed" != true ]; then
     jq '{failures, services: [.services[] | {taskDefinition, desiredCount, runningCount, pendingCount,
       deployments: [.deployments[] | {taskDefinition, rolloutState, rolloutStateReason}]}]}' <<< "$state"
-    echo "$service did not complete the requested rollout; contract migrations are blocked"
+    echo "$service did not complete the requested rollout; autoscaling restoration is blocked"
     exit 1
   fi
   # Desired STOPPED tasks can still be alive during shutdown; inspect both lists.
@@ -72,7 +72,7 @@ while IFS='|' read -r service expected; do
     sleep "${TASK_DRAIN_DELAY_SECONDS:-10}"
   done
   if [ "$drained" != true ]; then
-    echo "$service still has old or transitioning tasks; contract migrations are blocked"
+    echo "$service still has old or transitioning tasks; autoscaling restoration is blocked"
     exit 1
   fi
 done < "$RUNNER_TEMP/opencomp-expected-tasks"

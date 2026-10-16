@@ -53,7 +53,7 @@ describe('provisionOidcUser', () => {
       id: 'usr_a',
       email: 'old@example.com',
       banned: false,
-      gideonSub: 'sub-a',
+      oidcSub: 'sub-a',
       tenantId: TENANT_A,
     });
     mockFindFirst.mockResolvedValue(null);
@@ -77,7 +77,7 @@ describe('provisionOidcUser', () => {
       id: 'usr_a',
       email: 'old@example.com',
       banned: false,
-      gideonSub: 'sub-a',
+      oidcSub: 'sub-a',
       tenantId: TENANT_A,
     });
     mockFindFirst.mockResolvedValue({ id: 'usr_other', tenantId: TENANT_A });
@@ -103,7 +103,7 @@ describe('provisionOidcUser', () => {
       id: 'usr_a',
       email: 'old@example.com',
       banned: false,
-      gideonSub: 'sub-a',
+      oidcSub: 'sub-a',
       tenantId: TENANT_A,
     });
     mockFindFirst.mockResolvedValue(null);
@@ -131,7 +131,7 @@ describe('provisionOidcUser', () => {
       id: 'usr_a',
       email: 'person@example.com',
       banned: false,
-      gideonSub: 'sub-a',
+      oidcSub: 'sub-a',
       tenantId: null,
     });
     mockFindFirst.mockResolvedValue(null);
@@ -161,7 +161,7 @@ describe('provisionOidcUser', () => {
       id: 'usr_old',
       email: 'old@example.com',
       banned: true,
-      gideonSub: 'sub-1',
+      oidcSub: 'sub-1',
       tenantId: TENANT_A,
     });
 
@@ -183,7 +183,7 @@ describe('provisionOidcUser', () => {
     mockFindFirst.mockResolvedValue({
       id: 'usr_1',
       banned: false,
-      gideonSub: null,
+      oidcSub: null,
       tenantId: TENANT_A,
     });
     mockUpdate.mockRejectedValue({ code: 'P2002' });
@@ -205,7 +205,7 @@ describe('provisionOidcUser', () => {
     mockFindFirst.mockResolvedValue({
       id: 'usr_1',
       banned: false,
-      gideonSub: null,
+      oidcSub: null,
       tenantId: null,
     });
     mockUpdate.mockRejectedValue({ code: 'P2002' });

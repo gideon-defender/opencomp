@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { test } from 'node:test';
@@ -110,6 +110,96 @@ test(
     } finally {
       if (originalUrl === undefined) delete process.env.DATABASE_URL;
       else process.env.DATABASE_URL = originalUrl;
+      runSql({ connection: adminUrl, sql: `DROP DATABASE "${database}" WITH (FORCE)` });
+      rmSync(root, { recursive: true, force: true });
+    }
+  },
+);
+
+test(
+  'offline Prisma deploy approves the real rename and preserves existing identity data',
+  { skip: !adminUrl, timeout: 60_000 },
+  async () => {
+    const database = `offline_test_${randomUUID().replaceAll('-', '')}`;
+    const url = new URL(adminUrl);
+    url.pathname = `/${database}`;
+    const root = mkdtempSync(join(tmpdir(), 'offline-runtime-test-'));
+    const migrations = join(root, 'packages/db/dist/migrations');
+    const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+    const config = join(root, 'prisma.config.ts');
+    const runSql = ({ connection = url.toString(), sql }) => {
+      const result = spawnSync(
+        process.env.PSQL_BIN || 'psql',
+        [connection, '-X', '-At', '-v', 'ON_ERROR_STOP=1', '-c', sql],
+        { encoding: 'utf8' },
+      );
+      assert.equal(result.status, 0, result.stderr);
+      return result.stdout.trim();
+    };
+    runSql({ connection: adminUrl, sql: `CREATE DATABASE "${database}"` });
+    try {
+      const scripts = new Map([
+        [
+          '00000000000000_fixture',
+          `
+          CREATE TABLE "User" (id TEXT PRIMARY KEY, "gideonSub" TEXT UNIQUE, "gideonTenantId" TEXT);
+          CREATE TABLE "Session" (id TEXT PRIMARY KEY, "gideonRefreshToken" TEXT);
+          INSERT INTO "User" VALUES ('user', 'subject', 'tenant');
+          INSERT INTO "Session" VALUES ('session', 'refresh-token');`,
+        ],
+        [
+          CONTRACT_START,
+          `DO $$ BEGIN
+          IF current_setting('app.tenant_contract_approved', true) IS DISTINCT FROM 'yes' THEN
+            RAISE EXCEPTION 'tenant contract must be approved';
+          END IF;
+        END $$;`,
+        ],
+        [
+          '20261015000000_oidc_column_rename',
+          readFileSync(
+            join(packageRoot, 'prisma/migrations/20261015000000_oidc_column_rename/migration.sql'),
+            'utf8',
+          ),
+        ],
+      ]);
+      for (const [name, sql] of scripts) {
+        mkdirSync(join(migrations, name), { recursive: true });
+        writeFileSync(join(migrations, name, 'migration.sql'), sql);
+      }
+      writeFileSync(join(migrations, 'migration_lock.toml'), 'provider = "postgresql"\n');
+      const schema = join(root, 'schema.prisma');
+      writeFileSync(schema, 'datasource db {\n provider = "postgresql"\n}');
+      writeFileSync(
+        config,
+        `export default {schema: ${JSON.stringify(schema)},
+        migrations: {path: process.env.PRISMA_MIGRATIONS_PATH},
+        datasource: {url: process.env.DATABASE_URL}};`,
+      );
+      await runStagedMigration({
+        phase: 'offline',
+        root,
+        env: { ...process.env, DATABASE_URL: url.toString() },
+        readState: async () => ({ history: [], schema: {} }),
+        execute: ({ args, env }) => {
+          const result = spawnSync(
+            join(packageRoot, 'node_modules/.bin/prisma'),
+            [...args, '--config', config],
+            { cwd: root, env, encoding: 'utf8' },
+          );
+          assert.equal(result.status, 0, result.stdout + result.stderr);
+        },
+      });
+      assert.equal(
+        runSql({ sql: 'SELECT "oidcSub", "oidcTenantId" FROM "User"' }),
+        'subject|tenant',
+      );
+      assert.equal(runSql({ sql: 'SELECT "oidcRefreshToken" FROM "Session"' }), 'refresh-token');
+      assert.equal(
+        runSql({ sql: 'SELECT count(*) FROM _prisma_migrations WHERE finished_at IS NOT NULL' }),
+        '3',
+      );
+    } finally {
       runSql({ connection: adminUrl, sql: `DROP DATABASE "${database}" WITH (FORCE)` });
       rmSync(root, { recursive: true, force: true });
     }

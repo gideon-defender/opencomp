@@ -42,24 +42,42 @@ email_task_definition="$(register_task_definition gideon-dev-opencomp-email-work
 migrator_task_definition="$(register_task_definition gideon-dev-opencomp-migrator "$migrator_image")"
 
 printf '%s\n' "$migrator_task_definition" > "$RUNNER_TEMP/opencomp-migrator-task"
-bash .github/scripts/run-dev-migrations.sh expand
+bash .github/scripts/stop-dev-services.sh
+bash .github/scripts/run-dev-migrations.sh offline
 
 : > "$RUNNER_TEMP/opencomp-expected-tasks"
 
-for service_definition in \
+service_definitions=(
   "gideon-dev-opencomp-mcp|$mcp_task_definition" \
   "gideon-dev-opencomp-api|$api_task_definition" \
   "gideon-dev-opencomp-app|$app_task_definition" \
   "gideon-dev-opencomp-trust-center|$trust_task_definition" \
-  "gideon-dev-opencomp-email-worker|$email_task_definition"; do
+  "gideon-dev-opencomp-email-worker|$email_task_definition"
+)
+restart_plan="$RUNNER_TEMP/opencomp-restart-plan"
+: > "$restart_plan"
+# Validate the complete snapshot before starting even the first service.
+for service_definition in "${service_definitions[@]}"; do
   IFS='|' read -r service task_definition <<< "$service_definition"
+  if ! desired_count="$(awk -F'|' -v service="$service" '
+    $1 == service {matches++; count = $2; if (NF != 2 || $2 !~ /^[0-9]+$/) invalid = 1}
+    END {if (matches != 1 || invalid) exit 1; print count}
+  ' "$RUNNER_TEMP/opencomp-service-counts")"; then
+    echo "Invalid or missing desired count for $service; all service restarts are blocked"
+    exit 1
+  fi
+  printf '%s|%s|%s\n' "$service" "$task_definition" "$desired_count" >> "$restart_plan"
+done
+
+while IFS='|' read -r service task_definition desired_count; do
   aws ecs update-service \
     --region "$AWS_REGION" \
     --cluster "$ECS_CLUSTER" \
     --service "$service" \
     --task-definition "$task_definition" \
+    --desired-count "$desired_count" \
+    --deployment-configuration 'deploymentCircuitBreaker={enable=true,rollback=false}' \
     --force-new-deployment \
     >/dev/null
   printf '%s|%s\n' "$service" "$task_definition" >> "$RUNNER_TEMP/opencomp-expected-tasks"
-done
-aws ecs update-service --region "$AWS_REGION" --cluster "$ECS_CLUSTER" --service gideon-dev-opencomp-mcp --desired-count 1 >/dev/null
+done < "$restart_plan"
