@@ -117,6 +117,28 @@ export class TrustNdaPreviewService {
   }
 
   async previewNdaByToken(token: string) {
+    const { nda, pdfBuffer, previewId } = await this.renderTokenPreview(token);
+    const s3Key = `${nda.organizationId}/trust_nda/preview-nda-${nda.id}.pdf`;
+    await this.attachmentsService.uploadBuffer(
+      s3Key,
+      pdfBuffer,
+      'application/pdf',
+    );
+    const pdfUrl = await this.ndaPdfService.getSignedUrl(s3Key);
+    return {
+      message: 'Preview NDA generated',
+      previewId,
+      s3Key,
+      pdfDownloadUrl: pdfUrl,
+    };
+  }
+
+  async getPreviewNdaPdfByToken(token: string) {
+    const { nda, pdfBuffer } = await this.renderTokenPreview(token);
+    return { buffer: pdfBuffer, filename: buildPreviewFilename(nda.id) };
+  }
+
+  private async renderTokenPreview(token: string) {
     const nda = await db.trustNDAAgreement.findUnique({
       where: { signToken: token },
       include: {
@@ -134,8 +156,7 @@ export class TrustNdaPreviewService {
 
     // State before expiry (mirrors getNdaByToken): a signed or revoked
     // agreement past the 7-day window must report its state, not expiry.
-    // A preview mints a PDF + S3 object per call — dead agreements must not
-    // reach generation.
+    // Dead agreements must not reach PDF generation.
     if (nda.status === 'void') {
       throw new BadRequestException(
         'This NDA has been revoked and is no longer valid',
@@ -150,31 +171,13 @@ export class TrustNdaPreviewService {
       throw new BadRequestException('NDA signing link has expired');
     }
 
-    const previewId = generateTrustToken(16);
-    const pdfBuffer = await this.ndaPdfService.generateNdaPdf({
+    const { pdfBuffer, previewId } = await this.renderPreviewPdfBuffer({
       organizationName: nda.accessRequest.organization.name,
       signerName: nda.accessRequest.name,
       signerEmail: nda.accessRequest.email,
-      agreementId: `preview-${previewId}`,
     });
 
-    // Fixed key per agreement: repeated previews overwrite instead of
-    // accumulating one S3 object per call.
-    const s3Key = `${nda.organizationId}/trust_nda/preview-nda-${nda.id}.pdf`;
-    await this.attachmentsService.uploadBuffer(
-      s3Key,
-      pdfBuffer,
-      'application/pdf',
-    );
-
-    const pdfUrl = await this.ndaPdfService.getSignedUrl(s3Key);
-
-    return {
-      message: 'Preview NDA generated',
-      previewId,
-      s3Key,
-      pdfDownloadUrl: pdfUrl,
-    };
+    return { nda, pdfBuffer, previewId };
   }
 
   /**

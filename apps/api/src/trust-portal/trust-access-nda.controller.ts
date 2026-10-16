@@ -3,22 +3,26 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   HttpCode,
   HttpStatus,
   Param,
   Post,
   Query,
   Req,
+  StreamableFile,
 } from '@nestjs/common';
 import {
   ApiBody,
   ApiOperation,
   ApiParam,
+  ApiProduces,
   ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import { Public } from '../auth/public.decorator';
 import { ApiNotFoundError } from '../openapi/common-responses';
 import { ReclaimAccessDto } from './dto/trust-access.dto';
 import { SignNdaDto } from './dto/nda.dto';
@@ -62,6 +66,33 @@ export class TrustAccessNdaController {
   })
   async previewNdaByToken(@Param('token') token: string) {
     return this.trustAccessService.previewNdaByToken(token);
+  }
+
+  @Get('nda/:token/preview-nda')
+  @Public()
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  @Header('Cache-Control', 'private, no-store')
+  @ApiOperation({
+    operationId: 'TrustAccessController_streamPreviewNdaByToken_v1',
+    summary: 'View NDA preview by token',
+    description:
+      'View the NDA PDF before signing. Validates the signing token and returns the PDF directly without a browser connection to S3.',
+  })
+  @ApiProduces('application/pdf')
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'NDA preview PDF',
+    content: { 'application/pdf': {} },
+  })
+  @ApiNotFoundError('NDA not found or token expired')
+  async streamPreviewNdaByToken(@Param('token') token: string) {
+    const { buffer, filename } =
+      await this.trustAccessService.getPreviewNdaPdfByToken(token);
+    return new StreamableFile(buffer, {
+      type: 'application/pdf',
+      disposition: `inline; filename="${filename}"`,
+      length: buffer.length,
+    });
   }
 
   @Post('nda/:token/sign')

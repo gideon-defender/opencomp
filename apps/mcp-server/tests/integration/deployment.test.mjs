@@ -29,6 +29,15 @@ test('dev deploy authorizes the current main SHA and keeps the selected commit p
   assert(administratorCheck.with.script.includes('GITHUB_TRIGGERING_ACTOR'));
   assert(administratorCheck.with.script.includes("data.permission !== 'admin'"));
   assert.deepEqual(workflow.jobs.build.needs, ['authorize', 'preflight']);
+  assert(
+    workflow.jobs.preflight.steps.some(
+      (step) =>
+        step.run?.includes('aws application-autoscaling describe-scalable-targets') &&
+        step.run.includes('--service-namespace ecs') &&
+        !step.run.includes('|| true'),
+    ),
+    'Missing autoscaling read permission must fail preflight before builds',
+  );
   for (const name of ['build', 'deploy']) {
     const checkout = workflow.jobs[name].steps.find((step) =>
       step.uses?.startsWith('actions/checkout'),

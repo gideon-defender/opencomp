@@ -45,6 +45,10 @@ export class TrustNdaService {
     return this.previewService.previewNdaByToken(token);
   }
 
+  async getPreviewNdaPdfByToken(token: string) {
+    return this.previewService.getPreviewNdaPdfByToken(token);
+  }
+
   private buildPublicPortalBaseUrl(params: {
     organizationId: string;
   }): Promise<string> {
