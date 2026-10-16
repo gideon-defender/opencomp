@@ -8,6 +8,7 @@ import {
   oidcIdentityUrl,
   oidcRedirectUri,
   oidcScopes,
+  isLoopbackHost,
 } from './oidc-env';
 import {
   handleOidcCallback,
@@ -25,17 +26,6 @@ export {
 } from './oidc-callback';
 export type { OidcCallbackResult } from './oidc-callback';
 import { redisClient } from '../redis/redis.client';
-
-/** Loopback hosts where plain-HTTP OIDC discovery is tolerated (local dev). */
-function isLoopbackHost(hostname: string): boolean {
-  // NOTE: WHATWG URL strips brackets, so IPv6 loopback arrives as `::1`.
-  return (
-    hostname === 'localhost' ||
-    hostname === '127.0.0.1' ||
-    hostname === '::1' ||
-    hostname.endsWith('.localhost')
-  );
-}
 
 export interface BuildLoginUrlParams {
   redirectTo?: string;
