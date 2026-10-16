@@ -1,3 +1,4 @@
+import { writeHrMember } from './hr-member-write';
 import { Injectable, Logger } from '@nestjs/common';
 import { db } from '@db';
 import type { SyncEmployee } from '@gideon-defender/integration-platform';
@@ -156,8 +157,9 @@ export class GenericEmployeeSyncService {
             const parsedStartDate = employee.startDate
               ? new Date(employee.startDate)
               : null;
-            await db.member.update({
-              where: { id: existingMember.id },
+            await writeHrMember({
+              organizationId,
+              memberId: existingMember.id,
               data: {
                 deactivated: false,
                 isActive: true,
@@ -184,8 +186,9 @@ export class GenericEmployeeSyncService {
                 ? parsedStartDate
                 : null;
             if (needsHeal || (needsOnboardDate && validStartDate)) {
-              await db.member.update({
-                where: { id: existingMember.id },
+              await writeHrMember({
+                organizationId,
+                memberId: existingMember.id,
                 data: {
                   ...(needsHeal ? { role: healedRole } : {}),
                   ...(needsOnboardDate && validStartDate
@@ -215,7 +218,8 @@ export class GenericEmployeeSyncService {
         const newMemberStartDate = employee.startDate
           ? new Date(employee.startDate)
           : null;
-        await db.member.create({
+        await writeHrMember({
+          organizationId,
           data: {
             organizationId,
             userId: existingUser.id,

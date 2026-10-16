@@ -59,12 +59,17 @@ export async function runStagedMigration({
   execute = runPrisma,
 }) {
   if (!env.DATABASE_URL) throw new Error('DATABASE_URL is required');
-  const plan = planTenantMigrations({ phase, ...(await readState()) });
+  const source = join(root, 'packages/db/dist/migrations');
+  const migrationNames = phase === 'online'
+    ? readdirSync(source, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+    : [];
+  const plan = planTenantMigrations({ phase, migrationNames, ...(await readState()) });
   for (const name of plan.recover) {
     console.log(`Recovering rolled-back tenant migration ${name}`);
     execute({ args: ['migrate', 'resolve', '--rolled-back', name], env, root });
   }
-  const source = join(root, 'packages/db/dist/migrations');
   let temporary;
   try {
     let migrationsPath = source;

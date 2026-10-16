@@ -23,6 +23,8 @@ if args[:2] == ['ecs', 'describe-task-definition']:
     emit({'family': value('--task-definition'), 'containerDefinitions': [container]})
 elif args[:2] == ['ecs', 'register-task-definition']:
     data = json.loads(Path(value('--cli-input-json')[7:]).read_text())
+    if data['family'].endswith('-migrator'):
+        with trace.open('a') as f: f.write('register:migrator\\n')
     print('arn:' + data['family'] + ':new')
 elif args[:2] == ['ecs', 'run-task']:
     data = json.loads(Path(value('--overrides')[7:]).read_text())
@@ -58,7 +60,10 @@ elif args[:2] == ['ecs', 'update-service']:
     if restart:
         assert 'rollback=false' in value('--deployment-configuration')
         desired = '0' if service.endswith('email-worker') else '2' if service.endswith('-api') else '1'
-        assert value('--desired-count') == desired
+        if os.environ.get('RUN_OFFLINE_MIGRATIONS') == 'true':
+            assert value('--desired-count') == desired
+        else:
+            assert '--desired-count' not in args
     with trace.open('a') as f: f.write(('restart:' if restart else 'stop:') + service + '\\n')
 elif args[:2] == ['ecs', 'describe-services']:
     services = args[args.index('--services') + 1:]
@@ -115,7 +120,7 @@ else: raise SystemExit('Unexpected AWS call: ' + repr(args))
 
 
 class DevDeployTests(unittest.TestCase):
-    def run_flow(self, scenario):
+    def run_flow(self, scenario, *, offline='true'):
         with tempfile.TemporaryDirectory() as directory:
             temporary = Path(directory)
             aws = temporary / 'aws'
@@ -136,12 +141,54 @@ class DevDeployTests(unittest.TestCase):
                        SERVICE_ROLLOUT_ATTEMPTS='2', SERVICE_ROLLOUT_DELAY_SECONDS='0',
                        AWS_REGION='test', ECS_CLUSTER='test', ECR_REGISTRY='test',
                        IMAGE_TAG='test', MIGRATOR_SUBNETS='test', MIGRATOR_SECURITY_GROUP='test')
+            env.pop('RUN_OFFLINE_MIGRATIONS', None)
+            if offline is not None:
+                env['RUN_OFFLINE_MIGRATIONS'] = offline
             result = subprocess.run(['bash', '-c',
                 'set -e; bash .github/scripts/deploy-dev.sh; '
                 'bash .github/scripts/wait-dev-services.sh; '
-                'bash .github/scripts/restore-dev-autoscaling.sh'],
+                'if [ "${RUN_OFFLINE_MIGRATIONS:-false}" = true ]; then '
+                'bash .github/scripts/restore-dev-autoscaling.sh; fi'],
                 cwd=ROOT, env=env, capture_output=True, text=True)
             return result, trace.read_text().splitlines()
+
+    def test_online_deploy_migrates_before_rollout_and_preserves_running_services(self):
+        for offline in [None, 'false']:
+            with self.subTest(offline=offline):
+                result, events = self.run_flow('', offline=offline)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertEqual(sum(event.startswith('restart:') for event in events), 5)
+                migration = events.index('migration:online')
+                self.assertFalse(any(event.startswith('restart:') for event in events[:migration]))
+                self.assertFalse(any(event.startswith(('stop:', 'scaling:')) for event in events))
+
+    def test_plain_deploy_is_the_default_and_needs_no_attestation(self):
+        # Plain deploys must keep working with zero migration inputs. If this
+        # test fails, someone re-introduced a gate in front of plain deploys.
+        result, events = self.run_flow('', offline='false')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('Rolling image deploy (default)', result.stdout)
+        self.assertEqual(sum(event.startswith('restart:') for event in events), 5)
+        self.assertIn('migration:online', events)
+        self.assertFalse(any(event.startswith(('stop:', 'scaling:')) for event in events))
+
+    def test_online_migration_failure_blocks_rollout_without_stopping_services(self):
+        result, events = self.run_flow('migration-failure', offline='false')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('migration:online', events)
+        self.assertFalse(any(event.startswith(('stop:', 'scaling:', 'restart:')) for event in events))
+
+    def test_online_migration_preserves_shell_bootstrap(self):
+        result, events = self.run_flow('shell-entrypoint', offline='false')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        migration = events.index('migration:online')
+        self.assertEqual(events[migration-2:migration], ['tls-ready', 'driver:online'])
+
+    def test_invalid_migration_option_fails_before_aws_changes(self):
+        result, events = self.run_flow('', offline='yes')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('RUN_OFFLINE_MIGRATIONS must be true or false', result.stdout)
+        self.assertEqual(events, [])
 
     def test_offline_migration_requires_a_completed_drain(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -157,7 +204,8 @@ class DevDeployTests(unittest.TestCase):
         migration = events.index('migration:offline')
         self.assertEqual(sum(event.startswith('stop:') for event in events[:migration]), 5)
         self.assertEqual(sum(event.startswith('restart:') for event in events[migration:]), 5)
-        self.assertTrue(events[0].startswith('scaling:DynamicScalingInSuspended=true'))
+        self.assertTrue(any(event.startswith('scaling:DynamicScalingInSuspended=true')
+                            for event in events[:migration]))
         restored = json.loads(events[-1].removeprefix('scaling:'))
         self.assertEqual(restored, {'DynamicScalingInSuspended': True,
             'DynamicScalingOutSuspended': False, 'ScheduledScalingSuspended': False})
@@ -209,7 +257,8 @@ class DevDeployTests(unittest.TestCase):
     def test_scaling_permission_failure_does_not_stop_services(self):
         result, events = self.run_flow('scaling-denied')
         self.assertNotEqual(result.returncode, 0)
-        self.assertEqual(events, [])
+        self.assertFalse(any(event.startswith(('stop:', 'scaling:', 'migration:', 'restart:'))
+                             for event in events))
 
     def test_waits_for_rollout_completion_before_restoring_scaling(self):
         result, events = self.run_flow('rollout-lag')

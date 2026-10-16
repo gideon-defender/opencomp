@@ -27,6 +27,7 @@ const member = {
   },
 };
 const tx = {
+  $executeRaw: jest.fn(),
   $queryRaw: jest.fn(),
   member: { findFirst: jest.fn(), update: jest.fn() },
   user: { update: jest.fn() },

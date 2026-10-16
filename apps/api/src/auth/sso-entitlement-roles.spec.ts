@@ -26,6 +26,7 @@ const config = {
   tenantIds: [organizationId],
 };
 const tx = {
+  $executeRaw: jest.fn(),
   user: {
     findUnique: (...args: unknown[]) => mockFindUnique(...args),
     update: (...args: unknown[]) => mockUpdate(...args),

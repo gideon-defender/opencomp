@@ -26,6 +26,9 @@ jest.mock('@gideon-defender/auth', () => ({
 
 jest.mock('@db', () => ({
   db: {
+    $executeRaw: jest.fn(),
+    $transaction: (work: (tx: unknown) => unknown) =>
+      work(jest.requireMock('@db').db),
     user: {
       findUnique: (...args: unknown[]) => mockUserFindUnique(...args),
       create: (...args: unknown[]) => mockUserCreate(...args),
@@ -76,7 +79,7 @@ describe('GenericEmployeeSyncService SSO role ownership', () => {
       ],
     });
     expect(mockMemberUpdate).toHaveBeenCalledWith({
-      where: { id: 'mem_1' },
+      where: { id: 'mem_1', organizationId: 'org_1' },
       data: { onboardDate: new Date('2026-01-01') },
     });
     expect(mockMemberCreate).not.toHaveBeenCalled();
@@ -104,7 +107,7 @@ describe('GenericEmployeeSyncService SSO role ownership', () => {
       options: { allowReactivation: true },
     });
     expect(mockMemberUpdate).toHaveBeenCalledWith({
-      where: { id: 'mem_1' },
+      where: { id: 'mem_1', organizationId: 'org_1' },
       data: { deactivated: false, isActive: true, offboardDate: null },
     });
   });

@@ -18,6 +18,14 @@ interface RouteEntry {
  * HTTP access. If any of these reappear, the 410-fence era is back and the
  * IdP-ownership boundary is broken.
  *
+ * Boundary change (custom roles): role *definitions* are OpenComp-owned —
+ * `POST/PATCH/DELETE /v1/roles` plus the built-in obligations override were
+ * intentionally restored so admins can define what a role may do. Role
+ * *assignments* (who holds what) stay Gideon-owned: every membership writer
+ * below stays retired, and login/reconciliation still overwrites
+ * `Member.role`. Do NOT re-add a retired writer without updating this
+ * comment and the `docs/user-guide/roles-and-access.md` ownership rule.
+ *
  * Kept-neighbor assertions guard against over-deletion in the same edit.
  *
  * Freshness note: this spec reads the committed `packages/docs/openapi.json`.
@@ -73,6 +81,8 @@ describe('Retired IdP-owned writers stay gone', () => {
       (operation) => operation.method === method && operation.path === path,
     );
 
+  // Role *definitions* are intentionally NOT retired (see header): custom
+  // role writers live in OpenComp, assignments live in Gideon.
   it.each([
     'PeopleController_inviteMembers_v1',
     'PeopleController_createMember_v1',
@@ -81,10 +91,6 @@ describe('Retired IdP-owned writers stay gone', () => {
     'PeopleController_deleteMember_v1',
     'PeopleController_reactivateMember_v1',
     'PeopleController_resendPortalInvite_v1',
-    'RolesController_createRole_v1',
-    'RolesController_updateRole_v1',
-    'RolesController_deleteRole_v1',
-    'RolesController_updateBuiltInObligations_v1',
     'OrganizationController_transferOwnership_v1',
   ])('has no %s operation', (operationId) => {
     expect(hasOperation(operationId)).toBe(false);
@@ -109,6 +115,11 @@ describe('Retired IdP-owned writers stay gone', () => {
     ['get', '/v1/roles/{roleId}'],
     ['get', '/v1/roles/built-in/{name}/obligations'],
     ['get', '/v1/roles/permissions'],
+    // Intentionally restored role-definition writers (see header).
+    ['post', '/v1/roles'],
+    ['patch', '/v1/roles/{roleId}'],
+    ['delete', '/v1/roles/{roleId}'],
+    ['patch', '/v1/roles/built-in/{name}/obligations'],
     ['patch', '/v1/organization'],
     ['delete', '/v1/organization'],
   ])('keeps %s %s', (method, path) => {

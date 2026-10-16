@@ -1,4 +1,5 @@
 import { serverApi } from '@/lib/api-server';
+import { requireRoutePermission } from '@/lib/permissions.server';
 import { Breadcrumb, PageHeader, PageLayout } from '@trycompai/design-system';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -12,6 +13,7 @@ export default async function EditRolePage({
   params: Promise<{ orgId: string; roleId: string }>;
 }) {
   const { orgId, roleId } = await params;
+  await requireRoutePermission('settings/roles/:id', orgId);
 
   const res = await serverApi.get<CustomRole>(`/v1/roles/${roleId}`);
   const role = res.data;

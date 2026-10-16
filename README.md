@@ -645,58 +645,46 @@ environment secrets `AWS_ACCOUNT_ID`, `AWS_REGION`, `ECS_CLUSTER`,
 `AWS_ROLE_TO_ASSUME`, `MIGRATOR_SUBNETS` and `MIGRATOR_SECURITY_GROUP`.
 
 The workflow checks infrastructure and deployment permissions, then builds and
-pushes the ARM64 API, app, trust-center, hosted MCP, and migrator images in
-parallel. All image builds must succeed before deployment starts. The email
-worker uses the API image; the employee portal is not deployed by this workflow.
+pushes the ARM64 API, app, trust-center, hosted MCP, and migrator images in parallel. All
+required image builds must succeed before deployment starts. The email worker
+uses the API image; the employee portal is not deployed by this workflow.
 
-Tenant migration runs in three stages:
+The custom-role update includes two independent changes: tenant-scoped role
+definition editing and a new default dev deployment mode. Role assignments stay
+Gideon-owned. The deployment change replaces mandatory service drains with
+rolling deployments; incompatible migrations still require an explicit offline
+run. Review both the access-control behavior and deployment behavior for this
+release.
 
-The migrator invocation preserves the task definition's RDS certificate
-bootstrap. For shell entrypoints, the staged driver is passed as one command
-string; unsupported wrappers fail before service rollout rather than reporting
-a successful migration that never ran.
+By default the workflow runs a **rolling deploy**: it applies compatible pending
+migrations before it rolls out images. It preserves running services, desired
+replica counts, and autoscaling. No attestation is required. The online migrator
+does not add contract or rename approvals. If a known maintenance migration is
+pending, it stops before any migration or service rollout and reports that the
+run needs `offline_migrations`. Failed migration records require inspection.
 
-An older workflow passed separate Node arguments to a shell entrypoint, which
-could exit successfully without running migrations. After merging the fix,
-start a new workflow run on the current `main` commit. Check the staged
-migrator logs and Prisma migration state; a green run from the old workflow
-does not establish that the tenant contract was applied.
+When a migration cannot run while old code is live, temporarily enable
+**draining migrations** by checking `offline_migrations` in the workflow's
+Run dialog. This builds the migrator image and enables the maintenance sequence:
 
-1. **Expansion:** the first migrator applies migrations before
-   `20261013000004_user_tenant_enforce`, preserving the global email key while
-   normalizing emails, backfilling tenant ownership, and building indexes.
-2. **Service rollout:** deploy the new images, verify each requested task
-   definition, wait for explicit rollout completion, and wait for old tasks to
-   stop. AWS's `services-stable` waiter can return before `rolloutState` changes
-   to `COMPLETED`, so the workflow polls that state with bounded retries. A
-   failed deployment, service rollback, timeout, or old task that remains alive
-   blocks the contract phase.
-3. **Contract:** the second migrator sets `app.tenant_contract_approved=yes` only
-   in its database connection. It splits shared users into tenant accounts,
-   enforces ownership and email constraints, validates them, removes stale
-   sessions, and applies later pending migrations. The workflow then checks the
-   hosted MCP edge.
+1. Save desired replica counts and autoscaling settings, suspend autoscaling,
+   and stop all five services. Verify that every old task has stopped.
+2. Apply pending migrations with the staged driver's `offline` phase. The
+   migrator preserves the RDS certificate bootstrap and sets the tenant-contract
+   and OIDC-rename approvals only on its migration connection.
+3. Start the new images with the saved replica counts, verify rollout completion
+   and old-task shutdown, then restore the saved autoscaling settings.
 
-Once the tenant contract is complete, subsequent deploys apply pending migrations
-normally before the service rollout.
+Both modes verify the requested task definitions and the hosted MCP edge.
+The column-rename migrations require maintenance mode because old and new code
+cannot run against the same schema during a rolling deployment.
 
-If a previous plain deploy failed at `user_tenant_enforce` and Prisma reports
-`P3009`, rerun the updated workflow after merging it into `main`. The migrator
-clears that failed record only after it verifies zero applied steps, the legacy
-global email key, and nullable tenant ownership. Later validation or cleanup
-approval failures require an explicit approval-rejection message for automatic
-recovery. Other migration failures stop the workflow for inspection.
-
-If service rollout fails, expansion remains applied and contract does not run.
-If services become healthy after the waiter exits, the skipped contract step
-still needs to run. After merging a waiter fix into `main`, start a **new Deploy
-to Dev run** on the current `main` commit. Rerunning an old job checks out its
-original commit and uses the old script. The new run retains completed expansion
-migrations and applies contract only after rollout verification passes.
-
-Do not enable contract approval on the first migrator or run contract manually
-while old tasks remain alive. Large-table index and large-split approval gates
-still apply. See the
+If maintenance fails after services stop, they can remain stopped with
+autoscaling suspended. Inspect the migration and deployment logs, and use the
+`dev-maintenance` artifact to recover the original replica counts and scaling
+settings. Other migration failures require inspection; do not start old images
+against renamed columns. Large-table index and large-split approval gates still
+apply. See the
 [database recovery guide](packages/db/README.md#tenant-contract-approval-recovery)
 for manual recovery outside this workflow.
 

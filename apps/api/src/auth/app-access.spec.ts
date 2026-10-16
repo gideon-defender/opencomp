@@ -17,7 +17,13 @@ jest.mock('@gideon-defender/auth', () => ({
   },
 }));
 
-import { getValidRoleNames, hasAppAccess, splitRoleString } from './app-access';
+import {
+  getValidRoleNames,
+  hasAppAccess,
+  mergeInto,
+  resolveRolePermissions,
+  splitRoleString,
+} from './app-access';
 
 describe('hasAppAccess', () => {
   beforeEach(() => {
@@ -124,5 +130,35 @@ describe('splitRoleString', () => {
 
   it('returns an empty array for a blank role string', () => {
     expect(splitRoleString('  ')).toEqual([]);
+  });
+});
+
+describe('resolveRolePermissions hardening', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockOrgRoleFindMany.mockResolvedValue([]);
+  });
+
+  it('trims whitespace so " admin" still grants', async () => {
+    const perms = await resolveRolePermissions('org_1', [' admin ']);
+    expect(perms.app).toEqual(expect.arrayContaining(['read']));
+    expect(mockOrgRoleFindMany).not.toHaveBeenCalled();
+  });
+
+  it('does not crash on toString/valueOf stored rows', async () => {
+    mockOrgRoleFindMany.mockResolvedValue([
+      { permissions: JSON.stringify({ toString: ['read'], app: ['read'] }) },
+    ]);
+    await expect(resolveRolePermissions('org_1', ['Custom'])).resolves.toEqual(
+      expect.objectContaining({ app: ['read'] }),
+    );
+  });
+
+  it('mergeInto shadows inherited keys instead of throwing', () => {
+    const target: Record<string, Set<string>> = {};
+    expect(() =>
+      mergeInto(target, { toString: ['read'], app: ['read'] }),
+    ).not.toThrow();
+    expect(target.app?.has('read')).toBe(true);
   });
 });

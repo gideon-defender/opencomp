@@ -4,7 +4,10 @@ import {
   readReconciliationConfig,
   reconciliationEnabled,
 } from './entitlement-reconciliation-config';
-import { refreshSsoLoginRoles } from './sso-entitlement-roles';
+import {
+  readSsoEntitlementRoles,
+  refreshSsoLoginRoles,
+} from './sso-entitlement-roles';
 
 const logger = new Logger('SsoMemberSync');
 
@@ -81,7 +84,15 @@ export async function syncSsoMember({
                 subject,
               })
             ).join(',')
-          : role;
+          : (
+              await readSsoEntitlementRoles({
+                tx,
+                tenantId: organizationId,
+                entitlements: role.split(','),
+              })
+            ).roles.join(',');
+        if (!currentRole)
+          throw new Error('SSO role definition changed; retry login');
         const existing = await tx.member.findFirst({
           where: { userId, organizationId },
           select: { id: true },

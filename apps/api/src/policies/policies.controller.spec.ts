@@ -15,6 +15,7 @@ jest.mock('../auth/auth.server', () => ({
 }));
 
 jest.mock('@gideon-defender/auth', () => ({
+  allRoles: {},
   statement: {
     policy: ['create', 'read', 'update', 'delete'],
     control: ['create', 'read', 'update', 'delete'],

@@ -1,3 +1,4 @@
+import { requireRoutePermission } from '@/lib/permissions.server';
 import { Breadcrumb, PageHeader, PageLayout } from '@trycompai/design-system';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -5,6 +6,7 @@ import { NewRoleForm } from './components/NewRoleForm';
 
 export default async function NewRolePage({ params }: { params: Promise<{ orgId: string }> }) {
   const { orgId } = await params;
+  await requireRoutePermission('settings/roles/new', orgId);
 
   return (
     <PageLayout>

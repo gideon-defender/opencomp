@@ -72,8 +72,24 @@ test('dev deploy authorizes the current main SHA and keeps the selected commit p
   assert(deploySteps.includes('/healthz'));
 });
 
-test('dev deploy drains services before approved migrations and restores scaling only after verified rollout', () => {
+test('dev deploy defaults to plain images and drains only for approved offline migrations', () => {
   const workflow = parse(read('.github/workflows/deploy-dev.yml'));
+  // Plain image deploys need no input: the draining mode is opt-in per run.
+  const offlineInput = workflow.on.workflow_dispatch.inputs.offline_migrations;
+  assert.equal(offlineInput.type, 'boolean');
+  assert.equal(offlineInput.required, false);
+  assert.equal(offlineInput.default, false);
+  // Both online and offline deployments run the migrator image.
+  assert(
+    workflow.jobs.build.strategy.matrix.include.some(
+      ({ image }) => image === 'gideon-dev-opencomp-migrator',
+    ),
+  );
+  const imageBuild = workflow.jobs.build.steps.find(
+    (step) => step.uses === 'docker/build-push-action@v7',
+  );
+  assert(imageBuild, 'Every deployment needs an image build step');
+  assert.equal(imageBuild.if, undefined, 'Online deployments also need the migrator image');
   const steps = workflow.jobs.deploy.steps;
   const deploy = steps.findIndex((step) =>
     step.run?.includes('bash .github/scripts/deploy-dev.sh'),
@@ -85,21 +101,30 @@ test('dev deploy drains services before approved migrations and restores scaling
     step.run?.includes('bash .github/scripts/restore-dev-autoscaling.sh'),
   );
   const health = steps.findIndex((step) => step.run?.includes('/healthz'));
-  assert(deploy >= 0, 'Maintenance deployment step is required');
+  assert(deploy >= 0, 'Image deployment step is required');
   assert(verify > deploy, 'Verify the rollout after starting the new images');
   assert(restore > verify, 'Restore autoscaling only after a successful rollout');
   assert(health > restore, 'Check the hosted edge after service recovery');
   assert.equal(steps[verify].if, undefined, 'Keep the default success-only execution');
-  assert.equal(steps[restore].if, undefined, 'A failed rollout must block autoscaling restoration');
+  assert.equal(
+    steps[restore].if,
+    'inputs.offline_migrations',
+    'Autoscaling restoration runs only in draining mode',
+  );
 
   const script = read('.github/scripts/deploy-dev.sh');
   assert(script.includes('gideon-dev-opencomp-mcp|$mcp_task_definition'));
+  // Draining stays ordered when enabled: stop, then migrate, then restart.
   const stop = script.indexOf('bash .github/scripts/stop-dev-services.sh');
   const migration = script.indexOf('bash .github/scripts/run-dev-migrations.sh offline');
   const update = script.indexOf('aws ecs update-service');
   assert(stop >= 0 && migration > stop, 'All old services must stop before migration');
   assert(update > migration, 'Migration must succeed before any service restarts');
   assert(script.includes('rollback=false'), 'Do not roll back to images that use the old columns');
+  // Plain mode is the default and validates its opt-in flag before any AWS call.
+  assert(script.includes('offline_migrations="${RUN_OFFLINE_MIGRATIONS:-false}"'));
+  assert(script.includes('RUN_OFFLINE_MIGRATIONS must be true or false'));
+  assert(script.includes('Rolling image deploy (default)'));
 
   const drain = read('.github/scripts/stop-dev-services.sh');
   for (const required of [

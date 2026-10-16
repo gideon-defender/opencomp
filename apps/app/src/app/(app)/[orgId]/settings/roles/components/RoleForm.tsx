@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
+import { usePermissions } from '@/hooks/use-permissions';
 import { Button } from '@gideon-defender/ui/button';
 import {
   Form,
@@ -15,7 +16,6 @@ import {
   FormMessage,
 } from '@gideon-defender/ui/form';
 import { Input } from '@gideon-defender/ui/input';
-import { Stack } from '@trycompai/design-system';
 import { PermissionMatrix } from './PermissionMatrix';
 
 /**
@@ -29,7 +29,7 @@ const roleFormSchema = z.object({
     .min(2, 'Name must be at least 2 characters')
     .max(50, 'Name must be less than 50 characters')
     .regex(
-      /^[a-zA-Z][a-zA-Z0-9\s-]*$/,
+      /^[a-zA-Z][a-zA-Z0-9 -]*$/,
       'Name must start with a letter and contain only letters, numbers, spaces, and hyphens',
     ),
   permissions: z.record(z.string(), z.array(z.string())).check((ctx) => {
@@ -64,6 +64,7 @@ export function RoleForm({
   isSubmitting = false,
   submitLabel = 'Save',
 }: RoleFormProps) {
+  const { permissions: allowedPermissions } = usePermissions();
   const form = useForm<RoleFormValues>({
     resolver: zodResolver(roleFormSchema),
     defaultValues: {
@@ -80,7 +81,7 @@ export function RoleForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)}>
-        <Stack gap="lg">
+        <div className="flex flex-col gap-6">
           <FormField
             control={form.control}
             name="name"
@@ -106,14 +107,16 @@ export function RoleForm({
                 <FormLabel>Permissions & Obligations</FormLabel>
                 <FormDescription>
                   Select the access level for each resource. Read allows read-only access, Write
-                  allows full management. Obligations are requirements the role must fulfill.
+                  allows the actions you can grant. Obligations are requirements the role must
+                  fulfill.
                 </FormDescription>
                 <FormControl>
                   <PermissionMatrix
-                    value={permissionsField.value as Record<string, string[]>}
+                    value={permissionsField.value}
+                    allowedPermissions={allowedPermissions}
                     onChange={permissionsField.onChange}
                     // eslint-disable-next-line react-hooks/incompatible-library -- react-hook-form watch returns a non-memoizable function
-                    obligations={form.watch('obligations') as Record<string, boolean>}
+                    obligations={form.watch('obligations')}
                     onObligationsChange={(val) => form.setValue('obligations', val)}
                     disabled={isSubmitting}
                   />
@@ -131,7 +134,7 @@ export function RoleForm({
               {isSubmitting ? 'Saving...' : submitLabel}
             </Button>
           </div>
-        </Stack>
+        </div>
       </form>
     </Form>
   );

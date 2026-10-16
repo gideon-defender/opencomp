@@ -39,7 +39,7 @@ jobs:
       - uses: ./.github/actions/pnpm-install
       - name: Test migration recovery and deployment ordering
         run: |
-          node --test packages/db/scripts/staged-migrate.test.mjs
+          node --test packages/db/scripts/staged-migrate.test.mjs packages/db/scripts/online-migrate.test.mjs
           node --test packages/db/scripts/staged-migrate.integration.test.mjs
           python3 .github/scripts/tests/test_dev_deploy.py
           for script in .github/scripts/deploy-dev.sh .github/scripts/run-dev-migrations.sh .github/scripts/wait-dev-services.sh .github/scripts/stop-dev-services.sh .github/scripts/restore-dev-autoscaling.sh; do
@@ -106,6 +106,11 @@ jobs:
         env:
           CANDIDATE_INTAKE_TEST_DATABASE_URL: ${{ env.DATABASE_URL }}
         run: pnpm exec vitest run src/candidate-intake-migration.spec.ts
+      - name: Test role assignment races with PostgreSQL
+        working-directory: apps/api
+        env:
+          ROLE_ASSIGNMENT_TEST_DATABASE_URL: ${{ env.DATABASE_URL }}
+        run: pnpm exec jest src/roles/role-assignment-lock.integration.spec.ts src/roles/role-creation-lock.integration.spec.ts --runInBand --forceExit
       - name: Run API unit tests
         working-directory: apps/api
         # --forceExit: specs that load the real Prisma client leak an open connection

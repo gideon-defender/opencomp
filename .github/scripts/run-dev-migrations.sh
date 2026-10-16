@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-phase="${1:?Expected expand, contract, or offline phase}"
-case "$phase" in expand|contract|offline) ;; *) echo 'Invalid migration phase'; exit 1 ;; esac
+phase="${1:?Expected expand, contract, offline, or online phase}"
+case "$phase" in expand|contract|offline|online) ;; *) echo 'Invalid migration phase'; exit 1 ;; esac
 if [ "$phase" = offline ]; then
   test -s "$RUNNER_TEMP/opencomp-stopped-services" || {
     echo 'Offline migration requires a completed service drain'; exit 1;

@@ -36,5 +36,8 @@ export interface AuthContext {
   memberId?: string; // Member ID for assignment filtering (only available for session auth)
   memberDepartment?: string; // Member department for visibility filtering (only available for session auth)
   apiKeyScopes?: string[]; // Scopes for API key auth (empty = legacy full access)
+  apiKeyId?: string; // ApiKey row id — only set for API key auth.
+  apiKeyName?: string; // Human-readable API key name — only set for API key auth.
+  apiKeyCreatedByMemberId?: string | null; // Member that created the key — only set for API key auth.
   oidcAal?: number; // Assurance level from an OIDC JWT (only set for OIDC-JWT auth). Surfaced for a future aal >= 2 gate — no consumer enforces it yet.
 }
