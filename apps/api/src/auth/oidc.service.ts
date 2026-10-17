@@ -135,8 +135,7 @@ export class OidcService {
     const stored: StoredOidcState = { codeVerifier, nonce };
     if (params.redirectTo) stored.redirectTo = params.redirectTo;
     if (params.inviteCode) stored.inviteCode = params.inviteCode;
-    // Old API tasks must be able to consume logins started during a rollout.
-    await redisClient.set(`${LEGACY_OIDC_STATE_KEY_PREFIX}${state}`, stored, {
+    await redisClient.set(`${OIDC_STATE_KEY_PREFIX}${state}`, stored, {
       ex: OIDC_STATE_TTL_SECONDS,
     });
 

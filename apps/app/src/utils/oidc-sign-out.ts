@@ -17,8 +17,7 @@ interface SignOutFromOidcOptions {
 export async function signOutFromOidc(options: SignOutFromOidcOptions = {}): Promise<void> {
   const { redirectTo = '/auth' } = options;
   try {
-    // Both API versions serve this route while deployments overlap.
-    await apiClient.post('/v1/auth/gideon/logout');
+    await apiClient.post('/v1/auth/oidc/logout');
   } catch {
     // Best-effort revocation: the session may already be gone (or the API
     // unreachable). Still navigate away — never strand the user.

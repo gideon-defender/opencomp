@@ -15,12 +15,12 @@ describe('OidcSignIn', () => {
     });
   });
 
-  it('uses the login route supported by both old and new API tasks', () => {
+  it('uses the generic OIDC login route', () => {
     render(<OidcSignIn />);
 
     fireEvent.click(screen.getByRole('button'));
 
-    expect(window.location.href).toBe('https://api.example.com/v1/auth/gideon/login');
+    expect(window.location.href).toBe('https://api.example.com/v1/auth/oidc/login');
   });
 
   it('forwards inviteCode and redirectTo as query params', () => {
@@ -29,7 +29,7 @@ describe('OidcSignIn', () => {
     fireEvent.click(screen.getByRole('button'));
 
     const url = new URL(window.location.href);
-    expect(`${url.origin}${url.pathname}`).toBe('https://api.example.com/v1/auth/gideon/login');
+    expect(`${url.origin}${url.pathname}`).toBe('https://api.example.com/v1/auth/oidc/login');
     expect(url.searchParams.get('inviteCode')).toBe('inv_abc123');
     expect(url.searchParams.get('redirectTo')).toBe('/risks');
   });
