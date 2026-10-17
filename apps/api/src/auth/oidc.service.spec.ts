@@ -161,7 +161,7 @@ describe('OidcService', () => {
   });
 
   describe('buildLoginUrl', () => {
-    it('stores PKCE state where old API instances can consume it and returns the authorize URL', async () => {
+    it('stores PKCE state under the generic prefix and returns the authorize URL', async () => {
       const result = await service.buildLoginUrl({
         redirectTo: '/risks',
         inviteCode: 'inv_1',
@@ -172,7 +172,7 @@ describe('OidcService', () => {
       expect(result.nonce).toBe('nonce-123');
       expect(result.codeVerifier).toBe('verifier-123');
       expect(mockRedisSet).toHaveBeenCalledWith(
-        'app:gideon-oidc:state-123',
+        'app:oidc:state-123',
         {
           codeVerifier: 'verifier-123',
           nonce: 'nonce-123',
@@ -181,6 +181,7 @@ describe('OidcService', () => {
         },
         { ex: 600 },
       );
+      expect(mockRedisSet).toHaveBeenCalledTimes(1);
       expect(mockBuildAuthorizationUrl).toHaveBeenCalledWith('mock-config', {
         redirect_uri: ENV.OIDC_REDIRECT_URI,
         scope: 'openid profile email',

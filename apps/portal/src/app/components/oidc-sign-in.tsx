@@ -25,8 +25,7 @@ export function OidcSignIn({
     const params = new URLSearchParams();
     if (inviteCode) params.set('inviteCode', inviteCode);
     if (redirectTo) params.set('redirectTo', toAbsoluteUrl(redirectTo));
-    // Both API versions serve this route while deployments overlap.
-    const loginUrl = new URL('/v1/auth/gideon/login', apiBase);
+    const loginUrl = new URL('/v1/auth/oidc/login', apiBase);
     const query = params.toString();
     if (query) loginUrl.search = query;
     // External OIDC endpoint on another origin — needs a full document load,

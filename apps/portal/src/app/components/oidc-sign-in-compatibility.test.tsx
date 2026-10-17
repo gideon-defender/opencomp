@@ -20,12 +20,12 @@ describe('OidcSignIn rollout compatibility', () => {
     vi.unstubAllEnvs();
   });
 
-  it('uses the login route supported by both old and new API tasks', () => {
+  it('uses the generic OIDC login route', () => {
     render(<OidcSignIn />);
 
     fireEvent.click(screen.getByRole('button'));
 
-    expect(window.location.href).toBe('https://api.example.com/v1/auth/gideon/login');
+    expect(window.location.href).toBe('https://api.example.com/v1/auth/oidc/login');
   });
 
   it('preserves the invitation and absolute portal return URL', () => {
@@ -34,7 +34,7 @@ describe('OidcSignIn rollout compatibility', () => {
     fireEvent.click(screen.getByRole('button'));
 
     const url = new URL(window.location.href);
-    expect(url.pathname).toBe('/v1/auth/gideon/login');
+    expect(url.pathname).toBe('/v1/auth/oidc/login');
     expect(url.searchParams.get('inviteCode')).toBe('inv_abc123');
     expect(url.searchParams.get('redirectTo')).toBe('https://portal.example.com/dashboard');
   });

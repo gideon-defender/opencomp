@@ -26,6 +26,7 @@ the employee portal.
 ### Compliance
 
 - [Compliance overview](compliance-overview.md) — dashboard, frameworks, controls
+- [Compliance journey](compliance-journey.md) — end-to-end roadmap: sign-up to audit-ready, auditor access, Trust Center, staying ready
 - [Policies](policies.md) — create, approve, publish, and maintain policies (including the AI editor)
 - [Evidence and tasks](evidence-and-tasks.md) — collect evidence, assign work, approvals, exports
 - [Browser automations](browser-automations.md) — collect recurring evidence from vendor websites

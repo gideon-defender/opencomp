@@ -17,12 +17,12 @@ describe('signOutFromOidc', () => {
     });
   });
 
-  it('revokes through the route supported by old and new API tasks before redirecting', async () => {
+  it('revokes through the generic OIDC logout route before redirecting', async () => {
     mockPost.mockResolvedValue({ data: { loggedOut: true }, status: 200 });
 
     await signOutFromOidc();
 
-    expect(mockPost).toHaveBeenCalledWith('/v1/auth/gideon/logout');
+    expect(mockPost).toHaveBeenCalledWith('/v1/auth/oidc/logout');
     expect(window.location.href).toBe('/auth');
   });
 
