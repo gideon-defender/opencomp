@@ -2,7 +2,7 @@ import { HttpException, Logger, UnauthorizedException } from '@nestjs/common';
 import { db } from '@db';
 import { auth } from './auth.server';
 import { populateLegacyMcpRequest } from './legacy-mcp-request';
-import { authenticateGideonMcpToken } from './gideon-mcp-tenant-gate';
+import { authenticateOidcMcpToken } from './oidc-mcp-tenant-gate';
 import { isJwtShaped } from './oidc-tenant-claim';
 import type { AuthenticatedRequest } from './types';
 import type { OidcJwtService } from './oidc-jwt.service';
@@ -14,17 +14,17 @@ import type {
 export class HybridSessionAuth {
   private readonly logger = new Logger('HybridAuthGuard');
   private readonly nativeSessionService?: NativeSessionService;
-  private readonly gideonJwtService?: OidcJwtService;
+  private readonly oidcJwtService?: OidcJwtService;
 
   constructor({
     nativeSessionService,
-    gideonJwtService,
+    oidcJwtService,
   }: {
     nativeSessionService?: NativeSessionService;
-    gideonJwtService?: OidcJwtService;
+    oidcJwtService?: OidcJwtService;
   }) {
     this.nativeSessionService = nativeSessionService;
-    this.gideonJwtService = gideonJwtService;
+    this.oidcJwtService = oidcJwtService;
   }
 
   async handleSessionAuth(
@@ -41,7 +41,7 @@ export class HybridSessionAuth {
         );
       }
 
-      // Sessions resolve natively (direct Session-row lookup). Gideon OIDC
+      // Sessions resolve natively (direct Session-row lookup). OIDC
       // and legacy logins both mint plain Session rows, so every cookie or
       // bearer session token resolves here with no better-auth involved.
       if (this.nativeSessionService) {
@@ -154,18 +154,15 @@ export class HybridSessionAuth {
     request: AuthenticatedRequest,
     headers: Headers,
   ): Promise<boolean> {
-    // Phase 0 tenant gate — Gideon-issued MCP tokens (Gram re-pointed at
-    // Gideon, validated against Gideon JWKS) must resolve their tenant from
-    // verified claims and stay pinned to it. Any Gideon-presenting token that
-    // fails verification or the tenant gate FAILS CLOSED with no legacy
-    // fallback: only genuinely non-Gideon (opaque/foreign) bearers may use
-    // the legacy better-auth MCP session path.
+    // Tokens from the configured OIDC issuer stay pinned to verified tenant
+    // claims. Verification or tenant-gate failures cannot use the legacy MCP
+    // fallback; only opaque or foreign-issuer bearers may reach that path.
     const bearer = headers.get('authorization');
     const bearerToken =
       bearer?.startsWith('Bearer ') === true ? bearer.slice(7).trim() : null;
     const raw =
       bearerToken &&
-      this.gideonJwtService?.isConfigured() &&
+      this.oidcJwtService?.isConfigured() &&
       isJwtShaped(bearerToken)
         ? bearerToken
         : null;
@@ -173,41 +170,41 @@ export class HybridSessionAuth {
       !raw &&
       bearerToken &&
       isJwtShaped(bearerToken) &&
-      this.gideonJwtService?.isEnforceMode() === true &&
-      this.gideonJwtService?.isConfigured() === false
+      this.oidcJwtService?.isEnforceMode() === true &&
+      this.oidcJwtService?.isConfigured() === false
     ) {
-      // Enforce mode with no Gideon configuration: no legitimate Gideon
+      // Enforce mode with no OIDC configuration: no legitimate OIDC
       // token can exist, so a JWT-shaped bearer fails closed instead of
       // silently using the legacy session path. Opaque bearers still fall
       // through below.
       this.logger.warn(
-        '[Gideon] MCP JWT-shaped bearer in enforce mode with Gideon unconfigured — rejecting without legacy fallback',
+        '[OIDC] MCP JWT-shaped bearer in enforce mode with OIDC unconfigured — rejecting without legacy fallback',
       );
       throw new UnauthorizedException(
         'Invalid Gideon token: verification failed',
       );
     }
-    if (raw && this.gideonJwtService) {
-      const verified = await this.gideonJwtService.verify(raw);
+    if (raw && this.oidcJwtService) {
+      const verified = await this.oidcJwtService.verify(raw);
       if (verified) {
-        return authenticateGideonMcpToken({
+        return authenticateOidcMcpToken({
           request,
           payload: verified.payload,
-          gideonJwtService: this.gideonJwtService,
+          oidcJwtService: this.oidcJwtService,
           logger: this.logger,
         });
       }
-      // Verification failed but the token presents as a Gideon JWT (matching
+      // Verification failed but the token presents as an OIDC JWT (matching
       // iss) — expired, wrong audience, bad signature: reject without trying
       // the legacy session path. `raw` is JWT-shaped by construction, so a
-      // partial Gideon configuration (endpoint set, issuer/audience missing)
+      // partial OIDC configuration (endpoint set, issuer/audience missing)
       // that cannot identify tokens also fails closed here.
       if (
-        this.gideonJwtService.isOidcToken(raw) ||
-        this.gideonJwtService.isMisconfigured()
+        this.oidcJwtService.isOidcToken(raw) ||
+        this.oidcJwtService.isMisconfigured()
       ) {
         this.logger.warn(
-          '[Gideon] MCP bearer presents as a Gideon JWT but verification failed — rejecting without legacy fallback',
+          '[OIDC] MCP bearer presents as an OIDC JWT but verification failed — rejecting without legacy fallback',
         );
         throw new UnauthorizedException(
           'Invalid Gideon token: verification failed',

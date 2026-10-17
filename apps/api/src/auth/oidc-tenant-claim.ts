@@ -1,8 +1,8 @@
 /**
- * Phase 0 (Gram auth cutover) — explicit tenant-claim contract for MCP/Gideon
+ * Strict tenant-claim contract for OIDC bearer and MCP
  * JWTs.
  *
- * Gideon issues the tenant under one of `tid`, `tenant_id`, `organizationId`
+ * The IdP can issue the tenant under one of `tid`, `tenant_id`, `organizationId`
  * or `tenantId` depending on issuer configuration. OpenComp treats the tenant
  * ID as the Organization ID (tenant is the org). The key list is
  * configurable via OIDC_TENANT_CLAIM (comma-separated, same default order);
@@ -33,7 +33,7 @@ export interface OidcTenantClaimFail {
 
 export type OidcTenantClaimResult = OidcTenantClaimOk | OidcTenantClaimFail;
 
-/** Canonical default tenant-claim key list (Gideon shapes). */
+/** Canonical default tenant-claim keys. */
 export const DEFAULT_TENANT_CLAIM_KEYS: readonly string[] = [
   'tid',
   'tenant_id',
@@ -106,7 +106,7 @@ export function collectTenantClaimValues({
 }
 
 /**
- * Strict tenant-claim resolution per the Phase 0 contract above.
+ * Strict tenant-claim resolution per the tenant contract above.
  * Resolves the default key list from env config; pass explicit `keys`
  * in unit tests for hermetic coverage.
  */

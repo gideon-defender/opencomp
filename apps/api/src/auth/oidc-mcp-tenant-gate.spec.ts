@@ -14,7 +14,7 @@ import {
   bearer,
   validMocks,
   resetGateMocks,
-} from './gideon-mcp-tenant-gate.fixtures';
+} from './oidc-mcp-tenant-gate.fixtures';
 
 jest.mock('./auth.server', () => ({
   auth: {
@@ -37,7 +37,7 @@ jest.mock('./app-access', () => ({
   stripControlChars: (value: string) => value,
 }));
 
-describe('Gideon MCP tenant isolation', () => {
+describe('OIDC MCP tenant isolation', () => {
   beforeEach(resetGateMocks);
   it('authenticates a valid token and pins the token tenant', async () => {
     validMocks();
@@ -112,7 +112,7 @@ describe('Gideon MCP tenant isolation', () => {
     expect(mockGetMcpSession).not.toHaveBeenCalled();
   });
 
-  it('fails closed on JWT-shaped bearers in enforce mode while Gideon is unconfigured (401, no fallback)', async () => {
+  it('fails closed on JWT-shaped bearers in enforce mode while OIDC is unconfigured (401, no fallback)', async () => {
     mockIsConfigured.mockReturnValue(false);
     mockIsEnforceMode.mockReturnValue(true);
     mockVerify.mockResolvedValue(null);
@@ -123,7 +123,7 @@ describe('Gideon MCP tenant isolation', () => {
     expect(mockGetMcpSession).not.toHaveBeenCalled();
   });
 
-  it('preserves the opaque legacy fallback while Gideon is unconfigured even in enforce mode', async () => {
+  it('preserves the opaque legacy fallback while OIDC is unconfigured even in enforce mode', async () => {
     mockIsConfigured.mockReturnValue(false);
     mockIsEnforceMode.mockReturnValue(true);
     mockGetMcpSession.mockResolvedValue({ userId: 'usr_legacy' });

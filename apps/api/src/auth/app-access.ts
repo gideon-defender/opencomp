@@ -161,7 +161,7 @@ export function permissionsGrant(
 }
 
 /**
- * Milestone 3 — native RBAC check without better-auth.
+ * native RBAC check without better-auth.
  *
  * Checks `required` (`{ resource: actions[] }`) against the union of the
  * given role names in the org (built-in + custom `organization_role` rows).

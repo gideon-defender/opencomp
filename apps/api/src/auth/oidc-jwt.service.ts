@@ -48,15 +48,9 @@ export {
 } from './oidc-tenant-claim';
 
 /**
- * Phase 0 — Read-only shadow JWKS verifier for the OIDC IdP.
- *
- * Behind flag `OIDC_JWT_ENABLED` (enforce) and `OIDC_JWT_SHADOW_ENABLED`
- * (shadow+log, default for Phase 0). When disabled, `verify()` returns null
- * and HybridAuthGuard falls through to better-auth session.
- *
- * Uses `jose` `createRemoteJWKSet` with built-in cooldown + cache. The JWKS
- * URL comes from the discovery document's `jwks_uri`, with a fallback to the
- * legacy `/.well-known/jwks.json` path when discovery is unreachable.
+ * JWT verification for the configured OIDC issuer and audience.
+ * Discovery supplies the JWKS URL; JOSE caches the keys. Callers apply
+ * enforce/shadow policy and decide whether failed verification can fall back.
  */
 @Injectable()
 export class OidcJwtService {
@@ -83,7 +77,6 @@ export class OidcJwtService {
   }
 
   private get shadowEnabled(): boolean {
-    // Phase 0 default: shadow on even if enforce off, when identityUrl is set
     const shadowFlag = oidcJwtShadowFlag();
     if (shadowFlag === 'true') return true;
     if (shadowFlag === 'false') return false;
@@ -220,8 +213,7 @@ export class OidcJwtService {
         audience: this.audience || undefined,
       });
 
-      // Phase 0 shadow logs only: low assurance is observed here, not
-      // enforced. A future aal >= 2 gate will consume `oidcAal`.
+      // Assurance is informational; this verifier does not enforce a minimum.
       const aal = resolveOidcAal((payload as OidcJwtPayload).aal);
       if (aal !== undefined && aal < 2) {
         this.logger.warn(

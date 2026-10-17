@@ -72,7 +72,7 @@ Completion webhooks and Gideon identity provisioning are outside this flow.
 ### People directory troubleshooting
 
 The People directory reads memberships for the organization in the page URL.
-Roles come from `Member.role`, synchronized from Gideon OIDC entitlements;
+Roles come from `Member.role`, synchronized from OIDC entitlements;
 `User.role` is no longer part of the database schema. If API logs show
 `Unknown field role ... on model User`, deploy the API fix that removes that
 field from the directory query, together with the app fix that displays failed
@@ -230,10 +230,14 @@ social, magic link) were removed; their `AUTH_*` variables no longer exist.
 The API needs an OIDC client registration (ask the auth team for the
 per-environment client ID). Configure it in `opencomp/apps/api/.env` (see the
 documented `OIDC_*` block in `apps/api/.env.example`). `GIDEON_OIDC_*` names
-remain as deprecated one-release aliases; the callback keeps the legacy
-`/v1/auth/gideon/*` route as an alias of `/v1/auth/oidc/*`.
+remain as deprecated compatibility aliases. Login, logout, and the registered
+callback use `/v1/auth/oidc/*`; `/v1/auth/gideon/*` remains a route alias.
+New login state uses the Redis prefix `app:oidc:`. Callback readers still accept
+`app:gideon-oidc:` state from earlier releases. Keep both registered callback
+URLs, route aliases, and state readers through the rollout and rollback window.
 
 ```env
+OIDC_ISSUER_URL=""    # Provider base URL for OIDC discovery
 OIDC_CLIENT_ID=""     # e.g. opencomp-local (registered with auth team)
 OIDC_REDIRECT_URI=""  # e.g. http://localhost:3333/v1/auth/oidc/callback
 # OIDC_CLIENT_SECRET="" # only for confidential apps; public apps use PKCE
@@ -264,7 +268,7 @@ organization products or configure integration OAuth credentials.
 With both enforcement controls unset, the default is **audit mode**: logins
 evaluate the verified ID-token `entitlements` claim and log what enforcement
 _would_ do, then mint sessions as before. Configure enforcement explicitly
-(`GIDEON_*` names below are deprecated aliases of the `OIDC_*` primaries):
+(the corresponding `GIDEON_*` keys remain deprecated aliases):
 
 ```env
 # Pilot enforcement (comma-separated tenant IDs).
@@ -272,28 +276,24 @@ _would_ do, then mint sessions as before. Configure enforcement explicitly
 OIDC_ENFORCEMENT_TENANTS=""
 # Enforce all tenants, including future provisioned organizations; takes precedence.
 OIDC_ENFORCEMENT_ALL_TENANTS=false
-# Phase 5 bootstrap gate (deny unknown-tenant setup without a verified IdP
+# Bootstrap gate (deny unknown-tenant setup without a verified IdP
 # `owner` assignment). Enable only after IdP provisioning seeds an owner per
 # new tenant — otherwise new signups brick.
 OIDC_BOOTSTRAP_ENFORCED=""  # set to "true" to enable
 ```
 
-| Phase                                                                                                       | Status                                                                                                                                   |
-| ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| 0 — Audit + IdP data prep (claim evaluation, `roleSource`/`idpAccessRevoked` columns, conversion inventory) | Shipped                                                                                                                                  |
-| 1 — Enforce + JIT member sync + cutover (`no_role` UX)                                                      | Pilot deployed; all-tenant mode implemented locally, awaiting deployment                                                                 |
-| 2 — Reconciliation every five minutes (revocation between logins)                                           | Enabled for every existing dev tenant (currently bootstrap only); future-tenant discovery awaits deployment of the local all-tenant code |
-| 3 — Lockdown (legacy membership writes return `410 Gone`)                                                   | Server fences shipped; UI cleanup pending (invite dialogs still present)                                                                 |
-| 4 — Deletion of retired endpoints/services                                                                  | Pending                                                                                                                                  |
-| 5 — Bootstrap + break-glass prerequisites (owner gate, runbooks)                                            | Gate and runbooks shipped; per-tenant IdP owner seeding still required before enabling                                                   |
+Login enforcement supports pilot tenant scope or all-tenant scope. Reconciliation
+runs every five minutes when enabled. Deprecated local access-management
+endpoints remain fenced; manage IdP-owned assignments in the identity provider.
+Bootstrap remains a separate gate that requires IdP owner provisioning.
 
 Set `OIDC_ENFORCEMENT_ALL_TENANTS=true` to enforce every identified tenant.
 Unknown tenants are denied until their OpenComp organization exists; this mode
 does not enable self-service owner bootstrap. Existing local memberships must
 be converted using verified IdP assignments before expanding enforcement.
-Legacy membership/role mutations return `410 Gone` even while the UI cleanup
-is pending. Use identity cockpit to manage access; retained OpenComp invite and
-role-editing controls cannot grant it.
+Deprecated local membership and role-assignment mutations return `410 Gone`.
+Manage IdP-owned assignments in identity cockpit. OpenComp custom-role definition
+editing does not grant a user an IdP assignment.
 
 For all-tenant enforcement and between-login reconciliation, configure both:
 
@@ -332,18 +332,14 @@ OIDC_ENTITLEMENTS_PAGERDUTY_ROUTING_KEY="" # required unless dev explicitly opts
 Gideon Auth must receive the same secret as `ENTITLEMENTS_READ_TOKEN`, with
 `ENTITLEMENTS_READ_CLIENT_ID` pinned to OpenComp's OAuth client ID. Dev may
 explicitly skip PagerDuty using both `GIDEON_ENVIRONMENT=dev` and
-`GIDEON_ENTITLEMENTS_SKIP_PAGING=true`; failures still log and fail the task.
+`OIDC_ENTITLEMENTS_SKIP_PAGING=true`; failures still log and fail the task.
 Other environments require a PagerDuty routing key. Disable future polling with
-`GIDEON_ENTITLEMENTS_RECONCILIATION_ENABLED=false`; this does not undo recorded
+`OIDC_ENTITLEMENTS_RECONCILIATION_ENABLED=false`; this does not undo recorded
 revocations or restore deleted sessions.
 
-**Dev checkpoint (2026-10-13):** reconciliation covers every existing dev tenant.
-The live inventory found only bootstrap tenant
-`00000000-0000-0000-0000-000000000001`; PagerDuty is explicitly skipped in dev.
-Task revision 41 is deployed with `GIDEON_ENFORCEMENT_ALL_TENANTS=true`, but
-its current image (`dev-0d69878e9813…`) still reads the bootstrap allowlist.
-Deploy the local all-tenant code to activate automatic coverage for future
-provisioned organizations. Setting the flag alone does not update the image.
+**Reconciliation acceptance (2026-10-13):** the recorded inventory contained only
+bootstrap tenant `00000000-0000-0000-0000-000000000001`, with paging disabled in dev.
+This is historical acceptance evidence, not the current deployment inventory.
 The separate Gmail account completed a real auditor login; removing its test
 assignment caused the next scheduled run to revoke its retained session, and
 refreshing the original browser window denied access. Restoring its auditor

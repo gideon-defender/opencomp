@@ -35,14 +35,9 @@ import { Public } from './public.decorator';
 import { clearSessionCookie, setSessionCookie } from './session-cookie';
 
 /**
- * OIDC browser login (dual-run with better-auth).
- *
- * Browser-only flows (302 redirects + cookies), excluded from the public
- * OpenAPI/MCP surface. better-auth buttons and handlers stay untouched.
- *
- * The legacy `auth/gideon` path is a one-release alias: the registered IdP
- * redirect URI cannot move until the IdP-side app registration is updated.
- * Remove the alias once the registration points at `auth/oidc`.
+ * Browser OIDC login with redirects and native session cookies, excluded
+ * from the public OpenAPI/MCP surface. Keep auth/gideon as a compatibility
+ * alias for registered callbacks, cached clients, and rollback releases.
  */
 @ApiExcludeController()
 @ApiTags('Auth')
@@ -207,7 +202,7 @@ export class OidcController {
       });
       res.redirect(this.postLoginTarget(result));
     } catch (error) {
-      // Phase 1: IdP-deny mints no session and lands on the no-access
+      // IdP-deny mints no session and lands on the no-access
       // messaging. Class-matched, never message-matched, so identity-gate
       // failures keep their own codes.
       if (error instanceof EntitlementsDeniedError) {

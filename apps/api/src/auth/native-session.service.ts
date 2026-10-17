@@ -21,7 +21,7 @@ export interface NativeSessionResult {
 }
 
 /**
- * Milestone 3 — Native session resolution (no better-auth).
+ * Native session resolution (no better-auth).
  *
  * Reads the `Session` row directly from the database using the raw token
  * from the session cookie (either name variant, signed or unsigned) or a
@@ -29,7 +29,7 @@ export interface NativeSessionResult {
  * `HybridAuthGuard` previously built from `auth.api.getSession`, so the
  * guard can resolve sessions without the better-auth library.
  *
- * Sessions minted by EITHER path (legacy better-auth logins and Gideon OIDC
+ * Sessions minted by EITHER path (legacy better-auth logins and OIDC
  * logins via `mintOidcSession`) are plain `Session` rows keyed by the raw
  * token — both resolve here identically.
  *
@@ -76,9 +76,9 @@ export class NativeSessionService implements OnModuleInit {
     }
     if (authHeader?.startsWith('Bearer ')) {
       const raw = authHeader.slice(7).trim();
-      // A Gideon JWT also arrives as a bearer token — it is not a session
+      // An OIDC JWT also arrives as a bearer token — it is not a session
       // token (exactly 3 dot-segments; signed session cookies have 2, raw
-      // hex tokens have none). Skip the DB lookup for JWTs; the Gideon-JWT
+      // hex tokens have none). Skip the DB lookup for JWTs; the OIDC JWT
       // path in the guard handles those. The shape check runs on the RAW
       // value: unsignedSessionToken() strips the `.signature` suffix, which
       // would turn a JWT into a 2-segment string and defeat the check.

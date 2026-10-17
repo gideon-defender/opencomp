@@ -136,7 +136,7 @@ export class PermissionGuard implements CanActivate {
     // permissions against the roles HybridAuthGuard already resolved for the
     // bound org. (Mirrors better-auth's union-of-roles semantics.)
     //
-    // Milestone 3 — the same native check also covers session and Gideon-JWT
+    // The same native check also covers session and OIDC JWT
     // callers: HybridAuthGuard resolves `userRoles` from the Member row (the
     // same source better-auth's organization plugin reads), so re-resolving
     // via `auth.api.hasPermission` is redundant. better-auth stays as the

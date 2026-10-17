@@ -7,7 +7,7 @@ description: 'Complete environment variable reference for Docker self-hosting'
 
 | Column       | Description                                                                                                               |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| **Service**  | Which service(s) use this variable: `migrator`, `seeder`, `app`, `portal`                                                 |
+| **Service**  | Which service(s) use this variable: `migrator`, `seeder`, `api`, `app`, `portal`                                          |
 | **Phase**    | `build` = Docker build arg, `runtime` = loaded from env file at startup                                                   |
 | **Required** | `required-minimal` = needed for basic deployment, `conditional` = needed for specific features, `optional` = safe to omit |
 
@@ -15,39 +15,67 @@ description: 'Complete environment variable reference for Docker self-hosting'
 
 These variables are required for a functional Docker deployment:
 
-| Name                          | Service(s)                    | Phase   | Notes                                                                  |
-| ----------------------------- | ----------------------------- | ------- | ---------------------------------------------------------------------- |
-| `DATABASE_URL`                | migrator, seeder, app, portal | runtime | PostgreSQL connection string with `?sslmode=require`                   |
-| `AUTH_SECRET`                 | app                           | runtime | 32-byte base64 secret for auth. Generate: `openssl rand -base64 32`    |
-| `SECRET_KEY`                  | app                           | runtime | Encryption key for sensitive data. Generate: `openssl rand -base64 32` |
-| `BETTER_AUTH_URL`             | app, portal                   | runtime | Base URL for Better Auth (app or portal's public URL)                  |
-| `NEXT_PUBLIC_BETTER_AUTH_URL` | app, portal                   | build   | Public auth URL (same as `BETTER_AUTH_URL`)                            |
-| `BETTER_AUTH_SECRET`          | portal                        | runtime | Portal-specific auth secret. Generate: `openssl rand -base64 32`       |
-| `REVALIDATION_SECRET`         | app                           | runtime | Random string for revalidation. Generate: `openssl rand -base64 16`    |
-| `NEXT_PUBLIC_PORTAL_URL`      | app                           | build   | Public URL of the portal (e.g., `https://portal.yourdomain.com`)       |
+| Name                     | Service(s)                         | Phase   | Notes                                                                                         |
+| ------------------------ | ---------------------------------- | ------- | --------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`           | migrator, seeder, api, app, portal | runtime | PostgreSQL connection string with `?sslmode=require`                                          |
+| `AUTH_SECRET`            | app                                | runtime | Required by app environment validation. Generate: `openssl rand -base64 32`                   |
+| `SECRET_KEY`             | api, app                           | runtime | API session-signing and sensitive-data encryption secret. Generate: `openssl rand -base64 32` |
+| `REVALIDATION_SECRET`    | app                                | runtime | Random string for revalidation. Generate: `openssl rand -base64 16`                           |
+| `NEXT_PUBLIC_PORTAL_URL` | app                                | build   | Public URL of the portal (e.g., `https://portal.yourdomain.com`)                              |
+
+The API also requires its OIDC client configuration; see Authentication below.
+Build the frontends with `NEXT_PUBLIC_API_URL` set to the public API URL.
 
 ## All Variables by Category
 
 ### Database
 
-| Name           | Service(s)                    | Phase   | Required         | Notes                                                         |
-| -------------- | ----------------------------- | ------- | ---------------- | ------------------------------------------------------------- |
-| `DATABASE_URL` | migrator, seeder, app, portal | runtime | required-minimal | Format: `postgresql://user:pass@host:5432/db?sslmode=require` |
+| Name           | Service(s)                         | Phase   | Required         | Notes                                                         |
+| -------------- | ---------------------------------- | ------- | ---------------- | ------------------------------------------------------------- |
+| `DATABASE_URL` | migrator, seeder, api, app, portal | runtime | required-minimal | Format: `postgresql://user:pass@host:5432/db?sslmode=require` |
 
 ### Authentication
 
-Sign-in is handled by the external Gideon identity provider (OIDC) — there
-are no social-login client IDs/secrets to configure. The API's Gideon client
-registration lives in `apps/api/.env` (see the `GIDEON_OIDC_*` block in
-`apps/api/.env.example`).
+The API owns authentication. Browser sign-in starts at `/v1/auth/oidc/login`,
+returns to `/v1/auth/oidc/callback`, and creates a native session cookie. Register
+that exact callback URL with the external OIDC provider. Frontends call the API
+for authentication; they must not run their own Better Auth server.
 
-| Name                          | Service(s)  | Phase   | Required         | Notes                             |
-| ----------------------------- | ----------- | ------- | ---------------- | --------------------------------- |
-| `AUTH_SECRET`                 | app         | runtime | required-minimal | Main app auth secret              |
-| `SECRET_KEY`                  | app         | runtime | required-minimal | Encryption key for sensitive data |
-| `BETTER_AUTH_URL`             | app, portal | runtime | required-minimal | Base URL for auth                 |
-| `BETTER_AUTH_SECRET`          | portal      | runtime | required-minimal | Portal auth secret                |
-| `NEXT_PUBLIC_BETTER_AUTH_URL` | app, portal | build   | required-minimal | Public auth URL for client code   |
+Configure the API using the primary `OIDC_*` settings documented in
+`apps/api/.env.example`:
+
+| Name                      | Service(s)  | Phase   | Required         | Notes                                                                          |
+| ------------------------- | ----------- | ------- | ---------------- | ------------------------------------------------------------------------------ |
+| `BASE_URL`                | api         | runtime | required-minimal | Public API URL, e.g. `https://api.yourdomain.com`                              |
+| `NEXT_PUBLIC_APP_URL`     | api         | runtime | required-minimal | Public app URL for post-login, invite, and error redirects, e.g. `https://app.yourdomain.com` |
+| `SECRET_KEY`              | api, app    | runtime | required-minimal | API session-signing and sensitive-data encryption secret                       |
+| `AUTH_SECRET`             | app         | runtime | required-minimal | Retained app environment-validation requirement                                |
+| `NEXT_PUBLIC_API_URL`     | app, portal | build   | required-minimal | Public API URL used by frontend auth clients                                   |
+| `OIDC_ISSUER_URL`         | api         | runtime | required-minimal | Provider base URL for discovery and JWKS                                       |
+| `OIDC_CLIENT_ID`          | api         | runtime | required-minimal | Registered OpenComp client ID                                                  |
+| `OIDC_REDIRECT_URI`       | api         | runtime | required-minimal | Exact API callback URL ending in `/v1/auth/oidc/callback`                      |
+| `OIDC_CLIENT_SECRET`      | api         | runtime | conditional      | Required for a confidential client; omit for a public PKCE client              |
+| `OIDC_SCOPES`             | api         | runtime | optional         | Defaults to `openid profile email`                                             |
+| `OIDC_JWT_ISSUER`         | api         | runtime | conditional      | Exact access-token `iss`; required for bearer JWT verification                 |
+| `OIDC_JWT_AUDIENCE`       | api         | runtime | conditional      | Expected access-token audience; required for bearer JWT verification           |
+| `OIDC_JWT_ENABLED`        | api         | runtime | optional         | Enables fail-closed enforcement for tokens presenting as the configured issuer |
+| `OIDC_JWT_SHADOW_ENABLED` | api         | runtime | optional         | Enables shadow verification; defaults to automatic when an issuer URL is set   |
+
+The discovery URL and access-token issuer are separate settings; do not assume
+`OIDC_ISSUER_URL` and `OIDC_JWT_ISSUER` are identical. Browser ID tokens and direct
+bearer access tokens also have separate audience checks.
+
+Deprecated `GIDEON_*`, `AUTH__*`, and JWT aliases remain readable where listed in
+`apps/api/.env.example`; prefer the primary settings for new deployments.
+`/v1/auth/gideon/*` remains a route alias. New Redis login state uses `app:oidc:`,
+while callbacks still read `app:gideon-oidc:` for pending logins from earlier
+releases. Retain both registered callback URLs through the rollback window.
+The legacy MCP session fallback remains supported.
+
+Gideon HR, tenant provisioning, shadow comparison, and entitlement-reader
+integrations remain active platform features with their own configuration.
+In particular, `GIDEON_IDENTITY_URL` is still read directly by platform
+integrations even when OIDC uses `OIDC_ISSUER_URL`.
 
 ### Email (SES + SQS, apps/api)
 
@@ -93,10 +121,10 @@ registration lives in `apps/api/.env` (see the `GIDEON_OIDC_*` block in
 
 ### AI Providers
 
-| Name                         | Service(s) | Phase   | Required    | Notes                         |
-| ---------------------------- | ---------- | ------- | ----------- | ----------------------------- |
+| Name                           | Service(s) | Phase   | Required    | Notes                          |
+| ------------------------------ | ---------- | ------- | ----------- | ------------------------------ |
 | `GOOGLE_GENERATIVE_AI_API_KEY` | app, api   | runtime | conditional | Gemini API key for AI features |
-| `FIRECRAWL_API_KEY`          | app        | runtime | conditional | Firecrawl for vendor research |
+| `FIRECRAWL_API_KEY`            | app        | runtime | conditional | Firecrawl for vendor research  |
 
 ### Rate Limiting & Caching
 
@@ -144,21 +172,29 @@ registration lives in `apps/api/.env` (see the `GIDEON_OIDC_*` block in
 DATABASE_URL="postgresql://user:pass@host:5432/comp?sslmode=require"
 ```
 
+```bash apps/api/.env
+DATABASE_URL="postgresql://user:pass@host:5432/comp?sslmode=require"
+BASE_URL="https://api.yourdomain.com"
+NEXT_PUBLIC_APP_URL="https://app.yourdomain.com"
+SECRET_KEY="your-32-byte-secret-here"
+OIDC_ISSUER_URL="https://identity.yourdomain.com"
+OIDC_CLIENT_ID="opencomp"
+OIDC_REDIRECT_URI="https://api.yourdomain.com/v1/auth/oidc/callback"
+# Set OIDC_CLIENT_SECRET if the registered client is confidential.
+```
+
 ```bash apps/app/.env
 DATABASE_URL="postgresql://user:pass@host:5432/comp?sslmode=require"
 AUTH_SECRET="your-32-byte-secret-here"
 SECRET_KEY="your-32-byte-encryption-key"
-BETTER_AUTH_URL="https://app.yourdomain.com"
-NEXT_PUBLIC_BETTER_AUTH_URL="https://app.yourdomain.com"
+NEXT_PUBLIC_API_URL="https://api.yourdomain.com"
 NEXT_PUBLIC_PORTAL_URL="https://portal.yourdomain.com"
 REVALIDATION_SECRET="random-revalidation-string"
 ```
 
 ```bash apps/portal/.env
 DATABASE_URL="postgresql://user:pass@host:5432/comp?sslmode=require"
-BETTER_AUTH_SECRET="your-32-byte-portal-secret"
-BETTER_AUTH_URL="https://portal.yourdomain.com"
-NEXT_PUBLIC_BETTER_AUTH_URL="https://portal.yourdomain.com"
+NEXT_PUBLIC_API_URL="https://api.yourdomain.com"
 ```
 
 </CodeGroup>

@@ -26,8 +26,8 @@ export {
 
 export { isTrustedOrigin } from './auth-custom-origins';
 
-// Gideon is the sole authenticator. Legacy better-auth login entry points
-// (Google/GitHub/Microsoft social, magic link, email OTP) were removed after
+// The configured OIDC provider is the sole authenticator. Legacy login
+// entry points (social, magic link, email OTP) were removed after
 // OIDC cutover — the remaining plugins below serve session/org/MCP
 // routes consumed by the frontends until their native replacements land.
 const cookieDomain = getCookieDomain();
@@ -127,7 +127,7 @@ export const auth = betterAuth({
   baseURL: process.env.BASE_URL || 'http://localhost:3333',
   trustedOrigins: getBetterAuthTrustedOrigins(),
   emailAndPassword: {
-    // Not used — Gideon OIDC is the sole login; email change still uses
+    // Not used — OIDC is the sole login; email change still uses
     // the verification sender below for its double opt-in.
     enabled: false,
   },
@@ -238,9 +238,9 @@ export const auth = betterAuth({
   user: {
     modelName: 'User',
     changeEmail: {
-      // Disabled: Gideon is the sole identity owner and login emails are
-      // tenant-scoped (UNIQUE("tenantId", email)). Better Auth's change-email
-      // flow is email-global (lookup by email alone) and would bypass tenant
+      // The identity provider owns login emails, which are tenant-scoped
+      // (UNIQUE("tenantId", email)). Better Auth's change-email flow is
+      // email-global (lookup by email alone) and would bypass tenant
       // scoping. Email changes arrive via IdP sync/login; the tenant-scoped
       // admin validator (validateLoginEmailChange) covers operator renames.
       enabled: false,
@@ -261,7 +261,7 @@ export const auth = betterAuth({
   account: {
     modelName: 'Account',
     accountLinking: {
-      // No social providers remain (Gideon OIDC provisions users directly).
+      // No social providers remain (OIDC provisions users directly).
       enabled: false,
       trustedProviders: [],
     },

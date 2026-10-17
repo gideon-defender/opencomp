@@ -6,7 +6,6 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 /**
- * Milestone 1 — "Continue with Gideon" (dual-run, OTP/social buttons kept).
  * Plain redirect to the API's OIDC login endpoint; no client library involved.
  */
 export function OidcSignIn({

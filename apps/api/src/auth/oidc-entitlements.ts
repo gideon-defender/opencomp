@@ -12,7 +12,7 @@ const logger = new Logger('OidcEntitlements');
 export type EntitlementsDenyReason =
   'empty_entitlements' | 'no_valid_match' | 'unknown_tenant' | 'lookup_failed';
 
-/** Phase 1 deny reasons that never appear in audit mode. */
+/** Enforcement deny reasons that never appear in audit mode. */
 export type EnforceDenyReason =
   Exclude<EntitlementsDenyReason, 'lookup_failed'> | 'no_owner_bootstrap';
 
@@ -25,7 +25,7 @@ export interface EntitlementsAuditResult {
   /** Current cached Member.role for the user in the tenant org, if any. */
   memberRole?: string | null;
   /**
-   * Set when `wouldDeny` is false: whether Phase 1 would overwrite the
+   * Set when `wouldDeny` is false: whether enforcement would overwrite the
    * cached Member.role with the matched entitlements.
    */
   wouldOverwrite?: boolean;
@@ -40,7 +40,7 @@ export interface AuditOidcEntitlementsParams {
 }
 
 /**
- * Distinguished Phase 1 deny: empty/no-match/unknown-tenant (and bootstrap)
+ * Distinguished enforcement deny: empty/no-match/unknown-tenant (and bootstrap)
  * logins mint no session and redirect to `/auth?error=no_role`. The
  * controller maps this class — never messages — so identity-gate failures
  * (email/banned/sub) keep their own codes. Lookup/infra failures are NOT
@@ -123,16 +123,16 @@ export async function evaluateEntitlements({
 }
 
 /**
- * Phase 0 audit-mode entitlements check.
+ * Audit-mode entitlements check.
  *
  * Reads the verified ID-token `entitlements` claim, intersects the presented
  * values against that org's valid role names (built-ins ∪ its
  * `OrganizationRole` rows; entries are trimmed, then matched verbatim —
- * no translation table in v1), and logs what Phase 1 enforcement *would* do.
+ * no translation table in v1), and logs what enforcement *would* do.
  *
  * Audit mode only: never throws, never denies, never writes a Member row.
- * Callers proceed with the old behavior (mint session) regardless of the
- * result. Fail-closed at login and Member overwrite arrive in Phase 1.
+ * Callers can mint a session regardless of this audit result. Enforced
+ * tenants use enforceOidcEntitlements and sync roles before session creation.
  */
 export async function auditOidcEntitlements({
   claims,
@@ -223,8 +223,8 @@ export async function auditOidcEntitlements({
 }
 
 /**
- * Phase 1 enforcement for a pilot tenant (and the fleet once the allowlist
- * covers it). Evaluates the verified claim and either returns the matched
+ * Enforcement for configured pilot tenants or all tenants. Evaluates the
+ * verified claim and either returns the matched
  * role names or throws EntitlementsDeniedError — the caller mints no session
  * on any throw. Database failures propagate raw (fail closed, distinct
  * `oidc_login_failed` signal, still no session).

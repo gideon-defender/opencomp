@@ -5,12 +5,12 @@ import {
 } from './oidc-tenant-claim';
 
 /**
- * Phase 0 tenant-claim contract (Gram auth cutover): the tenant resolves
- * from verified Gideon claims `tid` / `tenant_id` / `organizationId` /
+ * OIDC tenant-claim contract: the tenant resolves
+ * from verified OIDC claims `tid` / `tenant_id` / `organizationId` /
  * `tenantId`. Missing, malformed or conflicting claims reject the token —
  * any alternative mapping needs an approved mapping contract.
  */
-describe('resolveOidcTenantClaim (Phase 0 contract)', () => {
+describe('resolveOidcTenantClaim (tenant contract)', () => {
   it('resolves each accepted alias on its own', () => {
     expect(resolveOidcTenantClaim({ tid: 'org_1' })).toEqual({
       ok: true,

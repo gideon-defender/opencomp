@@ -14,7 +14,7 @@ import {
   bearer,
   validMocks,
   resetGateMocks,
-} from './gideon-mcp-tenant-gate.fixtures';
+} from './oidc-mcp-tenant-gate.fixtures';
 
 jest.mock('./auth.server', () => ({
   auth: {
@@ -37,7 +37,7 @@ jest.mock('./app-access', () => ({
   stripControlChars: (value: string) => value,
 }));
 
-describe('Gideon MCP token rejection and legacy recovery', () => {
+describe('OIDC MCP token rejection and legacy recovery', () => {
   beforeEach(resetGateMocks);
   it('accepts agreeing aliases through the full gate', async () => {
     mockVerify.mockResolvedValue({
@@ -67,7 +67,7 @@ describe('Gideon MCP token rejection and legacy recovery', () => {
 
   it('rejects when the user record vanishes between link and populate (401, no fallback)', async () => {
     // The link check passes, then the by-id re-fetch misses (raced delete).
-    // Fail closed with a Gideon reason instead of a silent false.
+    // Fail closed with an OIDC reason instead of a silent false.
     mockVerify.mockResolvedValue({
       payload: { sub: 'sub_1', tid: 'org_1' },
       protectedHeader: { kid: 'k1' },
@@ -93,9 +93,9 @@ describe('Gideon MCP token rejection and legacy recovery', () => {
     expect(mockGetMcpSession).not.toHaveBeenCalled();
   });
 
-  it('rejects a Gideon-presenting token that fails verification (401, no fallback)', async () => {
+  it('rejects an OIDC-presenting token that fails verification (401, no fallback)', async () => {
     // Expired, wrong audience, or bad signature all collapse to verify → null
-    // here; the iss check is what separates Gideon-presenting from foreign.
+    // here; the iss check is what separates OIDC-presenting from foreign.
     mockVerify.mockResolvedValue(null);
     mockIsOidcToken.mockReturnValue(true);
     await expect(gideonAuth().handleSessionAuth(bearer())).rejects.toThrow(
@@ -104,7 +104,7 @@ describe('Gideon MCP token rejection and legacy recovery', () => {
     expect(mockGetMcpSession).not.toHaveBeenCalled();
   });
 
-  it('fails closed on JWT-shaped bearers when Gideon is misconfigured (401, no fallback)', async () => {
+  it('fails closed on JWT-shaped bearers when OIDC is misconfigured (401, no fallback)', async () => {
     // Endpoint set but issuer/audience missing: no token can be identified,
     // so JWT-shaped bearers fail closed while opaque legacy tokens still work.
     mockVerify.mockResolvedValue(null);
@@ -148,7 +148,7 @@ describe('Gideon MCP token rejection and legacy recovery', () => {
     expect(mockGetMcpSession).not.toHaveBeenCalled();
   });
 
-  it('preserves the legacy fallback for genuinely non-Gideon bearers', async () => {
+  it('preserves the legacy fallback for genuinely non-OIDC bearers', async () => {
     mockVerify.mockResolvedValue(null);
     mockIsOidcToken.mockReturnValue(false);
     mockGetMcpSession.mockResolvedValue({ userId: 'usr_legacy' });
@@ -163,7 +163,7 @@ describe('Gideon MCP token rejection and legacy recovery', () => {
     expect(req.userId).toBe('usr_legacy');
   });
 
-  it('preserves the opaque legacy fallback while Gideon is misconfigured', async () => {
+  it('preserves the opaque legacy fallback while OIDC is misconfigured', async () => {
     mockVerify.mockResolvedValue(null);
     mockIsOidcToken.mockReturnValue(false);
     mockIsMisconfigured.mockReturnValue(true);
