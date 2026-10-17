@@ -1,15 +1,39 @@
 export const CONTRACT_START = '20261013000004_user_tenant_enforce';
 export const CONTRACT_END = '20261013000006_user_tenant_session_cleanup';
+const OFFLINE_MIGRATIONS = new Set([
+  CONTRACT_START,
+  '20261013000005_user_tenant_validate',
+  CONTRACT_END,
+  '20261015000000_oidc_column_rename',
+]);
 const approvalFailures = new Map([
   ['20261013000005_user_tenant_validate', 'validation phase is not approved'],
   [CONTRACT_END, 'session cleanup is not approved'],
 ]);
 
-export function planTenantMigrations({ phase, history, schema }) {
-  if (!['expand', 'contract', 'offline'].includes(phase))
-    throw new Error('Expected expand, contract, or offline phase');
+export function planTenantMigrations({ phase, history, schema, migrationNames = [] }) {
+  if (!['expand', 'contract', 'offline', 'online'].includes(phase))
+    throw new Error('Expected expand, contract, offline, or online phase');
+  if (phase === 'online') {
+    const applied = new Set(
+      history.filter((row) => row.finished && !row.rolledBack).map((row) => row.name),
+    );
+    const pendingOffline = migrationNames.find(
+      (name) => OFFLINE_MIGRATIONS.has(name) && !applied.has(name),
+    );
+    if (pendingOffline) {
+      throw new Error(
+        `Migration ${pendingOffline} requires offline_migrations=true; no migrations were run`,
+      );
+    }
+  }
   const recover = [];
   for (const row of history.filter((entry) => !entry.finished && !entry.rolledBack)) {
+    if (phase === 'online') {
+      throw new Error(
+        `Migration ${row.name} needs explicit inspection; refusing automatic recovery`,
+      );
+    }
     // Prisma cannot always save the gate error inside the aborted transaction.
     // 00004 is explicitly atomic; check that its contract DDL never committed.
     const atomicContractRolledBack =

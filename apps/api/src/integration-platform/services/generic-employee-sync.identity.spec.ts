@@ -27,6 +27,9 @@ jest.mock('@gideon-defender/auth', () => ({
 
 jest.mock('@db', () => ({
   db: {
+    $executeRaw: jest.fn(),
+    $transaction: (work: (tx: unknown) => unknown) =>
+      work(jest.requireMock('@db').db),
     user: {
       findUnique: (...args: unknown[]) => mockUserFindUnique(...args),
       create: (...args: unknown[]) => mockUserCreate(...args),

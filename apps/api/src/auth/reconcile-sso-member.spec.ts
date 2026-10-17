@@ -70,6 +70,7 @@ let sessions = [
   { token: 'other-tenant-session', activeOrganizationId: 'other-tenant' },
 ];
 const tx = {
+  $executeRaw: jest.fn(),
   $queryRaw: jest.fn(),
   member: { findFirst: jest.fn(), update: jest.fn() },
   organizationRole: { findMany: jest.fn() },

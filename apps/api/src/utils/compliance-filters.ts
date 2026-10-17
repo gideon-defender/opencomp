@@ -1,81 +1,47 @@
-import {
-  BUILT_IN_ROLE_OBLIGATIONS,
-  type RoleObligations,
-  allRoles,
-} from '@gideon-defender/auth';
 import { db } from '@db';
-
-/**
- * Check if any of the given role names have the compliance obligation,
- * considering both built-in and custom role obligations.
- */
-function hasComplianceObligation(
-  roleNames: string[],
-  customObligationMap: Record<string, RoleObligations>,
-): boolean {
-  for (const name of roleNames) {
-    // Check built-in role obligations
-    const builtIn = BUILT_IN_ROLE_OBLIGATIONS[name];
-    if (builtIn?.compliance) return true;
-    // Check custom role obligations
-    const custom = customObligationMap[name];
-    if (custom?.compliance) return true;
-  }
-  return false;
-}
+import { splitRoleNames } from '../roles/role-holders';
+import {
+  parseObligationsField,
+  resolveEffectiveObligations,
+} from '../roles/role-obligations';
 
 interface MemberWithRole {
   role: string;
 }
 
-/**
- * Filter members to only those with the compliance obligation.
- * Membership is org-scoped: every member of the organization is a genuine
- * participant (there is no cross-tenant role), so filtering is purely a
- * function of the member's org roles (built-in + custom obligations).
- * Resolves built-in role obligations in-memory and fetches custom role
- * obligations with a single DB query.
- */
+/** Resolve tenant overrides before built-in defaults, then union each member's roles. */
 export async function filterComplianceMembers<T extends MemberWithRole>(
   members: T[],
   organizationId: string,
 ): Promise<T[]> {
   if (members.length === 0) return [];
 
-  // Collect all custom role names
-  const allCustomRoleNames = new Set<string>();
-  const builtInRoleNames = new Set<string>(Object.keys(allRoles));
+  const distinctRoles = new Set<string>();
   const memberRoles = members.map((member) => {
-    const roleNames = member.role
-      .split(',')
-      .map((r) => r.trim())
-      .filter(Boolean);
-    const customNames = roleNames.filter((n) => !builtInRoleNames.has(n));
-    for (const name of customNames) allCustomRoleNames.add(name);
+    const roleNames = splitRoleNames(member.role);
+    for (const name of roleNames) distinctRoles.add(name);
     return { member, roleNames };
   });
+  if (distinctRoles.size === 0) return [];
 
-  // Single DB query for custom role obligations
-  let customObligationMap: Record<string, RoleObligations> = {};
-  if (allCustomRoleNames.size > 0) {
-    const customRoles = await db.organizationRole.findMany({
-      where: { organizationId, name: { in: [...allCustomRoleNames] } },
-      select: { name: true, obligations: true },
-    });
-    customObligationMap = Object.fromEntries(
-      customRoles.map((r) => {
-        const obligations =
-          typeof r.obligations === 'string'
-            ? JSON.parse(r.obligations)
-            : r.obligations || {};
-        return [r.name, obligations as RoleObligations];
-      }),
-    );
-  }
+  const rows = await db.organizationRole.findMany({
+    where: { organizationId, name: { in: [...distinctRoles] } },
+    select: { name: true, obligations: true },
+  });
+  const overrides = new Map(
+    rows.map((row) => [row.name, parseObligationsField(row.obligations)]),
+  );
+  const complianceRoles = new Set(
+    [...distinctRoles].filter(
+      (name) =>
+        resolveEffectiveObligations(name, overrides.get(name) ?? null)
+          .compliance,
+    ),
+  );
 
   return memberRoles
     .filter(({ roleNames }) =>
-      hasComplianceObligation(roleNames, customObligationMap),
+      roleNames.some((name) => complianceRoles.has(name)),
     )
     .map(({ member }) => member);
 }

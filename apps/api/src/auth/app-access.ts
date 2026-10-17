@@ -1,17 +1,35 @@
 import { BUILT_IN_ROLE_PERMISSIONS } from '@gideon-defender/auth';
-import { db } from '@db';
+import { db, type Prisma } from '@db';
+
+const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+function isUnsafeKey(key: string): boolean {
+  return UNSAFE_KEYS.has(key);
+}
 
 /** Safely parse a custom role's stored permissions; malformed JSON → `{}` (never throws). */
-function parsePermissions(raw: unknown): Record<string, string[]> {
+export function parsePermissions(raw: unknown): Record<string, string[]> {
+  const clean = (value: unknown): Record<string, string[]> => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+    const out: Record<string, string[]> = {};
+    for (const [key, actions] of Object.entries(
+      value as Record<string, unknown>,
+    )) {
+      if (isUnsafeKey(key)) continue;
+      if (!Array.isArray(actions)) continue;
+      out[key] = (actions as unknown[]).filter(
+        (action): action is string => typeof action === 'string',
+      );
+    }
+    return out;
+  };
   if (raw && typeof raw === 'object') {
-    return raw as Record<string, string[]>;
+    return clean(raw);
   }
   if (typeof raw === 'string') {
     try {
       const parsed = JSON.parse(raw);
-      return parsed && typeof parsed === 'object'
-        ? (parsed as Record<string, string[]>)
-        : {};
+      return clean(parsed);
     } catch {
       return {};
     }
@@ -19,14 +37,27 @@ function parsePermissions(raw: unknown): Record<string, string[]> {
   return {};
 }
 
-function mergeInto(
+/**
+ * Union `perms` into the Set-based `target` merge. Shared with the roles
+ * module so read paths merge built-in and custom permissions identically.
+ * Skips prototype keys so a poisoned stored row cannot crash readers.
+ */
+export function mergeInto(
   target: Record<string, Set<string>>,
   perms: Record<string, string[]>,
 ): void {
   for (const [resource, actions] of Object.entries(perms)) {
+    if (isUnsafeKey(resource)) continue;
     if (!Array.isArray(actions)) continue;
-    target[resource] ??= new Set<string>();
-    for (const action of actions) target[resource].add(action);
+    // Own-property guard: plain `{}` inherits `toString`/`valueOf` etc.
+    // `??=` would keep the inherited function and `.add` would throw.
+    if (!Object.hasOwn(target, resource)) {
+      target[resource] = new Set<string>();
+    }
+    for (const action of actions) {
+      if (typeof action !== 'string') continue;
+      target[resource].add(action);
+    }
   }
 }
 
@@ -48,8 +79,9 @@ export function stripControlChars(value: string): string {
  */
 export async function getValidRoleNames(
   organizationId: string,
+  client: Pick<Prisma.TransactionClient, 'organizationRole'> = db,
 ): Promise<Set<string>> {
-  const customRoles = await db.organizationRole.findMany({
+  const customRoles = await client.organizationRole.findMany({
     where: { organizationId },
     select: { name: true },
   });
@@ -64,6 +96,8 @@ export async function getValidRoleNames(
  *
  * `null`/`undefined` (no membership row) stays `null` so callers can tell
  * "no membership" apart from "membership with an empty role string".
+ * The non-null trim+filter behavior is shared with `splitRoleNames` in
+ * roles/role-holders, which delegates to this function (`?? []`).
  */
 export function splitRoleString(
   role: string | null | undefined,
@@ -72,7 +106,7 @@ export function splitRoleString(
   return role
     .split(',')
     .map((r) => r.trim())
-    .filter(Boolean);
+    .filter((r) => r.length > 0);
 }
 
 /**
@@ -85,20 +119,23 @@ export function splitRoleString(
 export async function resolveRolePermissions(
   organizationId: string,
   roles: string[],
+  client: Pick<Prisma.TransactionClient, 'organizationRole'> = db,
 ): Promise<Record<string, string[]>> {
   const merged: Record<string, Set<string>> = {};
   const customRoleNames: string[] = [];
 
-  for (const role of roles) {
+  for (const rawRole of roles) {
+    const role = typeof rawRole === 'string' ? rawRole.trim() : rawRole;
+    if (!role) continue;
     if (Object.prototype.hasOwnProperty.call(BUILT_IN_ROLE_PERMISSIONS, role)) {
       mergeInto(merged, BUILT_IN_ROLE_PERMISSIONS[role]);
-    } else if (role) {
+    } else {
       customRoleNames.push(role);
     }
   }
 
   if (customRoleNames.length > 0) {
-    const customRoles = await db.organizationRole.findMany({
+    const customRoles = await client.organizationRole.findMany({
       where: { organizationId, name: { in: customRoleNames } },
       select: { permissions: true },
     });
@@ -156,12 +193,8 @@ export async function hasAppAccess(
   organizationId: string,
   roleString: string | null,
 ): Promise<boolean> {
-  if (!roleString) return false;
-  const roles = roleString
-    .split(',')
-    .map((r) => r.trim())
-    .filter(Boolean);
-  if (roles.length === 0) return false;
+  const roles = splitRoleString(roleString);
+  if (!roles || roles.length === 0) return false;
 
   const perms = await resolveRolePermissions(organizationId, roles);
   return permissionsGrant(perms, 'app', 'read');

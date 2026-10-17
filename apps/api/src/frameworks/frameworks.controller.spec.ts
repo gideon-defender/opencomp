@@ -25,6 +25,7 @@ jest.mock('../auth/auth.server', () => ({
 }));
 
 jest.mock('@gideon-defender/auth', () => ({
+  allRoles: {},
   ac: { newRole: jest.fn() },
   createAccessControl: jest.fn(),
   adminAc: {},

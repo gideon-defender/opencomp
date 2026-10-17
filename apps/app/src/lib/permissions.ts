@@ -75,6 +75,7 @@ const ROUTE_PERMISSIONS: Record<string, Array<{ resource: string; action: string
   'penetration-tests': [{ resource: 'pentest', action: 'read' }],
   // Settings — top-level requires access to at least one sub-page resource
   settings: [
+    { resource: 'ac', action: 'read' },
     { resource: 'organization', action: 'update' },
     { resource: 'evidence', action: 'read' },
     { resource: 'apiKey', action: 'read' },
@@ -85,7 +86,9 @@ const ROUTE_PERMISSIONS: Record<string, Array<{ resource: string; action: string
   'settings/context-hub': [{ resource: 'evidence', action: 'read' }],
   'settings/api-keys': [{ resource: 'apiKey', action: 'read' }],
   'settings/secrets': [{ resource: 'secret', action: 'read' }],
-  'settings/roles': [{ resource: 'member', action: 'read' }],
+  'settings/roles': [{ resource: 'ac', action: 'read' }],
+  'settings/roles/new': [{ resource: 'ac', action: 'create' }],
+  'settings/roles/:id': [{ resource: 'ac', action: 'read' }],
   'settings/notifications': [{ resource: 'organization', action: 'update' }],
   'settings/browser-connection': [{ resource: 'integration', action: 'read' }],
   // settings/user is intentionally not listed — every user can access their own preferences

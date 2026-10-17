@@ -1,3 +1,4 @@
+import { lockRoleAssignments } from '../roles/role-assignment-lock';
 import { findLegacySharedUser } from './legacy-shared-user';
 import type { Prisma } from '@db';
 import { BUILT_IN_ROLE_PERMISSIONS } from '@gideon-defender/auth';
@@ -17,6 +18,7 @@ export async function readSsoEntitlementRoles({
   tenantId: string;
   entitlements: string[];
 }) {
+  await lockRoleAssignments({ tx, organizationId: tenantId });
   const customRoles = await tx.organizationRole.findMany({
     where: { organizationId: tenantId },
     select: { name: true },

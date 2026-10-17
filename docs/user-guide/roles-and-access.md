@@ -2,20 +2,24 @@
 
 ## The one rule
 
-**Access is managed in Gideon, not in OpenComp.** Roles, invitations, and
-membership changes happen in the Gideon identity service and sync to
-OpenComp. OpenComp has no invite buttons, no role editors, and no local
-ownership transfer. Screens that used to edit access are read-only and say
-so, with guidance to make the change in Gideon.
+**Roles are defined in OpenComp and assigned in Gideon.** Admins create custom
+roles under Settings → Roles; Gideon decides who holds them. OpenComp never
+assigns roles to people — login overwrites assignments on every sign-in and on
+a five-minute reconciliation schedule.
 
 What this means in practice:
 
-- To give someone access: assign them a role in Gideon.
+- To define what a role can do: create or edit it in OpenComp (Settings →
+  Roles). A new role alone grants nobody access.
+- To give someone access: assign them the role name in Gideon (exact
+  case-sensitive match — `Lead` is not `lead`).
 - To remove someone: remove the assignment in Gideon (and offboard them —
   see [People](people.md)).
-- To change a role: change the assignment in Gideon; OpenComp overwrites the
-  member's roles on every login and on a five-minute reconciliation schedule.
+- To change a role: edit permissions in OpenComp for immediate enforcement;
+  change assignments in Gideon for who holds it.
 - A user with no Gideon entitlements cannot sign in at all.
+- Renaming a role orphans holders until Gideon values are renamed to match;
+  deleting is blocked while members hold the role.
 
 ## Built-in roles
 
@@ -27,11 +31,16 @@ What this means in practice:
 | Employee | Staff | Employee portal only (own policies, training, tasks, devices) |
 | Contractor | Contractors | Same portal-only scope as employee |
 
-Custom roles can exist with any combination of permissions.
+Custom roles can contain only permissions that their creator can grant. The Write
+option selects the actions that the caller holds for each resource.
 
-![System Roles and read-only Custom Roles reference](images/roles.png)
+Built-in permissions stay fixed. The Auditor role cannot require compliance
+because it lacks portal access. Use a custom role with compliance enabled when
+an auditor also needs to complete employee compliance work.
 
-*Use View to inspect permissions; change assignments in Gideon.*
+![System Roles and Custom Roles reference](images/roles.png)
+
+*Use New/View to define permissions; change assignments in Gideon.*
 
 ## Permissions
 

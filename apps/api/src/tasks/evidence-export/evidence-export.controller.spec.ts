@@ -28,6 +28,7 @@ jest.mock('../../auth/auth.server', () => ({
 }));
 
 jest.mock('@gideon-defender/auth', () => ({
+  allRoles: {},
   statement: {},
   BUILT_IN_ROLE_PERMISSIONS: {},
 }));

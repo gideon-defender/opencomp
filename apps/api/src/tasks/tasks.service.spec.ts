@@ -29,6 +29,7 @@ jest.mock('../frameworks/frameworks-timeline.helper', () => ({
 // The service's transitive imports pull in @gideon-defender/auth (ESM better-auth)
 // which jest can't transform; stub it as the controller spec does.
 jest.mock('@gideon-defender/auth', () => ({
+  allRoles: {},
   statement: {
     task: ['create', 'read', 'update', 'delete'],
     evidence: ['create', 'read', 'delete'],

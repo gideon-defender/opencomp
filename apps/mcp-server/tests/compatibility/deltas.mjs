@@ -160,6 +160,16 @@ add({
   keyword: 'maxLength',
   value: 2000,
 });
+// Reviewed evolution: get-permissions-for-roles declares its `roles` query
+// input explicitly (custom roles branch). The generated baseline inferred the
+// parameter with no description; the owned spec documents the format + limit.
+add({
+  tools: 'get-permissions-for-roles',
+  field: `${direct}/roles`,
+  keyword: 'description',
+  value:
+    'Comma-separated role names (or repeated roles params), e.g. admin,Compliance Lead. Max 100 names.',
+});
 // Reviewed evolution: EmailPreferencesDto gained optional findingNotifications.
 // Phase 0 baseline has 6 keys; current spec has 7.
 entries.push({

@@ -131,6 +131,10 @@ describe('OidcService Phase 1 enforcement (pilot tenant)', () => {
     mockDiscovery.mockResolvedValue('mock-config');
     mockTransaction.mockImplementation((fn: unknown) =>
       (fn as (tx: unknown) => unknown)({
+        $executeRaw: jest.fn(),
+        organizationRole: {
+          findMany: (...args: unknown[]) => mockOrgRoleFindMany(...args),
+        },
         member: {
           findFirst: (...a: unknown[]) => mockTxFindFirst(...a),
           update: (...a: unknown[]) => mockTxUpdate(...a),

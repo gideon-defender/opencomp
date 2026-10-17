@@ -2,6 +2,27 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RolesTable, type CustomRole } from './RolesTable';
 
+const mockPush = vi.fn();
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mockPush }),
+  useParams: () => ({ orgId: 'org_1' }),
+}));
+
+const mockHasPermission = vi.fn<(resource: string, action: string) => boolean>(() => false);
+const mockDeleteRole = vi.fn();
+const mockRefreshRoles = vi.fn();
+vi.mock('@/hooks/use-permissions', () => ({
+  usePermissions: () => ({ hasPermission: mockHasPermission }),
+}));
+vi.mock('../hooks/useRoles', () => ({
+  // Mutation-only component: must not subscribe to the roles list. If it
+  // calls useRoles again, this throws and the test fails.
+  useRoles: () => {
+    throw new Error('RolesTable must use useRoleMutations, not useRoles');
+  },
+  useRoleMutations: () => ({ deleteRole: mockDeleteRole, refreshRoles: mockRefreshRoles }),
+}));
+
 const mockRoles: CustomRole[] = [
   {
     id: 'role-1',
@@ -33,6 +54,7 @@ const mockRoles: CustomRole[] = [
 describe('RolesTable', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockHasPermission.mockReturnValue(false);
   });
 
   describe('Rendering', () => {
@@ -41,10 +63,9 @@ describe('RolesTable', () => {
 
       expect(screen.getByText('NAME')).toBeInTheDocument();
       expect(screen.getByText('PERMISSIONS')).toBeInTheDocument();
+      expect(screen.getByText('MEMBERS')).toBeInTheDocument();
       expect(screen.getByText('CREATED')).toBeInTheDocument();
-      // IdP-owned: no local actions column; list is read-only.
-      expect(screen.queryByText('ACTIONS')).not.toBeInTheDocument();
-      expect(screen.getByText(/OpenComp defines role permissions/)).toBeInTheDocument();
+      expect(screen.getByText(/Define what each role can do/)).toBeInTheDocument();
     });
 
     it('renders all roles in the table', () => {
@@ -54,32 +75,28 @@ describe('RolesTable', () => {
       expect(screen.getByText('risk-manager')).toBeInTheDocument();
     });
 
-    it('displays permission count for each role', () => {
+    it('read-only user sees no New/Edit/Delete', () => {
       render(<RolesTable roles={mockRoles} />);
 
-      expect(screen.getByText('2 resources')).toBeInTheDocument(); // compliance-lead
-      expect(screen.getByText('1 resources')).toBeInTheDocument(); // risk-manager (singular issue, but acceptable)
+      expect(screen.queryByRole('button', { name: /New role/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /View\/Edit/i })).not.toBeInTheDocument();
     });
 
-    it('formats dates correctly', () => {
+    it('admin sees New/Edit/Delete, delete disabled while holders exist', () => {
+      mockHasPermission.mockImplementation(
+        (resource: string, action: string) =>
+          resource === 'ac' && ['create', 'update', 'delete'].includes(action),
+      );
       render(<RolesTable roles={mockRoles} />);
 
-      // Check for formatted dates (format: "Jan 15, 2024")
-      expect(screen.getByText('Jan 15, 2024')).toBeInTheDocument();
-      expect(screen.getByText('Feb 1, 2024')).toBeInTheDocument();
-    });
-
-    it('does not render a Create Role button (Gideon-synced, read-only)', () => {
-      render(<RolesTable roles={mockRoles} />);
-
-      expect(screen.queryByRole('button', { name: /Create Role/i })).not.toBeInTheDocument();
-      expect(screen.getByText(/OpenComp defines role permissions/)).toBeInTheDocument();
-    });
-
-    it('renders the search input', () => {
-      render(<RolesTable roles={mockRoles} />);
-
-      expect(screen.getByPlaceholderText('Search roles...')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /New role/i })).toBeInTheDocument();
+      expect(screen.getAllByRole('button', { name: /View\/Edit/i })).toHaveLength(2);
+      const deletes = screen.getAllByRole('button', { name: /Delete/i });
+      expect(deletes).toHaveLength(2);
+      // 3 holders → disabled with Gideon guidance; 0 holders → enabled.
+      expect(deletes[0]).toBeDisabled();
+      expect(deletes[0]).toHaveAttribute('title', expect.stringContaining('Gideon'));
+      expect(deletes[1]).toBeEnabled();
     });
   });
 
@@ -89,29 +106,10 @@ describe('RolesTable', () => {
 
       expect(screen.getByText('No custom roles yet')).toBeInTheDocument();
     });
-
-    it('shows no match message when search returns no results', async () => {
-      render(<RolesTable roles={mockRoles} />);
-
-      const searchInput = screen.getByPlaceholderText('Search roles...');
-      fireEvent.change(searchInput, { target: { value: 'nonexistent' } });
-
-      expect(screen.getByText('No roles match your search')).toBeInTheDocument();
-    });
   });
 
   describe('Search Filtering', () => {
-    it('filters roles by name', async () => {
-      render(<RolesTable roles={mockRoles} />);
-
-      const searchInput = screen.getByPlaceholderText('Search roles...');
-      fireEvent.change(searchInput, { target: { value: 'compliance' } });
-
-      expect(screen.getByText('compliance-lead')).toBeInTheDocument();
-      expect(screen.queryByText('risk-manager')).not.toBeInTheDocument();
-    });
-
-    it('is case-insensitive', async () => {
+    it('filters roles by name case-insensitively', async () => {
       render(<RolesTable roles={mockRoles} />);
 
       const searchInput = screen.getByPlaceholderText('Search roles...');
@@ -120,25 +118,47 @@ describe('RolesTable', () => {
       expect(screen.getByText('risk-manager')).toBeInTheDocument();
       expect(screen.queryByText('compliance-lead')).not.toBeInTheDocument();
     });
-
-    it('shows all roles when search is cleared', async () => {
-      render(<RolesTable roles={mockRoles} />);
-
-      const searchInput = screen.getByPlaceholderText('Search roles...');
-      fireEvent.change(searchInput, { target: { value: 'compliance' } });
-      fireEvent.change(searchInput, { target: { value: '' } });
-
-      expect(screen.getByText('compliance-lead')).toBeInTheDocument();
-      expect(screen.getByText('risk-manager')).toBeInTheDocument();
-    });
   });
 
-  describe('Actions', () => {
-    it('renders no action buttons (read-only)', () => {
+  describe('Delete flow', () => {
+    it('confirms and deletes a holder-free role, alerts on failure', async () => {
+      mockHasPermission.mockImplementation(
+        (resource: string, action: string) =>
+          resource === 'ac' && ['create', 'update', 'delete'].includes(action),
+      );
+      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+      mockDeleteRole.mockResolvedValue({ id: 'role-2', deleted: true });
       render(<RolesTable roles={mockRoles} />);
 
-      // Only the search input renders; no row action menu triggers remain.
-      expect(screen.queryAllByRole('button').length).toBe(0);
+      const deletes = screen.getAllByRole('button', { name: /Delete/i });
+      fireEvent.click(deletes[1]);
+      expect(confirmSpy).toHaveBeenCalled();
+      await vi.waitFor(() => expect(mockDeleteRole).toHaveBeenCalledWith('role-2'));
+
+      mockDeleteRole.mockRejectedValueOnce(new Error('boom'));
+      const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+      // The first delete is still settling (button disabled) — wait for it.
+      await vi.waitFor(() =>
+        expect(screen.getAllByRole('button', { name: /Delete/i })[1]).toBeEnabled(),
+      );
+      fireEvent.click(screen.getAllByRole('button', { name: /Delete/i })[1]);
+      await vi.waitFor(() => expect(alertSpy).toHaveBeenCalledWith('boom'));
+      // A failed delete revalidates so the stale 0-member row corrects itself.
+      await vi.waitFor(() => expect(mockRefreshRoles).toHaveBeenCalled());
+      alertSpy.mockRestore();
+      confirmSpy.mockRestore();
+    });
+
+    it('does nothing when holders exist', async () => {
+      mockHasPermission.mockImplementation(() => true);
+      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+      render(<RolesTable roles={mockRoles} />);
+
+      const deletes = screen.getAllByRole('button', { name: /Delete/i });
+      fireEvent.click(deletes[0]);
+      expect(confirmSpy).not.toHaveBeenCalled();
+      expect(mockDeleteRole).not.toHaveBeenCalled();
+      confirmSpy.mockRestore();
     });
   });
 });

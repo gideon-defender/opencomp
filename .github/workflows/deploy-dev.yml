@@ -2,7 +2,16 @@ name: Deploy to Dev
 
 on:
   workflow_dispatch:
-    # Maintenance deployment: dev services stop while migrations run.
+    # DEPLOY MODE CONTRACT: rolling deploys apply compatible migrations and
+    # need no input. Draining migrations are opt-in per run. Do NOT add an
+    # attestation input that blocks plain deploys; one was removed on purpose
+    # because it blocked every routine deploy.
+    inputs:
+      offline_migrations:
+        description: 'Temporarily enable draining database migrations (stops services, causes downtime). Only for migrations that cannot run while old code is live.'
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -193,6 +202,7 @@ jobs:
       ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
       MIGRATOR_SUBNETS: ${{ secrets.MIGRATOR_SUBNETS }}
       MIGRATOR_SECURITY_GROUP: ${{ secrets.MIGRATOR_SECURITY_GROUP }}
+      RUN_OFFLINE_MIGRATIONS: ${{ inputs.offline_migrations }}
     steps:
       - name: Checkout main
         uses: actions/checkout@v5
@@ -211,7 +221,7 @@ jobs:
         id: ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Stop dev services, apply approved migrations, and start the new version
+      - name: Deploy images with optional offline migrations
         shell: bash
         run: |
           bash .github/scripts/deploy-dev.sh
@@ -222,6 +232,7 @@ jobs:
           bash .github/scripts/wait-dev-services.sh
 
       - name: Restore service autoscaling after successful rollout
+        if: inputs.offline_migrations
         shell: bash
         run: bash .github/scripts/restore-dev-autoscaling.sh
 
@@ -234,14 +245,14 @@ jobs:
           test "$status" = 401
 
       - name: Report maintenance failure
-        if: failure()
+        if: failure() && inputs.offline_migrations
         shell: bash
         run: |
           echo 'Deployment failed. Do not restart old images against renamed columns.' >> "$GITHUB_STEP_SUMMARY"
           echo 'Services can remain stopped and autoscaling suspended. Use the dev-maintenance artifact to recover original counts and scaling settings after fixing the new release.' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Save maintenance state for recovery
-        if: always()
+        if: always() && inputs.offline_migrations
         uses: actions/upload-artifact@v4
         with:
           name: dev-maintenance-${{ github.run_id }}

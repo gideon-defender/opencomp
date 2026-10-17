@@ -54,6 +54,7 @@ const initialMember = () => ({
 let member = initialMember();
 let pendingLock: Promise<void> = Promise.resolve();
 const tx = {
+  $executeRaw: jest.fn(),
   member: {
     findFirst: jest.fn(),
     update: jest.fn(),

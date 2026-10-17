@@ -28,6 +28,9 @@ jest.mock('@gideon-defender/auth', () => ({
 
 jest.mock('@db', () => ({
   db: {
+    $executeRaw: jest.fn(),
+    $transaction: (work: (tx: unknown) => unknown) =>
+      work(jest.requireMock('@db').db),
     user: {
       findUnique: (...args: unknown[]) => mockUserFindUnique(...args),
       create: (...args: unknown[]) => mockUserCreate(...args),
@@ -86,6 +89,19 @@ describe('GenericEmployeeSyncService role validation', () => {
         data: expect.objectContaining({ role: 'admin' }),
       }),
     );
+  });
+
+  it('does not assign a custom role removed after the initial lookup', async () => {
+    mockOrgRoleFindMany
+      .mockResolvedValueOnce([{ name: 'security-engineer' }])
+      .mockResolvedValueOnce([]);
+    const result = await service.processEmployees({
+      organizationId: 'org_1',
+      employees: [baseEmployee({ role: 'security-engineer' })],
+    });
+    expect(result.errors).toBe(1);
+    expect(result.imported).toBe(0);
+    expect(mockMemberCreate).not.toHaveBeenCalled();
   });
 
   it('persists a known custom role from the provider as-is', async () => {
@@ -181,7 +197,7 @@ describe('GenericEmployeeSyncService role validation', () => {
       });
 
       expect(mockMemberUpdate).toHaveBeenCalledWith({
-        where: { id: 'mem_1' },
+        where: { id: 'mem_1', organizationId: 'org_1' },
         data: { role: 'employee' },
       });
     });
@@ -204,7 +220,7 @@ describe('GenericEmployeeSyncService role validation', () => {
       });
 
       expect(mockMemberUpdate).toHaveBeenCalledWith({
-        where: { id: 'mem_1' },
+        where: { id: 'mem_1', organizationId: 'org_1' },
         data: { role: 'admin' },
       });
     });
@@ -248,7 +264,7 @@ describe('GenericEmployeeSyncService role validation', () => {
       });
 
       expect(mockMemberUpdate).toHaveBeenCalledWith({
-        where: { id: 'mem_1' },
+        where: { id: 'mem_1', organizationId: 'org_1' },
         data: {
           deactivated: false,
           isActive: true,

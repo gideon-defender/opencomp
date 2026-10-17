@@ -20,6 +20,10 @@ export function toAuthContext(request: AuthenticatedRequest): AuthContextType {
     userRoles,
     memberId,
     memberDepartment,
+    apiKeyScopes,
+    apiKeyId,
+    apiKeyName,
+    apiKeyCreatedByMemberId,
     oidcAal,
   } = request;
 
@@ -42,6 +46,10 @@ export function toAuthContext(request: AuthenticatedRequest): AuthContextType {
     userRoles,
     memberId,
     memberDepartment,
+    apiKeyScopes,
+    apiKeyId,
+    apiKeyName,
+    apiKeyCreatedByMemberId,
     oidcAal,
   };
 }

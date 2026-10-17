@@ -23114,17 +23114,82 @@
         "x-speakeasy-mcp": {
           "name": "list-roles"
         }
+      },
+      "post": {
+        "description": "Define a tenant-scoped custom role (permissions + obligations). Use when you need a reusable permission set for this organization. Does not assign anyone — assign users in Gideon.",
+        "operationId": "RolesController_createRole_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRoleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Custom role created"
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions for this operation\n\nForbidden - Insufficient permissions for this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apikey": []
+          }
+        ],
+        "summary": "Create a custom role",
+        "tags": [
+          "Roles"
+        ],
+        "x-comp-mcp": {
+          "name": "create-role"
+        },
+        "x-mint": {
+          "metadata": {
+            "title": "Create a custom role | OpenComp API",
+            "sidebarTitle": "Create a custom role",
+            "description": "Define a tenant-scoped custom role (permissions + obligations). Use when you need a reusable permission set for this organization. Does not assign anyone —.",
+            "og:title": "Create a custom role | OpenComp API",
+            "og:description": "Define a tenant-scoped custom role (permissions + obligations). Use when you need a reusable permission set for this organization. Does not assign anyone —."
+          }
+        },
+        "x-speakeasy-mcp": {
+          "name": "create-role"
+        }
       }
     },
     "/v1/roles/permissions": {
       "get": {
-        "description": "Returns the merged permissions for the given custom role names. Used by the frontend to resolve effective permissions for users with custom roles.",
+        "description": "Returns the merged permissions for the given role names (built-in and custom). Used by the frontend to resolve effective permissions for users.",
         "operationId": "RolesController_getPermissionsForRoles_v1",
         "parameters": [
           {
             "name": "roles",
             "required": true,
             "in": "query",
+            "description": "Comma-separated role names (or repeated roles params), e.g. admin,Compliance Lead. Max 100 names.",
             "schema": {
               "type": "string"
             }
@@ -23132,7 +23197,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Merged permissions for the requested roles",
+            "description": "Merged permissions",
             "content": {
               "application/json": {
                 "schema": {
@@ -23171,17 +23236,17 @@
             "apikey": []
           }
         ],
-        "summary": "Resolve permissions for custom roles",
+        "summary": "Resolve permissions for roles",
         "tags": [
           "Roles"
         ],
         "x-mint": {
           "metadata": {
-            "title": "Resolve permissions for custom roles | OpenComp API",
-            "sidebarTitle": "Resolve permissions for custom roles",
-            "description": "Returns the merged permissions for the given custom role names. Used by the frontend to resolve effective permissions for users with custom roles.",
-            "og:title": "Resolve permissions for custom roles | OpenComp API",
-            "og:description": "Returns the merged permissions for the given custom role names. Used by the frontend to resolve effective permissions for users with custom roles."
+            "title": "Resolve permissions for roles | OpenComp API",
+            "sidebarTitle": "Resolve permissions for roles",
+            "description": "Returns the merged permissions for the given role names (built-in and custom). Used by the frontend to resolve effective permissions for users.",
+            "og:title": "Resolve permissions for roles | OpenComp API",
+            "og:description": "Returns the merged permissions for the given role names (built-in and custom). Used by the frontend to resolve effective permissions for users."
           }
         },
         "x-comp-mcp": {
@@ -23210,7 +23275,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Effective obligations for the built-in role",
+            "description": "Effective obligations",
             "content": {
               "application/json": {
                 "schema": {
@@ -23276,6 +23341,101 @@
         },
         "x-speakeasy-mcp": {
           "name": "get-built-in-obligations"
+        }
+      },
+      "patch": {
+        "description": "Set the obligation override for a built-in role for this organization. Use to opt a built-in role into or out of compliance work.",
+        "operationId": "RolesController_setBuiltInObligations_v1",
+        "parameters": [
+          {
+            "name": "name",
+            "required": true,
+            "in": "path",
+            "description": "Built-in role name",
+            "schema": {
+              "example": "owner",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBuiltInObligationsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Effective obligations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "obligations": {
+                      "type": "object",
+                      "properties": {
+                        "compliance": {
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions for this operation\n\nForbidden - Insufficient permissions for this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apikey": []
+          }
+        ],
+        "summary": "Set obligations for a built-in role",
+        "tags": [
+          "Roles"
+        ],
+        "x-comp-mcp": {
+          "name": "update-built-in-obligations"
+        },
+        "x-mint": {
+          "metadata": {
+            "title": "Set obligations for a built-in role | OpenComp API",
+            "sidebarTitle": "Set obligations for a built-in role",
+            "description": "Set the obligation override for a built-in role for this organization. Use to opt a built-in role into or out of compliance work.",
+            "og:title": "Set obligations for a built-in role | OpenComp API",
+            "og:description": "Set the obligation override for a built-in role for this organization. Use to opt a built-in role into or out of compliance work."
+          }
+        },
+        "x-speakeasy-mcp": {
+          "name": "update-built-in-obligations"
         }
       }
     },
@@ -23368,6 +23528,146 @@
         },
         "x-speakeasy-mcp": {
           "name": "get-role"
+        }
+      },
+      "patch": {
+        "description": "Update a tenant-scoped custom role definition. Use to change what the name can do. Does not change who holds it — manage assignments in Gideon.",
+        "operationId": "RolesController_updateRole_v1",
+        "parameters": [
+          {
+            "name": "roleId",
+            "required": true,
+            "in": "path",
+            "description": "Role ID",
+            "schema": {
+              "example": "rol_abc123",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRoleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Custom role updated"
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions for this operation\n\nForbidden - Insufficient permissions for this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apikey": []
+          }
+        ],
+        "summary": "Update a custom role",
+        "tags": [
+          "Roles"
+        ],
+        "x-comp-mcp": {
+          "name": "update-role"
+        },
+        "x-mint": {
+          "metadata": {
+            "title": "Update a custom role | OpenComp API",
+            "sidebarTitle": "Update a custom role",
+            "description": "Update a tenant-scoped custom role definition. Use to change what the name can do. Does not change who holds it — manage assignments in Gideon.",
+            "og:title": "Update a custom role | OpenComp API",
+            "og:description": "Update a tenant-scoped custom role definition. Use to change what the name can do. Does not change who holds it — manage assignments in Gideon."
+          }
+        },
+        "x-speakeasy-mcp": {
+          "name": "update-role"
+        }
+      },
+      "delete": {
+        "description": "Delete an unassigned tenant-scoped custom role. Use to remove unused definitions. Blocked while members hold it — remove assignments in Gideon first.",
+        "operationId": "RolesController_deleteRole_v1",
+        "parameters": [
+          {
+            "name": "roleId",
+            "required": true,
+            "in": "path",
+            "description": "Role ID",
+            "schema": {
+              "example": "rol_abc123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Custom role deleted"
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions for this operation\n\nForbidden - Insufficient permissions for this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apikey": []
+          }
+        ],
+        "summary": "Delete a custom role",
+        "tags": [
+          "Roles"
+        ],
+        "x-comp-mcp": {
+          "name": "delete-role"
+        },
+        "x-mint": {
+          "metadata": {
+            "title": "Delete a custom role | OpenComp API",
+            "sidebarTitle": "Delete a custom role",
+            "description": "Delete an unassigned tenant-scoped custom role. Use to remove unused definitions. Blocked while members hold it — remove assignments in Gideon first.",
+            "og:title": "Delete a custom role | OpenComp API",
+            "og:description": "Delete an unassigned tenant-scoped custom role. Use to remove unused definitions. Blocked while members hold it — remove assignments in Gideon first."
+          }
+        },
+        "x-speakeasy-mcp": {
+          "name": "delete-role"
         }
       }
     },
@@ -38315,6 +38615,88 @@
             "description": "Auditor note when requesting revision",
             "maxLength": 2000,
             "nullable": true
+          }
+        }
+      },
+      "UpdateBuiltInObligationsDto": {
+        "type": "object",
+        "properties": {
+          "obligations": {
+            "type": "object",
+            "example": {
+              "compliance": true
+            },
+            "description": "Replacement obligation flags for the built-in role. Only known keys (compliance) allowed."
+          }
+        },
+        "required": [
+          "obligations"
+        ]
+      },
+      "CreateRoleDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Compliance Lead",
+            "maxLength": 50,
+            "description": "Custom role name (2-50 chars, starts with a letter). Case-sensitive exact — must match Gideon entitlement values verbatim."
+          },
+          "permissions": {
+            "type": "object",
+            "example": {
+              "control": [
+                "read"
+              ],
+              "evidence": [
+                "read",
+                "update"
+              ]
+            },
+            "description": "Permission map by resource. Must grant at least one valid action."
+          },
+          "obligations": {
+            "type": "object",
+            "example": {
+              "compliance": true
+            },
+            "description": "Obligation flags. Only known keys (compliance) allowed."
+          }
+        },
+        "required": [
+          "name",
+          "permissions"
+        ]
+      },
+      "UpdateRoleDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Compliance Lead",
+            "maxLength": 50,
+            "description": "New role name. Renaming orphans Gideon assignments until the IdP value is renamed to match."
+          },
+          "permissions": {
+            "type": "object",
+            "example": {
+              "control": [
+                "read"
+              ]
+            },
+            "description": "Replacement permission map. Same validation as create."
+          },
+          "obligations": {
+            "type": "object",
+            "example": {
+              "compliance": true
+            },
+            "description": "Replacement obligation flags."
+          },
+          "confirmRename": {
+            "type": "boolean",
+            "example": true,
+            "description": "Required true when renaming a role that members hold. Confirms the caller accepts that holders lose access until Gideon assignments are renamed."
           }
         }
       },

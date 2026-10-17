@@ -25,11 +25,27 @@ const txMember = {
 beforeEach(() => {
   jest.clearAllMocks();
   db.$transaction.mockImplementation((fn: unknown) =>
-    (fn as (tx: unknown) => unknown)({ member: txMember }),
+    (fn as (tx: unknown) => unknown)({
+      member: txMember,
+      $executeRaw: jest.fn(),
+      organizationRole: { findMany: jest.fn().mockResolvedValue([]) },
+    }),
   );
 });
 
 describe('syncSsoMember', () => {
+  it('rejects a custom role removed after token validation without writing a member', async () => {
+    await expect(
+      syncSsoMember({
+        userId: 'usr_1',
+        organizationId: 'tenant-1',
+        roles: ['Removed Lead'],
+      }),
+    ).rejects.toThrow('role definition changed');
+    expect(txMember.update).not.toHaveBeenCalled();
+    expect(txMember.create).not.toHaveBeenCalled();
+  });
+
   it('creates the member row on first login with sso source', async () => {
     txMember.findFirst.mockResolvedValue(null);
     txMember.create.mockResolvedValue({ id: 'mem_new' });
