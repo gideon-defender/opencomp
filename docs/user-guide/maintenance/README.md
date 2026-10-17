@@ -2,6 +2,30 @@
 
 This is an editorial record, separate from the customer instructions.
 
+## Checkr documentation follow-up — October 17, 2026
+
+**Pending Checkr configuration:** expand the user manual’s Background checks
+section after the integration is configured and the candidate flow can be
+verified live. Keep this follow-up in maintenance notes, outside the
+customer-facing manual.
+
+The candidate load-error screenshot, failure commentary, and unverified
+candidate-provisioning description were removed from the manual at the user’s
+request. The [earlier error capture](../images/manual/candidate-load-error.png)
+is retained here as an internal record, not a user instruction.
+
+When Checkr is ready:
+
+- Walk the candidate flow using approved sandbox data: start a screening,
+  candidate consent/invitation, status tracking, and completed-result review.
+- Capture the working screens from the product and replace the error example
+  with a step-by-step walkthrough and clear success checks.
+- Verify what a completed or flagged result actually does. Confirm identity
+  provisioning and access assignment behavior before documenting either;
+  do not restore the removed provisioning claims without evidence.
+- Confirm billing, duplicate-order handling, permissions, and the employee
+  record flow. Expand the section from those verified results.
+
 ## Verification status — October 15, 2026
 
 The guide covers the product areas represented in this branch. Screenshots

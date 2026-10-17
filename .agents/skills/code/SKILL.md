@@ -119,9 +119,9 @@ src/hooks/                # Shared hooks (useApiSWR, useDebounce)
 
 ## Code Quality
 
-### File Size Limit: 300 Lines
+### Code File Size Limit: 300 Lines
 
-Split large files into focused components.
+Split large code files into focused components. Documentation (including Markdown and MDX) is exempt; organize it for readability rather than splitting it to meet a line limit.
 
 ### Named Parameters for 2+ Args
 

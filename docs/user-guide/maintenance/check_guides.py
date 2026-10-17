@@ -31,8 +31,6 @@ def anchors(path):
 files = sorted(ROOT.rglob('*.md'))
 for path in files:
     text = path.read_text()
-    if len(text.splitlines()) > 300:
-        fail(path, 'exceeds 300 lines')
     if re.search(r'^> Screenshot:|\bTODO\b|\bTBD\b', text, re.M):
         fail(path, 'unfinished editorial marker')
     text = re.sub(r'^```.*?^```\s*$', '', text, flags=re.M | re.S)

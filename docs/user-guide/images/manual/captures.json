@@ -1,0 +1,785 @@
+{
+  "captured_on": "2026-10-17",
+  "source": "Current Google Chrome product tab, via cua_repl native screenshot API",
+  "base_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/",
+  "processing": "Screenshots were cropped and resized as recorded. People directory identities and Google account-picker/identity-verification identities were privacy-redacted at the user\u2019s request; original screenshot pixels elsewhere are unchanged. No external images were used.",
+  "captures": [
+    {
+      "file": "auditor-role.png",
+      "product_path": "settings/roles/system/auditor",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "original_sha256": "c14b32bd26b701f10c9e45ad3cb8abb2c34804a826778a5a6e95b23a3fab5abf",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "9555c7f329d8da046dbf5071fb727db2d3539a1e816ee139cf54d229e6368438"
+    },
+    {
+      "file": "candidate-load-error.png",
+      "product_path": "people?tab=candidates",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "original_sha256": "21bc31ebc0a44449c109c1968d92c13ec793cf6a55e181c954f505b489469209",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "fa4c8d77b2b45b3d1af172c6d9c98890ffd4f012bd69186be61d110bee7250b2"
+    },
+    {
+      "file": "cloud-tests.png",
+      "product_path": "cloud-tests",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "original_sha256": "05e30e92ab8e9431d469c2c78e1c8408ec75eba87ae32b5056a08bff4cf0dac3",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "0b360e85801f055f4e10de7bd967f3d71d34dc4400c0c3ee6a0063846375b40a"
+    },
+    {
+      "file": "context-search.png",
+      "product_path": "settings/context-hub",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "original_sha256": "0974b2997ece85c0eaecaba193a1d5c0ab0efd3e449375a3810eb4eebc7b8b29",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "b2b9fc03b1acb1edc5cf1edbca7ae86fb081514669f7f0f32ce6c1450d0fb3d6"
+    },
+    {
+      "file": "control-mappings.png",
+      "product_path": "frameworks/frm_6abd6514d9047fef9e0901a8/controls/ctl_6abd6514eda3fb23bfdaccf4",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "original_sha256": "04cd5630deae5d15de4c5f29cb1693db2bc0dae29a8d297d1eab2ee1d1f9894a",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "7e8a25a46a4d5d6c355ea0edd1e7151c3d8b9bc841fe0c8489a1682d6d302e08"
+    },
+    {
+      "file": "devices.png",
+      "product_path": "people?tab=devices",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "original_sha256": "7c3ae385ee2ef7c9bc1545e67603a2e8d1bf171ddf839791d214f369f14766c0",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "32a35e756947be16c6a3e335b5cc30df22e36a9305ed050a9310c19e2ce25555"
+    },
+    {
+      "file": "documents.png",
+      "product_path": "documents",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "original_sha256": "0634f2870f156e3e075be0298a532cd53d284d4383fab4fc41e93bae74569af7",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "81871475f9f6e22851e5e442ef28ba124bfb73cf98ca00335320f6a5a4795193"
+    },
+    {
+      "file": "evidence.png",
+      "product_path": "tasks",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "original_sha256": "882a37578c272cff533806b5cc32c9e9e69fc0fe792b11502085779c3662c990",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "b39f226f8c5e83dbb2dae5904f83f07e0058599cb3362279b229495352073895"
+    },
+    {
+      "file": "findings.png",
+      "product_path": "overview/findings",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "original_sha256": "7610f794d668c7981874582cf88b0e0737162422811fe0f8c7f28e4cbf28a151",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "ca22aad8293f0da0166210ab0a7ed6338e9f8529d7e90189a8ab1ebcd6faa22c"
+    },
+    {
+      "file": "framework-detail.png",
+      "product_path": "frameworks/frm_6abd6514d9047fef9e0901a8",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "original_sha256": "13f81d33fee3783416da638869a17916d66ef6d4d3ac5aa1c1f9a121d20757eb",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "022168562be4f347f51455b96b152348134278d440441c022c57a7d8b15690c7"
+    },
+    {
+      "file": "frameworks.png",
+      "product_path": "frameworks",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "original_sha256": "cf436b06a37141a7114b3a871b7b81b9a546a02c90db7454264da42d91539b58",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "7b4a328cfe0ead78f1d988530fa0b4443123106d00a634025b46a11717c3a543"
+    },
+    {
+      "file": "integrations.png",
+      "product_path": "integrations",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "original_sha256": "7228404ce2dbfd6aaf9b363f4e4df6a97e409e7d30135a32d92d4ce07d384f77",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "e324463a319b51616e5602d1eb54f149d259736bc34ae517935edd3b7986d038"
+    },
+    {
+      "file": "notifications.png",
+      "product_path": "settings/notifications",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "original_sha256": "6810bff49072ebd56bab994f044d8a9254754b65ef776d4d11e7f1cfc48dbb50",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "d5c5aec851133365538b17102335ea1af43486c6d5d713561f4753e07d11eb19"
+    },
+    {
+      "file": "overview.png",
+      "product_path": "overview",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "original_sha256": "d389364108e5efc694c3517a461e3471514fb6f2573f2fd1dd790d1e83dfef62",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "4f82925db5373a3cca32b5d77e3e9c55ba9f163a090aa5f6c7be19ca883b978a"
+    },
+    {
+      "file": "penetration-tests.png",
+      "product_path": "security/penetration-tests",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "original_sha256": "e6c73f83a0c5f45ccaa313ac3a6d2c8d442225c56c22ad4094a635c3510b9db6",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "97e8dfdc7beea34ba3b0090c00e999a114d874baf0bef73c92d9a1606d7be5f4"
+    },
+    {
+      "file": "people.png",
+      "product_path": "people",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "original_sha256": "d013b825fbf30efc4a251b573738e4b4ea7424e378534a7650ce6018f4be1746",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "61501b7d0a1ff5214eb8c33323558fe8fe582551cbd9a928a36b062e3cccc613",
+      "redacted": true,
+      "redactions": [
+        [
+          425,
+          338,
+          710,
+          390
+        ],
+        [
+          425,
+          394,
+          710,
+          449
+        ]
+      ],
+      "redaction_method": "AI-assisted opaque identity masks composited only within the two name cells; original screenshot pixels elsewhere are unchanged."
+    },
+    {
+      "file": "policies.png",
+      "product_path": "policies",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "original_sha256": "263e67e4c0f032a1a8868ee736b1f9dfdf70a93ab7db3fdd95eccbb7b76eba61",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "5e04d5282814be6684fc3b3ed2eeec1a95411d0c9b262bb4c686efde22cc6c59"
+    },
+    {
+      "file": "policy-detail.png",
+      "product_path": "policies/pol_6abd5b0703020b51a01acc68",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "original_sha256": "45fc11320235ce2ff16aaf725f3479a6820d112537fca74dd6afe2708f487334",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "39a675e9a5ed14ea1b855f2198029c4df0d40aba89ad7fbab90c8b0715a0ebe1"
+    },
+    {
+      "file": "risk-treatment.png",
+      "product_path": "risk/rsk_6abd644696b7b53adcfb6136?tab=treatment-plan",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "original_sha256": "cb7d33168facd0ea9be594ce79ae4bcc5df98f85eddae1b0316fdfa96686d7e4",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "ae03adfd5be79d12835714e38e9d3ba09ba5632df5e9a63807baa6ef0fcfdce1"
+    },
+    {
+      "file": "risks.png",
+      "product_path": "risk",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "original_sha256": "13ec86116c58976578024dcb1544887fc98c999d8fded2736805a462427da104",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "ed4d7d09c45db3e7a4a03d44a8f5617459ccd191dbaa6a23683ffa7dfcc1b536"
+    },
+    {
+      "file": "roles.png",
+      "product_path": "settings/roles",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "original_sha256": "e84a0ee17e71decb109b993f4ccc0bc215c596082f9a27c227f1cd12dcfe8596",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "4691bccf474f3d721a3ab13e454fdfd9190e38417997de5f1530d981e5fb4dd5"
+    },
+    {
+      "file": "settings-general.png",
+      "product_path": "settings",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "original_sha256": "278b2e8adca7e530abd3bed91f8aedf1e74a26b24420069b21f435109570df13",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "2d87c704256a8dc3c30515e9db38e677401d8398849a931b15361a697c093cdc"
+    },
+    {
+      "file": "statement-of-applicability.png",
+      "product_path": "documents/statement-of-applicability",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "original_sha256": "85e62564f6db4887de4eaf404975823ebe581fdd9efeb7c9e896a7b454926b66",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "bb0c4587d3b8c5911bd338b4becd2f017f87e87ac501b734c587bed0ed37ed59"
+    },
+    {
+      "file": "task-detail.png",
+      "product_path": "tasks/tsk_6abd5b07809c32864f432d97",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "original_sha256": "ab30e61ced4d4440ab1600523108745d21be7232fc4572cc2aeabfcfbaea3514",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "f4aa7c5df6b883928891928060088c3abf191c81a6a840c6f0d81646a59d7d0c"
+    },
+    {
+      "file": "trust-access-requests.png",
+      "product_path": "trust/access-requests",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "original_sha256": "e27c714301e6e8c086b643eb9f065698d235e499902041f55163dc36045ac5d2",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "367ca54f6bc400daaa70f14e791f0fbd6eb36b9ddb371be69f4d256b47346e94"
+    },
+    {
+      "file": "trust-frameworks.png",
+      "product_path": "trust",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "original_sha256": "06cc43e15769bd4fe2374233a3bf88f93d226b095c07dd5c03437c03026ab9c9",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "7460abeb3a949cde3f2ed148fc6db4bf760f476951392342aae6b038df16babd"
+    },
+    {
+      "file": "vendors.png",
+      "product_path": "vendors",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "original_sha256": "8412deb10a4c7db0d75e454000facf79fcda602c074312df487887f02b74a433",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "6a6d14b8918f42b10aeb9c654b9b5d4f8e3e1cd66749143b1dce618400bfafed"
+    },
+    {
+      "file": "gcp-reconnect-account.png",
+      "source_url": "https://accounts.google.com/",
+      "captured_on": "2026-10-17",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "crop": [
+        0,
+        174,
+        3452,
+        2044
+      ],
+      "original_sha256": "20c4c2ae01ebd856e04427db06d04dcc141e0198a077333977285cd1d38c1803",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "a93fcb827ff88a1e6ec6ca8c761cde7fd5b542b1a2c1190f96d5908fd6acfca0",
+      "redacted": true,
+      "redactions": [
+        [
+          880,
+          365,
+          1150,
+          419
+        ],
+        [
+          880,
+          435,
+          1150,
+          489
+        ]
+      ],
+      "redaction_method": "Strong privacy blur of both account identities, composited only within the two account rows; other original screenshot pixels are unchanged."
+    },
+    {
+      "file": "gcp-reconnect-catalog-after.png",
+      "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/integrations",
+      "captured_on": "2026-10-17",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "crop": [
+        0,
+        174,
+        3452,
+        2044
+      ],
+      "original_sha256": "52c984be31b4f3ea18baba218ff94b2049f1c1ba3df5ee02262f50483b79f159",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "51ad8b692c5333b57b4ade6ec528aec04f21f28933630afd6ef78186de5b2345"
+    },
+    {
+      "file": "gcp-reconnect-catalog.png",
+      "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/integrations",
+      "captured_on": "2026-10-17",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "crop": [
+        0,
+        174,
+        3452,
+        2044
+      ],
+      "original_sha256": "2995a5f63b25b10a6e3f7d57d588b0e51cc138ea72aa12461686a7ff90beb3f1",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "b9aa0cb0074d4785821d6c74d89568caa1c3967228a33216889655a2fdaa9b29"
+    },
+    {
+      "file": "gcp-reconnect-cloud-tests.png",
+      "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/cloud-tests?provider=gcp",
+      "captured_on": "2026-10-17",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "crop": [
+        0,
+        174,
+        3452,
+        2044
+      ],
+      "original_sha256": "0591dc80c4d0000424d7aae603e16f6a2b27399a06c22a751dfce558cbdd0d1f",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "7dcf8f5bf023874b73b1cc51d0f7bada250d94964cacf440b5f6b2fd2d190291"
+    },
+    {
+      "file": "gcp-reconnect-configuration.png",
+      "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/integrations/gcp",
+      "captured_on": "2026-10-17",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "crop": [
+        2540,
+        294,
+        3440,
+        1820
+      ],
+      "original_sha256": "59135d1e1738239ab04febf0d3f72fd7fe326b1f5d28232a1173da5a36aa94d4",
+      "size": [
+        450,
+        763
+      ],
+      "sha256": "37e2b8920075a7e5fa8ed9b9fadd4e904f9b6fe41d157c825c00148e950aceff"
+    },
+    {
+      "file": "gcp-reconnect-permissions.png",
+      "source_url": "https://accounts.google.com/",
+      "captured_on": "2026-10-17",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "crop": [
+        0,
+        174,
+        3452,
+        2044
+      ],
+      "original_sha256": "b9d3a1401f32aa19b85736fc20df5f82d57875449a0cf82d0ff0e4954b6d2328",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "0b300609a7fb96f01a1ea0344870b87969b23576863b4a0c74a17898e511d2df"
+    },
+    {
+      "file": "gcp-reconnect-project-picker.png",
+      "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/integrations/gcp",
+      "captured_on": "2026-10-17",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "crop": [
+        2540,
+        294,
+        3440,
+        1820
+      ],
+      "original_sha256": "a67b2e9585ed09998c260ec10e33dbb94d066e78a739b99a5aaa60b9b2311e20",
+      "size": [
+        450,
+        763
+      ],
+      "sha256": "d1085e2e28b0c35185e603ae226612c631b186804d0e7dc568f6bcb1768e1764"
+    },
+    {
+      "file": "gcp-reconnect-provider.png",
+      "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/integrations/gcp",
+      "captured_on": "2026-10-17",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "crop": [
+        0,
+        174,
+        3452,
+        2044
+      ],
+      "original_sha256": "34f1e15a1b62bc68f3fe8e840e3972bed072c583170f27339e9ac7103ab989c0",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "8fa4a604128b4358b7d46121a31f653ed1f60bf677911ec16fa1497ec083e2ee"
+    },
+    {
+      "file": "gcp-reconnect-sign-back-in.png",
+      "source_url": "https://accounts.google.com/",
+      "captured_on": "2026-10-17",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "crop": [
+        0,
+        174,
+        3452,
+        2044
+      ],
+      "original_sha256": "5aeb25ed9b29f1aa28725d8d1b8179f3db0c23e2230b452e93a18adedb15aee1",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "ded843a66291e418b9e4075d2cf9cdc7b8b81feefaf8d3fd029bf56fb896c5d6"
+    },
+    {
+      "file": "gcp-reconnect-verify.png",
+      "source_url": "https://accounts.google.com/",
+      "captured_on": "2026-10-17",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "crop": [
+        0,
+        174,
+        3452,
+        2044
+      ],
+      "original_sha256": "aadb6c5272a986d70303132fe6c249335611f02d6eab8d5dbccc0e75b015a766",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "e275a58b0fb3c1acf8780bf4245fe883413659b6398af26ff1c1e7091a80197e",
+      "redacted": true,
+      "redactions": [
+        [
+          377,
+          414,
+          660,
+          453
+        ]
+      ],
+      "redaction_method": "Strong privacy blur of selected account identity; original screenshot pixels elsewhere are unchanged."
+    },
+    {
+      "file": "idp-gideon-app-launcher.png",
+      "source_url": "https://cockpit.dev.gideondefender.com/apps",
+      "captured_on": "2026-10-17",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "crop": [
+        0,
+        174,
+        3452,
+        2044
+      ],
+      "original_sha256": "7935693879d3efaeb53847ee89ddc0e54d96be3ad923389541abefd19b784644",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "53020d2eb9291c8b6e9b57c00809ecf58b50c3100aaf75656734c4542c389add"
+    },
+    {
+      "file": "idp-gideon-applications.png",
+      "source_url": "https://cockpit.dev.gideondefender.com/admin/applications",
+      "captured_on": "2026-10-17",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "crop": [
+        0,
+        174,
+        3452,
+        2044
+      ],
+      "original_sha256": "07edcbb0cff162306b3417db927134e997f9a1e2eeec6552a7ab6b2080207721",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "8fce6d3d5ffa24e77ac567314a866d53139ffc7e88022acb3106892435d5db8c"
+    },
+    {
+      "file": "idp-gideon-opencomp.png",
+      "source_url": "https://cockpit.dev.gideondefender.com/admin/applications/0d4d25d0-c0a5-4658-a08c-d5b9765c1c51",
+      "captured_on": "2026-10-17",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "crop": [
+        0,
+        174,
+        3452,
+        2044
+      ],
+      "original_sha256": "34c20101c884bfe4af03f99b680dc8d6cdd1d4ae070d33769adb1dba439799d2",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "b852d8c90ae82024ac1f89e0918e99dca9775e1cd8de5231b19e1be41e0a97ac"
+    },
+    {
+      "file": "idp-gideon-oidc-edit.png",
+      "source_url": "https://cockpit.dev.gideondefender.com/admin/applications/0d4d25d0-c0a5-4658-a08c-d5b9765c1c51",
+      "captured_on": "2026-10-17",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "crop": [
+        0,
+        174,
+        3452,
+        2044
+      ],
+      "original_sha256": "2509f4ae8c20072a8899169a20abcf51d4001221e463c96fdf3acb577e4ce885",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "dba85b981df137a107c631f3e511fdab2fcaa1a5b5802cda27c2e302c57b93de"
+    },
+    {
+      "file": "idp-gideon-diagnostics.png",
+      "source_url": "https://cockpit.dev.gideondefender.com/admin/applications/0d4d25d0-c0a5-4658-a08c-d5b9765c1c51",
+      "captured_on": "2026-10-17",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "crop": [
+        0,
+        174,
+        3452,
+        2044
+      ],
+      "original_sha256": "6b8ea08a05dea5bf45103ece80dd0ca331370098f57eb1790d8aab7cdec5bdfd",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "469ab142687ecc8705b1dd41f89a5c63d8fbe837a6231d906ef97eb3ac3bdaba"
+    },
+    {
+      "file": "idp-gideon-access-policy.png",
+      "source_url": "https://cockpit.dev.gideondefender.com/admin/applications/0d4d25d0-c0a5-4658-a08c-d5b9765c1c51",
+      "captured_on": "2026-10-17",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "crop": [
+        496,
+        1350,
+        2716,
+        1810
+      ],
+      "original_sha256": "ae7a17cec67a6409fd81116a3d5f42161c61ce56673ba3b0f624e2e9f09f48ba",
+      "size": [
+        2220,
+        460
+      ],
+      "sha256": "62841bdef2a6290a2233920379852f36fb774d0fade341d89dd4f979799cf157"
+    },
+    {
+      "file": "idp-gideon-entitlements.png",
+      "source_url": "https://cockpit.dev.gideondefender.com/admin/applications/0d4d25d0-c0a5-4658-a08c-d5b9765c1c51",
+      "captured_on": "2026-10-17",
+      "original_size": [
+        3452,
+        2068
+      ],
+      "crop": [
+        0,
+        174,
+        3452,
+        2044
+      ],
+      "original_sha256": "5b0443ec7d5c37c55326ce603efc222599693defc0ac71867b758611b75ab310",
+      "size": [
+        1726,
+        935
+      ],
+      "sha256": "c1b1c6cf32c14ca3afb9fccd9b58c92d89b0c43d22e852e98d0b919225cf1aec"
+    }
+  ]
+}

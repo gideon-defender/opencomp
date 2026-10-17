@@ -16,7 +16,7 @@
 
 ## Code Style
 
-- **Max 300 lines per file.** Split into focused modules if exceeded.
+- **Max 300 lines per code file.** Split into focused modules if exceeded. Documentation (including Markdown and MDX) is exempt; organize it for readability rather than splitting it to meet a line limit.
 - **No `as any` casts.** Ever. Use proper types, generics, or `unknown` with type guards.
 - **No `@ts-ignore` or `@ts-expect-error`.** Fix the type instead.
 - **Strict TypeScript**: Use zod for runtime validation, generics over `any`.

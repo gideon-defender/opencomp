@@ -63,6 +63,28 @@ test('serving apikey header takes precedence; disabling static auth never uses a
   );
 });
 
+test('OIDC bearer is forwarded as Authorization and never as an API key', async () => {
+  const bearerToken = 'oidc-sensitive-token';
+  await withApi({
+    handle: ({ response }) => {
+      response.writeHead(200, { 'content-type': 'text/plain' });
+      response.end(bearerToken);
+    },
+    run: async ({ serverUrl, records }) => {
+      const result = await executeRequest({
+        tool: tool('get-tasks'),
+        input: {},
+        options: { bearerToken, serverUrl },
+        servers: [],
+      });
+      assert.equal(records.length, 1);
+      assert.equal(records[0].headers.authorization, `Bearer ${bearerToken}`);
+      assert.equal(records[0].headers['x-api-key'], undefined);
+      assert(!JSON.stringify(result).includes(bearerToken));
+    },
+  });
+});
+
 test('committed mutation followed by gateway failure has exactly one request/effect, even with safe-read retries', async () => {
   let effects = 0;
   await withApi({

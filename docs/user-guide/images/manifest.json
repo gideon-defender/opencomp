@@ -398,5 +398,853 @@
       890,
       1302
     ]
+  },
+  {
+    "image": "manual/auditor-role.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/settings/roles/system/auditor",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "9555c7f329d8da046dbf5071fb727db2d3539a1e816ee139cf54d229e6368438"
+  },
+  {
+    "image": "manual/candidate-load-error.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/people?tab=candidates",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "fa4c8d77b2b45b3d1af172c6d9c98890ffd4f012bd69186be61d110bee7250b2"
+  },
+  {
+    "image": "manual/cloud-tests.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/cloud-tests",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "0b360e85801f055f4e10de7bd967f3d71d34dc4400c0c3ee6a0063846375b40a"
+  },
+  {
+    "image": "manual/context-search.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/settings/context-hub",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "b2b9fc03b1acb1edc5cf1edbca7ae86fb081514669f7f0f32ce6c1450d0fb3d6"
+  },
+  {
+    "image": "manual/control-mappings.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/frameworks/frm_6abd6514d9047fef9e0901a8/controls/ctl_6abd6514eda3fb23bfdaccf4",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "7e8a25a46a4d5d6c355ea0edd1e7151c3d8b9bc841fe0c8489a1682d6d302e08"
+  },
+  {
+    "image": "manual/devices.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/people?tab=devices",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "32a35e756947be16c6a3e335b5cc30df22e36a9305ed050a9310c19e2ce25555"
+  },
+  {
+    "image": "manual/documents.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/documents",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "81871475f9f6e22851e5e442ef28ba124bfb73cf98ca00335320f6a5a4795193"
+  },
+  {
+    "image": "manual/evidence.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/tasks",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "b39f226f8c5e83dbb2dae5904f83f07e0058599cb3362279b229495352073895"
+  },
+  {
+    "image": "manual/findings.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/overview/findings",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "ca22aad8293f0da0166210ab0a7ed6338e9f8529d7e90189a8ab1ebcd6faa22c"
+  },
+  {
+    "image": "manual/framework-detail.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/frameworks/frm_6abd6514d9047fef9e0901a8",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "022168562be4f347f51455b96b152348134278d440441c022c57a7d8b15690c7"
+  },
+  {
+    "image": "manual/frameworks.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/frameworks",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "7b4a328cfe0ead78f1d988530fa0b4443123106d00a634025b46a11717c3a543"
+  },
+  {
+    "image": "manual/integrations.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/integrations",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "e324463a319b51616e5602d1eb54f149d259736bc34ae517935edd3b7986d038"
+  },
+  {
+    "image": "manual/notifications.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/settings/notifications",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "d5c5aec851133365538b17102335ea1af43486c6d5d713561f4753e07d11eb19"
+  },
+  {
+    "image": "manual/overview.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/overview",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "4f82925db5373a3cca32b5d77e3e9c55ba9f163a090aa5f6c7be19ca883b978a"
+  },
+  {
+    "image": "manual/penetration-tests.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/security/penetration-tests",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "97e8dfdc7beea34ba3b0090c00e999a114d874baf0bef73c92d9a1606d7be5f4"
+  },
+  {
+    "image": "manual/people.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/people",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": true,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "61501b7d0a1ff5214eb8c33323558fe8fe582551cbd9a928a36b062e3cccc613",
+    "redactions": [
+      {
+        "rectangle": [
+          425,
+          338,
+          710,
+          390
+        ],
+        "coordinate_space": "output pixels",
+        "content": "member name, email address, and avatar initials"
+      },
+      {
+        "rectangle": [
+          425,
+          394,
+          710,
+          449
+        ],
+        "coordinate_space": "output pixels",
+        "content": "member name, email address, and avatar initials"
+      }
+    ]
+  },
+  {
+    "image": "manual/policies.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/policies",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "5e04d5282814be6684fc3b3ed2eeec1a95411d0c9b262bb4c686efde22cc6c59"
+  },
+  {
+    "image": "manual/policy-detail.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/policies/pol_6abd5b0703020b51a01acc68",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "39a675e9a5ed14ea1b855f2198029c4df0d40aba89ad7fbab90c8b0715a0ebe1"
+  },
+  {
+    "image": "manual/risk-treatment.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/risk/rsk_6abd644696b7b53adcfb6136?tab=treatment-plan",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "ae03adfd5be79d12835714e38e9d3ba09ba5632df5e9a63807baa6ef0fcfdce1"
+  },
+  {
+    "image": "manual/risks.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/risk",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "ed4d7d09c45db3e7a4a03d44a8f5617459ccd191dbaa6a23683ffa7dfcc1b536"
+  },
+  {
+    "image": "manual/roles.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/settings/roles",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "4691bccf474f3d721a3ab13e454fdfd9190e38417997de5f1530d981e5fb4dd5"
+  },
+  {
+    "image": "manual/settings-general.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/settings",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "2d87c704256a8dc3c30515e9db38e677401d8398849a931b15361a697c093cdc"
+  },
+  {
+    "image": "manual/statement-of-applicability.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/documents/statement-of-applicability",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "bb0c4587d3b8c5911bd338b4becd2f017f87e87ac501b734c587bed0ed37ed59"
+  },
+  {
+    "image": "manual/task-detail.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/tasks/tsk_6abd5b07809c32864f432d97",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "f4aa7c5df6b883928891928060088c3abf191c81a6a840c6f0d81646a59d7d0c"
+  },
+  {
+    "image": "manual/trust-access-requests.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/trust/access-requests",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "367ca54f6bc400daaa70f14e791f0fbd6eb36b9ddb371be69f4d256b47346e94"
+  },
+  {
+    "image": "manual/trust-frameworks.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/trust",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "7460abeb3a949cde3f2ed148fc6db4bf760f476951392342aae6b038df16babd"
+  },
+  {
+    "image": "manual/vendors.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/vendors",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "6a6d14b8918f42b10aeb9c654b9b5d4f8e3e1cd66749143b1dce618400bfafed"
+  },
+  {
+    "image": "manual/gcp-reconnect-account.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development and Google reconnect flow, existing Chrome session",
+    "source_url": "https://accounts.google.com/",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": true,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "a93fcb827ff88a1e6ec6ca8c761cde7fd5b542b1a2c1190f96d5908fd6acfca0",
+    "redactions": [
+      {
+        "rectangle": [
+          880,
+          365,
+          1150,
+          419
+        ],
+        "coordinate_space": "output pixels",
+        "content": "Google account name, email address, and avatar"
+      },
+      {
+        "rectangle": [
+          880,
+          435,
+          1150,
+          489
+        ],
+        "coordinate_space": "output pixels",
+        "content": "Google account name, email address, and avatar"
+      }
+    ]
+  },
+  {
+    "image": "manual/gcp-reconnect-catalog-after.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development and Google reconnect flow, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/integrations",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "51ad8b692c5333b57b4ade6ec528aec04f21f28933630afd6ef78186de5b2345"
+  },
+  {
+    "image": "manual/gcp-reconnect-catalog.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development and Google reconnect flow, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/integrations",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "b9aa0cb0074d4785821d6c74d89568caa1c3967228a33216889655a2fdaa9b29"
+  },
+  {
+    "image": "manual/gcp-reconnect-cloud-tests.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development and Google reconnect flow, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/cloud-tests?provider=gcp",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "7dcf8f5bf023874b73b1cc51d0f7bada250d94964cacf440b5f6b2fd2d190291"
+  },
+  {
+    "image": "manual/gcp-reconnect-configuration.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development and Google reconnect flow, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/integrations/gcp",
+    "crop": [
+      2540,
+      294,
+      3440,
+      1820
+    ],
+    "redacted": false,
+    "size": [
+      450,
+      763
+    ],
+    "sha256": "37e2b8920075a7e5fa8ed9b9fadd4e904f9b6fe41d157c825c00148e950aceff"
+  },
+  {
+    "image": "manual/gcp-reconnect-permissions.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development and Google reconnect flow, existing Chrome session",
+    "source_url": "https://accounts.google.com/",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "0b300609a7fb96f01a1ea0344870b87969b23576863b4a0c74a17898e511d2df"
+  },
+  {
+    "image": "manual/gcp-reconnect-project-picker.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development and Google reconnect flow, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/integrations/gcp",
+    "crop": [
+      2540,
+      294,
+      3440,
+      1820
+    ],
+    "redacted": false,
+    "size": [
+      450,
+      763
+    ],
+    "sha256": "d1085e2e28b0c35185e603ae226612c631b186804d0e7dc568f6bcb1768e1764"
+  },
+  {
+    "image": "manual/gcp-reconnect-provider.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development and Google reconnect flow, existing Chrome session",
+    "source_url": "https://opencomp.dev.gideondefender.com/00000000-0000-0000-0000-000000000001/integrations/gcp",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "8fa4a604128b4358b7d46121a31f653ed1f60bf677911ec16fa1497ec083e2ee"
+  },
+  {
+    "image": "manual/gcp-reconnect-sign-back-in.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development and Google reconnect flow, existing Chrome session",
+    "source_url": "https://accounts.google.com/",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "ded843a66291e418b9e4075d2cf9cdc7b8b81feefaf8d3fd029bf56fb896c5d6"
+  },
+  {
+    "image": "manual/gcp-reconnect-verify.png",
+    "captured": "2026-10-17",
+    "environment": "OpenComp development and Google reconnect flow, existing Chrome session",
+    "source_url": "https://accounts.google.com/",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": true,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "e275a58b0fb3c1acf8780bf4245fe883413659b6398af26ff1c1e7091a80197e",
+    "redactions": [
+      {
+        "rectangle": [
+          377,
+          414,
+          660,
+          453
+        ],
+        "coordinate_space": "output pixels",
+        "content": "selected Google account email address and avatar initial"
+      }
+    ]
+  },
+  {
+    "image": "manual/idp-gideon-app-launcher.png",
+    "captured": "2026-10-17",
+    "environment": "Gideon Cockpit development, existing Chrome session",
+    "source_url": "https://cockpit.dev.gideondefender.com/apps",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "53020d2eb9291c8b6e9b57c00809ecf58b50c3100aaf75656734c4542c389add"
+  },
+  {
+    "image": "manual/idp-gideon-applications.png",
+    "captured": "2026-10-17",
+    "environment": "Gideon Cockpit development, existing Chrome session",
+    "source_url": "https://cockpit.dev.gideondefender.com/admin/applications",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "8fce6d3d5ffa24e77ac567314a866d53139ffc7e88022acb3106892435d5db8c"
+  },
+  {
+    "image": "manual/idp-gideon-opencomp.png",
+    "captured": "2026-10-17",
+    "environment": "Gideon Cockpit development, existing Chrome session",
+    "source_url": "https://cockpit.dev.gideondefender.com/admin/applications/0d4d25d0-c0a5-4658-a08c-d5b9765c1c51",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "b852d8c90ae82024ac1f89e0918e99dca9775e1cd8de5231b19e1be41e0a97ac"
+  },
+  {
+    "image": "manual/idp-gideon-oidc-edit.png",
+    "captured": "2026-10-17",
+    "environment": "Gideon Cockpit development, existing Chrome session",
+    "source_url": "https://cockpit.dev.gideondefender.com/admin/applications/0d4d25d0-c0a5-4658-a08c-d5b9765c1c51",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "dba85b981df137a107c631f3e511fdab2fcaa1a5b5802cda27c2e302c57b93de"
+  },
+  {
+    "image": "manual/idp-gideon-diagnostics.png",
+    "captured": "2026-10-17",
+    "environment": "Gideon Cockpit development, existing Chrome session",
+    "source_url": "https://cockpit.dev.gideondefender.com/admin/applications/0d4d25d0-c0a5-4658-a08c-d5b9765c1c51",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "469ab142687ecc8705b1dd41f89a5c63d8fbe837a6231d906ef97eb3ac3bdaba"
+  },
+  {
+    "image": "manual/idp-gideon-access-policy.png",
+    "captured": "2026-10-17",
+    "environment": "Gideon Cockpit development, existing Chrome session",
+    "source_url": "https://cockpit.dev.gideondefender.com/admin/applications/0d4d25d0-c0a5-4658-a08c-d5b9765c1c51",
+    "crop": [
+      496,
+      1350,
+      2716,
+      1810
+    ],
+    "redacted": false,
+    "size": [
+      2220,
+      460
+    ],
+    "sha256": "62841bdef2a6290a2233920379852f36fb774d0fade341d89dd4f979799cf157"
+  },
+  {
+    "image": "manual/idp-gideon-entitlements.png",
+    "captured": "2026-10-17",
+    "environment": "Gideon Cockpit development, existing Chrome session",
+    "source_url": "https://cockpit.dev.gideondefender.com/admin/applications/0d4d25d0-c0a5-4658-a08c-d5b9765c1c51",
+    "crop": [
+      0,
+      174,
+      3452,
+      2044
+    ],
+    "redacted": false,
+    "size": [
+      1726,
+      935
+    ],
+    "sha256": "c1b1c6cf32c14ca3afb9fccd9b58c92d89b0c43d22e852e98d0b919225cf1aec"
   }
 ]
