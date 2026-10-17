@@ -57,8 +57,8 @@ describe('MCP tenant binding after a shared-user split', () => {
       ForbiddenException,
     );
   });
-  it('also rejects a Gideon token after its secondary membership moves to the clone', async () => {
-    // Phase 0: the verified token tenant (secondary) pins the org. The user
+  it('also rejects an OIDC token after its secondary membership moves to the clone', async () => {
+    // the verified token tenant (secondary) pins the org. The user
     // row is owned by secondary but its only remaining membership is primary
     // with a stale secondary binding — no membership in the token org.
     // Route by query shape instead of call order — Once sequencing breaks
@@ -83,7 +83,7 @@ describe('MCP tenant binding after a shared-user split', () => {
       payload: { sub: 'sub_shared', tid: 'secondary' },
       protectedHeader: {},
     });
-    const gideonAuth = new HybridSessionAuth({ gideonJwtService: jwt });
+    const gideonAuth = new HybridSessionAuth({ oidcJwtService: jwt });
     const req = {
       headers: { authorization: 'Bearer one.two.three' },
     } as unknown as AuthenticatedRequest;

@@ -2,30 +2,30 @@ import { Logger } from '@nestjs/common';
 import { db } from '@db';
 import { stripControlChars } from './app-access';
 import {
-  requireGideonBearerAccess,
+  requireOidcBearerAccess,
   resolveTenantLinkedUser,
-} from './gideon-mcp-tenant-gate';
+} from './oidc-mcp-tenant-gate';
 import { isJwtShaped, resolveOidcAal } from './oidc-tenant-claim';
 import type { AuthenticatedRequest } from './types';
 import type { OidcJwtService } from './oidc-jwt.service';
 import type { GideonShadowService } from '../gideon/gideon-shadow.service';
 
 /**
- * Gideon JWT verification for the direct Bearer path (precedes the session
+ * OIDC JWT verification for the direct Bearer path (precedes the session
  * fallback in `HybridAuthGuard`). Shadow mode falls through to session auth
- * on any Gideon failure; enforce mode hard-fails Gideon-presenting tokens
- * (and JWT-shaped bearers when Gideon is misconfigured or unconfigured).
+ * on OIDC verification failure; enforce mode hard-fails tokens from the configured issuer
+ * (and JWT-shaped bearers when OIDC is misconfigured or unconfigured).
  * Returns `true` on success, `'enforce_failed'` for a hard 401, or
  * `null` to fall through.
  */
 export async function tryOidcJwtAuth({
   request,
-  gideonJwtService,
+  oidcJwtService,
   gideonShadowService,
   logger,
 }: {
   request: AuthenticatedRequest;
-  gideonJwtService?: OidcJwtService;
+  oidcJwtService?: OidcJwtService;
   gideonShadowService?: GideonShadowService;
   logger: Logger;
 }): Promise<true | 'enforce_failed' | null> {
@@ -35,14 +35,14 @@ export async function tryOidcJwtAuth({
       ? null
       : authHeader.slice(7).trim() || null;
 
-  if (!gideonJwtService || !gideonJwtService.isConfigured()) {
-    // Enforce mode with no Gideon configuration must not silently fall back:
-    // no legitimate Gideon token can exist, and native session bearers are
+  if (!oidcJwtService || !oidcJwtService.isConfigured()) {
+    // Enforce mode with no OIDC configuration must not silently fall back:
+    // no legitimate OIDC token can exist, and native session bearers are
     // opaque, so JWT-shaped bearers fail closed. Opaque bearers still fall
     // through to session auth.
-    if (token && isJwtShaped(token) && gideonJwtService?.isEnforceMode()) {
+    if (token && isJwtShaped(token) && oidcJwtService?.isEnforceMode()) {
       logger.warn(
-        '[Gideon] JWT-shaped bearer in enforce mode with Gideon unconfigured',
+        '[OIDC] JWT-shaped bearer in enforce mode with OIDC unconfigured',
       );
       return 'enforce_failed';
     }
@@ -51,42 +51,40 @@ export async function tryOidcJwtAuth({
 
   if (!token) return null;
 
-  const result = await gideonJwtService.verify(token);
+  const result = await oidcJwtService.verify(token);
   if (!result) {
-    // Enforce only tokens that present as Gideon JWTs. Anything else
+    // Enforce only tokens that present as OIDC JWTs. Anything else
     // (opaque session/MCP bearer tokens, foreign JWTs) falls through to
-    // session auth in every mode — dual-run fallback. A partial Gideon
+    // session auth in every mode — dual-run fallback. A partial OIDC
     // configuration (endpoint set, issuer/audience missing) cannot identify
     // tokens, so JWT-shaped bearers also fail closed instead of silently
     // falling back.
     if (
-      gideonJwtService.isEnforceMode() &&
-      (gideonJwtService.isOidcToken(token) ||
-        (gideonJwtService.isMisconfigured() && isJwtShaped(token)))
+      oidcJwtService.isEnforceMode() &&
+      (oidcJwtService.isOidcToken(token) ||
+        (oidcJwtService.isMisconfigured() && isJwtShaped(token)))
     ) {
-      logger.warn('[Gideon] JWT verify failed in enforce mode');
+      logger.warn('[OIDC] JWT verify failed in enforce mode');
       return 'enforce_failed';
     }
-    logger.debug(
-      '[GideonShadow] JWT verify failed, falling through to session',
-    );
+    logger.debug('[OIDCShadow] JWT verify failed, falling through to session');
     return null;
   }
 
-  const tenantClaim = gideonJwtService.resolveTenantClaim(result.payload);
-  const oidcSub = gideonJwtService.resolveUserId(result.payload);
+  const tenantClaim = oidcJwtService.resolveTenantClaim(result.payload);
+  const oidcSub = oidcJwtService.resolveUserId(result.payload);
   if (!tenantClaim.ok || !oidcSub) {
     logger.warn(
-      `[Gideon] JWT rejected: ${!tenantClaim.ok ? `tenant claim ${tenantClaim.reason}` : 'missing sub'}`,
+      `[OIDC] JWT rejected: ${!tenantClaim.ok ? `tenant claim ${tenantClaim.reason}` : 'missing sub'}`,
     );
-    if (gideonJwtService.isEnforceMode()) return 'enforce_failed';
+    if (oidcJwtService.isEnforceMode()) return 'enforce_failed';
     return null;
   }
   const tenantId = tenantClaim.tenantId;
 
-  // The Gideon `sub` is not the OpenComp user id (the link lives on
+  // The IdP `sub` is not the OpenComp user id (the link lives on
   // `User.oidcSub`, set by OIDC JIT provisioning). An unlinked sub holds
-  // no memberships: fall through in shadow, 401 in enforce. Phase 0 also
+  // no memberships: fall through in shadow, 401 in enforce. The subject link also
   // requires `User.tenantId` to equal the verified tenant (same-email
   // two-tenants isolation) — see `resolveTenantLinkedUser`.
   const link = await resolveTenantLinkedUser({
@@ -95,7 +93,7 @@ export async function tryOidcJwtAuth({
     logger,
   });
   if (!link.ok) {
-    if (gideonJwtService.isEnforceMode()) return 'enforce_failed';
+    if (oidcJwtService.isEnforceMode()) return 'enforce_failed';
     return null;
   }
   const linkedUser = link.user;
@@ -111,9 +109,9 @@ export async function tryOidcJwtAuth({
   });
   if (!org) {
     logger.warn(
-      `[GideonShadow] unknown Gideon tenant ${stripControlChars(tenantId)} (no such organization)`,
+      `[OIDCShadow] unknown OIDC tenant ${stripControlChars(tenantId)} (no such organization)`,
     );
-    if (gideonJwtService.isEnforceMode()) return 'enforce_failed';
+    if (oidcJwtService.isEnforceMode()) return 'enforce_failed';
     return null;
   }
 
@@ -128,15 +126,15 @@ export async function tryOidcJwtAuth({
   });
   if (!member) {
     logger.warn(
-      `[GideonShadow] user ${userId} not member of tenant ${stripControlChars(tenantId)}`,
+      `[OIDCShadow] user ${userId} not member of tenant ${stripControlChars(tenantId)}`,
     );
-    if (gideonJwtService.isEnforceMode()) return 'enforce_failed';
+    if (oidcJwtService.isEnforceMode()) return 'enforce_failed';
     return null;
   }
 
   // Gram tokens reach this path first; enforce the same access contract before
   // accepting any verified bearer or setting successful-authentication flags.
-  await requireGideonBearerAccess({ userId, tenantId, role: member.role });
+  await requireOidcBearerAccess({ userId, tenantId, role: member.role });
 
   request.organizationId = org.id;
   request.userId = userId;
@@ -170,7 +168,7 @@ export async function tryOidcJwtAuth({
   }
 
   logger.log(
-    `[Gideon] JWT authenticated user ${userId} tenant ${stripControlChars(tenantId)} shadow=${gideonJwtService.isShadowMode()}`,
+    `[OIDC] JWT authenticated user ${userId} tenant ${stripControlChars(tenantId)} shadow=${oidcJwtService.isShadowMode()}`,
   );
   return true;
 }

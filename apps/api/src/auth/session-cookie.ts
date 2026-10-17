@@ -124,7 +124,7 @@ export interface SessionCookieAttributes {
  * Cookie attributes mirroring better-auth's `advanced` config in
  * `auth.server.ts` (cross-subdomain cookies + lax sameSite). The `secure`
  * flag follows `shouldUseSecureCookies()` so plain-HTTP dev logins stick.
- * Shared by better-auth logins and Gideon OIDC logins so sessions minted by
+ * Shared by better-auth logins and OIDC logins so sessions minted by
  * either path are read back identically by `HybridAuthGuard`.
  */
 export function getSessionCookieAttributes(): SessionCookieAttributes {
@@ -138,7 +138,7 @@ export function getSessionCookieAttributes(): SessionCookieAttributes {
   };
 }
 
-/** Set the session cookie on a login response (Gideon OIDC path). */
+/** Set the session cookie on a login response (OIDC path). */
 export function setSessionCookie({
   res,
   token,

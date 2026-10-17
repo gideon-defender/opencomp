@@ -3,10 +3,10 @@ import { resolveOidcTenantClaim } from './oidc-tenant-claim';
 import type { AuthenticatedRequest } from './types';
 
 /**
- * Phase 0 tenant gate (Gram auth cutover) for Gideon MCP tokens.
+ * Tenant gate for OIDC MCP tokens.
  *
  * Every rejection below must fail closed with NO legacy `getMcpSession`
- * fallback: only genuinely non-Gideon bearers may use the legacy path.
+ * fallback: only genuinely non-OIDC bearers may use the legacy path.
  */
 export const mockVerify = jest.fn();
 export const mockIsOidcToken = jest.fn();
@@ -34,7 +34,7 @@ export function gideonAuth() {
     resolveUserId: (payload: { sub?: string }) =>
       typeof payload.sub === 'string' && payload.sub ? payload.sub : null,
   } as unknown as import('./oidc-jwt.service').OidcJwtService;
-  return new HybridSessionAuth({ gideonJwtService: service });
+  return new HybridSessionAuth({ oidcJwtService: service });
 }
 
 export function bearer(token = 'header.payload.sig'): AuthenticatedRequest {

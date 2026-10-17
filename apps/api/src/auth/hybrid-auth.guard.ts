@@ -15,7 +15,7 @@ import { IS_PUBLIC_KEY } from './public.decorator';
 import { SKIP_ORG_CHECK_KEY } from './skip-org-check.decorator';
 import { resolveServiceByToken } from './service-token.config';
 import { stripControlChars } from './app-access';
-import { tryOidcJwtAuth } from './gideon-jwt-request-auth';
+import { tryOidcJwtAuth } from './oidc-jwt-request-auth';
 import { AuthenticatedRequest } from './types';
 import { OidcJwtService } from './oidc-jwt.service';
 import { GideonShadowService } from '../gideon/gideon-shadow.service';
@@ -28,7 +28,7 @@ export class HybridAuthGuard implements CanActivate {
   constructor(
     private readonly apiKeyService: ApiKeyService,
     private readonly reflector: Reflector,
-    @Optional() private readonly gideonJwtService?: OidcJwtService,
+    @Optional() private readonly oidcJwtService?: OidcJwtService,
     @Optional() private readonly gideonShadowService?: GideonShadowService,
     // Keep the runtime injection token when the dependency is optional.
     @Optional()
@@ -55,16 +55,15 @@ export class HybridAuthGuard implements CanActivate {
       return this.handleServiceTokenAuth(request, serviceToken);
     }
 
-    // Phase 0 — Gideon JWT shadow/verify (x-api-key → x-service-token → Gideon JWT → cookie)
-    // Behind flag: when GIDEON_JWT_ENABLED=false and no identityUrl, this returns null and falls through
-    const gideonResult = await tryOidcJwtAuth({
+    // OIDC bearer verification precedes native sessions and the MCP fallback.
+    const oidcResult = await tryOidcJwtAuth({
       request,
-      gideonJwtService: this.gideonJwtService,
+      oidcJwtService: this.oidcJwtService,
       gideonShadowService: this.gideonShadowService,
       logger: this.logger,
     });
-    if (gideonResult === true) return true;
-    if (gideonResult === 'enforce_failed') {
+    if (oidcResult === true) return true;
+    if (oidcResult === 'enforce_failed') {
       throw new UnauthorizedException('Invalid Gideon JWT');
     }
 
@@ -75,7 +74,7 @@ export class HybridAuthGuard implements CanActivate {
     );
     return new HybridSessionAuth({
       nativeSessionService: this.nativeSessionService,
-      gideonJwtService: this.gideonJwtService,
+      oidcJwtService: this.oidcJwtService,
     }).handleSessionAuth(request, skipOrgCheck);
   }
 

@@ -22,7 +22,7 @@ beforeEach(() => {
   mockMemberFindFirst.mockResolvedValue(null);
 });
 
-describe('auditOidcEntitlements (Phase 0 audit mode)', () => {
+describe('auditOidcEntitlements (audit mode)', () => {
   it('flags empty entitlements as would-deny without writing', async () => {
     const result = await auditOidcEntitlements({
       claims: { sub: 'u1' },

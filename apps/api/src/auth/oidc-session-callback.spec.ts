@@ -131,7 +131,7 @@ describe('OidcService', () => {
       expect(result.redirectTo).toBe('/risks');
     });
 
-    it('runs the Phase 0 entitlements audit with the login identity', async () => {
+    it('runs the entitlements audit with the login identity', async () => {
       mockSuccessfulExchange();
       mockUserFindFirst.mockResolvedValue({
         id: 'usr_1',

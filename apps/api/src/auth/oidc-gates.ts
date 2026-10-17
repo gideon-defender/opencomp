@@ -41,7 +41,7 @@ export function isEnforcementEnabledFor(tenantId: string | undefined): boolean {
 }
 
 /**
- * Bootstrap gate (Phase 5 prerequisite): when true, unknown-tenant logins
+ * Bootstrap gate: when true, unknown-tenant logins
  * without a verified app-specific `owner` entitlement are denied instead of
  * flowing into self-service setup. Enable only after IdP tenant
  * provisioning seeds an owner assignment per tenant — otherwise new
@@ -64,7 +64,7 @@ export async function isKnownTenant(
 }
 
 /**
- * Phase 5 bootstrap gate for unknown tenants: a login the tenant allowlist
+ * Bootstrap gate for unknown tenants: a login the tenant allowlist
  * doesn't cover and with no org row may only enter restricted setup when
  * it carries a verified app-specific `owner` entitlement (the claim is
  * per-application, so a matched owner is app-specific by construction).

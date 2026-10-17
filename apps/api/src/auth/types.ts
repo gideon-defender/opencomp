@@ -1,4 +1,5 @@
-// Types for API authentication - supports API keys and session-based auth
+// API keys, service tokens, native sessions, and OIDC JWT authentication.
+// The public authType value `gideon` is retained for OIDC wire compatibility.
 
 export interface AuthenticatedRequest extends Request {
   organizationId: string;

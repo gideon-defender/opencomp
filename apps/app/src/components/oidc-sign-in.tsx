@@ -11,7 +11,6 @@ interface OidcSignInProps {
 }
 
 /**
- * Milestone 1 — "Continue with Gideon" (dual-run, better-auth buttons kept).
  * Plain redirect to the API's OIDC login endpoint; no client library involved.
  */
 export function OidcSignIn({ inviteCode, redirectTo }: OidcSignInProps) {

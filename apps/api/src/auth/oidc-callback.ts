@@ -26,9 +26,9 @@ export const OIDC_STATE_TTL_SECONDS = 10 * 60;
 export const OIDC_STATE_KEY_PREFIX = 'app:oidc:';
 
 /**
- * Keep writes on this prefix while old API tasks can serve callbacks.
- * Read both prefixes to accept state from either version during rollouts
- * and rollbacks. Switch writes only after all readers support both prefixes.
+ * Read-only compatibility prefix for pending logins from earlier releases.
+ * New logins use OIDC_STATE_KEY_PREFIX; keep this reader through the rollout
+ * and rollback compatibility window.
  */
 export const LEGACY_OIDC_STATE_KEY_PREFIX = 'app:gideon-oidc:';
 
@@ -117,7 +117,7 @@ export async function handleOidcCallback({
     throw new ForbiddenException('OIDC account has no email address');
   }
   // Policy flag for IdPs that omit `email_verified` (default true preserves
-  // the Gideon behavior of denying unverified addresses). Verify the source
+  // the policy of denying unverified addresses). Verify the source
   // that supplied the email: IdPs that omit email from userinfo also omit
   // its flag, so the fallback path checks the ID-token flag instead.
   const verificationClaim = userinfoEmail
@@ -149,13 +149,8 @@ export async function handleOidcCallback({
       }
     },
   });
-  // Phase 0 audit mode: log what Phase 1 enforcement would do, then
-  // proceed with the old behavior (mint session, no Member write). Never
-  // blocks login; never throws (failures log as audit_error inside).
-  //
-  // Phase 1 (pilot): allowlisted tenants enforce — deny mints no session,
-  // valid assignments JIT-sync the Member row before the session commits.
-  // Identity gates above (email_verified, banned, oidcSub) run first.
+  // Enforced tenants sync valid IdP roles before session creation; denied
+  // assignments cannot mint a session. Other tenants only audit the claim.
   if (isEnforcementEnabledFor(tenantId) && tenantId) {
     const { matched } = await enforceOidcEntitlements({
       claims,

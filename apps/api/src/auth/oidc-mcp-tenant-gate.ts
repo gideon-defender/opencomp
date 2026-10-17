@@ -20,9 +20,9 @@ export type TenantLinkResult =
   | { ok: false; reason: 'unlinked' | 'cross-tenant' };
 
 /**
- * Link a Gideon subject to its OpenComp user through `User.oidcSub` only
+ * Link an OIDC subject to its OpenComp user through `User.oidcSub` only
  * (never email-global) and require the row's immutable `User.tenantId` to
- * equal the verified token tenant. Shared by the direct Gideon-JWT path and
+ * equal the verified token tenant. Shared by the direct OIDC JWT path and
  * the MCP tenant gate so the two cannot drift.
  */
 export async function resolveTenantLinkedUser({
@@ -39,7 +39,7 @@ export async function resolveTenantLinkedUser({
     select: { id: true, email: true, tenantId: true },
   });
   if (!linked) {
-    logger?.warn('[Gideon] MCP token sub not linked to an OpenComp user');
+    logger?.warn('[OIDC] MCP token sub not linked to an OpenComp user');
     return { ok: false, reason: 'unlinked' };
   }
   if (!linked.tenantId) {
@@ -47,13 +47,13 @@ export async function resolveTenantLinkedUser({
     // organization" — treat it as unlinked (401) so the client retries
     // authentication instead of sticking on a misleading 403.
     logger?.warn(
-      `[Gideon] MCP token sub linked to tenant-less user ${linked.id}`,
+      `[OIDC] MCP token sub linked to tenant-less user ${linked.id}`,
     );
     return { ok: false, reason: 'unlinked' };
   }
   if (linked.tenantId !== tenantId) {
     logger?.warn(
-      `[Gideon] MCP cross-tenant subject rejected: user ${linked.id} owned by tenant ${stripControlChars(linked.tenantId ?? '<none>')} presented tenant ${stripControlChars(tenantId)}`,
+      `[OIDC] MCP cross-tenant subject rejected: user ${linked.id} owned by tenant ${stripControlChars(linked.tenantId ?? '<none>')} presented tenant ${stripControlChars(tenantId)}`,
     );
     return { ok: false, reason: 'cross-tenant' };
   }
@@ -61,7 +61,7 @@ export async function resolveTenantLinkedUser({
 }
 
 /**
- * Phase 0 tenant gate for a verified Gideon MCP token.
+ * Tenant gate for a verified OIDC MCP token.
  *
  * Contract (all failures throw — never fall back to legacy):
  * 1. Tenant resolves from verified claims via the strict claim contract
@@ -75,21 +75,21 @@ export async function resolveTenantLinkedUser({
  *    override or redirect to another account (stale/conflicting → 403).
  * 6. Active, non-revoked membership in the token org + `app:read` required.
  */
-export async function authenticateGideonMcpToken({
+export async function authenticateOidcMcpToken({
   request,
   payload,
-  gideonJwtService,
+  oidcJwtService,
   logger,
 }: {
   request: AuthenticatedRequest;
   payload: OidcJwtPayload;
-  gideonJwtService: OidcJwtService;
+  oidcJwtService: OidcJwtService;
   logger: Logger;
 }): Promise<boolean> {
-  const tenantClaim = gideonJwtService.resolveTenantClaim(payload);
+  const tenantClaim = oidcJwtService.resolveTenantClaim(payload);
   if (!tenantClaim.ok) {
     logger.warn(
-      `[Gideon] MCP token rejected: tenant claim ${tenantClaim.reason} — ${stripControlChars(tenantClaim.detail)}`,
+      `[OIDC] MCP token rejected: tenant claim ${tenantClaim.reason} — ${stripControlChars(tenantClaim.detail)}`,
     );
     throw new UnauthorizedException(
       `Invalid Gideon token: ${tenantClaim.reason} tenant claim`,
@@ -97,9 +97,9 @@ export async function authenticateGideonMcpToken({
   }
   const tenantId = tenantClaim.tenantId;
 
-  const sub = gideonJwtService.resolveUserId(payload);
+  const sub = oidcJwtService.resolveUserId(payload);
   if (!sub) {
-    logger.warn('[Gideon] MCP token rejected: missing sub claim');
+    logger.warn('[OIDC] MCP token rejected: missing sub claim');
     throw new UnauthorizedException('Invalid Gideon token: missing subject');
   }
 
@@ -121,13 +121,13 @@ export async function authenticateGideonMcpToken({
   });
   if (!org) {
     logger.warn(
-      `[Gideon] MCP token rejected: unknown tenant ${stripControlChars(tenantId)}`,
+      `[OIDC] MCP token rejected: unknown tenant ${stripControlChars(tenantId)}`,
     );
     throw new UnauthorizedException('Unknown tenant for Gideon token');
   }
 
   // Flags are set only after the request populates successfully — a rejected
-  // token must not leave Gideon-verified markers on the request.
+  // token must not leave OIDC-verified markers on the request.
   const populated = await populateTenantPinnedMcpRequest({
     request,
     userId: link.user.id,
@@ -148,7 +148,7 @@ export async function authenticateGideonMcpToken({
 }
 
 /** Direct and hosted-MCP bearers share a verifier, so both must enforce this gate. */
-export async function requireGideonBearerAccess({
+export async function requireOidcBearerAccess({
   userId,
   tenantId,
   role,
@@ -208,7 +208,7 @@ export async function populateTenantPinnedMcpRequest({
       'This account is not an active member of the token organization, so it cannot use the MCP.',
     );
   }
-  await requireGideonBearerAccess({ userId, tenantId, role: member.role });
+  await requireOidcBearerAccess({ userId, tenantId, role: member.role });
 
   request.userId = user.id;
   request.userEmail = user.email;

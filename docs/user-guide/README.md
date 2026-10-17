@@ -4,11 +4,17 @@ Practical documentation for everyone who uses OpenComp: administrators running
 compliance and security programs, and employees completing their own tasks in
 the employee portal.
 
+**[User manual](user-manual.md)** — the complete in-depth reference covering
+every product surface, including capabilities not covered by the topic pages
+below (custom roles CRUD, findings, ISMS wizard, SoA automation, task
+automations, browser connections, plan/billing, device agent, org chart, Ask
+AI, trust grants/expiry, MCP, platform flows).
+
 ## Who this guide is for
 
 | Reader | Start with |
 | --- | --- |
-| Organization owner or admin setting up OpenComp | [Getting started](getting-started.md), [Roles and access](roles-and-access.md) |
+| Organization owner or admin setting up OpenComp | [Getting started](getting-started.md), [Roles and access](roles-and-access.md), [User manual](user-manual.md) |
 | Compliance manager (SOC 2, ISO 27001, HIPAA, …) | [Compliance overview](compliance-overview.md), [Policies](policies.md), [Evidence and tasks](evidence-and-tasks.md) |
 | Security engineer | [Penetration tests](security-penetration-tests.md), [Cloud security](cloud-security.md), [Background checks](background-checks.md), [Devices](devices.md) |
 | People / HR operator | [People](people.md) |

@@ -4,7 +4,7 @@ const logger = new Logger('OidcEnv');
 const warnedKeys = new Set<string>();
 
 /**
- * Generic OIDC env with Gideon-compat fallback (generic-oidc-readiness §5.1).
+ * OIDC environment settings with deprecated-key compatibility.
  *
  * Reads `primary` (OIDC_*) first, then the deprecated `legacy` (GIDEON_*)
  * name, then any silent aliases (pre-existing generic names like
@@ -202,9 +202,9 @@ export function oidcTenantClaimKeys(): string[] | undefined {
 }
 
 /**
- * Email-verified policy (generic-oidc-readiness §5.4). Defaults to true for
- * Gideon parity; 'false' permits an omitted flag only for already linked
- * subjects. Unverified addresses cannot create, link, or rename accounts.
+ * Require verified email by default. 'false' permits an omitted flag only
+ * for already linked subjects. Unverified addresses cannot create, link,
+ * or rename accounts.
  */
 export function oidcRequireEmailVerified(): boolean {
   return (
