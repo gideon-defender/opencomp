@@ -96,6 +96,9 @@ export class AuthController {
       pendingInvitation,
       hasInactiveMembership: inactiveMembershipCount > 0,
       authType: authContext.authType,
+      ...(authContext.authType === 'gideon'
+        ? { tenantId: authContext.organizationId }
+        : {}),
     };
   }
 

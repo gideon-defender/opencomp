@@ -62,6 +62,32 @@ describe('AuthController.getMe — hasInactiveMembership (CS-569)', () => {
     expect(res.hasInactiveMembership).toBe(false);
   });
 
+  it('returns the guard-resolved tenant for a Gideon bearer', async () => {
+    mockMemberFindMany.mockResolvedValue([
+      { organization: { id: 'other_org' }, role: 'admin', id: 'member_2' },
+      { organization: { id: 'org_1' }, role: 'auditor', id: 'member_1' },
+    ]);
+    mockMemberCount.mockResolvedValue(0);
+
+    const res = await controller.getMe({
+      ...sessionContext(),
+      authType: 'gideon',
+      isOidcJwt: true,
+      userRoles: ['auditor'],
+    });
+
+    expect(res).toHaveProperty('tenantId', 'org_1');
+  });
+
+  it('does not expose a session organization as a verified bearer tenant', async () => {
+    mockMemberFindMany.mockResolvedValue([]);
+    mockMemberCount.mockResolvedValue(0);
+
+    const res = await controller.getMe(sessionContext());
+
+    expect(res).not.toHaveProperty('tenantId');
+  });
+
   it('returns hasInactiveMembership: true for an offboarded user (no active org, only deactivated memberships)', async () => {
     mockMemberFindMany.mockResolvedValue([]); // no ACTIVE memberships
     mockMemberCount.mockResolvedValue(1); // one deactivated/inactive membership

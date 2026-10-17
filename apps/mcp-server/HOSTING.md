@@ -4,13 +4,40 @@ The first owned hosted deployment uses organization API keys. It runs alongside
 the retained Gram OAuth connection. The dev endpoint, once infrastructure and
 the first image are deployed, is `https://mcp.dev.gideondefender.com/mcp`.
 
+## Gideon identity migration
+
+The owned endpoint has an opt-in bearer admission path for a dedicated Gideon
+OIDC client. Set `mcp_oidc_client_id` in OpenComp Terraform only after that
+client is registered and ensure it differs from the existing JWT audience.
+The MCP server checks the bearer with OpenComp's
+`/v1/auth/me`, then requires the validated user to belong to the API-resolved tenant
+and requires both `azp` and `aud` to contain the dedicated client ID. The same
+bearer is forwarded to the API for its normal per-operation permissions and
+audit; it is never converted into an organization API key. Unset configuration
+leaves the API-key endpoint unchanged.
+
+Deploy the API response's `tenantId` field before enabling MCP bearer admission.
+MCP uses this verified tenant so default and custom tenant-claim names follow
+the API's canonical configuration. A missing resolved tenant fails closed.
+
+This is bearer admission, **not yet a complete OAuth MCP connection**. Gideon
+still needs an MCP resource audience and client registration/redirect contract;
+the owned endpoint must then publish protected-resource metadata and test the
+full authorization-code, refresh, and revocation flow with actual MCP clients.
+Gideon's agent-tool grants are a separate machine-to-machine authorization
+decision. They do not supply a human session or an OpenComp API credential.
+An agent gateway must check the Gideon decision on every tool call, bind the
+tenant and tool to a narrow downstream identity, and preserve agent attribution
+before agent bearers are admitted here. Neither bearer mode is a reason to
+remove the API-key path or existing Gram service yet.
+
 ## Runtime and clients
 
 Clients use Streamable HTTP and send their organization key in the `apikey`
 header on every request. Configure an HTTP MCP connection with that URL and
 header in your client's credential settings. Do not put keys in URLs.
-This endpoint does not advertise OAuth or accept OAuth bearer credentials.
-Clients that require OAuth should continue using Gram during this migration.
+This endpoint does not yet advertise OAuth. Until the full Gideon OAuth flow
+passes live acceptance, clients that require automatic OAuth still use Gram.
 
 The container starts with:
 

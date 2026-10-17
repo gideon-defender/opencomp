@@ -16,11 +16,15 @@ export function serverFactory({ contract, flags }: { contract: BundledContract; 
       annotationFilter: flags.annotationFilter,
       ...(flags.allowedTools ? { allowedTools: flags.allowedTools } : {}),
       getOptions: () => ({
-        apiKey: resolveApiCredential({
-          headers,
-          staticApiKey,
-          disableStaticAuth: flags.disableStaticAuth,
-        }),
+        ...(flags.hosted && headers.get('authorization')?.startsWith('Bearer ')
+          ? { bearerToken: headers.get('authorization')!.slice(7).trim() }
+          : {
+              apiKey: resolveApiCredential({
+                headers,
+                staticApiKey,
+                disableStaticAuth: flags.disableStaticAuth,
+              }),
+            }),
         ...(flags.serverUrl ? { serverUrl: flags.serverUrl } : {}),
         ...(flags.serverIndex !== undefined ? { serverIndex: flags.serverIndex } : {}),
       }),

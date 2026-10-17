@@ -51,7 +51,19 @@ export async function startHttp({
     });
     if (flags.hosted) {
       if (!flags.serverUrl || !flags.publicUrl) throw new Error('Missing hosted configuration');
-      app.use('/mcp', hostedAuth({ apiUrl: flags.serverUrl, publicUrl: flags.publicUrl }));
+      app.use(
+        '/mcp',
+        hostedAuth({
+          apiUrl: flags.serverUrl,
+          publicUrl: flags.publicUrl,
+          ...(process.env['MCP_OIDC_CLIENT_ID']
+            ? {
+                oidcClientId: process.env['MCP_OIDC_CLIENT_ID'],
+                sharedAudience: process.env['MCP_OIDC_SHARED_AUDIENCE'] ?? '',
+              }
+            : {}),
+        }),
+      );
     }
     app.use(express.json());
     app.post('/mcp', async (req, res) => {

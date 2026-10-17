@@ -5,7 +5,8 @@ import { serializeRequest } from './request/serialize.js';
 import type { CompiledTool } from './tools.js';
 
 export type ApiOptions = {
-  apiKey: string;
+  apiKey?: string;
+  bearerToken?: string;
   serverUrl?: string;
   serverIndex?: number;
   /** Explicit opt-in only; the caller must know the GET/HEAD operation is safe. */
@@ -50,10 +51,10 @@ function resolveServer({ options, servers }: { options: ApiOptions; servers: str
 
 async function formatResponse({
   response,
-  apiKey,
+  credential,
 }: {
   response: Response;
-  apiKey: string;
+  credential: string;
 }): Promise<CallToolResult> {
   // Upstream errors can echo credentials or private request data. Do not expose their bodies.
   if (!response.ok) {
@@ -67,7 +68,7 @@ async function formatResponse({
       content: [{ type: mimeType.startsWith('image/') ? 'image' : 'audio', data, mimeType }],
     };
   }
-  const text = (await response.text()).replaceAll(apiKey, '[REDACTED]');
+  const text = (await response.text()).replaceAll(credential, '[REDACTED]');
   return { content: [{ type: 'text', text }] };
 }
 
@@ -92,13 +93,17 @@ export async function executeRequest({
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   const combined = signal ? AbortSignal.any([signal, controller.signal]) : controller.signal;
   try {
-    if (!options.apiKey.trim()) return errorResult('Missing API credentials.');
+    const apiKey = options.apiKey?.trim();
+    const bearerToken = options.bearerToken?.trim();
+    if ((!apiKey && !bearerToken) || (apiKey && bearerToken))
+      return errorResult('Missing or conflicting API credentials.');
     const request = serializeRequest({ plan: tool.plan, input, path: tool.path });
     const server = resolveServer({ options, servers });
     // Concatenate before URL parsing so an encoded path value cannot change the origin.
     const url = new URL(`${server.href.replace(/\/$/, '')}${request.path}`);
     url.search = request.query.toString();
-    request.headers.set('X-API-Key', options.apiKey);
+    if (apiKey) request.headers.set('X-API-Key', apiKey);
+    else request.headers.set('Authorization', `Bearer ${bearerToken}`);
     const retries = options.safeReadRetries ?? 0;
     if (!Number.isInteger(retries) || retries < 0 || retries > 3)
       return errorResult('Invalid safe-read retry limit.');
@@ -120,7 +125,7 @@ export async function executeRequest({
       }
       const retryStatus = response && [429, 500, 502, 503, 504].includes(response.status);
       if (response && (!retryStatus || !retryable || attempt >= retries)) {
-        return await formatResponse({ response, apiKey: options.apiKey });
+        return await formatResponse({ response, credential: (apiKey ?? bearerToken)! });
       }
       const waitMs = retryDelay({ ...(response ? { response } : {}), attempt });
       await response?.body?.cancel();
