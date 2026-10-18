@@ -6,7 +6,7 @@ import process from 'node:process';
 import { landingPageExpress } from '../landing-page.js';
 import type { ServerFactory } from './factory.js';
 import type { CliFlags } from './flags.js';
-import { hostedAuth } from './hosted.js';
+import { hostedAuth, hostedResourceMetadata } from './hosted.js';
 import { adaptHttpTransport } from './transport.js';
 
 function headersOf(request: Request): Headers {
@@ -51,14 +51,24 @@ export async function startHttp({
     });
     if (flags.hosted) {
       if (!flags.serverUrl || !flags.publicUrl) throw new Error('Missing hosted configuration');
+      const oidcClientId = process.env['MCP_OIDC_CLIENT_ID'];
+      const oidcIssuer = process.env['MCP_OIDC_ISSUER'];
+      if (oidcClientId && !oidcIssuer)
+        throw new Error('MCP_OIDC_ISSUER is required when MCP_OIDC_CLIENT_ID is set');
+      if (oidcClientId && oidcIssuer)
+        app.get(
+          '/.well-known/oauth-protected-resource',
+          hostedResourceMetadata({ publicUrl: flags.publicUrl, issuer: oidcIssuer }),
+        );
       app.use(
         '/mcp',
         hostedAuth({
           apiUrl: flags.serverUrl,
           publicUrl: flags.publicUrl,
-          ...(process.env['MCP_OIDC_CLIENT_ID']
+          ...(oidcClientId && oidcIssuer
             ? {
-                oidcClientId: process.env['MCP_OIDC_CLIENT_ID'],
+                oidcClientId,
+                oidcIssuer,
                 sharedAudience: process.env['MCP_OIDC_SHARED_AUDIENCE'] ?? '',
               }
             : {}),
