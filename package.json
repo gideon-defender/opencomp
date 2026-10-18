@@ -169,8 +169,11 @@
     "docker:down": "pnpm --filter @gideon-defender/db docker:down",
     "docker:up": "pnpm --filter @gideon-defender/db docker:up",
     "format": "prettier --write .",
+    "generate-storybook": "pnpm --filter @gideon-defender/storybook run generate",
     "lint": "turbo lint && syncpack lint",
     "prepare": "husky",
+    "storybook": "pnpm --filter @gideon-defender/storybook run storybook",
+    "build-storybook": "pnpm --filter @gideon-defender/storybook run build-storybook",
     "test": "turbo test --parallel",
     "typecheck": "turbo typecheck",
     "typecheck:ci": "turbo typecheck --filter={apps/**} --filter={packages/**} --filter=!@gideon-defender/integrations --filter=!@gideon-defender/ui"

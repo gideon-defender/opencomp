@@ -20,15 +20,29 @@ export default defineConfig({
   target: 'es2022',
   platform: 'neutral',
   esbuildOptions(options) {
-    // Preserve JSX - let Next.js handle the transformation
-    options.jsx = 'preserve';
+    // Compile JSX so dist works for every consumer (Next.js, Vite, Storybook).
+    options.jsx = 'automatic';
     options.platform = 'neutral';
     options.packages = 'external';
   },
   outDir: 'dist',
   onSuccess: async () => {
-    const { cp } = await import('fs/promises');
-    await cp('src/globals.css', 'dist/globals.css');
-    await cp('src/editor.css', 'dist/editor.css');
+    const { cp, readdir } = await import('fs/promises');
+    const { join, relative } = await import('path');
+
+    // tsup only emits JS/d.ts. Mirror every stylesheet into dist so subpath
+    // imports like `./theme.css` from a built component still resolve.
+    const copyStyles = async (dir: string): Promise<void> => {
+      for (const entry of await readdir(dir, { withFileTypes: true })) {
+        const full = join(dir, entry.name);
+        if (entry.isDirectory()) {
+          await copyStyles(full);
+        } else if (entry.name.endsWith('.css')) {
+          await cp(full, join('dist', relative('src', full)));
+        }
+      }
+    };
+
+    await copyStyles('src');
   },
 });
