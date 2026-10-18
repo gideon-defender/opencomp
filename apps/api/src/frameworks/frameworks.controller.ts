@@ -82,8 +82,15 @@ export class FrameworksController {
   })
   @ApiOkResponse({ description: 'Available frameworks retrieved successfully' })
   @ApiAuthErrors()
-  async findAvailable(@OrganizationIdOptional() organizationId?: string) {
-    const data = await this.frameworksService.findAvailable(organizationId);
+  async findAvailable(
+    @AuthContext() authContext: AuthContextType,
+    @OrganizationIdOptional() organizationId?: string,
+  ) {
+    const data = await this.frameworksService.findAvailable({
+      organizationId,
+      authType: authContext.authType,
+      userId: authContext.userId,
+    });
     return { data, count: data.length };
   }
 

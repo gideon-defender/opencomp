@@ -40,6 +40,7 @@ import { FrameworkSyncService } from './framework-versioning/framework-sync.serv
 import { FrameworkRollbackService } from './framework-versioning/framework-rollback.service';
 import { HybridAuthGuard } from '../auth/hybrid-auth.guard';
 import { PermissionGuard } from '../auth/permission.guard';
+import type { AuthContext } from '../auth/types';
 
 describe('FrameworksController', () => {
   let controller: FrameworksController;
@@ -125,6 +126,13 @@ describe('FrameworksController', () => {
   });
 
   describe('findAvailable', () => {
+    const authContext: AuthContext = {
+      authType: 'session',
+      organizationId: 'org_1',
+      userId: 'usr_1',
+      isApiKey: false,
+      userRoles: null,
+    };
     // Regression test for the onboarding 500 bug: this endpoint must not throw
     // when the authenticated user has no active organization yet (fresh signups
     // hitting the first onboarding step). Previously used @OrganizationId(),
@@ -135,18 +143,26 @@ describe('FrameworksController', () => {
       ];
       mockService.findAvailable.mockResolvedValue(mockFrameworks);
 
-      const result = await controller.findAvailable(undefined);
+      const result = await controller.findAvailable(authContext, undefined);
 
       expect(result).toEqual({ data: mockFrameworks, count: 1 });
-      expect(service.findAvailable).toHaveBeenCalledWith(undefined);
+      expect(service.findAvailable).toHaveBeenCalledWith({
+        organizationId: undefined,
+        authType: 'session',
+        userId: 'usr_1',
+      });
     });
 
     it('should pass organizationId to service when user has an active org', async () => {
       mockService.findAvailable.mockResolvedValue([]);
 
-      await controller.findAvailable('org_1');
+      await controller.findAvailable(authContext, 'org_1');
 
-      expect(service.findAvailable).toHaveBeenCalledWith('org_1');
+      expect(service.findAvailable).toHaveBeenCalledWith({
+        organizationId: 'org_1',
+        authType: 'session',
+        userId: 'usr_1',
+      });
     });
   });
 

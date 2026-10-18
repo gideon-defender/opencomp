@@ -4,6 +4,7 @@ import { auth } from './auth.server';
 import { populateLegacyMcpRequest } from './legacy-mcp-request';
 import { authenticateOidcMcpToken } from './oidc-mcp-tenant-gate';
 import { isJwtShaped } from './oidc-tenant-claim';
+import { resolveSessionTenant } from './session-tenant';
 import type { AuthenticatedRequest } from './types';
 import type { OidcJwtService } from './oidc-jwt.service';
 import type {
@@ -85,7 +86,7 @@ export class HybridSessionAuth {
   /**
    * Populate the request context from a resolved session (native or
    * better-auth shape). Shared by both resolution paths so behavior cannot
-   * drift: active-org membership is required unless skipped, and member
+   * drift: tenant membership is required unless skipped, and member
    * role/department is attached.
    */
   private async populateSessionRequest(
@@ -101,21 +102,21 @@ export class HybridSessionAuth {
       );
     }
 
-    const organizationId = sessionData.activeOrganizationId;
-    if (!organizationId && !skipOrgCheck) {
-      throw new UnauthorizedException(
-        'No active organization. Please select an organization.',
-      );
-    }
+    const organizationId = resolveSessionTenant({
+      tenantId: user.tenantId,
+      activeOrganizationId: sessionData.activeOrganizationId,
+      request,
+    });
 
     // Fetch member data for role and department info
-    // Skip if no active org or if org check is skipped (e.g., during onboarding)
+    // Bootstrap routes authenticate the tenant before its organization exists.
     let userRoles: string[] | null = null;
-    if (organizationId && !skipOrgCheck) {
+    if (!skipOrgCheck) {
       const member = await db.member.findFirst({
         where: {
           userId: user.id,
           organizationId,
+          isActive: true,
           deactivated: false,
           idpAccessRevoked: false,
         },
@@ -128,7 +129,7 @@ export class HybridSessionAuth {
 
       if (!member) {
         throw new UnauthorizedException(
-          `User is not a member of the active organization`,
+          'User has no active membership in the session tenant',
         );
       }
 
@@ -141,7 +142,7 @@ export class HybridSessionAuth {
     request.userId = user.id;
     request.userEmail = user.email;
     request.userRoles = userRoles;
-    request.organizationId = organizationId || '';
+    request.organizationId = organizationId;
     request.authType = 'session';
     request.isApiKey = false;
     request.isServiceToken = false;

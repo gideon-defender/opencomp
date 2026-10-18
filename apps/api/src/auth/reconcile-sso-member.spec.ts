@@ -151,7 +151,7 @@ beforeEach(() => {
             activeOrganizationId: tenantId,
             expiresAt: new Date(Date.now() + 60_000),
             deviceAgent: false,
-            user: { id: 'usr_1', email: 'test@example.com' },
+            user: { id: 'usr_1', email: 'test@example.com', tenantId },
           }
         : null,
   );

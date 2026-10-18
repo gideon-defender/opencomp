@@ -263,39 +263,6 @@ async function hasPermission(options: {
 }
 
 /**
- * List organizations for the current user.
- *
- * @param options.headers - The request headers (must include cookies)
- * @returns Array of organizations or empty array
- */
-async function listOrganizations(options: {
-  headers: ReadonlyHeaders | Headers;
-}): Promise<Organization[]> {
-  try {
-    const response = await fetch(`${API_URL}/api/auth/organization/list`, {
-      method: 'GET',
-      headers: {
-        ...headersToObject(options.headers),
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-store',
-    });
-
-    if (!response.ok) {
-      return [];
-    }
-
-    const data = await response.json();
-    return (data as Organization[]) || [];
-  } catch (error) {
-    if (IS_DEVELOPMENT) {
-      console.error('[auth] Failed to list organizations:', error);
-    }
-    return [];
-  }
-}
-
-/**
  * Set the active organization for the current session.
  */
 function setActiveOrganization(options: {
@@ -342,47 +309,6 @@ async function setActiveOrganization(options: {
       return new Response(JSON.stringify({ error: 'Failed to set active organization' }), {
         status: 500,
       });
-    }
-    return null;
-  }
-}
-
-/**
- * Full organization response including members
- */
-interface FullOrganization extends Organization {
-  members: Member[];
-  invitations?: Invitation[];
-}
-
-/**
- * Get the full organization including members.
- *
- * @param options.headers - The request headers (must include cookies)
- * @returns The full organization or null
- */
-async function getFullOrganization(options: {
-  headers: ReadonlyHeaders | Headers;
-}): Promise<FullOrganization | null> {
-  try {
-    const response = await fetch(`${API_URL}/api/auth/organization/get-full-organization`, {
-      method: 'GET',
-      headers: {
-        ...headersToObject(options.headers),
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-store',
-    });
-
-    if (!response.ok) {
-      return null;
-    }
-
-    const data = await response.json();
-    return data as FullOrganization;
-  } catch (error) {
-    if (IS_DEVELOPMENT) {
-      console.error('[auth] Failed to get full organization:', error);
     }
     return null;
   }
@@ -486,9 +412,7 @@ export const auth = {
     getFullSession,
     getActiveMember,
     hasPermission,
-    listOrganizations,
     setActiveOrganization,
-    getFullOrganization,
     createInvitation,
     addMember,
   },

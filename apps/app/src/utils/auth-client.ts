@@ -26,12 +26,5 @@ export const authClient = createAuthClient({
   // Authentication is handled via httpOnly cookies - no localStorage tokens needed
 });
 
-export const {
-  signIn,
-  signOut,
-  useSession,
-  useActiveOrganization,
-  organization,
-  useListOrganizations,
-  useActiveMember,
-} = authClient;
+export const { signIn, signOut, useSession, useActiveOrganization, organization, useActiveMember } =
+  authClient;

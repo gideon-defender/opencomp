@@ -4,6 +4,10 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import {
+  findAvailableFrameworks,
+  type AvailableFrameworksParams,
+} from './available-frameworks';
 import { withErrorCode } from '../common/i18n/error-messages';
 import { db, type EvidenceFormType } from '@db';
 
@@ -475,26 +479,8 @@ export class FrameworksService {
     };
   }
 
-  async findAvailable(organizationId?: string) {
-    const [platform, custom] = await Promise.all([
-      db.frameworkEditorFramework.findMany({
-        where: { visible: true },
-        include: { requirements: true },
-        orderBy: { name: 'asc' },
-      }),
-      organizationId
-        ? db.customFramework.findMany({
-            where: { organizationId },
-            include: { requirements: true },
-            orderBy: { name: 'asc' },
-          })
-        : Promise.resolve([]),
-    ]);
-
-    return [
-      ...platform.map((f) => ({ ...f, isCustom: false as const })),
-      ...custom.map((f) => ({ ...f, visible: true, isCustom: true as const })),
-    ];
+  async findAvailable(params: AvailableFrameworksParams) {
+    return findAvailableFrameworks(params);
   }
 
   async createCustom(
