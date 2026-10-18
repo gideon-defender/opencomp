@@ -1,0 +1,19 @@
+/*
+ * Tailwind entry point for the preview iframe.
+ *
+ * `@gideon-defender/ui`'s globals.css owns every design token, so the theme
+ * matches the apps exactly. Tailwind v4 only emits the utilities it finds, and
+ * the config's own `content` globs cover packages/ui alone — the extra
+ * `@source` roots add the components stories render from.
+ */
+@import '../../ui/src/globals.css';
+
+@source '../../ui/src/**/*.{ts,tsx}';
+@source '../../../apps/app/src/**/*.{ts,tsx}';
+@source './stories/**/*.tsx';
+@source './mocks/**/*.tsx';
+
+body {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+}

@@ -98,7 +98,7 @@ if (fs.existsSync(hooksDir)) {
 
 pkg.exports = exportsField;
 
-fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
+fs.writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
 console.log(
   '✅ package.json exports updated with ESM-only format including components, utils, and hooks!',
 );

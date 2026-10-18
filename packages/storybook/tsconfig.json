@@ -1,0 +1,49 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["dom", "dom.iterable", "ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "incremental": true,
+    "types": ["node", "vite/client"],
+    "paths": {
+      "@/*": ["../../apps/app/src/*"],
+      "@db": ["../../apps/app/prisma"],
+      "@db/server": ["../../apps/app/prisma/server"],
+      "@/trigger": ["../../apps/app/src/trigger"],
+      "@/trigger/*": ["../../apps/app/src/trigger/*"],
+      "@gideon-defender/email": ["../email/index.ts"],
+      "@gideon-defender/email/*": ["../email/*"],
+      "@gideon-defender/utils": ["../utils/src/index.ts"],
+      "@gideon-defender/utils/*": ["../utils/src/*"],
+      "@gideon-defender/integrations": ["../integrations/src/index.ts"],
+      "@gideon-defender/integrations/*": ["../integrations/src/*"],
+      "@gideon-defender/integration-platform": ["../integration-platform/src/index.ts"],
+      "@gideon-defender/integration-platform/*": ["../integration-platform/src/*"],
+      "@gideon-defender/kv": ["../kv/src/index.ts"],
+      "@gideon-defender/kv/*": ["../kv/src/*"],
+      "@gideon-defender/ui/hooks": ["../ui/src/hooks/index.ts"],
+      "@gideon-defender/ui/hooks/*": ["../ui/src/hooks/*"],
+      "@gideon-defender/ui/cn": ["../ui/src/utils/cn.ts"],
+      "@gideon-defender/ui/truncate": ["../ui/src/utils/truncate.ts"],
+      "@gideon-defender/ui/utils/*": ["../ui/src/utils/*"],
+      "@gideon-defender/ui/*": ["../ui/src/components/*"],
+      "@gideon-defender/ui": ["../ui/src/components/index.ts"]
+    }
+  },
+  "include": [
+    "src",
+    "scripts",
+    ".storybook",
+    "../../apps/app/i18n/global.ts",
+    "../../apps/app/src/markdown.d.ts"
+  ]
+}
