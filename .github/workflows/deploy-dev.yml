@@ -177,7 +177,11 @@ jobs:
         run: |
           set -euo pipefail
           image="$ECR_REGISTRY/${{ matrix.image }}:$IMAGE_TAG"
-          container="$(docker run -d --read-only --cap-drop ALL --security-opt no-new-privileges "$image" serve --hosted --mode dynamic --server-url https://opencomp-api.dev.gideondefender.com --public-url https://mcp.dev.gideondefender.com)"
+          container="$(docker run -d --read-only --cap-drop ALL --security-opt no-new-privileges \
+            -e MCP_OIDC_CLIENT_ID=smoke-client \
+            -e MCP_OIDC_ISSUER=https://gideon.dev.gideondefender.com \
+            -e MCP_OIDC_SHARED_AUDIENCE=gideon-cockpit \
+            "$image" serve --hosted --mode dynamic --server-url https://opencomp-api.dev.gideondefender.com --public-url https://mcp.dev.gideondefender.com)"
           trap 'docker rm -f "$container" >/dev/null' EXIT
           for attempt in $(seq 1 30); do
             state="$(docker inspect --format '{{.State.Health.Status}}' "$container")"
@@ -186,6 +190,8 @@ jobs:
           done
           test "$state" = healthy
           docker exec "$container" node -e "require('http').request('http://127.0.0.1:2718/mcp',{method:'POST',headers:{host:'mcp.dev.gideondefender.com'}},r=>{r.resume();process.exit(r.statusCode===401?0:1)}).on('error',()=>process.exit(1)).end()"
+          docker exec "$container" node -e "const http=require('http');const host='mcp.dev.gideondefender.com';http.get('http://127.0.0.1:2718/.well-known/oauth-protected-resource',{headers:{host}},r=>{let body='';r.on('data',chunk=>body+=chunk);r.on('end',()=>{const doc=JSON.parse(body);process.exit(r.statusCode===200&&doc.resource==='https://'+host+'/mcp'&&doc.authorization_servers?.[0]==='https://gideon.dev.gideondefender.com'?0:1)})}).on('error',()=>process.exit(1))"
+          docker exec "$container" node -e "require('http').request('http://127.0.0.1:2718/mcp',{method:'POST',headers:{host:'mcp.dev.gideondefender.com'}},r=>{r.resume();process.exit(r.statusCode===401&&r.headers['www-authenticate']?.includes('resource_metadata=')?0:1)}).on('error',()=>process.exit(1)).end()"
           docker push "$image"
 
   deploy:

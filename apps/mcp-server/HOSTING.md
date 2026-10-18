@@ -1,8 +1,8 @@
 # Owned hosted MCP
 
-The first owned hosted deployment uses organization API keys. It runs alongside
-the retained Gram OAuth connection. The dev endpoint, once infrastructure and
-the first image are deployed, is `https://mcp.dev.gideondefender.com/mcp`.
+The owned hosted deployment accepts organization API keys and a dedicated
+Gideon OIDC bearer. It runs alongside the retained Gram OAuth connection. The
+dev endpoint is `https://mcp.dev.gideondefender.com/mcp`.
 
 ## Gideon identity migration
 
@@ -20,10 +20,12 @@ Deploy the API response's `tenantId` field before enabling MCP bearer admission.
 MCP uses this verified tenant so default and custom tenant-claim names follow
 the API's canonical configuration. A missing resolved tenant fails closed.
 
-This is bearer admission, **not yet a complete OAuth MCP connection**. Gideon
-still needs an MCP resource audience and client registration/redirect contract;
-the owned endpoint must then publish protected-resource metadata and test the
-full authorization-code, refresh, and revocation flow with actual MCP clients.
+The endpoint publishes protected-resource metadata at
+`https://mcp.dev.gideondefender.com/.well-known/oauth-protected-resource`.
+Unauthenticated MCP requests receive a Bearer challenge pointing there. The
+metadata declares the MCP resource URL and the Gideon Dev authorization server.
+The public client is registered, but the full authorization-code, refresh, and
+revocation flow still needs live acceptance with an MCP client.
 Gideon's agent-tool grants are a separate machine-to-machine authorization
 decision. They do not supply a human session or an OpenComp API credential.
 An agent gateway must check the Gideon decision on every tool call, bind the
@@ -36,8 +38,9 @@ remove the API-key path or existing Gram service yet.
 Clients use Streamable HTTP and send their organization key in the `apikey`
 header on every request. Configure an HTTP MCP connection with that URL and
 header in your client's credential settings. Do not put keys in URLs.
-This endpoint does not yet advertise OAuth. Until the full Gideon OAuth flow
-passes live acceptance, clients that require automatic OAuth still use Gram.
+For OAuth-capable clients, configure the MCP URL, the registered public client
+ID, and authorization-code with PKCE. Keep Gram available until the full
+Gideon OAuth flow passes live acceptance.
 
 The container starts with:
 

@@ -10,10 +10,11 @@ publishing and live testing need explicit approval. See the
 the release checklist and rollback procedure. Generated sources remain the
 frozen compatibility oracle, not the authoring surface.
 
-The owned API-key hosted service deploys to dev after successful main CI once
-its infrastructure is provisioned. See [hosting and migration](./HOSTING.md)
-for bootstrap ordering, client configuration and rollback. Gram OAuth remains
-available during this migration.
+The owned hosted service supports organization API keys and an opt-in Gideon
+OIDC bearer path with OAuth discovery. It deploys to dev after successful main
+CI once its infrastructure is provisioned. See [hosting and migration](./HOSTING.md)
+for bootstrap ordering, client configuration and rollback. Keep Gram OAuth
+available until the full owned OAuth flow passes live acceptance.
 
 ## Development
 
@@ -95,6 +96,12 @@ The API key is sent as `X-API-Key`. CLI credentials use `--apikey`, then
 Disabling static auth prevents fallback. SSE message requests must use the key
 that established the session. Shared hosted users must not share a static key.
 
+Hosted mode validates each credential through the API's `/v1/auth/me` endpoint.
+Gideon bearers must identify the dedicated MCP client and include both its client
+ID and the MCP resource URL in `aud`. The validated user must belong to the
+API-resolved tenant. The server forwards the original bearer to the API for
+per-operation permissions and audit checks.
+
 There are no retries by default. Mutations never retry and no synthetic idempotency
 headers are added. Explicitly safe GET/HEAD callers may opt into at most three
 retries with jitter and `Retry-After`. Cancellation and one total 120-second
@@ -164,6 +171,33 @@ static fallback. This local API-key server is not a replacement for hosted OAuth
 Use repeatable `--tool` allowlists, `--mode dynamic` for progressive discovery,
 or `--tool-annotations` for exact annotation matching. There are no scope flags.
 Run the approved version with `--help` for the full CLI contract.
+
+## Hosted client configuration
+
+The dev Streamable HTTP endpoint is
+`https://mcp.dev.gideondefender.com/mcp`. API-key clients send their organization
+key in the `apikey` header on every request. Store credentials in the client's
+secret settings, never in URLs.
+
+To enable OAuth discovery and bearer admission, configure the hosted server with:
+
+| Environment variable | Value |
+| --- | --- |
+| `MCP_OIDC_CLIENT_ID` | Registered dedicated MCP public client ID |
+| `MCP_OIDC_ISSUER` | Gideon HTTPS issuer origin, without a path, query or fragment |
+| `MCP_OIDC_SHARED_AUDIENCE` | Existing API JWT audience; must differ from the MCP client ID |
+
+Deploy the API's resolved `tenantId` response field before enabling bearer
+admission. With OAuth enabled, the server publishes
+`/.well-known/oauth-protected-resource` and returns a `WWW-Authenticate: Bearer`
+challenge with its `resource_metadata` URL on unauthenticated MCP requests.
+The metadata identifies the `/mcp` resource and the configured authorization server.
+API-key authentication remains available.
+
+OAuth-capable clients use the MCP endpoint, the registered public client ID,
+and authorization-code with PKCE. The full authorization-code, refresh and
+revocation flow still requires live acceptance with an MCP client. See
+[hosting and migration](./HOSTING.md) for deployment and acceptance steps.
 
 ## Release boundaries
 

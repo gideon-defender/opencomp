@@ -44,17 +44,23 @@ export function hostedAuth({
   apiUrl,
   publicUrl,
   oidcClientId,
+  oidcIssuer,
   sharedAudience,
   fetchApi = fetch,
 }: {
   apiUrl: string;
   publicUrl: string;
   oidcClientId?: string;
+  oidcIssuer?: string;
   sharedAudience?: string;
   fetchApi?: typeof fetch;
 }): RequestHandler {
   const origin = new URL(publicUrl);
   const resource = new URL('/mcp', origin).toString();
+  const metadataUrl = new URL('/.well-known/oauth-protected-resource', origin).toString();
+  const bearerChallenge = (error?: string) =>
+    `Bearer resource_metadata="${metadataUrl}"${error ? `, error="${error}"` : ''}`;
+  const challenge = oidcClientId && oidcIssuer ? bearerChallenge() : 'ApiKey realm="OpenComp MCP"';
   const handleAuth: RequestHandler = async (req, res, next) => {
     if (
       req.headers.host !== origin.host ||
@@ -67,15 +73,20 @@ export function hostedAuth({
     const authorization = req.get('authorization');
     const bearer = authorization?.startsWith('Bearer ') ? authorization.slice(7).trim() : null;
     if ((key && authorization) || (authorization && !bearer)) {
-      res.sendStatus(401);
+      res.set('WWW-Authenticate', challenge).sendStatus(401);
       return;
     }
     if ((!key && !bearer) || (key && key.length > 4096) || (bearer && bearer.length > 16_384)) {
-      res.set('WWW-Authenticate', 'ApiKey realm="OpenComp MCP"').sendStatus(401);
+      res
+        .set('WWW-Authenticate', bearer ? bearerChallenge('invalid_token') : challenge)
+        .sendStatus(401);
       return;
     }
-    if (bearer && (!oidcClientId || !sharedAudience || oidcClientId === sharedAudience)) {
-      res.sendStatus(401);
+    if (
+      bearer &&
+      (!oidcClientId || !oidcIssuer || !sharedAudience || oidcClientId === sharedAudience)
+    ) {
+      res.set('WWW-Authenticate', challenge).sendStatus(401);
       return;
     }
     try {
@@ -90,7 +101,7 @@ export function hostedAuth({
         if (status === 401) {
           res.set(
             'WWW-Authenticate',
-            bearer ? 'Bearer realm="OpenComp MCP"' : 'ApiKey realm="OpenComp MCP"',
+            bearer ? bearerChallenge('invalid_token') : 'ApiKey realm="OpenComp MCP"',
           );
         }
         res.sendStatus(status);
@@ -116,7 +127,7 @@ export function hostedAuth({
             organizations: person.data.organizations,
           })
         ) {
-          res.set('WWW-Authenticate', 'Bearer error="invalid_token"').sendStatus(401);
+          res.set('WWW-Authenticate', bearerChallenge('invalid_token')).sendStatus(401);
           return;
         }
       } else if (!z.object({ authType: z.literal('api-key') }).safeParse(identity).success) {
@@ -129,4 +140,40 @@ export function hostedAuth({
     }
   };
   return handleAuth;
+}
+
+export function hostedResourceMetadata({
+  publicUrl,
+  issuer,
+}: {
+  publicUrl: string;
+  issuer: string;
+}): RequestHandler {
+  const origin = new URL(publicUrl);
+  const issuerUrl = new URL(issuer);
+  if (
+    issuerUrl.protocol !== 'https:' ||
+    issuerUrl.username ||
+    issuerUrl.password ||
+    issuerUrl.pathname !== '/' ||
+    issuerUrl.search ||
+    issuerUrl.hash
+  )
+    throw new Error('MCP OIDC issuer must be an HTTPS origin');
+  const document = {
+    resource: new URL('/mcp', origin).toString(),
+    authorization_servers: [issuerUrl.origin],
+  };
+  return (req, res) => {
+    if (req.headers.host !== origin.host) {
+      res.sendStatus(403);
+      return;
+    }
+    res
+      .set({
+        'Access-Control-Allow-Origin': '*',
+        'Cache-Control': 'public, max-age=300',
+      })
+      .json(document);
+  };
 }

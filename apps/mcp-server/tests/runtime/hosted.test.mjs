@@ -4,7 +4,7 @@ import { once } from 'node:events';
 import { request as httpRequest } from 'node:http';
 import { test } from 'node:test';
 import { parseCli } from '../../src/cli/flags.ts';
-import { hostedAuth } from '../../src/cli/hosted.ts';
+import { hostedAuth, hostedResourceMetadata } from '../../src/cli/hosted.ts';
 
 test('hosted flags require explicit HTTPS origins and disable all static credential fallback', () => {
   const args = [
@@ -126,6 +126,7 @@ test('hosted gate binds Gideon bearer to a dedicated MCP client and active tenan
       apiUrl: 'https://api.example.com',
       publicUrl: 'https://mcp.example.com',
       oidcClientId: 'mcp-client',
+      oidcIssuer: 'https://gideon.example.com',
       sharedAudience: 'gideon-cockpit',
       fetchApi: async (_url, options) => {
         calls.push(options);
@@ -233,6 +234,7 @@ test('hosted bearer mode refuses a client ID equal to the shared API audience', 
       apiUrl: 'https://api.example.com',
       publicUrl: 'https://mcp.example.com',
       oidcClientId: 'gideon-cockpit',
+      oidcIssuer: 'https://gideon.example.com',
       sharedAudience: 'gideon-cockpit',
       fetchApi: async () => {
         calls++;
@@ -262,4 +264,93 @@ test('hosted bearer mode refuses a client ID equal to the shared API audience', 
     listener.closeAllConnections();
     await new Promise((resolve) => listener.close(resolve));
   }
+});
+
+test('hosted OAuth discovery advertises the exact MCP resource and challenges without breaking API keys', async () => {
+  const app = express();
+  app.get(
+    '/.well-known/oauth-protected-resource',
+    hostedResourceMetadata({
+      publicUrl: 'https://mcp.example.com',
+      issuer: 'https://gideon.example.com',
+    }),
+  );
+  app.use(
+    '/mcp',
+    hostedAuth({
+      apiUrl: 'https://api.example.com',
+      publicUrl: 'https://mcp.example.com',
+      oidcClientId: 'mcp-client',
+      oidcIssuer: 'https://gideon.example.com',
+      sharedAudience: 'gideon-cockpit',
+      fetchApi: async (_url, options) =>
+        new Response(JSON.stringify({ authType: 'api-key' }), {
+          status: options.headers['X-API-Key'] ? 200 : 401,
+        }),
+    }),
+  );
+  app.post('/mcp', (_req, res) => res.json({ allowed: true }));
+  const listener = app.listen(0, '127.0.0.1');
+  await once(listener, 'listening');
+  const request = (path, method = 'GET', headers = {}) =>
+    new Promise((resolve, reject) => {
+      const outgoing = httpRequest(
+        `http://127.0.0.1:${listener.address().port}${path}`,
+        { method, headers: { host: 'mcp.example.com', ...headers } },
+        (incoming) => {
+          let body = '';
+          incoming.setEncoding('utf8');
+          incoming.on('data', (chunk) => {
+            body += chunk;
+          });
+          incoming.on('end', () =>
+            resolve({ status: incoming.statusCode, headers: incoming.headers, body }),
+          );
+        },
+      );
+      outgoing.on('error', reject);
+      outgoing.end();
+    });
+  const metadataUrl = 'https://mcp.example.com/.well-known/oauth-protected-resource';
+  try {
+    const metadata = await request('/.well-known/oauth-protected-resource');
+    assert.equal(metadata.status, 200);
+    assert.deepEqual(JSON.parse(metadata.body), {
+      resource: 'https://mcp.example.com/mcp',
+      authorization_servers: ['https://gideon.example.com'],
+    });
+    assert.equal(metadata.headers['access-control-allow-origin'], '*');
+    assert.equal(
+      (await request('/mcp', 'POST')).headers['www-authenticate'],
+      `Bearer resource_metadata="${metadataUrl}"`,
+    );
+    assert.equal(
+      (await request('/mcp', 'POST', { authorization: 'Bearer invalid' })).headers[
+        'www-authenticate'
+      ],
+      `Bearer resource_metadata="${metadataUrl}", error="invalid_token"`,
+    );
+    assert.equal((await request('/mcp', 'POST', { apikey: 'valid-key' })).status, 200);
+    assert.equal(
+      (await request('/mcp', 'POST', { apikey: 'revoked-key', authorization: 'Bearer x' })).status,
+      401,
+    );
+    assert.equal(
+      (await request('/.well-known/oauth-protected-resource', 'GET', { host: 'other.example.com' }))
+        .status,
+      403,
+    );
+  } finally {
+    listener.closeAllConnections();
+    await new Promise((resolve) => listener.close(resolve));
+  }
+});
+
+test('hosted OAuth metadata requires an HTTPS issuer origin', () => {
+  for (const issuer of [
+    'http://gideon.example.com',
+    'https://user:pass@gideon.example.com',
+    'https://gideon.example.com/tenant',
+  ])
+    assert.throws(() => hostedResourceMetadata({ publicUrl: 'https://mcp.example.com', issuer }));
 });
