@@ -560,7 +560,7 @@ describe('HybridAuthGuard — OIDC JWT enforcement', () => {
   it('shadow mode: invalid OIDC token falls through to a valid session', async () => {
     mockVerify.mockResolvedValue(null);
     mockNativeResolve.mockResolvedValue({
-      user: { id: 'usr_9', email: 'legacy@acme.com', role: 'user' },
+      user: { id: 'usr_9', email: 'legacy@acme.com', tenantId: 'org_9' },
       session: {
         id: 'sess_9',
         activeOrganizationId: 'org_9',
@@ -592,7 +592,7 @@ describe('HybridAuthGuard — OIDC JWT enforcement', () => {
     });
     mockUserFindUnique.mockResolvedValue(null);
     mockNativeResolve.mockResolvedValue({
-      user: { id: 'usr_9', email: 'legacy@acme.com', role: 'user' },
+      user: { id: 'usr_9', email: 'legacy@acme.com', tenantId: 'org_9' },
       session: {
         id: 'sess_9',
         activeOrganizationId: 'org_9',
@@ -629,7 +629,7 @@ describe('HybridAuthGuard — OIDC JWT enforcement', () => {
         protectedHeader: { kid: 'k1' },
       });
       mockNativeResolve.mockResolvedValue({
-        user: { id: 'usr_9', email: 'legacy@acme.com', role: 'user' },
+        user: { id: 'usr_9', email: 'legacy@acme.com', tenantId: 'org_9' },
         session: {
           id: 'sess_9',
           activeOrganizationId: 'org_9',
@@ -668,7 +668,7 @@ describe('HybridAuthGuard — OIDC JWT enforcement', () => {
       tenantId: 'org_b',
     });
     mockNativeResolve.mockResolvedValue({
-      user: { id: 'usr_9', email: 'legacy@acme.com', role: 'user' },
+      user: { id: 'usr_9', email: 'legacy@acme.com', tenantId: 'org_9' },
       session: {
         id: 'sess_9',
         activeOrganizationId: 'org_9',
@@ -713,7 +713,7 @@ describe('HybridAuthGuard — OIDC JWT enforcement', () => {
           : { id: 'mem_9', role: 'owner', department: 'none' },
     );
     mockNativeResolve.mockResolvedValue({
-      user: { id: 'usr_9', email: 'legacy@acme.com', role: 'user' },
+      user: { id: 'usr_9', email: 'legacy@acme.com', tenantId: 'org_9' },
       session: {
         id: 'sess_9',
         activeOrganizationId: 'org_9',
@@ -755,7 +755,7 @@ describe('HybridAuthGuard — OIDC JWT enforcement', () => {
     mockVerify.mockResolvedValue(null);
     mockIsOidcToken.mockReturnValue(false);
     mockNativeResolve.mockResolvedValue({
-      user: { id: 'usr_9', email: 'legacy@acme.com', role: 'user' },
+      user: { id: 'usr_9', email: 'legacy@acme.com', tenantId: 'org_9' },
       session: {
         id: 'sess_9',
         activeOrganizationId: 'org_9',
@@ -784,7 +784,7 @@ describe('HybridAuthGuard — OIDC JWT enforcement', () => {
     mockVerify.mockResolvedValue(null);
     mockIsOidcToken.mockReturnValue(false);
     mockNativeResolve.mockResolvedValue({
-      user: { id: 'usr_9', email: 'legacy@acme.com', role: 'user' },
+      user: { id: 'usr_9', email: 'legacy@acme.com', tenantId: 'org_9' },
       session: {
         id: 'sess_9',
         activeOrganizationId: 'org_9',
@@ -990,7 +990,7 @@ describe('HybridAuthGuard — OIDC JWT enforcement', () => {
     mockVerify.mockResolvedValue(null);
     mockIsOidcToken.mockReturnValue(false);
     mockNativeResolve.mockResolvedValue({
-      user: { id: 'usr_9', email: 'legacy@acme.com', role: 'user' },
+      user: { id: 'usr_9', email: 'legacy@acme.com', tenantId: 'org_9' },
       session: {
         id: 'sess_9',
         activeOrganizationId: 'org_9',
@@ -1036,7 +1036,7 @@ describe('HybridAuthGuard — OIDC JWT enforcement', () => {
     enforce = true;
     configured = false;
     mockNativeResolve.mockResolvedValue({
-      user: { id: 'usr_9', email: 'legacy@acme.com', role: 'user' },
+      user: { id: 'usr_9', email: 'legacy@acme.com', tenantId: 'org_9' },
       session: {
         id: 'sess_9',
         activeOrganizationId: 'org_9',
@@ -1121,7 +1121,7 @@ describe('HybridAuthGuard — OIDC JWT enforcement', () => {
     });
     mockOrgFindUnique.mockResolvedValue(null);
     mockNativeResolve.mockResolvedValue({
-      user: { id: 'usr_9', email: 'legacy@acme.com', role: 'user' },
+      user: { id: 'usr_9', email: 'legacy@acme.com', tenantId: 'org_9' },
       session: {
         id: 'sess_9',
         activeOrganizationId: 'org_9',
@@ -1147,7 +1147,7 @@ describe('HybridAuthGuard — OIDC JWT enforcement', () => {
 
   it('no Bearer header skips OIDC entirely and uses the session', async () => {
     mockNativeResolve.mockResolvedValue({
-      user: { id: 'usr_9', email: 'legacy@acme.com', role: 'user' },
+      user: { id: 'usr_9', email: 'legacy@acme.com', tenantId: 'org_9' },
       session: {
         id: 'sess_9',
         activeOrganizationId: 'org_9',
@@ -1307,7 +1307,7 @@ describe('HybridAuthGuard — native session first (Milestone 3)', () => {
 
   function mockNativeHit() {
     mockResolveFromHeaders.mockResolvedValue({
-      user: { id: 'usr_1', email: 'native@acme.com', role: 'user' },
+      user: { id: 'usr_1', email: 'native@acme.com', tenantId: 'org_1' },
       session: {
         id: 'ses_native',
         activeOrganizationId: 'org_1',

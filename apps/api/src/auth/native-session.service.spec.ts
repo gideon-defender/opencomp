@@ -26,7 +26,7 @@ const LIVE_ROW = {
   expiresAt: new Date(NOW + 60_000),
   activeOrganizationId: 'org_1',
   deviceAgent: false,
-  user: { id: 'usr_1', email: 'user@acme.com' },
+  user: { id: 'usr_1', email: 'user@acme.com', tenantId: 'org_1' },
 };
 
 describe('NativeSessionService', () => {

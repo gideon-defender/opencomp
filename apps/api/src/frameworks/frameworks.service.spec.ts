@@ -290,7 +290,7 @@ describe('FrameworksService', () => {
     });
 
     it('orders platform frameworks deterministically by name', async () => {
-      await service.findAvailable();
+      await service.findAvailable({ authType: 'session' });
 
       expect(mockDb.frameworkEditorFramework.findMany).toHaveBeenCalledWith({
         where: { visible: true },
@@ -300,7 +300,10 @@ describe('FrameworksService', () => {
     });
 
     it("orders an org's custom frameworks deterministically by name", async () => {
-      await service.findAvailable('org_1');
+      await service.findAvailable({
+        organizationId: 'org_1',
+        authType: 'api-key',
+      });
 
       expect(mockDb.customFramework.findMany).toHaveBeenCalledWith({
         where: { organizationId: 'org_1' },

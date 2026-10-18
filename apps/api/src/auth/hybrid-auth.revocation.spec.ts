@@ -114,7 +114,11 @@ for (const mode of ['gideon', 'session', 'mcp']) {
               resolveFromHeaders: async () =>
                 mode === 'session'
                   ? {
-                      user: { id: 'usr_1', email: 'ada@example.com' },
+                      user: {
+                        id: 'usr_1',
+                        email: 'ada@example.com',
+                        tenantId: 'org_1',
+                      },
                       session: {
                         id: 'ses_1',
                         activeOrganizationId: 'org_1',

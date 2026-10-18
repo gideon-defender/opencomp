@@ -7,12 +7,5 @@ export const authClient = createAuthClient({
   plugins: [organizationClient({ ac, roles: allRoles }), emailOTPClient()],
 });
 
-export const {
-  signIn,
-  signOut,
-  useSession,
-  useActiveOrganization,
-  organization,
-  useListOrganizations,
-  useActiveMember,
-} = authClient;
+export const { signIn, signOut, useSession, useActiveOrganization, organization, useActiveMember } =
+  authClient;

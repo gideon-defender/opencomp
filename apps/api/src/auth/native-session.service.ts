@@ -6,6 +6,7 @@ import { getSessionCookieNames, unsignedSessionToken } from './session-cookie';
 export interface NativeSessionUser {
   id: string;
   email: string;
+  tenantId: string;
 }
 
 export interface NativeSessionData {
@@ -98,7 +99,7 @@ export class NativeSessionService implements OnModuleInit {
       expiresAt: Date;
       activeOrganizationId: string | null;
       deviceAgent: boolean | null;
-      user: { id: string; email: string };
+      user: NativeSessionUser;
     } | null;
     try {
       session = await db.session.findUnique({
@@ -108,7 +109,7 @@ export class NativeSessionService implements OnModuleInit {
           expiresAt: true,
           activeOrganizationId: true,
           deviceAgent: true,
-          user: { select: { id: true, email: true } },
+          user: { select: { id: true, email: true, tenantId: true } },
         },
       });
     } catch (error) {
