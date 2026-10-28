@@ -1,6 +1,6 @@
+import { Fade } from '@gideon-defender/ui/diff/blur-fade';
 import type { Meta, StoryObj } from '@storybook/react';
 import { withCanvas } from '../../mocks/decorators';
-import { Fade } from '@gideon-defender/ui/diff/blur-fade';
 
 const meta = {
   title: 'Tier 1 — Fade',

@@ -2,13 +2,16 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { frameworkEditorModelSchemas } from './frameworkEditorSchemas';
+
+const seedDirectory = path.dirname(fileURLToPath(import.meta.url));
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
 
 async function seedJsonFiles(subDirectory: string) {
-  const directoryPath = path.join(__dirname, subDirectory);
+  const directoryPath = path.join(seedDirectory, subDirectory);
   console.log(`Starting to seed files from: ${directoryPath}`);
   const files = await fs.readdir(directoryPath);
   const jsonFiles = files.filter((file) => file.endsWith('.json'));

@@ -1,16 +1,16 @@
 speakeasyVersion: 1.800.1
 sources:
     OpenComp API:
-        sourceNamespace: comp-ai-api
+        sourceNamespace: opencomp-api
         sourceRevisionDigest: sha256:7e436f809cfd668dfa5e35ebc8cf514687da43e9329602b90df51d2a521b2df1
         sourceBlobDigest: sha256:02b9837a0a13d2d105ddfc00b05b4c76ae81d290b3986b5012dae3e79b98b800
         tags:
             - latest
             - "1.0"
 targets:
-    comp-ai:
+    opencomp:
         source: OpenComp API
-        sourceNamespace: comp-ai-api
+        sourceNamespace: opencomp-api
         sourceRevisionDigest: sha256:7e436f809cfd668dfa5e35ebc8cf514687da43e9329602b90df51d2a521b2df1
         sourceBlobDigest: sha256:02b9837a0a13d2d105ddfc00b05b4c76ae81d290b3986b5012dae3e79b98b800
 workflow:
@@ -24,9 +24,9 @@ workflow:
                 - location: ./.speakeasy/mcp-uploads-overlay.yaml
             output: .speakeasy/out.openapi.yaml
             registry:
-                location: registry.speakeasyapi.dev/comp-ai-ntv/comp-ai/comp-ai-api
+                location: registry.speakeasyapi.dev/opencomp-ntv/opencomp/opencomp-api
     targets:
-        comp-ai:
+        opencomp:
             target: mcp-typescript
             source: OpenComp API
             publish:

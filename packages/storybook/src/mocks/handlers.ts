@@ -1,20 +1,20 @@
 import { http, HttpResponse } from 'msw';
 import {
-  org,
-  user,
-  member,
   activeMember,
-  framework,
   control,
-  policy,
-  task,
-  risk,
-  vendor,
+  featureFlags,
   finding,
+  framework,
   integration,
   listEnvelope,
+  member,
+  org,
+  policy,
+  risk,
   singleEnvelope,
-  featureFlags,
+  task,
+  user,
+  vendor,
 } from './fixtures';
 
 const session = {
@@ -37,7 +37,9 @@ export const handlers = [
   http.get('*/v1/organization/*/risks', () => HttpResponse.json(listEnvelope([risk]))),
   http.get('*/v1/organization/*/vendors', () => HttpResponse.json(listEnvelope([vendor]))),
   http.get('*/v1/organization/*/findings', () => HttpResponse.json(listEnvelope([finding]))),
-  http.get('*/v1/organization/*/integrations', () => HttpResponse.json(listEnvelope([integration]))),
+  http.get('*/v1/organization/*/integrations', () =>
+    HttpResponse.json(listEnvelope([integration])),
+  ),
   http.get('*/v1/assistant-chat/history', () => HttpResponse.json({ messages: [] })),
   http.get('*/v1/auth/me', () =>
     HttpResponse.json({ user, authType: 'session', hasInactiveMembership: false }),

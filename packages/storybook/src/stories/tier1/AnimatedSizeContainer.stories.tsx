@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { AnimatedSizeContainer } from '@gideon-defender/ui/animated-size-container';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
   title: 'Tier 1 — AnimatedSizeContainer',

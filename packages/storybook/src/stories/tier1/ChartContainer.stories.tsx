@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { ChartContainer } from '@gideon-defender/ui/chart';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
   title: 'Tier 1 — ChartContainer',
@@ -12,6 +12,6 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   args: {
     children: <div>Example content</div>,
-    config: {  },
+    config: {},
   },
 };

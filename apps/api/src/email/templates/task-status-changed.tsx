@@ -32,34 +32,33 @@ interface Props {
 
 const copy = {
   en: {
-    previewTask: "Task",
-    previewChanged: "status changed from",
-    previewTo: "to",
-    heading: "Task Status Updated",
-    hello: "Hello",
-    bodyChanged: "changed the status of task",
-    bodyFrom: "from",
-    bodyTo: "to",
-    bodyIn: "in",
-    viewTask: "View Task",
-    copyPaste: "or copy and paste this URL into your browser:",
-    unsubscribeQuestion:
-      "Don't want to receive task assignment notifications?",
+    previewTask: 'Task',
+    previewChanged: 'status changed from',
+    previewTo: 'to',
+    heading: 'Task Status Updated',
+    hello: 'Hello',
+    bodyChanged: 'changed the status of task',
+    bodyFrom: 'from',
+    bodyTo: 'to',
+    bodyIn: 'in',
+    viewTask: 'View Task',
+    copyPaste: 'or copy and paste this URL into your browser:',
+    unsubscribeQuestion: "Don't want to receive task assignment notifications?",
   },
   es: {
-    previewTask: "Tarea",
-    previewChanged: "estado cambiado de",
-    previewTo: "a",
-    heading: "Estado de la tarea actualizado",
-    hello: "Hola",
-    bodyChanged: "cambió el estado de la tarea",
-    bodyFrom: "de",
-    bodyTo: "a",
-    bodyIn: "en",
-    viewTask: "Ver tarea",
-    copyPaste: "o copia y pega esta URL en tu navegador:",
+    previewTask: 'Tarea',
+    previewChanged: 'estado cambiado de',
+    previewTo: 'a',
+    heading: 'Estado de la tarea actualizado',
+    hello: 'Hola',
+    bodyChanged: 'cambió el estado de la tarea',
+    bodyFrom: 'de',
+    bodyTo: 'a',
+    bodyIn: 'en',
+    viewTask: 'Ver tarea',
+    copyPaste: 'o copia y pega esta URL en tu navegador:',
     unsubscribeQuestion:
-      "¿No quieres recibir notificaciones de asignación de tareas?",
+      '¿No quieres recibir notificaciones de asignación de tareas?',
   },
 };
 
@@ -116,7 +115,11 @@ export const TaskStatusChangedEmail = ({
             </Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              <strong>{changedByName}</strong> {t.bodyChanged} <strong>"{taskTitle}"</strong> {t.bodyFrom} <strong>{oldStatusText}</strong> {t.bodyTo} <strong>{newStatusText}</strong> {t.bodyIn} <strong>{organizationName}</strong>.
+              <strong>{changedByName}</strong> {t.bodyChanged}{' '}
+              <strong>"{taskTitle}"</strong> {t.bodyFrom}{' '}
+              <strong>{oldStatusText}</strong> {t.bodyTo}{' '}
+              <strong>{newStatusText}</strong> {t.bodyIn}{' '}
+              <strong>{organizationName}</strong>.
             </Text>
 
             <Section className="mt-[32px] mb-[32px] text-center">

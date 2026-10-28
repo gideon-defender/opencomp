@@ -1,9 +1,9 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Prisma, PrismaClient } from '@prisma/client';
-import { resolveSslConfig } from './ssl-config';
+import { resolveSslConfig } from './ssl-config.js';
 
-export { resolveSslConfig } from './ssl-config';
-export type { SslConfig } from './ssl-config';
+export { resolveSslConfig } from './ssl-config.js';
+export type { SslConfig } from './ssl-config.js';
 
 /**
  * RLS (Row-Level Security) client roles.

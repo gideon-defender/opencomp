@@ -11,7 +11,13 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    framework: { name: 'Example name', id: 'demo_id', description: 'Example description', visible: true, version: 'Example' },
+    framework: {
+      name: 'Example name',
+      id: 'demo_id',
+      description: 'Example description',
+      visible: true,
+      version: 'Example',
+    },
     isSelected: true,
     onSelectionChange: () => {},
   },

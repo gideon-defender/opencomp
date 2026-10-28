@@ -6,7 +6,7 @@
       "type": "openapiv3",
       "location": "packages/docs/openapi.json",
       "name": "OpenComp API",
-      "slug": "comp-ai-api"
+      "slug": "opencomp-api"
     }
   ]
 }

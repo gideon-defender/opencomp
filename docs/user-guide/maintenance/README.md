@@ -40,27 +40,27 @@ creation, access change, or production data edit was performed for captures.
 Blank creation forms were opened and dismissed. Chrome's product tab was
 returned to Overview after capture.
 
-| Area | Evidence obtained | Remaining acceptance work |
-| --- | --- | --- |
-| Getting started | Live Overview and navigation | Capture sign-in using a separate signed-out demo session. |
-| Frameworks | Live list and SOC 2 controls | Exercise framework creation and update with disposable demo data. |
-| Policies | Live list, Overview, and Content inspection | Capture approval, published version, and AI suggestion with approved demo content. |
-| Evidence | Live list, task settings, comments, and attachment controls | Verify a disposable upload, completion, and export. |
-| Documents | Live Overview and document categories | Capture submitted form and completed statement of applicability. |
-| People | Live directory, identity-sync notice, and device empty state | Capture a synthetic employee's details, training, and offboarding. |
-| Background checks | Candidates tab returned “Could not load candidate screenings.” | Restore Checkr access and capture sandbox configuration and screening statuses. |
-| Devices | Live empty-state capture | Capture enrolled synthetic devices and policy results. |
-| Risks and vendors | Live creation forms; register fields inspected | Capture synthetic assessment, treatment, and review outcomes. |
-| Integrations | Live catalog and provider availability | Capture a demo connection's details and successful sync. |
-| Cloud tests | Live providers, account selection, results controls, and Add Cloud | Capture nonempty findings, permission error, remediation review, and disconnect using demo accounts. |
-| Trust | Live configuration, access requests, public portal, and visitor form | Public development portal and blank visitor request form captured; NDA approval/revocation still needs synthetic visitors. |
-| Settings and roles | Live general, roles, portal toggles, API-key form, and context form | Verify notifications, billing, secrets, and user preferences with sanitized demo data. |
-| Penetration tests | Live “No active plan” entry screen | Use an entitled demo organization for profile, run, finding, report, and retest captures. Preview scans are not real runs. |
-| Questionnaires | Route returned 404; branch source inspected | Enable the feature in a matching deployment; capture upload, review, knowledge base, and export. |
-| Employee portal | Documented hostname returned DNS_PROBE_FINISHED_NXDOMAIN | Confirm a working portal URL; capture a synthetic employee's policy, training, forms, and devices. |
-| Browser extension | Existing extension documentation reviewed | Use a connected extension and synthetic questionnaire page for detection, review, and insertion. |
-| Browser automations | Existing guide and task components reviewed | Capture a sanitized connection, test run, evaluation, and history. |
-| API/MCP | Live hosted handshake, 406-tool discovery, task/framework reads, missing-key rejection, and local stdio read | [Connection check](mcp-connection-check.md); interactive client and full release acceptance remain separate. |
+| Area                | Evidence obtained                                                                                            | Remaining acceptance work                                                                                                  |
+| ------------------- | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| Getting started     | Live Overview and navigation                                                                                 | Capture sign-in using a separate signed-out demo session.                                                                  |
+| Frameworks          | Live list and SOC 2 controls                                                                                 | Exercise framework creation and update with disposable demo data.                                                          |
+| Policies            | Live list, Overview, and Content inspection                                                                  | Capture approval, published version, and AI suggestion with approved demo content.                                         |
+| Evidence            | Live list, task settings, comments, and attachment controls                                                  | Verify a disposable upload, completion, and export.                                                                        |
+| Documents           | Live Overview and document categories                                                                        | Capture submitted form and completed statement of applicability.                                                           |
+| People              | Live directory, identity-sync notice, and device empty state                                                 | Capture a synthetic employee's details, training, and offboarding.                                                         |
+| Background checks   | Candidates tab returned “Could not load candidate screenings.”                                               | Restore Checkr access and capture sandbox configuration and screening statuses.                                            |
+| Devices             | Live empty-state capture                                                                                     | Capture enrolled synthetic devices and policy results.                                                                     |
+| Risks and vendors   | Live creation forms; register fields inspected                                                               | Capture synthetic assessment, treatment, and review outcomes.                                                              |
+| Integrations        | Live catalog and provider availability                                                                       | Capture a demo connection's details and successful sync.                                                                   |
+| Cloud tests         | Live providers, account selection, results controls, and Add Cloud                                           | Capture nonempty findings, permission error, remediation review, and disconnect using demo accounts.                       |
+| Trust               | Live configuration, access requests, public portal, and visitor form                                         | Public development portal and blank visitor request form captured; NDA approval/revocation still needs synthetic visitors. |
+| Settings and roles  | Live general, roles, portal toggles, API-key form, and context form                                          | Verify notifications, billing, secrets, and user preferences with sanitized demo data.                                     |
+| Penetration tests   | Live “No active plan” entry screen                                                                           | Use an entitled demo organization for profile, run, finding, report, and retest captures. Preview scans are not real runs. |
+| Questionnaires      | Route returned 404; branch source inspected                                                                  | Enable the feature in a matching deployment; capture upload, review, knowledge base, and export.                           |
+| Employee portal     | Documented hostname returned DNS_PROBE_FINISHED_NXDOMAIN                                                     | Confirm a working portal URL; capture a synthetic employee's policy, training, forms, and devices.                         |
+| Browser extension   | Existing extension documentation reviewed                                                                    | Use a connected extension and synthetic questionnaire page for detection, review, and insertion.                           |
+| Browser automations | Existing guide and task components reviewed                                                                  | Capture a sanitized connection, test run, evaluation, and history.                                                         |
+| API/MCP             | Live hosted handshake, 406-tool discovery, task/framework reads, missing-key rejection, and local stdio read | [Connection check](mcp-connection-check.md); interactive client and full release acceptance remain separate.               |
 
 ## Source checks
 
@@ -69,9 +69,9 @@ branch's feature implementation or the existing product guides. These checks
 support editing; they do not substitute for end-to-end workflow verification.
 
 - Questionnaire upload accepts PDF, XLSX, and CSV, one file up to 100 MB:
-  [QuestionnaireUpload](../../../apps/app/src/app/\(app\)/[orgId]/questionnaire/components/QuestionnaireUpload.tsx).
+  [QuestionnaireUpload](<../../../apps/app/src/app/(app)/[orgId]/questionnaire/components/QuestionnaireUpload.tsx>).
 - Knowledge Base is inside Questionnaire:
-  [QuestionnaireTabs](../../../apps/app/src/app/\(app\)/[orgId]/questionnaire/components/QuestionnaireTabs.tsx).
+  [QuestionnaireTabs](<../../../apps/app/src/app/(app)/[orgId]/questionnaire/components/QuestionnaireTabs.tsx>).
 - Creating a penetration-test run requires `pentest:create`:
   [API controller](../../../apps/api/src/security-penetration-tests/security-penetration-tests.controller.ts).
 - Framework creation requires `framework:create`:

@@ -28,40 +28,42 @@ interface Props {
 
 const copy = {
   en: {
-    previewFrom: "New Trust Portal Access Request from",
-    heading: "New Access Request",
-    introPrefix: "A new request to access",
-    introSuffix: "'s trust portal has been submitted and is awaiting your review.",
-    requesterDetails: "Requester Details",
-    nameLabel: "Name:",
-    emailLabel: "Email:",
-    companyLabel: "Company:",
-    jobTitleLabel: "Job Title:",
-    purposeTitle: "Purpose",
-    durationLabel: "Requested Access Duration:",
-    days: "days",
-    reviewButton: "Review Request",
-    actionRequired: "Action Required",
+    previewFrom: 'New Trust Portal Access Request from',
+    heading: 'New Access Request',
+    introPrefix: 'A new request to access',
+    introSuffix:
+      "'s trust portal has been submitted and is awaiting your review.",
+    requesterDetails: 'Requester Details',
+    nameLabel: 'Name:',
+    emailLabel: 'Email:',
+    companyLabel: 'Company:',
+    jobTitleLabel: 'Job Title:',
+    purposeTitle: 'Purpose',
+    durationLabel: 'Requested Access Duration:',
+    days: 'days',
+    reviewButton: 'Review Request',
+    actionRequired: 'Action Required',
     actionBody:
-      "Please review this request and either approve or deny access. Approved requests will require the requester to sign an NDA before accessing your trust portal.",
+      'Please review this request and either approve or deny access. Approved requests will require the requester to sign an NDA before accessing your trust portal.',
   },
   es: {
-    previewFrom: "Nueva solicitud de acceso al Portal de Confianza de",
-    heading: "Nueva solicitud de acceso",
-    introPrefix: "Se ha enviado una nueva solicitud de acceso al portal de confianza de",
-    introSuffix: " y está pendiente de tu revisión.",
-    requesterDetails: "Datos del solicitante",
-    nameLabel: "Nombre:",
-    emailLabel: "Correo electrónico:",
-    companyLabel: "Empresa:",
-    jobTitleLabel: "Cargo:",
-    purposeTitle: "Motivo",
-    durationLabel: "Duración de acceso solicitada:",
-    days: "días",
-    reviewButton: "Revisar solicitud",
-    actionRequired: "Acción requerida",
+    previewFrom: 'Nueva solicitud de acceso al Portal de Confianza de',
+    heading: 'Nueva solicitud de acceso',
+    introPrefix:
+      'Se ha enviado una nueva solicitud de acceso al portal de confianza de',
+    introSuffix: ' y está pendiente de tu revisión.',
+    requesterDetails: 'Datos del solicitante',
+    nameLabel: 'Nombre:',
+    emailLabel: 'Correo electrónico:',
+    companyLabel: 'Empresa:',
+    jobTitleLabel: 'Cargo:',
+    purposeTitle: 'Motivo',
+    durationLabel: 'Duración de acceso solicitada:',
+    days: 'días',
+    reviewButton: 'Revisar solicitud',
+    actionRequired: 'Acción requerida',
     actionBody:
-      "Revisa esta solicitud y aprueba o deniega el acceso. Las solicitudes aprobadas requerirán que el solicitante firme un NDA antes de acceder a tu portal de confianza.",
+      'Revisa esta solicitud y aprueba o deniega el acceso. Las solicitudes aprobadas requerirán que el solicitante firme un NDA antes de acceder a tu portal de confianza.',
   },
 };
 
@@ -95,7 +97,9 @@ export const AccessRequestNotificationEmail = ({
             fontStyle="normal"
           />
         </head>
-        <Preview>{t.previewFrom} {requesterName}</Preview>
+        <Preview>
+          {t.previewFrom} {requesterName}
+        </Preview>
 
         <Body className="mx-auto my-auto bg-[#fff] font-sans">
           <Container
@@ -108,7 +112,8 @@ export const AccessRequestNotificationEmail = ({
             </Heading>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              {t.introPrefix} <strong>{organizationName}</strong>{t.introSuffix}
+              {t.introPrefix} <strong>{organizationName}</strong>
+              {t.introSuffix}
             </Text>
 
             <Section
@@ -150,8 +155,8 @@ export const AccessRequestNotificationEmail = ({
 
             {requestedDurationDays && (
               <Text className="text-[14px] leading-[24px] text-[#121212]">
-                <strong>{t.durationLabel}</strong>{' '}
-                {requestedDurationDays} {t.days}
+                <strong>{t.durationLabel}</strong> {requestedDurationDays}{' '}
+                {t.days}
               </Text>
             )}
 

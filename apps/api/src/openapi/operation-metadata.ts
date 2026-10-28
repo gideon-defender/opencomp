@@ -18,7 +18,7 @@ const CORE_OPERATION_METADATA: Record<string, PublicOperationMetadata> = {
         lang: 'bash',
         label: 'Get organization profile',
         source:
-          'curl --request GET --url "https://api.gideondefender.com/v1/organization" --header "X-API-Key: $COMP_AI_API_KEY"',
+          'curl --request GET --url "https://api.gideondefender.com/v1/organization" --header "X-API-Key: $OPENCOMP_API_KEY"',
       },
     ],
   },
@@ -56,19 +56,19 @@ const CORE_OPERATION_METADATA: Record<string, PublicOperationMetadata> = {
         lang: 'bash',
         label: 'List policies',
         source:
-          'curl --request GET --url "https://api.gideondefender.com/v1/policies" --header "X-API-Key: $COMP_AI_API_KEY"',
+          'curl --request GET --url "https://api.gideondefender.com/v1/policies" --header "X-API-Key: $OPENCOMP_API_KEY"',
       },
       {
         lang: 'bash',
         label: 'List policies (lightweight, no content)',
         source:
-          'curl --request GET --url "https://api.gideondefender.com/v1/policies?excludeContent=true" --header "X-API-Key: $COMP_AI_API_KEY"',
+          'curl --request GET --url "https://api.gideondefender.com/v1/policies?excludeContent=true" --header "X-API-Key: $OPENCOMP_API_KEY"',
       },
       {
         lang: 'bash',
         label: 'List policies including archived',
         source:
-          'curl --request GET --url "https://api.gideondefender.com/v1/policies?includeArchived=true" --header "X-API-Key: $COMP_AI_API_KEY"',
+          'curl --request GET --url "https://api.gideondefender.com/v1/policies?includeArchived=true" --header "X-API-Key: $OPENCOMP_API_KEY"',
       },
     ],
   },
@@ -151,7 +151,7 @@ const CORE_OPERATION_METADATA: Record<string, PublicOperationMetadata> = {
         lang: 'bash',
         label: 'List tasks',
         source:
-          'curl --request GET --url "https://api.gideondefender.com/v1/tasks" --header "X-API-Key: $COMP_AI_API_KEY"',
+          'curl --request GET --url "https://api.gideondefender.com/v1/tasks" --header "X-API-Key: $OPENCOMP_API_KEY"',
       },
     ],
   },

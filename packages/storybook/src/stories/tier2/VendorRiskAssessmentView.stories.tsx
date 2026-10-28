@@ -11,6 +11,10 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    source: { title: 'Example title', description: 'Example description', createdAt: '2026-01-01T00:00:00.000Z' },
+    source: {
+      title: 'Example title',
+      description: 'Example description',
+      createdAt: '2026-01-01T00:00:00.000Z',
+    },
   },
 };

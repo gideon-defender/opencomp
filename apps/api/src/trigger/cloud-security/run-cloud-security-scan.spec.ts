@@ -20,8 +20,8 @@ jest.mock('@gideon-defender/trigger-local', () => ({
   task: (config: unknown) => config,
 }));
 
-jest.mock('../../cloud-security/cloud-security.controller', () => ({
-  CloudSecurityController: class {},
+jest.mock('../../cloud-security/cloud-security-scan.controller', () => ({
+  CloudSecurityScanController: class {},
 }));
 
 jest.mock('../nest-context', () => {

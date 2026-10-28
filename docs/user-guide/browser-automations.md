@@ -56,13 +56,13 @@ Stored-login connections may renew automatically when supported. SSO sessions
 can require manual reconnection. Keep an owner responsible for expired or
 failed connections so scheduled collection does not remain stale.
 
-| Symptom | Next step |
-| --- | --- |
-| Sign-in fails | Check the connection, account status, and vendor's current login requirements. |
-| A human prompt appears | Take over in the live browser and finish the required step. |
-| Screenshot shows the wrong page | Make the capture instructions more specific and test again. |
-| Evidence is stale | Check the task frequency and latest run, then renew the connection if needed. |
-| Evaluation fails | Read the result, verify the actual vendor setting, and correct the control or criterion. |
+| Symptom                         | Next step                                                                                |
+| ------------------------------- | ---------------------------------------------------------------------------------------- |
+| Sign-in fails                   | Check the connection, account status, and vendor's current login requirements.           |
+| A human prompt appears          | Take over in the live browser and finish the required step.                              |
+| Screenshot shows the wrong page | Make the capture instructions more specific and test again.                              |
+| Evidence is stale               | Check the task frequency and latest run, then renew the connection if needed.            |
+| Evaluation fails                | Read the result, verify the actual vendor setting, and correct the control or criterion. |
 
 Related: [Evidence and tasks](evidence-and-tasks.md),
 [Integrations](integrations.md), [Organization settings](organization-settings.md).

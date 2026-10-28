@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { QuantityInput } from '@gideon-defender/ui/quantity-input';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
   title: 'Tier 1 — QuantityInput',

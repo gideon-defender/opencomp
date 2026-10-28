@@ -20,7 +20,7 @@ requires `apiKey:delete`.
 
 ![New API Key form with permission presets and expiration](images/api-key-create.png)
 
-*Review permissions deliberately: the form can initially select Full Access.*
+_Review permissions deliberately: the form can initially select Full Access._
 
 For API requests, send the key in the `x-api-key` header. Use the base URL
 provided for your deployment. Do not put keys in URLs, screenshots, tickets,
@@ -64,13 +64,13 @@ that every control is complete.
 
 ## Troubleshooting
 
-| Problem | Check |
-| --- | --- |
-| Authentication rejected | Correct deployment, key value, expiration, and revocation status. |
-| Action forbidden | Key scopes and the permission required for that operation. |
-| Wrong organization | Client configuration and tenant assignment; a URL cannot grant cross-tenant access. |
+| Problem                        | Check                                                                                    |
+| ------------------------------ | ---------------------------------------------------------------------------------------- |
+| Authentication rejected        | Correct deployment, key value, expiration, and revocation status.                        |
+| Action forbidden               | Key scopes and the permission required for that operation.                               |
+| Wrong organization             | Client configuration and tenant assignment; a URL cannot grant cross-tenant access.      |
 | Agent cannot find an operation | Search using the business action and consult the API/MCP guide for supported operations. |
-| Export missing expected proof | Reporting scope, task attachments, completion state, and control mappings. |
+| Export missing expected proof  | Reporting scope, task attachments, completion state, and control mappings.               |
 
 Related: [Roles and access](roles-and-access.md),
 [Organization settings](organization-settings.md),

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { db } from '../client';
-import { backfillFrameworkVersions } from './backfill-framework-versions';
+import { db } from '../client.js';
+import { backfillFrameworkVersions } from './backfill-framework-versions.js';
 
 const dbUrl = process.env.DATABASE_URL ?? '';
 const isProdLike = dbUrl.includes('prod') || dbUrl.includes('staging');

@@ -42,24 +42,24 @@ between **Compliance**, **Trust**, **Security**, and **Settings**; the sidebar
 then shows pages for that product. Use **Search** (⌘K on macOS) to find work.
 The pages available in your deployment can include:
 
-| Section | What it holds |
-| --- | --- |
-| Overview | Compliance scores, frameworks, policies, tasks at a glance |
-| Frameworks | SOC 2, ISO 27001, HIPAA, and other framework instances |
-| Policies | Company policies and their approval lifecycle |
-| Evidence (Tasks) | Evidence collection work |
-| People | Employee directory, candidates, devices, org chart |
-| Risk / Vendors | Risk register and vendor register |
-| Questionnaire | AI-assisted vendor questionnaires |
-| Documents | Company forms and ISO 27001 ISMS documents |
-| Knowledge Base (inside Questionnaire) | Curated answers and documents that power AI features |
-| Settings → Context | Organization facts used by AI features |
-| Security | Penetration tests |
-| Cloud tests | AWS, GCP, and Azure security checks |
-| Integrations | Connected third-party tools |
-| Trust | Trust Center configuration and access requests |
-| Settings | Organization configuration |
-| Auditor | Read-only auditor view (auditors only) |
+| Section                               | What it holds                                              |
+| ------------------------------------- | ---------------------------------------------------------- |
+| Overview                              | Compliance scores, frameworks, policies, tasks at a glance |
+| Frameworks                            | SOC 2, ISO 27001, HIPAA, and other framework instances     |
+| Policies                              | Company policies and their approval lifecycle              |
+| Evidence (Tasks)                      | Evidence collection work                                   |
+| People                                | Employee directory, candidates, devices, org chart         |
+| Risk / Vendors                        | Risk register and vendor register                          |
+| Questionnaire                         | AI-assisted vendor questionnaires                          |
+| Documents                             | Company forms and ISO 27001 ISMS documents                 |
+| Knowledge Base (inside Questionnaire) | Curated answers and documents that power AI features       |
+| Settings → Context                    | Organization facts used by AI features                     |
+| Security                              | Penetration tests                                          |
+| Cloud tests                           | AWS, GCP, and Azure security checks                        |
+| Integrations                          | Connected third-party tools                                |
+| Trust                                 | Trust Center configuration and access requests             |
+| Settings                              | Organization configuration                                 |
+| Auditor                               | Read-only auditor view (auditors only)                     |
 
 Sections may be hidden because of permissions or feature availability. If the whole app shows
 "No access", your role has no `app:read` permission (typical for
@@ -67,7 +67,7 @@ portal-only employee roles — use the [Employee portal](employee-portal.md)).
 
 ![Overview showing compliance progress and framework cards](images/overview-dashboard.png)
 
-*Use the product rail on the left to switch areas; use framework cards to investigate coverage.*
+_Use the product rail on the left to switch areas; use framework cards to investigate coverage._
 
 ## Core concepts
 

@@ -186,11 +186,19 @@ export function resolveGcpServiceId(
   return CATEGORY_TO_SERVICE[category] ?? 'security-command-center';
 }
 
-export type GcpSetupStepId =
-  | 'enable_security_command_center_api'
-  | 'enable_cloud_resource_manager_api'
-  | 'enable_service_usage_api'
-  | 'grant_findings_viewer_role';
+/**
+ * Single source of truth for setup step ids — the resolve-step DTO's
+ * `@IsIn` validation and Swagger enum derive from this array, so they
+ * can't drift from the type.
+ */
+export const GCP_SETUP_STEP_IDS = [
+  'enable_security_command_center_api',
+  'enable_cloud_resource_manager_api',
+  'enable_service_usage_api',
+  'grant_findings_viewer_role',
+] as const;
+
+export type GcpSetupStepId = (typeof GCP_SETUP_STEP_IDS)[number];
 
 export type GcpSetupAdminAction =
   | { kind: 'link'; label: string; url: string }

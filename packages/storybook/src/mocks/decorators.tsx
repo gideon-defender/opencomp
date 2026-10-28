@@ -3,13 +3,17 @@
  * The story generator references these by name (see DECORATORS in
  * scripts/build-full-storybook.ts).
  */
-import type { Decorator } from '@storybook/react';
-import { useEffect } from 'react';
-import { toast } from 'sonner';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@gideon-defender/ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@gideon-defender/ui/dropdown-menu';
 import { ResizablePanel, ResizablePanelGroup } from '@gideon-defender/ui/resizable';
 import { Select, SelectContent, SelectTrigger } from '@gideon-defender/ui/select';
 import { ToastProvider, ToastViewport } from '@gideon-defender/ui/toast';
+import type { Decorator } from '@storybook/react';
+import { useEffect } from 'react';
+import { toast } from 'sonner';
 import { SidebarProvider } from '../../../../apps/app/src/context/sidebar-context';
 import { MockNavigationContext } from './next/navigation';
 
@@ -17,7 +21,9 @@ export function withRouteParams(params: Record<string, string>): Decorator {
   return (Story, context) => (
     <MockNavigationContext.Consumer>
       {(current) => (
-        <MockNavigationContext.Provider value={{ ...current, params: { ...current.params, ...params } }}>
+        <MockNavigationContext.Provider
+          value={{ ...current, params: { ...current.params, ...params } }}
+        >
           <Story {...context} />
         </MockNavigationContext.Provider>
       )}

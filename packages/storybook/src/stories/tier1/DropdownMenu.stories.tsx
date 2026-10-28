@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { DropdownMenu } from '@gideon-defender/ui/dropdown-menu';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
   title: 'Tier 1 — DropdownMenu',

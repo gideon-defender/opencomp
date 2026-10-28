@@ -737,7 +737,7 @@ describe('OAuthController', () => {
           authorizeUrl: 'https://github.com/login/oauth/authorize',
           tokenUrl: 'https://github.com/login/oauth/access_token',
           installUrl:
-            'https://github.com/apps/comp-ai-compliance/installations/new',
+            'https://github.com/apps/opencomp-compliance/installations/new',
         },
       },
       capabilities: [],
@@ -800,7 +800,7 @@ describe('OAuthController', () => {
         const redirectUrl = (mockResponse.redirect as jest.Mock).mock
           .calls[0][0];
         expect(redirectUrl).toContain(
-          `https://github.com/apps/${slug ?? 'comp-ai-compliance'}/installations/new`,
+          `https://github.com/apps/${slug ?? 'opencomp-compliance'}/installations/new`,
         );
         expect(redirectUrl).toContain('state=install_state');
 

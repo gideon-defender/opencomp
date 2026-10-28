@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { AuthErrorNotice } from '@gideon-defender/ui/auth-error-notice';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
   title: 'Tier 1 — AuthErrorNotice',

@@ -51,8 +51,5 @@ test('strict DTOs reject extras and current spec constraints cannot silently wea
     }).success,
     false,
   );
-  assert.equal(
-    tool('create-task').plan.input.safeParse({ request: {} }).success,
-    false,
-  );
+  assert.equal(tool('create-task').plan.input.safeParse({ request: {} }).success, false);
 });

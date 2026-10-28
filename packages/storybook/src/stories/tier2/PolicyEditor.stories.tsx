@@ -11,7 +11,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    content: [{  }, {  }, {  }],
+    content: [{}, {}, {}],
     readOnly: false,
     minHeight: 'Example',
     maxHeight: 'Example',

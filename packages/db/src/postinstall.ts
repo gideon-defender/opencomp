@@ -169,6 +169,9 @@ function runCli() {
   }
 }
 
+// The published bin (comp-prisma-postinstall) points at dist/cjs/postinstall.js,
+// where this check works. The ESM build (dist/postinstall.js) is import-only:
+// `require` is undefined there, so importing never triggers side effects.
 const executedAsScript =
   typeof require !== 'undefined' && typeof module !== 'undefined' && require.main === module;
 

@@ -6,10 +6,10 @@
  *   different Vite pipelines (defines, dep pre-bundling), so a story can render
  *   in one and crash in the other; both modes are worth checking.
  */
-import { createServer } from 'node:http';
-import { readFile } from 'node:fs/promises';
-import { createRequire } from 'node:module';
 import { spawn } from 'node:child_process';
+import { readFile } from 'node:fs/promises';
+import { createServer } from 'node:http';
+import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -39,7 +39,9 @@ async function serveDist() {
     const filePath = path.join(DIST, url.pathname === '/' ? 'index.html' : url.pathname);
     try {
       const body = await readFile(filePath);
-      res.writeHead(200, { 'content-type': MIME[path.extname(filePath)] ?? 'application/octet-stream' });
+      res.writeHead(200, {
+        'content-type': MIME[path.extname(filePath)] ?? 'application/octet-stream',
+      });
       res.end(body);
     } catch {
       res.writeHead(404).end('not found');
@@ -178,7 +180,11 @@ async function checkStory(page, origin, id) {
   page.off('pageerror', onError);
 
   if (!crashed && !blank && errors.length === 0) return null;
-  return { id, errors: [...new Set(errors)].slice(0, 2), blank: blank && errors.length === 0 && !crashed };
+  return {
+    id,
+    errors: [...new Set(errors)].slice(0, 2),
+    blank: blank && errors.length === 0 && !crashed,
+  };
 }
 
 async function main() {

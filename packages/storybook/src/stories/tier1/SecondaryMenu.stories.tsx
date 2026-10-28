@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { SecondaryMenu } from '@gideon-defender/ui/secondary-menu';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
   title: 'Tier 1 — SecondaryMenu',
@@ -11,7 +11,11 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    items: [{ path: 'Example 1', label: 'Example title 1' }, { path: 'Example 2', label: 'Example title 2' }, { path: 'Example 3', label: 'Example title 3' }],
+    items: [
+      { path: 'Example 1', label: 'Example title 1' },
+      { path: 'Example 2', label: 'Example title 2' },
+      { path: 'Example 3', label: 'Example title 3' },
+    ],
     isChild: false,
     showBackButton: false,
     backButtonHref: 'https://example.com',

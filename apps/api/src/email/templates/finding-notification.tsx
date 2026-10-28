@@ -35,28 +35,28 @@ interface Props {
 
 const copy = {
   en: {
-    hello: "Hello",
-    detailsTitle: "Finding Details",
-    orgLabel: "Organization:",
-    taskLabel: "Task:",
-    typeLabel: "Type:",
-    statusLabel: "Status:",
-    viewFinding: "View Finding",
-    copyPaste: "or copy and paste this URL into your browser:",
+    hello: 'Hello',
+    detailsTitle: 'Finding Details',
+    orgLabel: 'Organization:',
+    taskLabel: 'Task:',
+    typeLabel: 'Type:',
+    statusLabel: 'Status:',
+    viewFinding: 'View Finding',
+    copyPaste: 'or copy and paste this URL into your browser:',
     unsubscribeQuestion: "Don't want to receive finding notifications?",
-    managePrefs: "Manage your email preferences",
+    managePrefs: 'Manage your email preferences',
   },
   es: {
-    hello: "Hola",
-    detailsTitle: "Datos del hallazgo",
-    orgLabel: "Organización:",
-    taskLabel: "Tarea:",
-    typeLabel: "Tipo:",
-    statusLabel: "Estado:",
-    viewFinding: "Ver hallazgo",
-    copyPaste: "o copia y pega esta URL en tu navegador:",
-    unsubscribeQuestion: "¿No quieres recibir notificaciones de hallazgos?",
-    managePrefs: "Gestionar tus preferencias de correo electrónico",
+    hello: 'Hola',
+    detailsTitle: 'Datos del hallazgo',
+    orgLabel: 'Organización:',
+    taskLabel: 'Tarea:',
+    typeLabel: 'Tipo:',
+    statusLabel: 'Estado:',
+    viewFinding: 'Ver hallazgo',
+    copyPaste: 'o copia y pega esta URL en tu navegador:',
+    unsubscribeQuestion: '¿No quieres recibir notificaciones de hallazgos?',
+    managePrefs: 'Gestionar tus preferencias de correo electrónico',
   },
 };
 
@@ -135,7 +135,12 @@ export const FindingNotificationEmail = ({
 
               <Text className="mt-[4px] mb-[4px] text-[13px] text-[#666666]">
                 {t.typeLabel} {findingType}
-                {newStatus && <> | {t.statusLabel} {newStatus}</>}
+                {newStatus && (
+                  <>
+                    {' '}
+                    | {t.statusLabel} {newStatus}
+                  </>
+                )}
               </Text>
 
               <Text className="mt-[12px] mb-0 text-[13px] italic text-[#444444]">

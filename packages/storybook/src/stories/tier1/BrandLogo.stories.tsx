@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { BrandLogo } from '@gideon-defender/ui/brand-logo';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
   title: 'Tier 1 — BrandLogo',

@@ -71,6 +71,20 @@ test(
       'export-document',
     ]);
     const seenBodyDeltas = new Set();
+    // Reviewed evolution: the three GCP setup bodies moved from inline @Body()
+    // parameter types (invisible to the frozen oracle) to DTO classes. The
+    // legacy oracle omits the body entirely; the owned runtime sends the
+    // declared object verbatim.
+    const gcpBodyDeltas = new Set(['setup-gcp', 'select-gcp-projects', 'resolve-gcp-setup-step']);
+    const seenGcpBodyDeltas = new Set();
+    const evolvedProviderTools = new Set(['set-employee-sync-provider', 'set-two-factor-source']);
+    const seenEvolvedProviders = new Set();
+    const evolvedStringFields = {
+      'update-finding': 'revisionNote',
+      'update-task-item': 'assigneeId',
+      'update-vendor': 'treatmentStrategyDescription',
+    };
+    const seenEvolvedStringFields = new Set();
     // Reviewed evolution: current spec accepts optional
     // preferences.findingNotifications; the retained generated oracle predates it
     // and drops the unknown key while the owned runtime sends it.
@@ -90,9 +104,23 @@ test(
         const input = sample(tool.staticInputSchema);
         const old = legacy.get(tool.name);
         assert(old, tool.name);
+        let legacyInput = input;
+        if (evolvedProviderTools.has(tool.name)) {
+          legacyInput = { ...input, request: { ...input.request, provider: {} } };
+        }
+        if (evolvedStringFields[tool.name]) {
+          const field = evolvedStringFields[tool.name];
+          legacyInput = {
+            ...legacyInput,
+            request: {
+              ...legacyInput.request,
+              body: { ...legacyInput.request?.body, [field]: {} },
+            },
+          };
+        }
         const context = { signal: new AbortController().signal };
         const beforeResult = old.args
-          ? await old.tool(client, input, context)
+          ? await old.tool(client, legacyInput, context)
           : await old.tool(client, context);
         const afterResult = await executeRequest({
           tool,
@@ -109,6 +137,22 @@ test(
         // Reviewed hygiene delta: do not send the generated SDK's empty Cookie header.
         if (before.headers.cookie === '' && after.headers.cookie === undefined)
           delete before.headers.cookie;
+        if (gcpBodyDeltas.has(tool.name)) {
+          assert.equal(before.body, null, `${tool.name}: legacy omitted the body entirely`);
+          assert.equal(
+            after.headers['content-type'],
+            'application/json',
+            `${tool.name}: owned runtime sends the declared JSON content type`,
+          );
+          delete after.headers['content-type'];
+          assert.deepEqual(
+            after.body,
+            input.request.body,
+            `${tool.name}: owned runtime sends the declared body`,
+          );
+          before.body = after.body;
+          seenGcpBodyDeltas.add(tool.name);
+        }
         if (bodyDeltas.has(tool.name)) {
           assert.equal(before.body, null, `${tool.name}: legacy omitted the body entirely`);
           assert.deepEqual(after.body, {}, `${tool.name}: owned runtime sends the declared object`);
@@ -123,16 +167,63 @@ test(
           before.body.preferences.findingNotifications = true;
           seenEvolvedPreferences.add(tool.name);
         }
+        if (tool.name === 'get-activity') {
+          // Reviewed evolution: the owned runtime sends the optional `take`
+          // query param; the retained generated oracle predates it and omits it.
+          const afterUrl = new URL(after.url, serverUrl);
+          assert.equal(
+            new URL(before.url, serverUrl).searchParams.get('take'),
+            null,
+            'get-activity: legacy oracle must omit take',
+          );
+          assert.equal(
+            afterUrl.searchParams.get('take'),
+            String(sample(tool.staticInputSchema).request.take),
+            'get-activity: owned runtime must send take',
+          );
+          const separator = before.url.includes('?') ? '&' : '?';
+          before.url = `${before.url}${separator}take=${afterUrl.searchParams.get('take')}`;
+        }
+        if (evolvedProviderTools.has(tool.name)) {
+          assert.equal(typeof after.body.provider, 'string', tool.name);
+          assert.deepEqual(before.body.provider, {}, tool.name);
+          before.body.provider = after.body.provider;
+          seenEvolvedProviders.add(tool.name);
+        }
+        if (evolvedStringFields[tool.name]) {
+          const field = evolvedStringFields[tool.name];
+          const afterContainer = after.body?.body ?? after.body;
+          const beforeContainer = before.body?.body ?? before.body;
+          assert.equal(
+            typeof beforeContainer?.[field],
+            'object',
+            `${tool.name}: legacy oracle sends an object for ${field}`,
+          );
+          assert.equal(
+            typeof afterContainer?.[field],
+            'string',
+            `${tool.name}: owned runtime sends a string for ${field}`,
+          );
+          beforeContainer[field] = afterContainer[field];
+          seenEvolvedStringFields.add(tool.name);
+        }
         if (!isDeepStrictEqual(after, before)) mismatches.push({ tool: tool.name, before, after });
         if (!isDeepStrictEqual(afterResult, beforeResult))
           mismatches.push({ tool: tool.name, beforeResult, afterResult });
       }
       assert.deepEqual(mismatches, [], 'Unexpected per-operation wire/result deltas');
       assert.deepEqual(seenBodyDeltas, bodyDeltas, 'Stale wire delta allowlist');
+      assert.deepEqual(seenGcpBodyDeltas, gcpBodyDeltas, 'Stale GCP body delta allowlist');
       assert.deepEqual(
         seenEvolvedPreferences,
         new Set(['update-email-preferences']),
         'Stale evolved preferences allowlist',
+      );
+      assert.deepEqual(seenEvolvedProviders, evolvedProviderTools, 'Stale evolved provider tools');
+      assert.deepEqual(
+        seenEvolvedStringFields,
+        new Set(Object.keys(evolvedStringFields)),
+        'Stale evolved string field tools',
       );
     } finally {
       api.closeAllConnections();

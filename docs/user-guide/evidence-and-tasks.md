@@ -24,11 +24,11 @@ organization's settings.
 
 ![Evidence summary, status filters, and list of tasks](images/tasks-list.png)
 
-*Filter by status, framework, assignee, or type; switch between Categories and List.*
+_Filter by status, framework, assignee, or type; switch between Categories and List._
 
 ![Evidence detail with status, assignee, frequency, comments, and attachments](images/task-detail.png)
 
-*Use Overview to manage work, Mappings to check controls, and Activity to review changes.*
+_Use Overview to manage work, Mappings to check controls, and Activity to review changes._
 
 ## Attach and verify evidence
 

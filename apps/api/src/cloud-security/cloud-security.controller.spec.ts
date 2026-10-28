@@ -16,6 +16,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { HttpException, HttpStatus } from '@nestjs/common';
 
 import { CloudSecurityController } from './cloud-security.controller';
+import { CloudSecurityScanController } from './cloud-security-scan.controller';
 import {
   CloudSecurityService,
   ConnectionNotFoundError,
@@ -333,8 +334,8 @@ describe('CloudSecurityController — API-key mutation support', () => {
   });
 });
 
-describe('CloudSecurityController — resolveSession (internal)', () => {
-  let controller: CloudSecurityController;
+describe('CloudSecurityScanController — resolveSession (internal)', () => {
+  let controller: CloudSecurityScanController;
   let cloudSecurityService: { resolveAwsSession: jest.Mock };
   const mockGuard = { canActivate: jest.fn().mockReturnValue(true) };
 
@@ -342,18 +343,9 @@ describe('CloudSecurityController — resolveSession (internal)', () => {
     cloudSecurityService = { resolveAwsSession: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [CloudSecurityController],
+      controllers: [CloudSecurityScanController],
       providers: [
         { provide: CloudSecurityService, useValue: cloudSecurityService },
-        { provide: CloudSecurityQueryService, useValue: {} },
-        { provide: CloudSecurityLegacyService, useValue: {} },
-        { provide: CloudSecurityActivityService, useValue: {} },
-        { provide: GCPSecurityService, useValue: {} },
-        { provide: AzureSecurityService, useValue: {} },
-        { provide: CheckDefinitionService, useValue: {} },
-        { provide: CloudExceptionService, useValue: {} },
-        { provide: CloudHistoryService, useValue: {} },
-        { provide: CloudAwsScanModeService, useValue: {} },
         { provide: ActingUserResolver, useValue: {} },
       ],
     })
@@ -365,7 +357,7 @@ describe('CloudSecurityController — resolveSession (internal)', () => {
       .useValue(mockGuard)
       .compile();
 
-    controller = module.get(CloudSecurityController);
+    controller = module.get(CloudSecurityScanController);
     jest.clearAllMocks();
   });
 

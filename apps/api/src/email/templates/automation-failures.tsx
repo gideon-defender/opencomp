@@ -33,36 +33,35 @@ interface Props {
 
 const copy = {
   en: {
-    previewOf: "of",
-    previewAutomations: "automation(s) failed on task",
-    heading: "Automation Failures",
-    hello: "Hello",
-    bodyOf: "of",
-    bodyAutomations: "automation(s) failed on task",
-    bodyIn: "in",
-    statusPrefix: "Task status has been changed to",
-    failedStatus: "Failed",
-    viewTask: "View Task",
-    copyPaste: "or copy and paste this URL into your browser:",
-    unsubscribeQuestion:
-      "Don't want to receive task assignment notifications?",
-    managePrefs: "Manage your email preferences",
+    previewOf: 'of',
+    previewAutomations: 'automation(s) failed on task',
+    heading: 'Automation Failures',
+    hello: 'Hello',
+    bodyOf: 'of',
+    bodyAutomations: 'automation(s) failed on task',
+    bodyIn: 'in',
+    statusPrefix: 'Task status has been changed to',
+    failedStatus: 'Failed',
+    viewTask: 'View Task',
+    copyPaste: 'or copy and paste this URL into your browser:',
+    unsubscribeQuestion: "Don't want to receive task assignment notifications?",
+    managePrefs: 'Manage your email preferences',
   },
   es: {
-    previewOf: "de",
-    previewAutomations: "automatizaciones fallaron en la tarea",
-    heading: "Fallos de automatización",
-    hello: "Hola",
-    bodyOf: "de",
-    bodyAutomations: "automatizaciones fallaron en la tarea",
-    bodyIn: "en",
-    statusPrefix: "El estado de la tarea ha cambiado a",
-    failedStatus: "Fallida",
-    viewTask: "Ver tarea",
-    copyPaste: "o copia y pega esta URL en tu navegador:",
+    previewOf: 'de',
+    previewAutomations: 'automatizaciones fallaron en la tarea',
+    heading: 'Fallos de automatización',
+    hello: 'Hola',
+    bodyOf: 'de',
+    bodyAutomations: 'automatizaciones fallaron en la tarea',
+    bodyIn: 'en',
+    statusPrefix: 'El estado de la tarea ha cambiado a',
+    failedStatus: 'Fallida',
+    viewTask: 'Ver tarea',
+    copyPaste: 'o copia y pega esta URL en tu navegador:',
     unsubscribeQuestion:
-      "¿No quieres recibir notificaciones de asignación de tareas?",
-    managePrefs: "Gestionar tus preferencias de correo electrónico",
+      '¿No quieres recibir notificaciones de asignación de tareas?',
+    managePrefs: 'Gestionar tus preferencias de correo electrónico',
   },
 };
 
@@ -118,7 +117,10 @@ export const AutomationFailuresEmail = ({
             </Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              <strong>{failedCount}</strong> {t.bodyOf} <strong>{totalCount}</strong> {t.bodyAutomations} <strong>"{taskTitle}"</strong> {t.bodyIn} <strong>{organizationName}</strong>.
+              <strong>{failedCount}</strong> {t.bodyOf}{' '}
+              <strong>{totalCount}</strong> {t.bodyAutomations}{' '}
+              <strong>"{taskTitle}"</strong> {t.bodyIn}{' '}
+              <strong>{organizationName}</strong>.
             </Text>
 
             {taskStatusChanged && (

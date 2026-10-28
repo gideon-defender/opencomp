@@ -16,7 +16,7 @@ pages include **Controls**, **Requirements**, and **History**.
 
 ![Overview with policy, evidence, document, and people progress](images/overview-dashboard.png)
 
-*A percentage describes recorded coverage; it is not a certification or an audit opinion.*
+_A percentage describes recorded coverage; it is not a certification or an audit opinion._
 
 ## Frameworks
 
@@ -32,7 +32,7 @@ example SOC 2, ISO 27001, HIPAA, GDPR), each with a compliance percentage.
 
 ![Framework table with compliance, control counts, and status](images/frameworks-list.png)
 
-*Search the framework list, then open a standard to see its controls.*
+_Search the framework list, then open a standard to see its controls._
 
 ### Work a framework
 
@@ -46,7 +46,7 @@ example SOC 2, ISO 27001, HIPAA, GDPR), each with a compliance percentage.
 
 ![SOC 2 detail with Controls, Requirements, and History tabs](images/framework-controls.png)
 
-*The control table shows mapped policy, task, and document completion.*
+_The control table shows mapped policy, task, and document completion._
 
 ## Controls
 

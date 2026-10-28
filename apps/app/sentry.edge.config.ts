@@ -17,5 +17,6 @@ Sentry.init({
 
   tracesSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.1,
 
-  enableLogs: true,
+  // SDK diagnostics stay off in production; use `VERCEL_ENV` gating so preview/dev keep them.
+  debug: process.env.VERCEL_ENV !== 'production',
 });

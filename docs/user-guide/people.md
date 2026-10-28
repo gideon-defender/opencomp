@@ -26,7 +26,7 @@ Gideon, never by inviting from OpenComp.
 
 ![People directory with roles, training, device, and background status; identities redacted](images/people-directory.png)
 
-*Access changes sync from Gideon. Use the directory to review compliance completion.*
+_Access changes sync from Gideon. Use the directory to review compliance completion._
 
 ## Employee record
 

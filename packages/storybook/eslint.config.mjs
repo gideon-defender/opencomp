@@ -17,7 +17,12 @@ export default defineConfig([
       // they never reach the DOM.
       '@typescript-eslint/no-unused-vars': [
         'error',
-        { args: 'after-used', argsIgnorePattern: '^_', ignoreRestSiblings: true, varsIgnorePattern: '^_' },
+        {
+          args: 'after-used',
+          argsIgnorePattern: '^_',
+          ignoreRestSiblings: true,
+          varsIgnorePattern: '^_',
+        },
       ],
     },
   },

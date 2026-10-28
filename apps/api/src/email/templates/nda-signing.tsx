@@ -24,30 +24,30 @@ interface Props {
 
 const copy = {
   en: {
-    preview: "NDA Signature Required",
-    heading: "NDA Signature Required",
-    hello: "Hello",
-    requestPrefix: "Your request to",
+    preview: 'NDA Signature Required',
+    heading: 'NDA Signature Required',
+    hello: 'Hello',
+    requestPrefix: 'Your request to',
     requestSuffix: "'s trust portal has been approved.",
     mustSign:
-      "Before you can access the policy documentation, you must review and sign a Non-Disclosure Agreement (NDA).",
-    button: "Review and Sign NDA",
-    copyPaste: "or copy and paste this URL into your browser",
+      'Before you can access the policy documentation, you must review and sign a Non-Disclosure Agreement (NDA).',
+    button: 'Review and Sign NDA',
+    copyPaste: 'or copy and paste this URL into your browser',
     expiryNote:
-      "This link will expire in 7 days. If you need a new link, please contact the organization.",
+      'This link will expire in 7 days. If you need a new link, please contact the organization.',
   },
   es: {
-    preview: "Firma del NDA requerida",
-    heading: "Firma del NDA requerida",
-    hello: "Hola",
-    requestPrefix: "Tu solicitud al portal de confianza de",
-    requestSuffix: " ha sido aprobada.",
+    preview: 'Firma del NDA requerida',
+    heading: 'Firma del NDA requerida',
+    hello: 'Hola',
+    requestPrefix: 'Tu solicitud al portal de confianza de',
+    requestSuffix: ' ha sido aprobada.',
     mustSign:
-      "Antes de poder acceder a la documentación de políticas, debes revisar y firmar un Acuerdo de No Divulgación (NDA).",
-    button: "Revisar y firmar el NDA",
-    copyPaste: "o copia y pega esta URL en tu navegador",
+      'Antes de poder acceder a la documentación de políticas, debes revisar y firmar un Acuerdo de No Divulgación (NDA).',
+    button: 'Revisar y firmar el NDA',
+    copyPaste: 'o copia y pega esta URL en tu navegador',
     expiryNote:
-      "Este enlace vencerá en 7 días. Si necesitas un nuevo enlace, contacta a la organización.",
+      'Este enlace vencerá en 7 días. Si necesitas un nuevo enlace, contacta a la organización.',
   },
 };
 
@@ -76,7 +76,9 @@ export const NdaSigningEmail = ({
             fontStyle="normal"
           />
         </head>
-        <Preview>{t.preview} - {organizationName}</Preview>
+        <Preview>
+          {t.preview} - {organizationName}
+        </Preview>
 
         <Body className="mx-auto my-auto bg-[#fff] font-sans">
           <Container
@@ -93,7 +95,8 @@ export const NdaSigningEmail = ({
             </Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              {t.requestPrefix} <strong>{organizationName}</strong>{t.requestSuffix}
+              {t.requestPrefix} <strong>{organizationName}</strong>
+              {t.requestSuffix}
             </Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">

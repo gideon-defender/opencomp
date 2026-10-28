@@ -23,13 +23,13 @@ What this means in practice:
 
 ## Built-in roles
 
-| Role | Intended for | Key abilities |
-| --- | --- | --- |
-| Owner | Company owners | Everything, including deleting the organization |
-| Admin | Security/compliance leads | Everything except deleting the organization |
-| Auditor | External/internal auditors | Read everything, raise and manage findings; no secrets, no API keys |
-| Employee | Staff | Employee portal only (own policies, training, tasks, devices) |
-| Contractor | Contractors | Same portal-only scope as employee |
+| Role       | Intended for               | Key abilities                                                       |
+| ---------- | -------------------------- | ------------------------------------------------------------------- |
+| Owner      | Company owners             | Everything, including deleting the organization                     |
+| Admin      | Security/compliance leads  | Everything except deleting the organization                         |
+| Auditor    | External/internal auditors | Read everything, raise and manage findings; no secrets, no API keys |
+| Employee   | Staff                      | Employee portal only (own policies, training, tasks, devices)       |
+| Contractor | Contractors                | Same portal-only scope as employee                                  |
 
 Custom roles can contain only permissions that their creator can grant. The Write
 option selects the actions that the caller holds for each resource.
@@ -40,7 +40,7 @@ an auditor also needs to complete employee compliance work.
 
 ![System Roles and Custom Roles reference](images/roles.png)
 
-*Use New/View to define permissions; change assignments in Gideon.*
+_Use New/View to define permissions; change assignments in Gideon._
 
 ## Permissions
 
@@ -80,4 +80,4 @@ for scoped credentials.
 1. Check your role with an admin.
 2. Check the permission listed at the top of the relevant guide.
 3. If the whole app says "No access", your role lacks `app:read` — you are
-  probably a portal-only user; use the [Employee portal](employee-portal.md).
+   probably a portal-only user; use the [Employee portal](employee-portal.md).

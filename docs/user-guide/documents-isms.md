@@ -14,7 +14,7 @@ Use **Settings** to review document configuration.
 
 ![Documents Overview with Statement of Applicability and categorized records](images/documents-tabs.png)
 
-*Open a document card to work with that record type.*
+_Open a document card to work with that record type._
 
 These records feed auditor views and generated documents — keep them
 accurate and current.

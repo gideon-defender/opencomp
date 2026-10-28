@@ -11,7 +11,11 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    columnHeaders: { name: 'Example name', status: 'Example', updatedAt: '2026-01-01T00:00:00.000Z' },
+    columnHeaders: {
+      name: 'Example name',
+      status: 'Example',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    },
     data: [],
     pageCount: 42,
     currentPage: 42,

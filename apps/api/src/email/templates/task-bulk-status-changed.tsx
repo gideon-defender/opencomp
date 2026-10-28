@@ -32,34 +32,33 @@ interface Props {
 
 const copy = {
   en: {
-    previewChanged: "status changed to",
-    task: "task",
-    tasks: "tasks",
-    heading: "Task Status Updated",
-    hello: "Hello",
-    bodyChanged: "changed the status of",
-    bodyTo: "to",
-    bodyIn: "in",
-    viewTasks: "View Tasks",
-    copyPaste: "or copy and paste this URL into your browser:",
-    unsubscribeQuestion:
-      "Don't want to receive task assignment notifications?",
-    managePrefs: "Manage your email preferences",
+    previewChanged: 'status changed to',
+    task: 'task',
+    tasks: 'tasks',
+    heading: 'Task Status Updated',
+    hello: 'Hello',
+    bodyChanged: 'changed the status of',
+    bodyTo: 'to',
+    bodyIn: 'in',
+    viewTasks: 'View Tasks',
+    copyPaste: 'or copy and paste this URL into your browser:',
+    unsubscribeQuestion: "Don't want to receive task assignment notifications?",
+    managePrefs: 'Manage your email preferences',
   },
   es: {
-    previewChanged: "estado cambiado a",
-    task: "tarea",
-    tasks: "tareas",
-    heading: "Estado de tareas actualizado",
-    hello: "Hola",
-    bodyChanged: "cambió el estado de",
-    bodyTo: "a",
-    bodyIn: "en",
-    viewTasks: "Ver tareas",
-    copyPaste: "o copia y pega esta URL en tu navegador:",
+    previewChanged: 'estado cambiado a',
+    task: 'tarea',
+    tasks: 'tareas',
+    heading: 'Estado de tareas actualizado',
+    hello: 'Hola',
+    bodyChanged: 'cambió el estado de',
+    bodyTo: 'a',
+    bodyIn: 'en',
+    viewTasks: 'Ver tareas',
+    copyPaste: 'o copia y pega esta URL en tu navegador:',
     unsubscribeQuestion:
-      "¿No quieres recibir notificaciones de asignación de tareas?",
-    managePrefs: "Gestionar tus preferencias de correo electrónico",
+      '¿No quieres recibir notificaciones de asignación de tareas?',
+    managePrefs: 'Gestionar tus preferencias de correo electrónico',
   },
 };
 
@@ -116,7 +115,12 @@ export const TaskBulkStatusChangedEmail = ({
             </Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              <strong>{changedByName}</strong> {t.bodyChanged} <strong>{taskCount} {taskText}</strong> {t.bodyTo} <strong>{statusText}</strong> {t.bodyIn} <strong>{organizationName}</strong>.
+              <strong>{changedByName}</strong> {t.bodyChanged}{' '}
+              <strong>
+                {taskCount} {taskText}
+              </strong>{' '}
+              {t.bodyTo} <strong>{statusText}</strong> {t.bodyIn}{' '}
+              <strong>{organizationName}</strong>.
             </Text>
 
             <Section className="mt-[32px] mb-[32px] text-center">

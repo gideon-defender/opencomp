@@ -51,7 +51,8 @@ export const BackgroundCheckStatus = {
   failed: 'failed',
   cancelled: 'cancelled',
 } as const;
-export type BackgroundCheckStatus = (typeof BackgroundCheckStatus)[keyof typeof BackgroundCheckStatus];
+export type BackgroundCheckStatus =
+  (typeof BackgroundCheckStatus)[keyof typeof BackgroundCheckStatus];
 
 export const BrowserAuthProfileStatus = {
   unverified: 'unverified',
@@ -59,13 +60,15 @@ export const BrowserAuthProfileStatus = {
   needs_reauth: 'needs_reauth',
   blocked: 'blocked',
 } as const;
-export type BrowserAuthProfileStatus = (typeof BrowserAuthProfileStatus)[keyof typeof BrowserAuthProfileStatus];
+export type BrowserAuthProfileStatus =
+  (typeof BrowserAuthProfileStatus)[keyof typeof BrowserAuthProfileStatus];
 
 export const BrowserAutomationEvaluationStatus = {
   pass: 'pass',
   fail: 'fail',
 } as const;
-export type BrowserAutomationEvaluationStatus = (typeof BrowserAutomationEvaluationStatus)[keyof typeof BrowserAutomationEvaluationStatus];
+export type BrowserAutomationEvaluationStatus =
+  (typeof BrowserAutomationEvaluationStatus)[keyof typeof BrowserAutomationEvaluationStatus];
 
 export const BrowserAutomationFailureCode = {
   needs_reauth: 'needs_reauth',
@@ -77,7 +80,8 @@ export const BrowserAutomationFailureCode = {
   evaluation_failed: 'evaluation_failed',
   unknown: 'unknown',
 } as const;
-export type BrowserAutomationFailureCode = (typeof BrowserAutomationFailureCode)[keyof typeof BrowserAutomationFailureCode];
+export type BrowserAutomationFailureCode =
+  (typeof BrowserAutomationFailureCode)[keyof typeof BrowserAutomationFailureCode];
 
 export const BrowserAutomationFailureStage = {
   auth: 'auth',
@@ -89,7 +93,8 @@ export const BrowserAutomationFailureStage = {
   session: 'session',
   unknown: 'unknown',
 } as const;
-export type BrowserAutomationFailureStage = (typeof BrowserAutomationFailureStage)[keyof typeof BrowserAutomationFailureStage];
+export type BrowserAutomationFailureStage =
+  (typeof BrowserAutomationFailureStage)[keyof typeof BrowserAutomationFailureStage];
 
 export const BrowserAutomationRunStatus = {
   pending: 'pending',
@@ -98,7 +103,8 @@ export const BrowserAutomationRunStatus = {
   failed: 'failed',
   blocked: 'blocked',
 } as const;
-export type BrowserAutomationRunStatus = (typeof BrowserAutomationRunStatus)[keyof typeof BrowserAutomationRunStatus];
+export type BrowserAutomationRunStatus =
+  (typeof BrowserAutomationRunStatus)[keyof typeof BrowserAutomationRunStatus];
 
 export const CommentEntityType = {
   task: 'task',
@@ -138,7 +144,8 @@ export const EvidenceAutomationEvaluationStatus = {
   pass: 'pass',
   fail: 'fail',
 } as const;
-export type EvidenceAutomationEvaluationStatus = (typeof EvidenceAutomationEvaluationStatus)[keyof typeof EvidenceAutomationEvaluationStatus];
+export type EvidenceAutomationEvaluationStatus =
+  (typeof EvidenceAutomationEvaluationStatus)[keyof typeof EvidenceAutomationEvaluationStatus];
 
 export const EvidenceAutomationRunStatus = {
   pending: 'pending',
@@ -147,14 +154,16 @@ export const EvidenceAutomationRunStatus = {
   failed: 'failed',
   cancelled: 'cancelled',
 } as const;
-export type EvidenceAutomationRunStatus = (typeof EvidenceAutomationRunStatus)[keyof typeof EvidenceAutomationRunStatus];
+export type EvidenceAutomationRunStatus =
+  (typeof EvidenceAutomationRunStatus)[keyof typeof EvidenceAutomationRunStatus];
 
 export const EvidenceAutomationTrigger = {
   manual: 'manual',
   scheduled: 'scheduled',
   api: 'api',
 } as const;
-export type EvidenceAutomationTrigger = (typeof EvidenceAutomationTrigger)[keyof typeof EvidenceAutomationTrigger];
+export type EvidenceAutomationTrigger =
+  (typeof EvidenceAutomationTrigger)[keyof typeof EvidenceAutomationTrigger];
 
 export const EvidenceFormType = {
   meeting: 'meeting',
@@ -178,7 +187,8 @@ export const FindingResolutionMethod = {
   resource_deleted: 'resource_deleted',
   exception_marked: 'exception_marked',
 } as const;
-export type FindingResolutionMethod = (typeof FindingResolutionMethod)[keyof typeof FindingResolutionMethod];
+export type FindingResolutionMethod =
+  (typeof FindingResolutionMethod)[keyof typeof FindingResolutionMethod];
 
 export const FindingSeverity = {
   low: 'low',
@@ -213,7 +223,8 @@ export const FrameworkEditorFrameworkFamilyStatus = {
   under_construction: 'under_construction',
   partial: 'partial',
 } as const;
-export type FrameworkEditorFrameworkFamilyStatus = (typeof FrameworkEditorFrameworkFamilyStatus)[keyof typeof FrameworkEditorFrameworkFamilyStatus];
+export type FrameworkEditorFrameworkFamilyStatus =
+  (typeof FrameworkEditorFrameworkFamilyStatus)[keyof typeof FrameworkEditorFrameworkFamilyStatus];
 
 export const FrameworkStatus = {
   started: 'started',
@@ -226,7 +237,8 @@ export const FrameworkSyncOperationKind = {
   SYNC: 'SYNC',
   ROLLBACK: 'ROLLBACK',
 } as const;
-export type FrameworkSyncOperationKind = (typeof FrameworkSyncOperationKind)[keyof typeof FrameworkSyncOperationKind];
+export type FrameworkSyncOperationKind =
+  (typeof FrameworkSyncOperationKind)[keyof typeof FrameworkSyncOperationKind];
 
 export const Frequency = {
   monthly: 'monthly',
@@ -251,7 +263,8 @@ export const IntegrationConnectionStatus = {
   paused: 'paused',
   disconnected: 'disconnected',
 } as const;
-export type IntegrationConnectionStatus = (typeof IntegrationConnectionStatus)[keyof typeof IntegrationConnectionStatus];
+export type IntegrationConnectionStatus =
+  (typeof IntegrationConnectionStatus)[keyof typeof IntegrationConnectionStatus];
 
 export const IntegrationFindingSeverity = {
   info: 'info',
@@ -260,14 +273,16 @@ export const IntegrationFindingSeverity = {
   high: 'high',
   critical: 'critical',
 } as const;
-export type IntegrationFindingSeverity = (typeof IntegrationFindingSeverity)[keyof typeof IntegrationFindingSeverity];
+export type IntegrationFindingSeverity =
+  (typeof IntegrationFindingSeverity)[keyof typeof IntegrationFindingSeverity];
 
 export const IntegrationFindingStatus = {
   open: 'open',
   resolved: 'resolved',
   ignored: 'ignored',
 } as const;
-export type IntegrationFindingStatus = (typeof IntegrationFindingStatus)[keyof typeof IntegrationFindingStatus];
+export type IntegrationFindingStatus =
+  (typeof IntegrationFindingStatus)[keyof typeof IntegrationFindingStatus];
 
 export const IntegrationRunJobType = {
   full_sync: 'full_sync',
@@ -276,7 +291,8 @@ export const IntegrationRunJobType = {
   manual: 'manual',
   test_connection: 'test_connection',
 } as const;
-export type IntegrationRunJobType = (typeof IntegrationRunJobType)[keyof typeof IntegrationRunJobType];
+export type IntegrationRunJobType =
+  (typeof IntegrationRunJobType)[keyof typeof IntegrationRunJobType];
 
 export const IntegrationRunStatus = {
   pending: 'pending',
@@ -294,14 +310,16 @@ export const IntegrationSyncLogStatus = {
   success: 'success',
   failed: 'failed',
 } as const;
-export type IntegrationSyncLogStatus = (typeof IntegrationSyncLogStatus)[keyof typeof IntegrationSyncLogStatus];
+export type IntegrationSyncLogStatus =
+  (typeof IntegrationSyncLogStatus)[keyof typeof IntegrationSyncLogStatus];
 
 export const IsmsAuditConclusionVerdict = {
   conform: 'conform',
   substantially_conform: 'substantially_conform',
   not_yet_conform: 'not_yet_conform',
 } as const;
-export type IsmsAuditConclusionVerdict = (typeof IsmsAuditConclusionVerdict)[keyof typeof IsmsAuditConclusionVerdict];
+export type IsmsAuditConclusionVerdict =
+  (typeof IsmsAuditConclusionVerdict)[keyof typeof IsmsAuditConclusionVerdict];
 
 export const IsmsAuditControlResult = {
   conformity_confirmed: 'conformity_confirmed',
@@ -309,14 +327,16 @@ export const IsmsAuditControlResult = {
   observation_raised: 'observation_raised',
   not_sampled: 'not_sampled',
 } as const;
-export type IsmsAuditControlResult = (typeof IsmsAuditControlResult)[keyof typeof IsmsAuditControlResult];
+export type IsmsAuditControlResult =
+  (typeof IsmsAuditControlResult)[keyof typeof IsmsAuditControlResult];
 
 export const IsmsAuditFindingStatus = {
   open: 'open',
   in_progress: 'in_progress',
   closed: 'closed',
 } as const;
-export type IsmsAuditFindingStatus = (typeof IsmsAuditFindingStatus)[keyof typeof IsmsAuditFindingStatus];
+export type IsmsAuditFindingStatus =
+  (typeof IsmsAuditFindingStatus)[keyof typeof IsmsAuditFindingStatus];
 
 export const IsmsAuditFindingType = {
   nc_major: 'nc_major',
@@ -404,14 +424,16 @@ export const IsmsReviewActionStatus = {
   in_progress: 'in_progress',
   closed: 'closed',
 } as const;
-export type IsmsReviewActionStatus = (typeof IsmsReviewActionStatus)[keyof typeof IsmsReviewActionStatus];
+export type IsmsReviewActionStatus =
+  (typeof IsmsReviewActionStatus)[keyof typeof IsmsReviewActionStatus];
 
 export const IsmsReviewConclusionVerdict = {
   suitable: 'suitable',
   adequate: 'adequate',
   effective: 'effective',
 } as const;
-export type IsmsReviewConclusionVerdict = (typeof IsmsReviewConclusionVerdict)[keyof typeof IsmsReviewConclusionVerdict];
+export type IsmsReviewConclusionVerdict =
+  (typeof IsmsReviewConclusionVerdict)[keyof typeof IsmsReviewConclusionVerdict];
 
 export const IsmsReviewStatus = {
   planned: 'planned',
@@ -426,7 +448,8 @@ export const KnowledgeBaseDocumentProcessingStatus = {
   completed: 'completed',
   failed: 'failed',
 } as const;
-export type KnowledgeBaseDocumentProcessingStatus = (typeof KnowledgeBaseDocumentProcessingStatus)[keyof typeof KnowledgeBaseDocumentProcessingStatus];
+export type KnowledgeBaseDocumentProcessingStatus =
+  (typeof KnowledgeBaseDocumentProcessingStatus)[keyof typeof KnowledgeBaseDocumentProcessingStatus];
 
 export const Likelihood = {
   very_unlikely: 'very_unlikely',
@@ -471,7 +494,8 @@ export const QuestionnaireAnswerStatus = {
   generated: 'generated',
   manual: 'manual',
 } as const;
-export type QuestionnaireAnswerStatus = (typeof QuestionnaireAnswerStatus)[keyof typeof QuestionnaireAnswerStatus];
+export type QuestionnaireAnswerStatus =
+  (typeof QuestionnaireAnswerStatus)[keyof typeof QuestionnaireAnswerStatus];
 
 export const QuestionnaireStatus = {
   parsing: 'parsing',
@@ -603,7 +627,8 @@ export const TrustAccessGrantStatus = {
   expired: 'expired',
   revoked: 'revoked',
 } as const;
-export type TrustAccessGrantStatus = (typeof TrustAccessGrantStatus)[keyof typeof TrustAccessGrantStatus];
+export type TrustAccessGrantStatus =
+  (typeof TrustAccessGrantStatus)[keyof typeof TrustAccessGrantStatus];
 
 export const TrustAccessRequestStatus = {
   under_review: 'under_review',
@@ -611,7 +636,8 @@ export const TrustAccessRequestStatus = {
   denied: 'denied',
   canceled: 'canceled',
 } as const;
-export type TrustAccessRequestStatus = (typeof TrustAccessRequestStatus)[keyof typeof TrustAccessRequestStatus];
+export type TrustAccessRequestStatus =
+  (typeof TrustAccessRequestStatus)[keyof typeof TrustAccessRequestStatus];
 
 export const TrustFramework = {
   iso_27001: 'iso_27001',

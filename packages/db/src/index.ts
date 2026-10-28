@@ -1,13 +1,13 @@
 export * from '@prisma/client';
-export { db, serviceDb, tenantDb, withService, withTenant } from './client';
-export type { SslConfig } from './client';
+export { db, serviceDb, tenantDb, withService, withTenant } from './client.js';
+export type { SslConfig } from './client.js';
 export {
   EMBEDDING_DIMENSIONS,
   EMBEDDING_IDENTITY,
   EMBEDDING_MODEL,
   embedTexts,
-} from './embedding-client';
-export { normalizeEmail } from './normalize-email';
+} from './embedding-client.js';
+export { normalizeEmail } from './normalize-email.js';
 export {
   countVectorsByOrganization,
   deleteVectorsByOrganization,
@@ -16,7 +16,7 @@ export {
   listVectorsByOrganizationAndType,
   upsertVectors,
   vectorIndex,
-} from './vector-index';
+} from './vector-index.js';
 export type {
   VectorFetchOptions,
   VectorFetchResult,
@@ -30,4 +30,4 @@ export type {
   VectorRangeResult,
   VectorRecord,
   VectorRecordInput,
-} from './vector-index';
+} from './vector-index.js';

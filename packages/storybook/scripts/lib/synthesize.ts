@@ -84,7 +84,8 @@ function booleanFor(propertyName: string): string {
   return FALSE_BY_DEFAULT.test(propertyName) ? 'false' : 'true';
 }
 
-function isDateType(type: ts.Type): boolean {  return type.getSymbol()?.getName() === 'Date';
+function isDateType(type: ts.Type): boolean {
+  return type.getSymbol()?.getName() === 'Date';
 }
 
 function isReactNodeType({ checker, type }: { checker: ts.TypeChecker; type: ts.Type }): boolean {
@@ -94,7 +95,13 @@ function isReactNodeType({ checker, type }: { checker: ts.TypeChecker; type: ts.
 }
 
 /** Only an element satisfies `ReactElement`; `ReactNode` also accepts text. */
-function isReactElementType({ checker, type }: { checker: ts.TypeChecker; type: ts.Type }): boolean {
+function isReactElementType({
+  checker,
+  type,
+}: {
+  checker: ts.TypeChecker;
+  type: ts.Type;
+}): boolean {
   return /^(React\.)?(ReactElement(<.*>)?|JSX\.Element|Element)$/.test(checker.typeToString(type));
 }
 

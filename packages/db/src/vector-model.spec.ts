@@ -23,7 +23,7 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 describe('vector model isolation', () => {
   it('stamps current model identity on inserts and conflict updates', async () => {
-    const { vectorIndex } = await import('./vector-index');
+    const { vectorIndex } = await import('./vector-index.js');
     await vectorIndex?.upsert({
       id: 'policy_1',
       vector: [0.1],
@@ -35,7 +35,7 @@ describe('vector model isolation', () => {
     expect(tenant).toHaveBeenCalledWith('org_1', expect.any(Function));
   });
   it('filters incompatible and legacy vectors before similarity ranking', async () => {
-    const { vectorIndex } = await import('./vector-index');
+    const { vectorIndex } = await import('./vector-index.js');
     await vectorIndex?.query({ vector: [0.1], topK: 5, organizationId: 'org_1' });
     const statement: Prisma.Sql = query.mock.calls[0][0];
     expect(statement.sql).toContain('AND "embeddingModel" = ?');
@@ -49,7 +49,7 @@ describe('vector model isolation', () => {
 
 describe('atomic document batches', () => {
   it('commits all chunks through one tenant transaction and SQL statement', async () => {
-    const { upsertVectors } = await import('./vector-index');
+    const { upsertVectors } = await import('./vector-index.js');
     await upsertVectors({
       organizationId: 'org_1',
       records: ['chunk_1', 'chunk_2'].map((id) => ({
@@ -65,7 +65,7 @@ describe('atomic document batches', () => {
     expect(statement.values).toContain('chunk_2');
   });
   it('rejects cross-tenant batches before any write', async () => {
-    const { upsertVectors } = await import('./vector-index');
+    const { upsertVectors } = await import('./vector-index.js');
     await expect(
       upsertVectors({
         organizationId: 'org_1',

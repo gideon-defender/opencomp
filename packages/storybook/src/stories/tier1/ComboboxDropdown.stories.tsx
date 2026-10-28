@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { ComboboxDropdown } from '@gideon-defender/ui/combobox-dropdown';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
   title: 'Tier 1 — ComboboxDropdown',

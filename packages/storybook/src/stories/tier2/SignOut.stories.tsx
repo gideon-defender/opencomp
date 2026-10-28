@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { withDropdownMenu } from '../../mocks/decorators';
 import { SignOut } from '../../../../../apps/app/src/components/sign-out';
+import { withDropdownMenu } from '../../mocks/decorators';
 
 const meta = {
   title: 'Tier 2 — SignOut',

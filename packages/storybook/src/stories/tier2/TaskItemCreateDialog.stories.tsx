@@ -19,7 +19,7 @@ export const Default: Story = {
     limit: 42,
     sortBy: 'createdAt',
     sortOrder: 'desc',
-    filters: {  },
+    filters: {},
     onSuccess: () => {},
   },
 };

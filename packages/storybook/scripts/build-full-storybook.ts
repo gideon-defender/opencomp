@@ -3,14 +3,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isSafeIdentifier, jsPropertyKey, jsString } from './lib/emit';
 import { pickComponentExport, readModuleExports } from './lib/exports';
-import {
-  extractRouteParams,
-  scanFiles,
-  toPascalCase,
-  toRelativeSpecifier,
-} from './lib/scan';
-import { isServerOnly } from './lib/server-only';
 import { createPropsAnalyzer, type PropsAnalyzer } from './lib/props';
+import { extractRouteParams, scanFiles, toPascalCase, toRelativeSpecifier } from './lib/scan';
+import { isServerOnly } from './lib/server-only';
 import { SKIPPED_APP_COMPONENTS } from './lib/skip';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -165,9 +160,7 @@ function buildStory({
   const decoratorImportLine = decoratorImports.size
     ? `import { ${[...decoratorImports].sort().join(', ')} } from '${mocksPath}';\n`
     : '';
-  const decoratorBlock = decorators.length
-    ? `\n  decorators: [${decorators.join(', ')}],`
-    : '';
+  const decoratorBlock = decorators.length ? `\n  decorators: [${decorators.join(', ')}],` : '';
   const parameterEntries: string[] = [];
   const urlEntries = Object.entries(urlState);
   if (urlEntries.length > 0) {

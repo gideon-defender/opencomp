@@ -1,6 +1,6 @@
 /** Shared embedding client for risk linkage and API vector search. */
 import { z } from 'zod';
-import { embedBedrockTexts } from './bedrock-embeddings';
+import { embedBedrockTexts } from './bedrock-embeddings.js';
 
 const DEFAULT_EMBEDDINGS_BASE_URL = 'http://localhost:11434';
 

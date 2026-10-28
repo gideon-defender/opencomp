@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { TimeRangeInput } from '@gideon-defender/ui/time-range-input';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
   title: 'Tier 1 — TimeRangeInput',

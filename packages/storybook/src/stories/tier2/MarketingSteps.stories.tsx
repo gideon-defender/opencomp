@@ -11,6 +11,10 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    steps: [{ number: 'Example 1', title: 'Example title 1', description: 'Example description 1' }, { number: 'Example 2', title: 'Example title 2', description: 'Example description 2' }, { number: 'Example 3', title: 'Example title 3', description: 'Example description 3' }],
+    steps: [
+      { number: 'Example 1', title: 'Example title 1', description: 'Example description 1' },
+      { number: 'Example 2', title: 'Example title 2', description: 'Example description 2' },
+      { number: 'Example 3', title: 'Example title 3', description: 'Example description 3' },
+    ],
   },
 };

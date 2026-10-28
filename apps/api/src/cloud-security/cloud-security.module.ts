@@ -1,5 +1,11 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { CloudSecurityController } from './cloud-security.controller';
+import { CloudSecurityScanController } from './cloud-security-scan.controller';
+import { CloudSecurityGcpController } from './cloud-security-gcp.controller';
+import { CloudSecurityAzureController } from './cloud-security-azure.controller';
+import { CloudSecurityAzureValidateController } from './cloud-security-azure-validate.controller';
+import { CloudSecurityTriggerController } from './cloud-security-trigger.controller';
+import { CloudSecurityLegacyController } from './cloud-security-legacy.controller';
 import { CloudSecurityService } from './cloud-security.service';
 import { CloudSecurityQueryService } from './cloud-security-query.service';
 import { CloudSecurityLegacyService } from './cloud-security-legacy.service';
@@ -28,6 +34,12 @@ import { AuthModule } from '../auth/auth.module';
   imports: [forwardRef(() => IntegrationPlatformModule), AuthModule],
   controllers: [
     CloudSecurityController,
+    CloudSecurityScanController,
+    CloudSecurityGcpController,
+    CloudSecurityAzureController,
+    CloudSecurityAzureValidateController,
+    CloudSecurityTriggerController,
+    CloudSecurityLegacyController,
     RemediationController,
     RemediationBatchController,
   ],

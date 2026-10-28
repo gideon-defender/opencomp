@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import MultipleSelector from '@gideon-defender/ui/multiple-selector';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
   title: 'Tier 1 — MultipleSelector',

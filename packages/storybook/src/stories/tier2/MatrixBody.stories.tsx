@@ -11,7 +11,11 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    riskData: [{ probability: 'Example 1', impact: 'Example 1', level: 'high' }, { probability: 'Example 2', impact: 'Example 2', level: 'high' }, { probability: 'Example 3', impact: 'Example 3', level: 'high' }],
+    riskData: [
+      { probability: 'Example 1', impact: 'Example 1', level: 'high' },
+      { probability: 'Example 2', impact: 'Example 2', level: 'high' },
+      { probability: 'Example 3', impact: 'Example 3', level: 'high' },
+    ],
     handleCellClick: () => {},
     readOnly: false,
     suggestedLikelihood: 'very_unlikely',

@@ -81,6 +81,7 @@ Connections created earlier may use a single `OpenComp-Remediator` role for all 
     ```
 
     GovCloud accounts: run this in the GovCloud partition — the role ARN uses `aws-us-gov` throughout.
+
   </Step>
   <Step title="Confirm in OpenComp">
     Reopen the connection settings. The legacy-role notice is gone and your pair rows still show **Configured**.
@@ -88,7 +89,9 @@ Connections created earlier may use a single `OpenComp-Remediator` role for all 
 </Steps>
 
 <Note>
-  Deleting the legacy role before the pairs are ready is safe but degrades auto-fix: findings without a matching pair role fall back to manual guidance until you configure that pair. Nothing breaks and no scan data is lost.
+  Deleting the legacy role before the pairs are ready is safe but degrades auto-fix: findings
+  without a matching pair role fall back to manual guidance until you configure that pair. Nothing
+  breaks and no scan data is lost.
 </Note>
 
 ## What gets scanned
@@ -191,9 +194,11 @@ Subscribe the security on-call email — not an individual inbox. Confirm the SN
 </Accordion>
 
 <Accordion title="Auto-remediation isn't available" icon="wrench">
-  Auto-remediation requires per-pair `OpenComp-Remediator-{AssetClass}-{Region}` roles. Run the CloudShell script for the finding's asset
-  class and region, then paste its Role ARN into the matching row of the **remediation roles table**
-  in the connection settings. If the connection previously used the single `OpenComp-Remediator` role, follow [Migrate from the legacy remediation role](#migrate-from-the-legacy-remediation-role) first — that role is no longer read.
+  Auto-remediation requires per-pair `OpenComp-Remediator-{AssetClass}-{Region}` roles. Run the
+  CloudShell script for the finding's asset class and region, then paste its Role ARN into the
+  matching row of the **remediation roles table** in the connection settings. If the connection
+  previously used the single `OpenComp-Remediator` role, follow [Migrate from the legacy remediation
+  role](#migrate-from-the-legacy-remediation-role) first — that role is no longer read.
 </Accordion>
 
 ## Support

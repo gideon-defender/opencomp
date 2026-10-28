@@ -11,7 +11,11 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    certifications: [{ type: 'Example 1', status: 'unknown' }, { type: 'Example 2', status: 'unknown' }, { type: 'Example 3', status: 'unknown' }],
+    certifications: [
+      { type: 'Example 1', status: 'unknown' },
+      { type: 'Example 2', status: 'unknown' },
+      { type: 'Example 3', status: 'unknown' },
+    ],
     verifiedCount: 42,
     previewCount: 42,
   },

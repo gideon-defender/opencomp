@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { withSelect } from '../../mocks/decorators';
 import { SelectUser } from '../../../../../apps/app/src/components/select-user';
+import { withSelect } from '../../mocks/decorators';
 
 const meta = {
   title: 'Tier 2 — SelectUser',
@@ -13,7 +13,11 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    users: [{ id: 'demo_id_1', name: 'Example name 1' }, { id: 'demo_id_2', name: 'Example name 2' }, { id: 'demo_id_3', name: 'Example name 3' }],
+    users: [
+      { id: 'demo_id_1', name: 'Example name 1' },
+      { id: 'demo_id_2', name: 'Example name 2' },
+      { id: 'demo_id_3', name: 'Example name 3' },
+    ],
     isLoading: false,
     onSelect: () => {},
     selectedId: 'demo_id',

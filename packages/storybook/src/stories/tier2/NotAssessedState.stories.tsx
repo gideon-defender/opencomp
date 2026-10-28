@@ -11,7 +11,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    onAssess: () => (undefined),
+    onAssess: () => undefined,
     disabled: false,
     description: 'Example description',
     headline: 'Example',
