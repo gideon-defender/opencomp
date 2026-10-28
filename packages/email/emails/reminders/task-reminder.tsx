@@ -54,7 +54,7 @@ export const TaskReminderEmail = ({
   recordId,
   locale = 'en',
 }: Props) => {
-  const t = copy[locale];
+  const t = copy[locale] ?? copy.en;
   const link = `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.gideondefender.com'}${recordId}`;
 
   return (

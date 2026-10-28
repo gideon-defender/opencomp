@@ -1,8 +1,8 @@
 import { Prisma } from '@prisma/client';
-import { withTenant } from './client';
-import { EMBEDDING_IDENTITY } from './embedding-client';
-import { toVectorLiteral } from './vector-index-sql';
-import type { VectorRecordInput } from './vector-index-types';
+import { withTenant } from './client.js';
+import { EMBEDDING_IDENTITY } from './embedding-client.js';
+import { toVectorLiteral } from './vector-index-sql.js';
+import type { VectorRecordInput } from './vector-index-types.js';
 
 /** A complete document batch commits atomically, so failed chunks cannot look fresh. */
 export async function upsertVectors({

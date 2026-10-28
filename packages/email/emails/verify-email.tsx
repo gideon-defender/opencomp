@@ -50,7 +50,7 @@ const copy: Record<
 };
 
 export const VerifyEmail = ({ email, url, locale = 'en' }: Props) => {
-  const t = copy[locale];
+  const t = copy[locale] ?? copy.en;
   return (
     <Html lang={locale}>
       <Tailwind>

@@ -73,7 +73,7 @@ export const PolicyNotificationEmail = ({
   notificationType,
   locale = 'en',
 }: Props) => {
-  const t = copy[locale];
+  const t = copy[locale] ?? copy.en;
   const link = `${process.env.NEXT_PUBLIC_PORTAL_URL ?? 'https://portal.gideondefender.com'}/${organizationId}`;
 
   const getBodyText = () => {

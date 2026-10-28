@@ -8,9 +8,9 @@ sources:
             - location: ./.speakeasy/mcp-uploads-overlay.yaml
         output: .speakeasy/out.openapi.yaml
         registry:
-            location: registry.speakeasyapi.dev/comp-ai-ntv/comp-ai/comp-ai-api
+            location: registry.speakeasyapi.dev/opencomp-ntv/opencomp/opencomp-api
 targets:
-    comp-ai:
+    opencomp:
         target: mcp-typescript
         source: OpenComp API
         publish:

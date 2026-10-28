@@ -19,7 +19,7 @@ const copy: Record<Locale, { prefix: string; link: string }> = {
 };
 
 export function UnsubscribeLink({ email, unsubscribeUrl, locale = 'en' }: UnsubscribeLinkProps) {
-  const t = copy[locale];
+  const t = copy[locale] ?? copy.en;
   void email;
   return (
     <Section className="mt-[24px]">

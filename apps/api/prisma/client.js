@@ -4,7 +4,7 @@ exports.db = void 0;
 const client_1 = require('@prisma/client');
 const adapter_pg_1 = require('@prisma/adapter-pg');
 const globalForPrisma = global;
-const LOCAL_HOSTNAMES = new Set(['localhost', '127.0.0.1', '::1']);
+const LOCAL_HOSTNAMES = new Set(['localhost', '127.0.0.1', '::1', 'postgres', 'db']);
 function stripSslMode(connectionString) {
   const url = new URL(connectionString);
   url.searchParams.delete('sslmode');
@@ -22,9 +22,16 @@ function isLocalhostUrl(connectionString) {
     return false;
   }
 }
+function hasSslModeDisable(connectionString) {
+  try {
+    return new URL(connectionString).searchParams.get('sslmode') === 'disable';
+  } catch {
+    return false;
+  }
+}
 function createPrismaClient() {
   const rawUrl = process.env.DATABASE_URL;
-  const isLocalhost = isLocalhostUrl(rawUrl);
+  const isLocalhost = isLocalhostUrl(rawUrl) || hasSslModeDisable(rawUrl);
   // Strategy:
   // - Localhost: TLS off (typical dev Postgres has no cert).
   // - Remote with NODE_EXTRA_CA_CERTS set: verified TLS using that bundle

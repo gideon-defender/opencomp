@@ -12,7 +12,6 @@ export function initAutoLaunch(): void {
   log(`Initializing auto-launch: ${enabled ? 'enabled' : 'disabled'}`);
   app.setLoginItemSettings({
     openAtLogin: enabled,
-    openAsHidden: true,
   });
 }
 
@@ -24,7 +23,6 @@ export function setAutoLaunch(enabled: boolean): void {
   setOpenAtLogin(enabled);
   app.setLoginItemSettings({
     openAtLogin: enabled,
-    openAsHidden: true,
   });
 }
 

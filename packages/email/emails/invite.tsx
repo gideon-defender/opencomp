@@ -42,7 +42,7 @@ const copy: Record<
 };
 
 export const InviteEmail = ({ email, organizationName, inviteLink, locale = 'en' }: Props) => {
-  const t = copy[locale];
+  const t = copy[locale] ?? copy.en;
   return (
     <Html lang={locale}>
       <Tailwind>

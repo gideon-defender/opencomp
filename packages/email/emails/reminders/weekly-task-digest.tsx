@@ -69,7 +69,7 @@ export const WeeklyTaskDigestEmail = ({
   tasks,
   locale = 'en',
 }: Props) => {
-  const t = copy[locale];
+  const t = copy[locale] ?? copy.en;
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.gideondefender.com';
   const tasksUrl = `${baseUrl}/${organizationId}/tasks`;
   const taskCountMessage = getTaskCountMessage(tasks.length, locale);

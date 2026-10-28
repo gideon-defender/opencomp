@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { db } from '../client';
+import { db } from '../client.js';
 
 export interface BackfillResult {
   versionsCreated: number;

@@ -145,7 +145,7 @@
           {
             "lang": "bash",
             "label": "Get organization profile",
-            "source": "curl --request GET --url \"https://api.gideondefender.com/v1/organization\" --header \"X-API-Key: $COMP_AI_API_KEY\""
+            "source": "curl --request GET --url \"https://api.gideondefender.com/v1/organization\" --header \"X-API-Key: $OPENCOMP_API_KEY\""
           }
         ],
         "x-comp-mcp": {
@@ -903,7 +903,8 @@
             "in": "query",
             "description": "Access token for public access (alternative to authentication). When provided, authentication is not required.",
             "schema": {
-              "example": "tok_abc123def456"
+              "example": "tok_abc123def456",
+              "type": "string"
             }
           }
         ],
@@ -5828,6 +5829,15 @@
             "name": "connectionId",
             "required": true,
             "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": false,
+            "in": "query",
+            "description": "Number of activity records to return (1-100, default 30)",
             "schema": {
               "type": "string"
             }
@@ -11682,17 +11692,17 @@
           {
             "lang": "bash",
             "label": "List policies",
-            "source": "curl --request GET --url \"https://api.gideondefender.com/v1/policies\" --header \"X-API-Key: $COMP_AI_API_KEY\""
+            "source": "curl --request GET --url \"https://api.gideondefender.com/v1/policies\" --header \"X-API-Key: $OPENCOMP_API_KEY\""
           },
           {
             "lang": "bash",
             "label": "List policies (lightweight, no content)",
-            "source": "curl --request GET --url \"https://api.gideondefender.com/v1/policies?excludeContent=true\" --header \"X-API-Key: $COMP_AI_API_KEY\""
+            "source": "curl --request GET --url \"https://api.gideondefender.com/v1/policies?excludeContent=true\" --header \"X-API-Key: $OPENCOMP_API_KEY\""
           },
           {
             "lang": "bash",
             "label": "List policies including archived",
-            "source": "curl --request GET --url \"https://api.gideondefender.com/v1/policies?includeArchived=true\" --header \"X-API-Key: $COMP_AI_API_KEY\""
+            "source": "curl --request GET --url \"https://api.gideondefender.com/v1/policies?includeArchived=true\" --header \"X-API-Key: $OPENCOMP_API_KEY\""
           }
         ],
         "x-speakeasy-mcp": {
@@ -15267,7 +15277,7 @@
           {
             "lang": "bash",
             "label": "List tasks",
-            "source": "curl --request GET --url \"https://api.gideondefender.com/v1/tasks\" --header \"X-API-Key: $COMP_AI_API_KEY\""
+            "source": "curl --request GET --url \"https://api.gideondefender.com/v1/tasks\" --header \"X-API-Key: $OPENCOMP_API_KEY\""
           }
         ],
         "x-comp-mcp": {
@@ -35204,7 +35214,7 @@
             "example": true
           },
           "image": {
-            "type": "object",
+            "type": "string",
             "description": "User profile image URL",
             "example": "https://example.com/avatar.jpg",
             "nullable": true
@@ -35222,7 +35232,8 @@
             "example": "2024-01-15T00:00:00Z"
           },
           "lastLogin": {
-            "type": "object",
+            "format": "date-time",
+            "type": "string",
             "description": "Last login time",
             "example": "2024-01-15T12:00:00Z",
             "nullable": true
@@ -35302,7 +35313,7 @@
             "example": "it"
           },
           "jobTitle": {
-            "type": "object",
+            "type": "string",
             "description": "Job title for the member",
             "example": "Software Engineer",
             "nullable": true
@@ -35318,7 +35329,7 @@
             "example": false
           },
           "fleetDmLabelId": {
-            "type": "object",
+            "type": "number",
             "description": "FleetDM label ID for member devices",
             "example": 123,
             "nullable": true
@@ -35792,7 +35803,7 @@
             "description": "Auto-resolved from your API key / session. You can omit this; it is ignored by the server."
           },
           "provider": {
-            "type": "object",
+            "type": "string",
             "description": "Provider slug to use for employee sync (must have the \"sync\" capability in its manifest — call list-providers to see options). Pass null or omit the field to disable employee sync for this org.",
             "example": "google-workspace",
             "nullable": true
@@ -35807,7 +35818,7 @@
             "description": "Auto-resolved from your API key / session. You can omit this; it is ignored by the server."
           },
           "provider": {
-            "type": "object",
+            "type": "string",
             "description": "Provider slug whose 2FA check feeds the People-tab 2FA column (must be bound to the 2FA task — call available-2fa-sources for options). Pass null or omit to clear the source.",
             "example": "google-workspace",
             "nullable": true
@@ -36332,7 +36343,7 @@
             "example": "mitigate"
           },
           "treatmentStrategyDescription": {
-            "type": "object",
+            "type": "string",
             "description": "Description of the treatment strategy",
             "example": "We isolated the vendor to a dedicated VPC."
           },
@@ -36454,7 +36465,7 @@
             "example": "john@example.com"
           },
           "team_id": {
-            "type": "object",
+            "type": "number",
             "description": "Team ID",
             "example": 789,
             "nullable": true
@@ -36722,7 +36733,7 @@
             "example": 300
           },
           "team_id": {
-            "type": "object",
+            "type": "number",
             "description": "Team ID",
             "example": 1,
             "nullable": true
@@ -36735,7 +36746,7 @@
             }
           },
           "team_name": {
-            "type": "object",
+            "type": "string",
             "description": "Team name",
             "example": "Engineering",
             "nullable": true
@@ -36778,7 +36789,7 @@
             "additionalProperties": true
           },
           "refetch_critical_queries_until": {
-            "type": "object",
+            "type": "string",
             "description": "Refetch critical queries until",
             "example": "2024-01-20T00:00:00Z",
             "nullable": true
@@ -36933,7 +36944,7 @@
             "example": "admin"
           },
           "department": {
-            "type": "object",
+            "type": "string",
             "description": "Member department",
             "example": "engineering",
             "nullable": true
@@ -36944,7 +36955,7 @@
             "example": true
           },
           "fleetDmLabelId": {
-            "type": "object",
+            "type": "number",
             "description": "FleetDM label ID for member devices",
             "example": 123,
             "nullable": true
@@ -37697,7 +37708,7 @@
             "example": "2024-01-15T10:30:00Z"
           },
           "taskTemplateId": {
-            "type": "object",
+            "type": "string",
             "description": "Task template ID",
             "example": "frk_tt_68406e353df3bc002994acef",
             "nullable": true
@@ -37715,7 +37726,8 @@
             "example": "daily"
           },
           "integrationLastRunAt": {
-            "type": "object",
+            "format": "date-time",
+            "type": "string",
             "description": "Last successful integration check run timestamp",
             "nullable": true
           }
@@ -37805,7 +37817,7 @@
             "example": "john.doe@company.com"
           },
           "image": {
-            "type": "object",
+            "type": "string",
             "description": "User profile image URL",
             "example": "https://example.com/avatar.jpg",
             "nullable": true
@@ -38026,7 +38038,7 @@
             "example": "3a69a5bb27875189.vercel-dns-016.com"
           },
           "misconfigured": {
-            "type": "object",
+            "type": "boolean",
             "description": "Whether Vercel's /v6/domains/{d}/config call reports the domain as misconfigured. Null when Vercel could not be reached.",
             "nullable": true
           }
@@ -38123,7 +38135,7 @@
             "nullable": true
           },
           "customFrameworkId": {
-            "type": "object",
+            "type": "string",
             "description": "Set for custom-framework certificates; null for native ones",
             "nullable": true
           },
@@ -38268,7 +38280,7 @@
             "example": "security-overview.pdf"
           },
           "description": {
-            "type": "object",
+            "type": "string",
             "example": "Overview of our security program"
           },
           "createdAt": {
@@ -38611,7 +38623,7 @@
             "maxLength": 5000
           },
           "revisionNote": {
-            "type": "object",
+            "type": "string",
             "description": "Auditor note when requesting revision",
             "maxLength": 2000,
             "nullable": true
@@ -39073,7 +39085,7 @@
             "example": "Review vendor contract"
           },
           "description": {
-            "type": "object",
+            "type": "string",
             "description": "Task description",
             "nullable": true
           },
@@ -39317,7 +39329,7 @@
             ]
           },
           "assigneeId": {
-            "type": "object",
+            "type": "string",
             "description": "Assignee member ID (set to null to unassign)",
             "nullable": true
           }

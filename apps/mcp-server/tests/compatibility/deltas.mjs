@@ -170,6 +170,13 @@ add({
   value:
     'Comma-separated role names (or repeated roles params), e.g. admin,Compliance Lead. Max 100 names.',
 });
+// Reviewed evolution: get-activity explicitly documents its optional take limit.
+add({
+  tools: 'get-activity',
+  field: `${direct}/take`,
+  keyword: 'description',
+  value: 'Number of activity records to return (1-100, default 30)',
+});
 // Reviewed evolution: EmailPreferencesDto gained optional findingNotifications.
 // Phase 0 baseline has 6 keys; current spec has 7.
 entries.push({
@@ -177,6 +184,29 @@ entries.push({
   path: '/properties/request/properties/preferences/properties/findingNotifications',
   before: undefined,
   after: { type: 'boolean' },
+});
+// Reviewed evolution: provider and identifying DTO fields are now string schemas.
+for (const [tool, path, before] of [
+  ['set-employee-sync-provider', '/properties/request/properties/provider/anyOf/0/type', 'object'],
+  ['set-two-factor-source', '/properties/request/properties/provider/anyOf/0/type', 'object'],
+  ['update-finding', '/properties/request/properties/body/properties/revisionNote/anyOf/0/type', 'object'],
+  ['update-task-item', '/properties/request/properties/body/properties/assigneeId/anyOf/0/type', 'object'],
+  ['update-vendor', '/properties/request/properties/body/properties/treatmentStrategyDescription/type', 'object'],
+]) {
+  entries.push({ tool, path, before, after: 'string' });
+}
+entries.push({
+  tool: 'update-finding',
+  path: '/properties/request/properties/body/properties/revisionNote/anyOf/0/maxLength',
+  before: undefined,
+  after: 2000,
+});
+// Reviewed evolution: get-primary-color now exposes the token name as a string.
+entries.push({
+  tool: 'get-primary-color',
+  path: '/properties/request/properties/token/type',
+  before: undefined,
+  after: 'string',
 });
 export const reviewedSchemaDeltas = entries.map((item) => ({
   ...item,

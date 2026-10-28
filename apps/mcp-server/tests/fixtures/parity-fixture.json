@@ -6005,6 +6005,9 @@
             "properties": {
               "connectionId": {
                 "type": "string"
+              },
+              "take": {
+                "type": "string"
               }
             },
             "required": [

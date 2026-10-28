@@ -4,11 +4,11 @@ import { jsPDF } from 'jspdf';
 // Primary brand color (teal/green) - hsl(165, 100%, 15%)
 const PRIMARY_COLOR = { r: 0, g: 77, b: 61 };
 
-const COMP_AI_LOGO_URL = 'https://assets.gideondefender.com/logo.png';
+const OPENCOMP_LOGO_URL = 'https://assets.gideondefender.com/logo.png';
 
 const getLogoDataUrl = async (): Promise<string | null> => {
   try {
-    const response = await fetch(COMP_AI_LOGO_URL);
+    const response = await fetch(OPENCOMP_LOGO_URL);
     if (!response.ok) {
       return null;
     }

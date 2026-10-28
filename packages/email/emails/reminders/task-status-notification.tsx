@@ -73,7 +73,7 @@ export const TaskStatusNotificationEmail = ({
   taskUrl,
   locale = 'en',
 }: Props) => {
-  const t = copy[locale];
+  const t = copy[locale] ?? copy.en;
   const statusLabel = taskStatus === 'failed' ? t.failedLabel : t.reviewLabel;
   const statusMessage = taskStatus === 'failed' ? t.failedMessage : t.reviewMessage;
 

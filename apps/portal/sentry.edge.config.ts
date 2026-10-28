@@ -16,6 +16,4 @@ Sentry.init({
   enabled: process.env.VERCEL_ENV === 'production',
 
   tracesSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.1,
-
-  enableLogs: true,
 });

@@ -3,9 +3,12 @@
  * Generates a prisma-client-js client to populate @prisma/client at node_modules.
  * Creates a temp schema dir, copies model files, generates with prisma-client-js.
  */
-const { execFileSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+import { execFileSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const root = path.join(__dirname, '..');
 const schemaDir = path.join(root, 'prisma/schema');
@@ -41,8 +44,8 @@ datasource db {
   );
 
   // Resolve prisma CLI via Node/Bun module resolution (handles hoisting)
-  const prismaPackage = require.resolve('prisma/package.json');
-  const prismaCli = path.join(path.dirname(prismaPackage), 'build', 'index.js');
+  const prismaPackagePath = fileURLToPath(import.meta.resolve('prisma/package.json'));
+  const prismaCli = path.join(path.dirname(prismaPackagePath), 'build', 'index.js');
 
   execFileSync(process.execPath, [prismaCli, 'generate', `--schema=${tempDir}`], {
     stdio: 'inherit',

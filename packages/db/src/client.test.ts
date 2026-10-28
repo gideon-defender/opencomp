@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { resolveConnectionString } from './client';
-import { resolveSslConfig } from './ssl-config';
+import { resolveConnectionString } from './client.js';
+import { resolveSslConfig } from './ssl-config.js';
 
 describe('resolveSslConfig', () => {
   it('returns undefined for localhost', () => {

@@ -23,7 +23,7 @@ const copy: Record<Locale, { preview: string; heading: string; body: string }> =
 
 export const WelcomeEmail = ({ name, locale = 'en' }: Props) => {
   void name;
-  const t = copy[locale];
+  const t = copy[locale] ?? copy.en;
   return (
     <Html lang={locale}>
       <Tailwind>
