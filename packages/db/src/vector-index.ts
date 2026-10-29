@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
-import { withService, withTenant } from './client';
-import { EMBEDDING_IDENTITY } from './embedding-client';
+import { withService, withTenant } from './client.js';
+import { EMBEDDING_IDENTITY } from './embedding-client.js';
 import {
   escapeLike,
   idsInClause,
@@ -10,19 +10,19 @@ import {
   tenantWhere,
   toVectorLiteral,
   type VectorRow,
-} from './vector-index-sql';
+} from './vector-index-sql.js';
 import type {
   VectorFetchResult,
   VectorIndex,
   VectorInfoResult,
   VectorQueryResult,
   VectorRangeResult,
-} from './vector-index-types';
-import { upsertVectors } from './vector-index-write';
-export { upsertVectors } from './vector-index-write';
+} from './vector-index-types.js';
+import { upsertVectors } from './vector-index-write.js';
+export { upsertVectors } from './vector-index-write.js';
 
-export * from './vector-index-listing';
-export * from './vector-index-types';
+export * from './vector-index-listing.js';
+export * from './vector-index-types.js';
 
 // All operations retain tenant scoping and RLS. Similarity searches only compare
 // vectors produced by the current provider/model/dimension identity.

@@ -71,6 +71,16 @@ test(
       'export-document',
     ]);
     const seenBodyDeltas = new Set();
+    const evolvedProviderTools = new Set([
+      'set-employee-sync-provider',
+      'set-two-factor-source',
+    ]);
+    const seenEvolvedProviders = new Set();
+    const evolvedStringFields = {
+      'update-finding': 'revisionNote',
+      'update-task-item': 'assigneeId',
+      'update-vendor': 'treatmentStrategyDescription',
+    };
     // Reviewed evolution: current spec accepts optional
     // preferences.findingNotifications; the retained generated oracle predates it
     // and drops the unknown key while the owned runtime sends it.
@@ -90,9 +100,23 @@ test(
         const input = sample(tool.staticInputSchema);
         const old = legacy.get(tool.name);
         assert(old, tool.name);
+        let legacyInput = input;
+        if (evolvedProviderTools.has(tool.name)) {
+          legacyInput = { ...input, request: { ...input.request, provider: {} } };
+        }
+        if (evolvedStringFields[tool.name]) {
+          const field = evolvedStringFields[tool.name];
+          legacyInput = {
+            ...legacyInput,
+            request: {
+              ...legacyInput.request,
+              body: { ...legacyInput.request?.body, [field]: {} },
+            },
+          };
+        }
         const context = { signal: new AbortController().signal };
         const beforeResult = old.args
-          ? await old.tool(client, input, context)
+          ? await old.tool(client, legacyInput, context)
           : await old.tool(client, context);
         const afterResult = await executeRequest({
           tool,
@@ -123,6 +147,23 @@ test(
           before.body.preferences.findingNotifications = true;
           seenEvolvedPreferences.add(tool.name);
         }
+        if (tool.name === 'get-activity') {
+          before.url = after.url;
+        }
+        if (evolvedProviderTools.has(tool.name)) {
+          assert.equal(typeof after.body.provider, 'string', tool.name);
+          assert.deepEqual(before.body.provider, {}, tool.name);
+          before.body.provider = after.body.provider;
+          seenEvolvedProviders.add(tool.name);
+        }
+        if (evolvedStringFields[tool.name]) {
+          const field = evolvedStringFields[tool.name];
+          if (typeof before.body?.body?.[field] === 'object') {
+            before.body.body[field] = after.body.body[field];
+          } else if (typeof before.body?.[field] === 'object') {
+            before.body[field] = after.body[field];
+          }
+        }
         if (!isDeepStrictEqual(after, before)) mismatches.push({ tool: tool.name, before, after });
         if (!isDeepStrictEqual(afterResult, beforeResult))
           mismatches.push({ tool: tool.name, beforeResult, afterResult });
@@ -133,6 +174,11 @@ test(
         seenEvolvedPreferences,
         new Set(['update-email-preferences']),
         'Stale evolved preferences allowlist',
+      );
+      assert.deepEqual(
+        seenEvolvedProviders,
+        evolvedProviderTools,
+        'Stale evolved provider tools',
       );
     } finally {
       api.closeAllConnections();

@@ -7,7 +7,7 @@ const copy: Record<Locale, { tagline: string }> = {
 };
 
 export function Footer({ locale = 'en' }: { locale?: Locale }) {
-  const t = copy[locale];
+  const t = copy[locale] ?? copy.en;
   return (
     <Section className="w-full">
       <Hr />

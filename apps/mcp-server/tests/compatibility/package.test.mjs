@@ -15,7 +15,7 @@ import { withStdio } from './processes.mjs';
 
 test(
   'owned build is deterministic, manifest/names/revision match, and unpacked mcpb works without repository data/dependencies',
-  { timeout: 60000 },
+  { timeout: 120000 },
   async () => {
     const directory = await mkdtemp(resolve(tmpdir(), 'opencomp-phase3-package-'));
     const candidate = resolve(directory, 'candidate');

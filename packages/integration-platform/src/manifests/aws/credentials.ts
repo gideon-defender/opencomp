@@ -4,8 +4,8 @@ import { escapeDoubleQuotedShell } from './remediation-roles';
 
 export type AwsEnvironment = 'aws' | 'aws-us-gov';
 
-const COMP_AI_COMMERCIAL_ROLE_ASSUMER_ACCOUNT_ID = '684120556289';
-const COMP_AI_GOVCLOUD_ROLE_ASSUMER_ACCOUNT_ID = '633779453318';
+const OPENCOMP_COMMERCIAL_ROLE_ASSUMER_ACCOUNT_ID = '684120556289';
+const OPENCOMP_GOVCLOUD_ROLE_ASSUMER_ACCOUNT_ID = '633779453318';
 
 export function normalizeAwsEnvironment(value: unknown): AwsEnvironment {
   return value === 'aws-us-gov' ? 'aws-us-gov' : 'aws';
@@ -14,8 +14,8 @@ export function normalizeAwsEnvironment(value: unknown): AwsEnvironment {
 export function getAwsRoleAssumerArn(environment: AwsEnvironment): string {
   const accountId =
     environment === 'aws-us-gov'
-      ? COMP_AI_GOVCLOUD_ROLE_ASSUMER_ACCOUNT_ID
-      : COMP_AI_COMMERCIAL_ROLE_ASSUMER_ACCOUNT_ID;
+      ? OPENCOMP_GOVCLOUD_ROLE_ASSUMER_ACCOUNT_ID
+      : OPENCOMP_COMMERCIAL_ROLE_ASSUMER_ACCOUNT_ID;
 
   return `arn:${environment}:iam::${accountId}:role/roleAssumer`;
 }

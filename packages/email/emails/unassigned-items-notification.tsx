@@ -68,11 +68,11 @@ export const UnassignedItemsNotificationEmail = ({
   userId,
   locale = 'en',
 }: Props) => {
-  const t = copy[locale];
+  const t = copy[locale] ?? copy.en;
   const baseUrl = process.env.NEXT_PUBLIC_BETTER_AUTH_URL ?? 'https://app.gideondefender.com';
   const link = `${baseUrl}/${organizationId}`;
 
-  const getItemTypeLabel = (type: UnassignedItem['type']) => itemLabels[locale][type];
+  const getItemTypeLabel = (type: UnassignedItem['type']) => itemLabels[locale]?.[type] ?? '';
 
   const getItemUrl = (item: UnassignedItem) => {
     switch (item.type) {

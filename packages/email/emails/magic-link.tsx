@@ -43,7 +43,7 @@ const copy: Record<
 
 export const MagicLinkEmail = ({ email, url, inviteCode, locale = 'en' }: Props) => {
   void inviteCode;
-  const t = copy[locale];
+  const t = copy[locale] ?? copy.en;
   return (
     <Html lang={locale}>
       <Tailwind>

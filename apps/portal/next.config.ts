@@ -79,7 +79,7 @@ const config = {
 const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 
 export default withSentryConfig(withNextIntl(config), {
-  org: 'comp-ai',
+  org: 'opencomp',
   project: 'comp',
 
   // Only print logs for uploading source maps in CI

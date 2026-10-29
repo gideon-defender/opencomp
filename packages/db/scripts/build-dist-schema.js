@@ -9,8 +9,11 @@
  * monorepo, consumers can read those files directly. Outside the monorepo
  * they cannot, so we ship a flattened copy in dist/.
  */
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const root = path.join(__dirname, '..');
 const schemaDir = path.join(root, 'prisma/schema');

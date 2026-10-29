@@ -68,5 +68,6 @@
     "postinstall": "node scripts/generate-prisma-client-js.js || true",
     "prepublishOnly": "pnpm run build",
     "test": "vitest run"
-  }
+  },
+  "type": "module"
 }

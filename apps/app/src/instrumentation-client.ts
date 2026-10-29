@@ -32,7 +32,7 @@ Sentry.init({
 
   tracesSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.1,
 
-  enableLogs: true,
+  debug: true,
 
   // 10% of all sessions; 100% of sessions where an error occurs.
   replaysSessionSampleRate: 0.1,

@@ -20,5 +20,5 @@ Sentry.init({
   // data (DB rows, auth tokens, request bodies) to Sentry payloads.
   includeLocalVariables: process.env.NODE_ENV !== 'production',
 
-  enableLogs: true,
+  debug: true,
 });

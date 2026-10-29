@@ -144,7 +144,7 @@ export class McpDownloadService {
       signal: AbortSignal.timeout(GITHUB_TIMEOUT_MS),
       headers: {
         // GitHub rejects API requests without a User-Agent.
-        'User-Agent': 'comp-ai-mcp-download',
+        'User-Agent': 'opencomp-mcp-download',
         Accept: 'application/vnd.github+json',
         // Optional: lifts the rate limit to 5000/hr if a token is configured.
         ...(process.env.GITHUB_TOKEN && {

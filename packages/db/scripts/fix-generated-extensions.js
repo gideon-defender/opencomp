@@ -7,8 +7,11 @@
  * Usage: node fix-generated-extensions.js [dir]
  *   dir: path to generated prisma directory (default: ../src/generated/prisma relative to this script)
  */
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const generatedDir = process.argv[2]
   ? path.resolve(process.argv[2])

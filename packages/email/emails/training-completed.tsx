@@ -72,7 +72,7 @@ export const TrainingCompletedEmail = ({
   completedAt,
   locale = 'en',
 }: Props) => {
-  const t = copy[locale];
+  const t = copy[locale] ?? copy.en;
   const formattedDate = new Date(completedAt).toLocaleDateString(
     locale === 'es' ? 'es-ES' : 'en-US',
     {

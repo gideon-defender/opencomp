@@ -17,6 +17,7 @@ import {
   ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 import { HybridAuthGuard } from '../auth/hybrid-auth.guard';
@@ -72,6 +73,12 @@ export class CloudSecurityController {
   @UseGuards(HybridAuthGuard, PermissionGuard)
   @RequirePermission('integration', 'read')
   @ApiOperation({ summary: 'List recent cloud security activity' })
+  @ApiQuery({
+    name: 'take',
+    required: false,
+    description: 'Number of activity records to return (1-100, default 30)',
+    type: String,
+  })
   @ApiOkResponse({
     description: 'Recent cloud security activity retrieved successfully',
   })

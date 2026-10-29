@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
-import { withTenant } from './client';
-import { METADATA_SELECT, rowToRecord, type VectorRow } from './vector-index-sql';
-import type { VectorRecord } from './vector-index-types';
+import { withTenant } from './client.js';
+import { METADATA_SELECT, rowToRecord, type VectorRow } from './vector-index-sql.js';
+import type { VectorRecord } from './vector-index-types.js';
 
 export async function deleteVectorsByOrganization(organizationId: string): Promise<void> {
   await withTenant(organizationId, async (tx) => {

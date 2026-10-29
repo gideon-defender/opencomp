@@ -46,7 +46,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/comp-ai/comp.git",
+    "url": "git+https://github.com/gideon-defender/opencomp.git",
     "directory": "packages/email"
   },
   "scripts": {
@@ -58,5 +58,6 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
+  "type": "module",
   "types": "./dist/index.d.ts"
 }
