@@ -7,10 +7,10 @@ record, task content, or Trust Center configuration is stored here.
 
 ## Tested connections
 
-| Connection | Target | Result |
-| --- | --- | --- |
-| Hosted Streamable HTTP | `https://mcp.dev.gideondefender.com/mcp` | Passed |
-| Local stdio | Owned bundle, development API at `https://opencomp-api.dev.gideondefender.com` | Passed |
+| Connection             | Target                                                                         | Result |
+| ---------------------- | ------------------------------------------------------------------------------ | ------ |
+| Hosted Streamable HTTP | `https://mcp.dev.gideondefender.com/mcp`                                       | Passed |
+| Local stdio            | Owned bundle, development API at `https://opencomp-api.dev.gideondefender.com` | Passed |
 
 The hosted server identified itself as **OpenComp 0.3.0**. Tests used the
 installed MCP SDK client, with the hosted handshake and reads completed
@@ -18,18 +18,18 @@ between 12:35 and 12:39 UTC (8:35–8:39 a.m. America/New_York).
 
 ## Results
 
-| Check | Observation |
-| --- | --- |
-| MCP initialization | Successful authenticated handshake. |
-| Protocol tool discovery | `list_tools`, `describe_tool_input`, and `execute_tool` available. |
-| Business-operation discovery | 406 operations returned by `list_tools`. |
-| Input-schema discovery | Schemas returned for each tested read. |
-| `get-tasks` through hosted MCP | Successful API response; 52 records, declared count 52. |
-| `frameworks-find-all` through hosted MCP | Successful API response; 4 records, declared count 4. |
-| `get-overview` through hosted MCP | Successful Trust Center overview response. |
-| Missing API key | Initialization request rejected with HTTP 401. |
-| Local stdio handshake and discovery | Successful; allowlist exposed only `get-tasks`. |
-| Local stdio `get-tasks` | Successful API response; 52 records. |
+| Check                                    | Observation                                                        |
+| ---------------------------------------- | ------------------------------------------------------------------ |
+| MCP initialization                       | Successful authenticated handshake.                                |
+| Protocol tool discovery                  | `list_tools`, `describe_tool_input`, and `execute_tool` available. |
+| Business-operation discovery             | 406 operations returned by `list_tools`.                           |
+| Input-schema discovery                   | Schemas returned for each tested read.                             |
+| `get-tasks` through hosted MCP           | Successful API response; 52 records, declared count 52.            |
+| `frameworks-find-all` through hosted MCP | Successful API response; 4 records, declared count 4.              |
+| `get-overview` through hosted MCP        | Successful Trust Center overview response.                         |
+| Missing API key                          | Initialization request rejected with HTTP 401.                     |
+| Local stdio handshake and discovery      | Successful; allowlist exposed only `get-tasks`.                    |
+| Local stdio `get-tasks`                  | Successful API response; 52 records.                               |
 
 The first overview probe omitted a required input and received an MCP
 validation error. It succeeded after supplying

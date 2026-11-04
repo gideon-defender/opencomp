@@ -34,27 +34,27 @@ interface Props {
 
 const copy = {
   en: {
-    previewSuffix: "mentioned you in a task",
-    heading: "You were mentioned in a task",
-    hello: "Hello",
-    bodyMentioned: "mentioned you in the task",
-    bodyFor: "for",
-    viewTask: "View Task",
-    copyPaste: "or copy and paste this URL into your browser:",
+    previewSuffix: 'mentioned you in a task',
+    heading: 'You were mentioned in a task',
+    hello: 'Hello',
+    bodyMentioned: 'mentioned you in the task',
+    bodyFor: 'for',
+    viewTask: 'View Task',
+    copyPaste: 'or copy and paste this URL into your browser:',
     unsubscribeQuestion: "Don't want to receive task mention notifications?",
-    managePrefs: "Manage your email preferences",
+    managePrefs: 'Manage your email preferences',
   },
   es: {
-    previewSuffix: "te mencionó en una tarea",
-    heading: "Te mencionaron en una tarea",
-    hello: "Hola",
-    bodyMentioned: "te mencionó en la tarea",
-    bodyFor: "para",
-    viewTask: "Ver tarea",
-    copyPaste: "o copia y pega esta URL en tu navegador:",
+    previewSuffix: 'te mencionó en una tarea',
+    heading: 'Te mencionaron en una tarea',
+    hello: 'Hola',
+    bodyMentioned: 'te mencionó en la tarea',
+    bodyFor: 'para',
+    viewTask: 'Ver tarea',
+    copyPaste: 'o copia y pega esta URL en tu navegador:',
     unsubscribeQuestion:
-      "¿No quieres recibir notificaciones de menciones en tareas?",
-    managePrefs: "Gestionar tus preferencias de correo electrónico",
+      '¿No quieres recibir notificaciones de menciones en tareas?',
+    managePrefs: 'Gestionar tus preferencias de correo electrónico',
   },
 };
 
@@ -91,7 +91,9 @@ export const TaskItemMentionedEmail = ({
             fontStyle="normal"
           />
         </head>
-        <Preview>{mentionedByName} {t.previewSuffix}</Preview>
+        <Preview>
+          {mentionedByName} {t.previewSuffix}
+        </Preview>
 
         <Body className="mx-auto my-auto bg-[#fff] font-sans">
           <Container
@@ -108,7 +110,9 @@ export const TaskItemMentionedEmail = ({
             </Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              <strong>{mentionedByName}</strong> {t.bodyMentioned} <strong>"{taskTitle}"</strong> {t.bodyFor} <strong>{entityName}</strong>.
+              <strong>{mentionedByName}</strong> {t.bodyMentioned}{' '}
+              <strong>"{taskTitle}"</strong> {t.bodyFor}{' '}
+              <strong>{entityName}</strong>.
             </Text>
 
             <Section className="mt-[32px] mb-[32px] text-center">

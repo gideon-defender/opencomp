@@ -15,7 +15,7 @@ organization deletion live here too:
 
 ![General settings with organization name, website, logo, and ownership guidance](images/settings-general.png)
 
-*Save each changed section and reopen it to confirm the value. Ownership assignments live in Gideon.*
+_Save each changed section and reopen it to confirm the value. Ownership assignments live in Gideon._
 
 ## Billing
 
@@ -32,7 +32,7 @@ systems, services, or responsibilities change. Do not store credentials here.
 
 ![Blank Add Context Entry form with question and answer fields](images/context-entry.png)
 
-*Keep each entry specific enough to review and reuse.*
+_Keep each entry specific enough to review and reuse._
 
 ## Roles
 
@@ -55,7 +55,7 @@ Use keys as the `x-api-key` header for API automation. See
 
 ![New API Key form with expiration and Full Access, Read Only, and Custom permissions](images/api-key-create.png)
 
-*The form initially selects broad access; choose the permissions deliberately before creation.*
+_The form initially selects broad access; choose the permissions deliberately before creation._
 
 ## Secrets
 
@@ -79,7 +79,7 @@ experience after changing these options. See [Employee portal](employee-portal.m
 
 ![Portal Settings with device agent, security training, whistleblower, and access request toggles](images/portal-settings.png)
 
-*These options determine which steps and forms employees see.*
+_These options determine which steps and forms employees see._
 
 ## Browser connections
 

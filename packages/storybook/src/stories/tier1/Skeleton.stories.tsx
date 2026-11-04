@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { Skeleton } from '@gideon-defender/ui/skeleton';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
   title: 'Tier 1 — Skeleton',

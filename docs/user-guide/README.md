@@ -12,14 +12,14 @@ AI, trust grants/expiry, MCP, platform flows).
 
 ## Who this guide is for
 
-| Reader | Start with |
-| --- | --- |
-| Organization owner or admin setting up OpenComp | [Getting started](getting-started.md), [Roles and access](roles-and-access.md), [User manual](user-manual.md) |
-| Compliance manager (SOC 2, ISO 27001, HIPAA, …) | [Compliance overview](compliance-overview.md), [Policies](policies.md), [Evidence and tasks](evidence-and-tasks.md) |
-| Security engineer | [Penetration tests](security-penetration-tests.md), [Cloud security](cloud-security.md), [Background checks](background-checks.md), [Devices](devices.md) |
-| People / HR operator | [People](people.md) |
-| Employee (non-admin) | [Employee portal](employee-portal.md) |
-| Sales / customer trust team | [Trust Center](trust-center.md) |
+| Reader                                          | Start with                                                                                                                                                |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Organization owner or admin setting up OpenComp | [Getting started](getting-started.md), [Roles and access](roles-and-access.md), [User manual](user-manual.md)                                             |
+| Compliance manager (SOC 2, ISO 27001, HIPAA, …) | [Compliance overview](compliance-overview.md), [Policies](policies.md), [Evidence and tasks](evidence-and-tasks.md)                                       |
+| Security engineer                               | [Penetration tests](security-penetration-tests.md), [Cloud security](cloud-security.md), [Background checks](background-checks.md), [Devices](devices.md) |
+| People / HR operator                            | [People](people.md)                                                                                                                                       |
+| Employee (non-admin)                            | [Employee portal](employee-portal.md)                                                                                                                     |
+| Sales / customer trust team                     | [Trust Center](trust-center.md)                                                                                                                           |
 
 ## Contents
 

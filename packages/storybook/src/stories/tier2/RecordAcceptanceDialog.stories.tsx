@@ -15,7 +15,11 @@ export const Default: Story = {
     onOpenChange: () => {},
     subjectLabel: 'Example title',
     residualLevelLabel: 'Example title',
-    acceptorOptions: [{ id: 'demo_id_1', name: 'Example name 1' }, { id: 'demo_id_2', name: 'Example name 2' }, { id: 'demo_id_3', name: 'Example name 3' }],
+    acceptorOptions: [
+      { id: 'demo_id_1', name: 'Example name 1' },
+      { id: 'demo_id_2', name: 'Example name 2' },
+      { id: 'demo_id_3', name: 'Example name 3' },
+    ],
     defaultAcceptorId: 'demo_id',
     onRecord: async () => {},
   },

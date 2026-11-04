@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { Label } from '@gideon-defender/ui/label';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
   title: 'Tier 1 — Label',

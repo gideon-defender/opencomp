@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { InnerMenu } from '@gideon-defender/ui/inner-menu';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
   title: 'Tier 1 — InnerMenu',

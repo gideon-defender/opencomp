@@ -1,6 +1,6 @@
+import { ResizableHandle } from '@gideon-defender/ui/resizable';
 import type { Meta, StoryObj } from '@storybook/react';
 import { withPanelGroup } from '../../mocks/decorators';
-import { ResizableHandle } from '@gideon-defender/ui/resizable';
 
 const meta = {
   title: 'Tier 1 — ResizableHandle',

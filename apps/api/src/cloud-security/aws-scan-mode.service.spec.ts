@@ -5,7 +5,7 @@ import { BadRequestException, ForbiddenException } from '@nestjs/common';
 const mockDb = {
   integrationConnection: {
     findFirst: jest.fn(),
-    update: jest.fn(),
+    updateMany: jest.fn(),
   },
 };
 jest.mock('@db', () => ({ db: mockDb }));
@@ -76,7 +76,7 @@ describe('CloudAwsScanModeService.updateMode', () => {
     });
 
     expect(result).toEqual({ mode: 'security_hub' });
-    expect(mockDb.integrationConnection.update).not.toHaveBeenCalled();
+    expect(mockDb.integrationConnection.updateMany).not.toHaveBeenCalled();
     expect(mockAuditLog).not.toHaveBeenCalled();
   });
 
@@ -90,9 +90,9 @@ describe('CloudAwsScanModeService.updateMode', () => {
       mode: 'security_hub',
     });
 
-    expect(mockDb.integrationConnection.update).toHaveBeenCalledWith(
+    expect(mockDb.integrationConnection.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: 'icn_aws' },
+        where: { id: 'icn_aws', organizationId: 'org_1' },
         data: expect.objectContaining({
           metadata: expect.objectContaining({ awsScanMode: 'security_hub' }),
         }),

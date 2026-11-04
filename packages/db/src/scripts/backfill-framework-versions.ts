@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { db } from '../client';
+import { db } from '../client.js';
 
 export interface BackfillResult {
   versionsCreated: number;
@@ -166,16 +166,4 @@ function dedupeById<T extends { id: string }>(items: T[]): T[] {
     if (!seen.has(item.id)) seen.set(item.id, item);
   }
   return [...seen.values()];
-}
-
-if (require.main === module) {
-  backfillFrameworkVersions()
-    .then((result) => {
-      console.log('Backfill complete:', result);
-      process.exit(0);
-    })
-    .catch((err) => {
-      console.error('Backfill failed:', err);
-      process.exit(1);
-    });
 }

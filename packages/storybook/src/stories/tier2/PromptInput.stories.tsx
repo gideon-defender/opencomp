@@ -11,7 +11,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    onSubmit: () => (undefined),
+    onSubmit: () => undefined,
     children: 'Example content',
     accept: 'Example',
     multiple: false,

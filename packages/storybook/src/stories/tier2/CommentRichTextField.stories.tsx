@@ -11,9 +11,13 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    value: {  },
+    value: {},
     onChange: () => {},
-    members: [{ id: 'demo_id_1', name: 'Example name 1', email: 'person1@example.com' }, { id: 'demo_id_2', name: 'Example name 2', email: 'person2@example.com' }, { id: 'demo_id_3', name: 'Example name 3', email: 'person3@example.com' }],
+    members: [
+      { id: 'demo_id_1', name: 'Example name 1', email: 'person1@example.com' },
+      { id: 'demo_id_2', name: 'Example name 2', email: 'person2@example.com' },
+      { id: 'demo_id_3', name: 'Example name 3', email: 'person3@example.com' },
+    ],
     disabled: false,
     placeholder: 'Example',
   },

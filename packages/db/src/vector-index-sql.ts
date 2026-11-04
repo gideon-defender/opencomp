@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import type { VectorMetadata, VectorRecord } from './vector-index-types';
+import type { VectorMetadata, VectorRecord } from './vector-index-types.js';
 
 export interface VectorRow {
   id: string;

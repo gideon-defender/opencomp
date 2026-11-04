@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { PromptInput } from '@gideon-defender/ui/ai-elements/prompt-input';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
   title: 'Tier 1 — PromptInput',
@@ -11,7 +11,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    onSubmit: () => (undefined),
+    onSubmit: () => undefined,
     children: 'Example content',
     accept: 'Example',
     multiple: false,

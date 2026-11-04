@@ -79,8 +79,8 @@ export class CloudAwsScanModeService {
       awsScanMode: params.mode,
     };
 
-    await db.integrationConnection.update({
-      where: { id: connection.id },
+    await db.integrationConnection.updateMany({
+      where: { id: connection.id, organizationId: params.organizationId },
       data: {
         metadata: nextMetadata as unknown as Prisma.InputJsonValue,
       },

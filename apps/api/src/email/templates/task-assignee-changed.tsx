@@ -32,34 +32,33 @@ interface Props {
 
 const copy = {
   en: {
-    previewTask: "Task",
-    previewReassigned: "reassigned from",
-    previewTo: "to",
-    heading: "Task Reassigned",
-    hello: "Hello",
-    bodyReassigned: "reassigned task",
-    bodyFrom: "from",
-    bodyTo: "to",
-    bodyIn: "in",
-    viewTask: "View Task",
-    copyPaste: "or copy and paste this URL into your browser:",
-    unsubscribeQuestion:
-      "Don't want to receive task assignment notifications?",
+    previewTask: 'Task',
+    previewReassigned: 'reassigned from',
+    previewTo: 'to',
+    heading: 'Task Reassigned',
+    hello: 'Hello',
+    bodyReassigned: 'reassigned task',
+    bodyFrom: 'from',
+    bodyTo: 'to',
+    bodyIn: 'in',
+    viewTask: 'View Task',
+    copyPaste: 'or copy and paste this URL into your browser:',
+    unsubscribeQuestion: "Don't want to receive task assignment notifications?",
   },
   es: {
-    previewTask: "Tarea",
-    previewReassigned: "reasignada de",
-    previewTo: "a",
-    heading: "Tarea reasignada",
-    hello: "Hola",
-    bodyReassigned: "reasignó la tarea",
-    bodyFrom: "de",
-    bodyTo: "a",
-    bodyIn: "en",
-    viewTask: "Ver tarea",
-    copyPaste: "o copia y pega esta URL en tu navegador:",
+    previewTask: 'Tarea',
+    previewReassigned: 'reasignada de',
+    previewTo: 'a',
+    heading: 'Tarea reasignada',
+    hello: 'Hola',
+    bodyReassigned: 'reasignó la tarea',
+    bodyFrom: 'de',
+    bodyTo: 'a',
+    bodyIn: 'en',
+    viewTask: 'Ver tarea',
+    copyPaste: 'o copia y pega esta URL en tu navegador:',
     unsubscribeQuestion:
-      "¿No quieres recibir notificaciones de asignación de tareas?",
+      '¿No quieres recibir notificaciones de asignación de tareas?',
   },
 };
 
@@ -113,7 +112,11 @@ export const TaskAssigneeChangedEmail = ({
             </Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              <strong>{changedByName}</strong> {t.bodyReassigned} <strong>"{taskTitle}"</strong> {t.bodyFrom} <strong>{oldAssigneeName}</strong> {t.bodyTo} <strong>{newAssigneeName}</strong> {t.bodyIn} <strong>{organizationName}</strong>.
+              <strong>{changedByName}</strong> {t.bodyReassigned}{' '}
+              <strong>"{taskTitle}"</strong> {t.bodyFrom}{' '}
+              <strong>{oldAssigneeName}</strong> {t.bodyTo}{' '}
+              <strong>{newAssigneeName}</strong> {t.bodyIn}{' '}
+              <strong>{organizationName}</strong>.
             </Text>
 
             <Section className="mt-[32px] mb-[32px] text-center">

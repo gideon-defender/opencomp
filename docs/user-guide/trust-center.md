@@ -18,14 +18,14 @@ vendors, and a security questionnaire entry point.
 
 ![Trust Portal configuration with framework visibility and progress selectors](images/trust-config.png)
 
-*Use the content tabs to manage frameworks, mission, branding, vendors, links, FAQ, documents, and questionnaires.*
+_Use the content tabs to manage frameworks, mission, branding, vendors, links, FAQ, documents, and questionnaires._
 
 ## What a visitor sees
 
 ![Public Trust Center showing organization introduction and framework progress](images/trust-public-overview.png)
 
-*The public page distinguishes framework progress from completed certification
-and shows published policies, controls, and subprocessors.*
+_The public page distinguishes framework progress from completed certification
+and shows published policies, controls, and subprocessors._
 
 Visitors can use **Overview**, **Security controls**, and **Subprocessors** to
 explore the content you expose. If no policies are published, the portal
@@ -42,7 +42,7 @@ before directing customers to them.
 
 ![Trust Center Request access form with name, work email, company, job title, and purpose](images/trust-public-request.png)
 
-*Use your work identity so the organization can assess the request.*
+_Use your work identity so the organization can assess the request._
 
 If **Security questionnaire** opens the same request form, it pre-fills the
 purpose as “Security questionnaire.” Complete the request for the team to
@@ -62,7 +62,7 @@ Visitors can request access to gated materials:
 
 ![Access Requests showing duration, approval, and NDA status; identity redacted](images/trust-access-requests.png)
 
-*Approval and NDA status are separate. Check both before expecting a visitor to reach gated content.*
+_Approval and NDA status are separate. Check both before expecting a visitor to reach gated content._
 
 ## Confirm visitor access
 

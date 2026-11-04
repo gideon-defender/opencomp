@@ -17,7 +17,7 @@ for host details, policy results, and linked member.
 
 ![People Devices tab showing no enrolled device data](images/devices.png)
 
-*An empty device view means coverage has not been recorded; it does not mean devices passed.*
+_An empty device view means coverage has not been recorded; it does not mean devices passed._
 
 ## Link devices to people
 

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { withTable } from '../../mocks/decorators';
 import { DataTableHeader } from '../../../../../apps/app/src/components/tables/policies/data-table-header';
+import { withTable } from '../../mocks/decorators';
 
 const meta = {
   title: 'Tier 2 — DataTableHeader',

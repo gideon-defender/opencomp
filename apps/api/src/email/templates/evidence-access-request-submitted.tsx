@@ -33,32 +33,31 @@ interface Props {
 
 const copy = {
   en: {
-    previewFrom: "New access request from",
-    heading: "New Access Request",
-    hello: "Hello",
-    bodySubmitted: "submitted an access request in",
-    detailsTitle: "Request Details",
-    accountsLabel: "Accounts Needed:",
-    permissionsLabel: "Permissions Needed:",
-    reviewButton: "Review Request",
-    copyPaste: "or copy and paste this URL into your browser:",
-    unsubscribeQuestion:
-      "Don't want to receive access request notifications?",
-    managePrefs: "Manage your email preferences",
+    previewFrom: 'New access request from',
+    heading: 'New Access Request',
+    hello: 'Hello',
+    bodySubmitted: 'submitted an access request in',
+    detailsTitle: 'Request Details',
+    accountsLabel: 'Accounts Needed:',
+    permissionsLabel: 'Permissions Needed:',
+    reviewButton: 'Review Request',
+    copyPaste: 'or copy and paste this URL into your browser:',
+    unsubscribeQuestion: "Don't want to receive access request notifications?",
+    managePrefs: 'Manage your email preferences',
   },
   es: {
-    previewFrom: "Nueva solicitud de acceso de",
-    heading: "Nueva solicitud de acceso",
-    hello: "Hola",
-    bodySubmitted: "envió una solicitud de acceso en",
-    detailsTitle: "Datos de la solicitud",
-    accountsLabel: "Cuentas necesarias:",
-    permissionsLabel: "Permisos necesarios:",
-    reviewButton: "Revisar solicitud",
-    copyPaste: "o copia y pega esta URL en tu navegador:",
+    previewFrom: 'Nueva solicitud de acceso de',
+    heading: 'Nueva solicitud de acceso',
+    hello: 'Hola',
+    bodySubmitted: 'envió una solicitud de acceso en',
+    detailsTitle: 'Datos de la solicitud',
+    accountsLabel: 'Cuentas necesarias:',
+    permissionsLabel: 'Permisos necesarios:',
+    reviewButton: 'Revisar solicitud',
+    copyPaste: 'o copia y pega esta URL en tu navegador:',
     unsubscribeQuestion:
-      "¿No quieres recibir notificaciones de solicitudes de acceso?",
-    managePrefs: "Gestionar tus preferencias de correo electrónico",
+      '¿No quieres recibir notificaciones de solicitudes de acceso?',
+    managePrefs: 'Gestionar tus preferencias de correo electrónico',
   },
 };
 
@@ -95,7 +94,9 @@ export const EvidenceAccessRequestSubmittedEmail = ({
             fontStyle="normal"
           />
         </head>
-        <Preview>{t.previewFrom} {requesterName}</Preview>
+        <Preview>
+          {t.previewFrom} {requesterName}
+        </Preview>
 
         <Body className="mx-auto my-auto bg-[#fff] font-sans">
           <Container
@@ -112,7 +113,8 @@ export const EvidenceAccessRequestSubmittedEmail = ({
             </Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              <strong>{requesterName}</strong> {t.bodySubmitted} <strong>{organizationName}</strong>.
+              <strong>{requesterName}</strong> {t.bodySubmitted}{' '}
+              <strong>{organizationName}</strong>.
             </Text>
 
             <Section

@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { DatePicker } from '@gideon-defender/ui/date-picker';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
   title: 'Tier 1 — DatePicker',

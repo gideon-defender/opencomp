@@ -22,7 +22,7 @@ jobs:
     env:
       # Org + project slugs are NOT secret — they appear in the Gram dashboard URL
       # (app.getgram.ai/<org>/projects/<project>). Only the API key is a secret.
-      GRAM_ORG: comp-ai-f041
+      GRAM_ORG: opencomp-f041
       GRAM_PROJECT: default
       GRAM_API_KEY: ${{ secrets.GRAM_API_KEY }}
     steps:

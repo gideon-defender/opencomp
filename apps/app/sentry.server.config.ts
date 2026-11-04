@@ -20,5 +20,6 @@ Sentry.init({
   // data (DB rows, auth tokens, request bodies) to Sentry payloads.
   includeLocalVariables: process.env.NODE_ENV !== 'production',
 
-  enableLogs: true,
+  // SDK diagnostics stay off in production; use `VERCEL_ENV` gating so preview/dev keep them.
+  debug: process.env.VERCEL_ENV !== 'production',
 });

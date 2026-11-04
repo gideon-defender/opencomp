@@ -33,7 +33,9 @@ function parseEnums(source: string): PrismaEnum[] {
 
 function collectEnums(): PrismaEnum[] {
   const files = fs.readdirSync(SCHEMA_DIR).filter((file) => file.endsWith('.prisma'));
-  const enums = files.flatMap((file) => parseEnums(fs.readFileSync(path.join(SCHEMA_DIR, file), 'utf8')));
+  const enums = files.flatMap((file) =>
+    parseEnums(fs.readFileSync(path.join(SCHEMA_DIR, file), 'utf8')),
+  );
   return enums.sort((a, b) => a.name.localeCompare(b.name));
 }
 

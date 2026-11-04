@@ -39,38 +39,37 @@ const MAX_DISPLAYED_TASKS = 15;
 
 const copy = {
   en: {
-    previewSuffix: "with automation failures",
-    task: "task",
-    tasks: "tasks",
-    heading: "Automation Failures Summary",
-    hello: "Hello",
+    previewSuffix: 'with automation failures',
+    task: 'task',
+    tasks: 'tasks',
+    heading: 'Automation Failures Summary',
+    hello: 'Hello',
     bodyPrefix: "Today's scheduled automations found failures in",
-    bodyIn: "in",
-    failed: "failed",
-    andMorePrefix: "and",
-    andMoreSuffix: "more...",
-    viewTasks: "View Tasks",
-    copyPaste: "or copy and paste this URL into your browser:",
-    unsubscribeQuestion:
-      "Don't want to receive task assignment notifications?",
-    managePrefs: "Manage your email preferences",
+    bodyIn: 'in',
+    failed: 'failed',
+    andMorePrefix: 'and',
+    andMoreSuffix: 'more...',
+    viewTasks: 'View Tasks',
+    copyPaste: 'or copy and paste this URL into your browser:',
+    unsubscribeQuestion: "Don't want to receive task assignment notifications?",
+    managePrefs: 'Manage your email preferences',
   },
   es: {
-    previewSuffix: "con fallos de automatización",
-    task: "tarea",
-    tasks: "tareas",
-    heading: "Resumen de fallos de automatización",
-    hello: "Hola",
-    bodyPrefix: "Las automatizaciones programadas de hoy encontraron fallos en",
-    bodyIn: "en",
-    failed: "fallidos",
-    andMorePrefix: "y",
-    andMoreSuffix: "más...",
-    viewTasks: "Ver tareas",
-    copyPaste: "o copia y pega esta URL en tu navegador:",
+    previewSuffix: 'con fallos de automatización',
+    task: 'tarea',
+    tasks: 'tareas',
+    heading: 'Resumen de fallos de automatización',
+    hello: 'Hola',
+    bodyPrefix: 'Las automatizaciones programadas de hoy encontraron fallos en',
+    bodyIn: 'en',
+    failed: 'fallidos',
+    andMorePrefix: 'y',
+    andMoreSuffix: 'más...',
+    viewTasks: 'Ver tareas',
+    copyPaste: 'o copia y pega esta URL en tu navegador:',
     unsubscribeQuestion:
-      "¿No quieres recibir notificaciones de asignación de tareas?",
-    managePrefs: "Gestionar tus preferencias de correo electrónico",
+      '¿No quieres recibir notificaciones de asignación de tareas?',
+    managePrefs: 'Gestionar tus preferencias de correo electrónico',
   },
 };
 
@@ -125,7 +124,8 @@ export const AutomationBulkFailuresEmail = ({
             </Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              {t.bodyPrefix} <strong>{taskCount}</strong> {taskText} {t.bodyIn} <strong>{organizationName}</strong>.
+              {t.bodyPrefix} <strong>{taskCount}</strong> {taskText} {t.bodyIn}{' '}
+              <strong>{organizationName}</strong>.
             </Text>
 
             <Section className="mt-[16px] mb-[16px]">

@@ -32,29 +32,28 @@ interface Props {
 const copy = {
   en: {
     previewPrefix: "You've been requested to review evidence for",
-    heading: "Evidence Review Requested",
-    hello: "Hello",
-    bodySubmitted: "has submitted evidence for",
-    bodyApproval: "and requested your approval in",
-    reviewHint: "Please review the evidence and approve or reject it.",
-    reviewEvidence: "Review Evidence",
-    copyPaste: "or copy and paste this URL into your browser:",
-    unsubscribeQuestion:
-      "Don't want to receive task assignment notifications?",
-    managePrefs: "Manage your email preferences",
+    heading: 'Evidence Review Requested',
+    hello: 'Hello',
+    bodySubmitted: 'has submitted evidence for',
+    bodyApproval: 'and requested your approval in',
+    reviewHint: 'Please review the evidence and approve or reject it.',
+    reviewEvidence: 'Review Evidence',
+    copyPaste: 'or copy and paste this URL into your browser:',
+    unsubscribeQuestion: "Don't want to receive task assignment notifications?",
+    managePrefs: 'Manage your email preferences',
   },
   es: {
-    previewPrefix: "Se te ha solicitado revisar la evidencia de",
-    heading: "Revisión de evidencia solicitada",
-    hello: "Hola",
-    bodySubmitted: "ha enviado evidencia de",
-    bodyApproval: "y ha solicitado tu aprobación en",
-    reviewHint: "Revisa la evidencia y apruébala o recházala.",
-    reviewEvidence: "Revisar evidencia",
-    copyPaste: "o copia y pega esta URL en tu navegador:",
+    previewPrefix: 'Se te ha solicitado revisar la evidencia de',
+    heading: 'Revisión de evidencia solicitada',
+    hello: 'Hola',
+    bodySubmitted: 'ha enviado evidencia de',
+    bodyApproval: 'y ha solicitado tu aprobación en',
+    reviewHint: 'Revisa la evidencia y apruébala o recházala.',
+    reviewEvidence: 'Revisar evidencia',
+    copyPaste: 'o copia y pega esta URL en tu navegador:',
     unsubscribeQuestion:
-      "¿No quieres recibir notificaciones de asignación de tareas?",
-    managePrefs: "Gestionar tus preferencias de correo electrónico",
+      '¿No quieres recibir notificaciones de asignación de tareas?',
+    managePrefs: 'Gestionar tus preferencias de correo electrónico',
   },
 };
 
@@ -89,9 +88,7 @@ export const EvidenceReviewRequestedEmail = ({
             fontStyle="normal"
           />
         </head>
-        <Preview>
-          {`${t.previewPrefix} "${taskTitle}"`}
-        </Preview>
+        <Preview>{`${t.previewPrefix} "${taskTitle}"`}</Preview>
 
         <Body className="mx-auto my-auto bg-[#fff] font-sans">
           <Container
@@ -108,7 +105,9 @@ export const EvidenceReviewRequestedEmail = ({
             </Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              <strong>{submittedByName}</strong> {t.bodySubmitted} <strong>"{taskTitle}"</strong> {t.bodyApproval} <strong>{organizationName}</strong>.
+              <strong>{submittedByName}</strong> {t.bodySubmitted}{' '}
+              <strong>"{taskTitle}"</strong> {t.bodyApproval}{' '}
+              <strong>{organizationName}</strong>.
             </Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">

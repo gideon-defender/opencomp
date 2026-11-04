@@ -3,7 +3,7 @@
   "description": "Database package with Prisma client and schema for OpenComp",
   "version": "2.3.0",
   "bin": {
-    "comp-prisma-postinstall": "./dist/postinstall.js"
+    "comp-prisma-postinstall": "./dist/cjs/postinstall.js"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.1149.0",
@@ -24,16 +24,19 @@
     ".": {
       "types": "./src/index.ts",
       "import": "./dist/index.js",
+      "require": "./dist/cjs/index.js",
       "default": "./dist/index.js"
     },
     "./postinstall": {
       "types": "./src/postinstall.ts",
       "import": "./dist/postinstall.js",
+      "require": "./dist/cjs/postinstall.js",
       "default": "./dist/postinstall.js"
     },
     "./ssl-config": {
       "types": "./dist/ssl-config.d.ts",
       "import": "./dist/ssl-config.js",
+      "require": "./dist/cjs/ssl-config.js",
       "default": "./dist/ssl-config.js"
     }
   },
@@ -51,8 +54,8 @@
     "directory": "packages/db"
   },
   "scripts": {
-    "backfill:framework-versions": "tsx src/scripts/backfill-framework-versions.ts",
-    "build": "rm -rf dist && node scripts/generate-prisma-client-js.js && tsc && node scripts/build-dist-schema.js",
+    "backfill:framework-versions": "tsx src/scripts/backfill-framework-versions-cli.ts",
+    "build": "rm -rf dist && node scripts/generate-prisma-client-js.js && tsc && tsc -p tsconfig.cjs.json && node -e \"require('fs').writeFileSync('dist/cjs/package.json', JSON.stringify({ type: 'commonjs' }, null, 2) + '\\n')\" && node scripts/build-dist-schema.js",
     "check-types": "tsc --noEmit",
     "db:generate": "node scripts/generate-prisma-client-js.js",
     "db:migrate": "prisma migrate dev",
@@ -68,5 +71,6 @@
     "postinstall": "node scripts/generate-prisma-client-js.js || true",
     "prepublishOnly": "pnpm run build",
     "test": "vitest run"
-  }
+  },
+  "type": "module"
 }

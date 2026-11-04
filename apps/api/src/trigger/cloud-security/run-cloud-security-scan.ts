@@ -1,6 +1,6 @@
 import { db } from '@db';
 import { logger, tags, task } from '@gideon-defender/trigger-local';
-import { CloudSecurityController } from '../../cloud-security/cloud-security.controller';
+import { CloudSecurityScanController } from '../../cloud-security/cloud-security-scan.controller';
 import {
   createServiceTriggerRequest,
   getTriggerService,
@@ -72,7 +72,7 @@ export const runCloudSecurityScan = task({
       // synthesized service request keeps the scan's audit attribution
       // (`via service "Local trigger Workers"`, owner fallback) identical to
       // the HTTP path.
-      const controller = getTriggerService(CloudSecurityController);
+      const controller = getTriggerService(CloudSecurityScanController);
       const serviceReq = createServiceTriggerRequest({
         organizationId,
         serviceName: TRIGGER_SERVICE_NAME,

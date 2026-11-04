@@ -1,6 +1,6 @@
 /** Browser-safe stand-in for `next/link`: renders a plain anchor. */
-import { forwardRef } from 'react';
 import type { AnchorHTMLAttributes, ReactNode } from 'react';
+import { forwardRef } from 'react';
 
 type LinkProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href'> & {
   href: string | { pathname?: string };

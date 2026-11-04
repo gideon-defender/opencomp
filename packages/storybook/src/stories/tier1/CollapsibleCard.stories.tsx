@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { CollapsibleCard } from '@gideon-defender/ui/collapsible-card';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
   title: 'Tier 1 — CollapsibleCard',

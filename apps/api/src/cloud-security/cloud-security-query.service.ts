@@ -283,13 +283,18 @@ export class CloudSecurityQueryService {
       connections.map((c) => [c.id, c.provider.slug]),
     );
 
-    // Build project ID → name map from all GCP connections
+    // Build project ID → name map from all GCP connections. Skip any
+    // persisted junk (non-string values can land via legacy/self-inflicted
+    // writes) so it never reaches findings responses.
     const projectNameMap = new Map<string, string>();
     for (const conn of connections) {
       const vars = (conn.variables ?? {}) as Record<string, unknown>;
-      const names = vars.project_names as Record<string, string> | undefined;
-      if (names) {
-        for (const [id, name] of Object.entries(names)) {
+      const names = vars.project_names;
+      if (typeof names !== 'object' || names === null || Array.isArray(names)) {
+        continue;
+      }
+      for (const [id, name] of Object.entries(names)) {
+        if (typeof name === 'string') {
           projectNameMap.set(id, name);
         }
       }

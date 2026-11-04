@@ -2,7 +2,7 @@
 const isLinuxBuild = process.argv.includes('--linux') || process.env.BUILD_TARGET === 'linux';
 
 /** @type {import('electron-builder').Configuration} */
-module.exports = {
+export default {
   appId: 'ai.trycomp.device-agent',
   productName: isLinuxBuild ? 'comp-ai-device-agent' : 'OpenComp Device Agent',
   directories: {

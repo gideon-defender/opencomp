@@ -208,7 +208,7 @@ The agent registers itself to start automatically at login using Electron's `app
 - The preference is persisted in the encrypted store (`openAtLogin`, default `true`)
 - On every launch, `initAutoLaunch()` re-syncs the OS setting with the stored preference (handles app path changes after auto-updates)
 - Users can toggle it via the "Start at Login" checkbox in the tray context menu
-- On macOS, the app starts hidden (`openAsHidden: true`) to avoid flashing a window
+- On macOS there is no hidden start. Electron removed the `openAsHidden` flag, so the app window opens visibly at login
 
 ### Check-in cycle
 

@@ -100,7 +100,11 @@
     },
     "build-storybook": {
       "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/apps/app/src/**", "$TURBO_ROOT$/packages/ui/src/**"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/apps/app/src/**",
+        "$TURBO_ROOT$/packages/ui/src/**"
+      ],
       "outputs": ["dist/**"]
     },
     "lint": {

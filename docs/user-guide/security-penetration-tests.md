@@ -7,7 +7,7 @@ to enable the appropriate plan before continuing.
 
 ![Penetration Tests showing No active plan and View Plans](images/pentest-access.png)
 
-*This is the subscription entry screen. The example scans shown on it are previews.*
+_This is the subscription entry screen. The example scans shown on it are previews._
 
 ## Run a test
 

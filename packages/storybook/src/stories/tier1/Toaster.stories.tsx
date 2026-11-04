@@ -1,6 +1,6 @@
+import { Toaster } from '@gideon-defender/ui/sonner';
 import type { Meta, StoryObj } from '@storybook/react';
 import { withSonnerToast } from '../../mocks/decorators';
-import { Toaster } from '@gideon-defender/ui/sonner';
 
 const meta = {
   title: 'Tier 1 — Toaster',

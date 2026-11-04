@@ -37,7 +37,7 @@ describe('Bedrock embeddings', () => {
     const fetch = vi.fn();
     vi.stubGlobal('fetch', fetch);
     send.mockResolvedValue(response(vector));
-    const { embedTexts } = await import('./embedding-client');
+    const { embedTexts } = await import('./embedding-client.js');
     await expect(embedTexts(['alpha', ' ', 'beta'])).resolves.toEqual([vector, vector]);
     expect(fetch).not.toHaveBeenCalled();
     expect(client).toHaveBeenCalledWith({ region: 'us-east-2' });
@@ -56,7 +56,7 @@ describe('Bedrock embeddings', () => {
       if (inputText === 'first') await new Promise((resolve) => setTimeout(resolve, 10));
       return response(inputText === 'first' ? vector : other);
     });
-    const { embedTexts } = await import('./embedding-client');
+    const { embedTexts } = await import('./embedding-client.js');
     await expect(embedTexts(['first', 'second'])).resolves.toEqual([vector, other]);
   });
 
@@ -64,7 +64,7 @@ describe('Bedrock embeddings', () => {
     'rejects invalid model vectors',
     async (value) => {
       send.mockResolvedValue(response(value));
-      const { embedTexts } = await import('./embedding-client');
+      const { embedTexts } = await import('./embedding-client.js');
       await expect(embedTexts(['text'])).rejects.toThrow(/embedding/i);
     },
   );
@@ -79,7 +79,7 @@ describe('Bedrock embeddings', () => {
       active -= 1;
       return response(vector);
     });
-    const { embedTexts } = await import('./embedding-client');
+    const { embedTexts } = await import('./embedding-client.js');
     await expect(embedTexts(Array(9).fill('text'))).resolves.toHaveLength(9);
     expect(maximum).toBe(4);
   });
@@ -88,32 +88,32 @@ describe('Bedrock embeddings', () => {
     delete process.env.AWS_REGION;
     vi.stubEnv('APP_AWS_REGION', 'us-east-2');
     send.mockResolvedValue(response(vector));
-    const { embedTexts } = await import('./embedding-client');
+    const { embedTexts } = await import('./embedding-client.js');
     await embedTexts(['text']);
     expect(client).toHaveBeenCalledWith({ region: 'us-east-2' });
   });
 
   it('propagates model invocation failures', async () => {
     send.mockRejectedValue(new Error('AccessDeniedException'));
-    const { embedTexts } = await import('./embedding-client');
+    const { embedTexts } = await import('./embedding-client.js');
     await expect(embedTexts(['text'])).rejects.toThrow('AccessDeniedException');
   });
 
   it('does not create a client for empty input', async () => {
-    const { embedTexts } = await import('./embedding-client');
+    const { embedTexts } = await import('./embedding-client.js');
     await expect(embedTexts([' '])).resolves.toEqual([]);
     expect(client).not.toHaveBeenCalled();
   });
 
   it('defaults to the Titan model when Bedrock is selected', async () => {
     delete process.env.EMBEDDING_MODEL;
-    const { EMBEDDING_MODEL } = await import('./embedding-client');
+    const { EMBEDDING_MODEL } = await import('./embedding-client.js');
     expect(EMBEDDING_MODEL).toBe('amazon.titan-embed-text-v2:0');
   });
 
   it('rejects unknown providers instead of silently using Ollama', async () => {
     vi.stubEnv('EMBEDDINGS_PROVIDER', 'typo');
-    const { embedTexts } = await import('./embedding-client');
+    const { embedTexts } = await import('./embedding-client.js');
     await expect(embedTexts(['text'])).rejects.toThrow(/provider/i);
   });
 });

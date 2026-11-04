@@ -1,9 +1,9 @@
+import { TooltipProvider } from '@gideon-defender/ui/tooltip';
 import type { Preview } from '@storybook/react';
 import { initialize, mswLoader } from 'msw-storybook-addon';
-import { TooltipProvider } from '@gideon-defender/ui/tooltip';
 import { NextIntlClientProvider } from 'next-intl';
-import { NuqsAdapter } from 'nuqs/adapters/react';
 import { ThemeProvider } from 'next-themes';
+import { NuqsAdapter } from 'nuqs/adapters/react';
 import { Toaster } from 'sonner';
 import { SWRConfig } from 'swr';
 import messages from '../../../apps/app/messages/en.json';

@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { InputOTP } from '@gideon-defender/ui/input-otp';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
   title: 'Tier 1 — InputOTP',
@@ -12,7 +12,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   args: {
     maxLength: 42,
-    render: () => ('Example content'),
+    render: () => 'Example content',
     children: undefined,
   },
 };

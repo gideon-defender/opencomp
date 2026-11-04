@@ -25,26 +25,27 @@ interface Props {
 
 const copy = {
   en: {
-    preview: "Access Your Compliance Data",
-    heading: "Access Your Data",
-    hello: "Hello",
-    requestedPrefix: "You requested access to",
+    preview: 'Access Your Compliance Data',
+    heading: 'Access Your Data',
+    hello: 'Hello',
+    requestedPrefix: 'You requested access to',
     requestedSuffix: "'s compliance documentation.",
-    clickBelow: "Click the button below to access your data:",
-    button: "Access Compliance Data",
-    copyPaste: "or copy and paste this URL into your browser",
-    linkValid: "This link will remain valid until your access expires on:",
+    clickBelow: 'Click the button below to access your data:',
+    button: 'Access Compliance Data',
+    copyPaste: 'or copy and paste this URL into your browser',
+    linkValid: 'This link will remain valid until your access expires on:',
   },
   es: {
-    preview: "Accede a tus datos de cumplimiento",
-    heading: "Accede a tus datos",
-    hello: "Hola",
-    requestedPrefix: "Solicitaste acceso a la documentación de cumplimiento de",
-    requestedSuffix: ".",
-    clickBelow: "Haz clic en el botón siguiente para acceder a tus datos:",
-    button: "Acceder a los datos de cumplimiento",
-    copyPaste: "o copia y pega esta URL en tu navegador",
-    linkValid: "Este enlace seguirá siendo válido hasta que tu acceso venza el:",
+    preview: 'Accede a tus datos de cumplimiento',
+    heading: 'Accede a tus datos',
+    hello: 'Hola',
+    requestedPrefix: 'Solicitaste acceso a la documentación de cumplimiento de',
+    requestedSuffix: '.',
+    clickBelow: 'Haz clic en el botón siguiente para acceder a tus datos:',
+    button: 'Acceder a los datos de cumplimiento',
+    copyPaste: 'o copia y pega esta URL en tu navegador',
+    linkValid:
+      'Este enlace seguirá siendo válido hasta que tu acceso venza el:',
   },
 };
 
@@ -74,7 +75,9 @@ export const AccessReclaimEmail = ({
             fontStyle="normal"
           />
         </head>
-        <Preview>{t.preview} - {organizationName}</Preview>
+        <Preview>
+          {t.preview} - {organizationName}
+        </Preview>
 
         <Body className="mx-auto my-auto bg-[#fff] font-sans">
           <Container
@@ -91,7 +94,8 @@ export const AccessReclaimEmail = ({
             </Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              {t.requestedPrefix} <strong>{organizationName}</strong>{t.requestedSuffix}
+              {t.requestedPrefix} <strong>{organizationName}</strong>
+              {t.requestedSuffix}
             </Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">

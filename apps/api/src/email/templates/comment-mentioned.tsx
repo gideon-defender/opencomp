@@ -34,26 +34,25 @@ interface Props {
 
 const copy = {
   en: {
-    previewMentioned: "mentioned you in a comment",
-    heading: "You were mentioned in a comment",
-    hello: "Hello",
-    bodyMentioned: "mentioned you in a comment on",
-    viewComment: "View Comment",
-    copyPaste: "or copy and paste this URL into your browser:",
-    unsubscribeQuestion:
-      "Don't want to receive comment mention notifications?",
-    managePrefs: "Manage your email preferences",
+    previewMentioned: 'mentioned you in a comment',
+    heading: 'You were mentioned in a comment',
+    hello: 'Hello',
+    bodyMentioned: 'mentioned you in a comment on',
+    viewComment: 'View Comment',
+    copyPaste: 'or copy and paste this URL into your browser:',
+    unsubscribeQuestion: "Don't want to receive comment mention notifications?",
+    managePrefs: 'Manage your email preferences',
   },
   es: {
-    previewMentioned: "te mencionó en un comentario",
-    heading: "Te mencionaron en un comentario",
-    hello: "Hola",
-    bodyMentioned: "te mencionó en un comentario en",
-    viewComment: "Ver comentario",
-    copyPaste: "o copia y pega esta URL en tu navegador:",
+    previewMentioned: 'te mencionó en un comentario',
+    heading: 'Te mencionaron en un comentario',
+    hello: 'Hola',
+    bodyMentioned: 'te mencionó en un comentario en',
+    viewComment: 'Ver comentario',
+    copyPaste: 'o copia y pega esta URL en tu navegador:',
     unsubscribeQuestion:
-      "¿No quieres recibir notificaciones de menciones en comentarios?",
-    managePrefs: "Gestionar tus preferencias de correo electrónico",
+      '¿No quieres recibir notificaciones de menciones en comentarios?',
+    managePrefs: 'Gestionar tus preferencias de correo electrónico',
   },
 };
 
@@ -120,7 +119,9 @@ export const CommentMentionedEmail = ({
             fontStyle="normal"
           />
         </head>
-        <Preview>{mentionedByName} {t.previewMentioned}</Preview>
+        <Preview>
+          {mentionedByName} {t.previewMentioned}
+        </Preview>
 
         <Body className="mx-auto my-auto bg-[#fff] font-sans">
           <Container
@@ -137,7 +138,8 @@ export const CommentMentionedEmail = ({
             </Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              <strong>{mentionedByName}</strong> {t.bodyMentioned} <strong>{entityName}</strong>.
+              <strong>{mentionedByName}</strong> {t.bodyMentioned}{' '}
+              <strong>{entityName}</strong>.
             </Text>
 
             <Section className="mt-[24px] mb-[24px] rounded-[4px] bg-[#F5F5F5] p-[16px]">

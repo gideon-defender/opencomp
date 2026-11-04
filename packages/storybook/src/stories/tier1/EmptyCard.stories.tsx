@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { EmptyCard } from '@gideon-defender/ui/empty-card';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
   title: 'Tier 1 — EmptyCard',

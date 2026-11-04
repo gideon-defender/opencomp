@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeEmail } from './normalize-email';
+import { normalizeEmail } from './normalize-email.js';
 
 // Contract: identical to `normalizeEmail` in `@gideon-defender/email`
 // (`packages/email/lib/unsubscribe.ts`). Keep both in sync — the contract

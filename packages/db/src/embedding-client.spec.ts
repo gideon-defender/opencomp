@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { EMBEDDING_MODEL, embedTexts } from './embedding-client';
+import { EMBEDDING_MODEL, embedTexts } from './embedding-client.js';
 
 describe('embedTexts', () => {
   afterEach(() => {

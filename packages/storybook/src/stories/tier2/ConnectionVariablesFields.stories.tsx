@@ -11,11 +11,15 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    variables: [{ id: 'demo_id_1', label: 'Example title 1', type: 'string', required: true }, { id: 'demo_id_2', label: 'Example title 2', type: 'string', required: true }, { id: 'demo_id_3', label: 'Example title 3', type: 'string', required: true }],
-    variableValues: {  },
+    variables: [
+      { id: 'demo_id_1', label: 'Example title 1', type: 'string', required: true },
+      { id: 'demo_id_2', label: 'Example title 2', type: 'string', required: true },
+      { id: 'demo_id_3', label: 'Example title 3', type: 'string', required: true },
+    ],
+    variableValues: {},
     setVariableValues: () => {},
-    dynamicOptions: {  },
-    loadingOptions: {  },
+    dynamicOptions: {},
+    loadingOptions: {},
     fetchOptions: () => {},
   },
 };

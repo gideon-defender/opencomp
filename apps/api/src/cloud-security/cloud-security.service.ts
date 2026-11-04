@@ -14,6 +14,17 @@ import { AWS_SERVICE_TASK_MAPPINGS } from './aws-task-mappings';
 import { CloudReconciliationService } from './reconciliation.service';
 import { resolveAwsScanMode } from './aws-scan-mode';
 import {
+  ConnectionNotFoundError,
+  saveConnectionVariable as persistConnectionVariable,
+  saveConnectionVariables as persistConnectionVariables,
+  type ConnectionVariableValue,
+} from './connection-variables';
+export {
+  ConcurrentVariableSaveError,
+  ConnectionNotFoundError,
+} from './connection-variables';
+export type { ConnectionVariableValue } from './connection-variables';
+import {
   GCP_SCAN_MODE_DIRECT,
   GCP_SCAN_MODE_SCC,
   formatCheckLog,
@@ -61,12 +72,6 @@ type ResolveAwsSessionResult =
     }
   | { ok: false; reason: 'not_configured' }
   | { ok: false; reason: 'assume_failed'; error: string };
-
-export class ConnectionNotFoundError extends Error {
-  constructor() {
-    super('Connection not found');
-  }
-}
 
 @Injectable()
 export class CloudSecurityService {
@@ -272,8 +277,8 @@ export class CloudSecurityService {
               `Auto-detected GCP org: ${orgs[0].displayName} (${orgs[0].id})`,
             );
             // Save for future scans
-            await db.integrationConnection.update({
-              where: { id: connectionId },
+            await db.integrationConnection.updateMany({
+              where: { id: connectionId, organizationId },
               data: {
                 variables: { ...variables } as unknown as Prisma.InputJsonValue,
               },
@@ -395,8 +400,8 @@ export class CloudSecurityService {
           }
           // Merge: keep previously detected + add newly found (AFTER the new-check above)
           for (const id of serviceIds) existingDetected.add(id);
-          await db.integrationConnection.update({
-            where: { id: connectionId },
+          await db.integrationConnection.updateMany({
+            where: { id: connectionId, organizationId },
             data: {
               variables: {
                 ...currentVars,
@@ -412,8 +417,8 @@ export class CloudSecurityService {
       }
 
       // Update last sync time (AWS detectedServices is handled by detectServices via Cost Explorer)
-      await db.integrationConnection.update({
-        where: { id: connectionId },
+      await db.integrationConnection.updateMany({
+        where: { id: connectionId, organizationId },
         data: { lastSyncAt: new Date() },
       });
 
@@ -735,8 +740,8 @@ export class CloudSecurityService {
       existingDetected.add(id);
     }
 
-    await db.integrationConnection.update({
-      where: { id: connectionId },
+    await db.integrationConnection.updateMany({
+      where: { id: connectionId, organizationId },
       data: {
         variables: {
           ...variables,
@@ -774,28 +779,27 @@ export class CloudSecurityService {
 
   /**
    * Save a variable to a connection (e.g., organization_id after auto-detection).
+   * See `connection-variables.ts` for the concurrency contract.
    */
   async saveConnectionVariable(
     connectionId: string,
     key: string,
-    value: string | string[],
+    value: ConnectionVariableValue,
     organizationId: string,
   ) {
-    const connection = await db.integrationConnection.findFirst({
-      where: { id: connectionId, organizationId },
-    });
-    if (!connection) throw new ConnectionNotFoundError();
+    await persistConnectionVariable(connectionId, key, value, organizationId);
+  }
 
-    const variables = (connection.variables as Record<string, unknown>) || {};
-    await db.integrationConnection.update({
-      where: { id: connectionId },
-      data: {
-        variables: {
-          ...variables,
-          [key]: value,
-        } as unknown as Prisma.InputJsonValue,
-      },
-    });
+  /**
+   * Save multiple connection variables in a single read-modify-write.
+   * See `connection-variables.ts` for the concurrency contract.
+   */
+  async saveConnectionVariables(
+    connectionId: string,
+    entries: Record<string, ConnectionVariableValue>,
+    organizationId: string,
+  ) {
+    await persistConnectionVariables(connectionId, entries, organizationId);
   }
 
   async triggerScan(

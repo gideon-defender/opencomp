@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { SubmitButton } from '@gideon-defender/ui/submit-button';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
   title: 'Tier 1 — SubmitButton',

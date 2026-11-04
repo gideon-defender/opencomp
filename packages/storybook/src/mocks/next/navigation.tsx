@@ -50,7 +50,9 @@ export function useSearchParams(): URLSearchParams {
   return useContext(MockNavigationContext).searchParams;
 }
 
-export function useParams<T extends Record<string, string | string[]> = Record<string, string | string[]>>(): T {
+export function useParams<
+  T extends Record<string, string | string[]> = Record<string, string | string[]>,
+>(): T {
   return useContext(MockNavigationContext).params as T;
 }
 

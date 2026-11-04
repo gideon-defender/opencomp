@@ -3,6 +3,26 @@ import { test } from 'node:test';
 import { serializeRequest } from '../../src/request/serialize.ts';
 import { compileTools } from '../../src/tools.ts';
 import { baseline, emptyOverlay, tiny, tool } from './fixtures.mjs';
+import { reviewedSchemaDeltas } from '../compatibility/deltas.mjs';
+
+// The frozen Phase 0 baseline predates reviewed changes to the request
+// envelope (e.g. get-activity's `take`, the GCP DTO bodies). deltas.mjs is the
+// source of truth for those changes; anything not listed there keeps failing.
+const reviewedEnvelope = new Map();
+for (const delta of reviewedSchemaDeltas) {
+  const entry = reviewedEnvelope.get(delta.tool) ?? { addKeys: new Set(), dropKeys: new Set() };
+  const property = /^\/properties\/request\/properties\/([^/]+)$/.exec(delta.path);
+  if (property) {
+    if (delta.before === undefined && delta.after !== undefined) entry.addKeys.add(property[1]);
+    else if (delta.before !== undefined && delta.after === undefined)
+      entry.dropKeys.add(property[1]);
+    reviewedEnvelope.set(delta.tool, entry);
+    continue;
+  }
+  if (delta.path === '/properties/request/required' && Array.isArray(delta.after))
+    entry.required = [...delta.after];
+  reviewedEnvelope.set(delta.tool, entry);
+}
 
 const serialize = ({ name, input }) => {
   const actual = tool(name);
@@ -27,11 +47,16 @@ test('all captured request envelope keys and requiredness are preserved, includi
   });
   for (const captured of baseline.tools) {
     const actual = tool(captured.name);
-    assert.deepEqual(
-      envelope(actual.staticInputSchema),
-      envelope(captured.inputSchema),
-      actual.name,
-    );
+    const expected = envelope(captured.inputSchema);
+    const reviewed = reviewedEnvelope.get(captured.name);
+    if (reviewed) {
+      expected.requestKeys = [
+        ...expected.requestKeys.filter((key) => !reviewed.dropKeys.has(key)),
+        ...[...reviewed.addKeys].filter((key) => !expected.requestKeys.includes(key)),
+      ].sort();
+      if (reviewed.required) expected.requestRequired = [...reviewed.required].sort();
+    }
+    assert.deepEqual(envelope(actual.staticInputSchema), expected, actual.name);
   }
   for (const name of ['create-risk', 'create-vendor', 'create-finding']) {
     const actual = tool(name);

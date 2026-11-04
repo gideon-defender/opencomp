@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { RadioGroup } from '@gideon-defender/ui/radio-group';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
   title: 'Tier 1 — RadioGroup',

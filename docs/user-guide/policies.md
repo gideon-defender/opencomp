@@ -12,7 +12,7 @@ that policies are being tailored.
 
 ![Policy status charts and searchable table](images/policies-list.png)
 
-*Use status and department filters to identify policies that need review.*
+_Use status and department filters to identify policies that need review._
 
 ## Create a policy
 
@@ -41,7 +41,7 @@ review frequency, and review date; choose **Save** when available. In
 
 ![Policy Overview showing assignee, review frequency, department, and review date](images/policy-detail.png)
 
-*Overview holds policy metadata; Content holds the text or PDF.*
+_Overview holds policy metadata; Content holds the text or PDF._
 
 ## AI policy editor
 

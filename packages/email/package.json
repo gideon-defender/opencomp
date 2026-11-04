@@ -20,7 +20,7 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "require": "./dist/index.cjs"
     },
     "./emails/*": "./emails/*",
     "./lib/*": "./lib/*"
@@ -35,7 +35,7 @@
     "react-email"
   ],
   "license": "MIT",
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "peerDependencies": {
     "react": "^19.2.3",
@@ -46,17 +46,18 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/comp-ai/comp.git",
+    "url": "git+https://github.com/gideon-defender/opencomp.git",
     "directory": "packages/email"
   },
   "scripts": {
-    "build": "tsup index.ts --format cjs,esm --dts",
+    "build": "tsup",
     "clean": "rm -rf .turbo node_modules dist",
-    "dev": "tsup index.ts --format cjs,esm --watch --dts",
+    "dev": "tsup --watch",
     "format": "prettier --write .",
     "lint": "prettier --check .",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
+  "type": "module",
   "types": "./dist/index.d.ts"
 }

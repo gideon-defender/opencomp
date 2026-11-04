@@ -24,35 +24,35 @@ interface Props {
 
 const copy = {
   en: {
-    previewPrefix: "Action required: Trust Portal custom domain",
-    previewSuffix: "is misconfigured",
-    heading: "Trust Portal Domain Needs Attention",
-    hello: "Hello",
-    bodyDetected: "We detected that the custom domain",
-    bodyConfigured: "configured for",
+    previewPrefix: 'Action required: Trust Portal custom domain',
+    previewSuffix: 'is misconfigured',
+    heading: 'Trust Portal Domain Needs Attention',
+    hello: 'Hello',
+    bodyDetected: 'We detected that the custom domain',
+    bodyConfigured: 'configured for',
     bodySuffix:
       "'s Trust Portal is no longer resolving correctly. Visitors using this domain may be unable to access your Trust Portal until the DNS configuration is fixed.",
-    whatToDo: "What to do:",
+    whatToDo: 'What to do:',
     dnsBody:
-      "Visit your Trust Portal settings to review the DNS records and re-verify your domain. Ensure your CNAME record points to the correct target and that all required verification records are in place.",
-    reviewButton: "Review Domain Settings",
-    supportNote: "If you need help, please contact our support team.",
+      'Visit your Trust Portal settings to review the DNS records and re-verify your domain. Ensure your CNAME record points to the correct target and that all required verification records are in place.',
+    reviewButton: 'Review Domain Settings',
+    supportNote: 'If you need help, please contact our support team.',
   },
   es: {
     previewPrefix:
-      "Acción requerida: el dominio personalizado del Portal de Confianza",
-    previewSuffix: "está mal configurado",
-    heading: "El dominio del Portal de Confianza necesita atención",
-    hello: "Hola",
-    bodyDetected: "Detectamos que el dominio personalizado",
-    bodyConfigured: "configurado para el Portal de Confianza de",
+      'Acción requerida: el dominio personalizado del Portal de Confianza',
+    previewSuffix: 'está mal configurado',
+    heading: 'El dominio del Portal de Confianza necesita atención',
+    hello: 'Hola',
+    bodyDetected: 'Detectamos que el dominio personalizado',
+    bodyConfigured: 'configurado para el Portal de Confianza de',
     bodySuffix:
-      " ya no se resuelve correctamente. Los visitantes que usen este dominio podrían no poder acceder a tu Portal de Confianza hasta que se corrija la configuración DNS.",
-    whatToDo: "Qué hacer:",
+      ' ya no se resuelve correctamente. Los visitantes que usen este dominio podrían no poder acceder a tu Portal de Confianza hasta que se corrija la configuración DNS.',
+    whatToDo: 'Qué hacer:',
     dnsBody:
-      "Visita la configuración de tu Portal de Confianza para revisar los registros DNS y volver a verificar tu dominio. Asegúrate de que tu registro CNAME apunte al destino correcto y de que todos los registros de verificación requeridos estén en su lugar.",
-    reviewButton: "Revisar la configuración del dominio",
-    supportNote: "Si necesitas ayuda, contacta a nuestro equipo de soporte.",
+      'Visita la configuración de tu Portal de Confianza para revisar los registros DNS y volver a verificar tu dominio. Asegúrate de que tu registro CNAME apunte al destino correcto y de que todos los registros de verificación requeridos estén en su lugar.',
+    reviewButton: 'Revisar la configuración del dominio',
+    supportNote: 'Si necesitas ayuda, contacta a nuestro equipo de soporte.',
   },
 };
 
@@ -82,7 +82,9 @@ export const TrustDomainMisconfiguredEmail = ({
             fontStyle="normal"
           />
         </head>
-        <Preview>{t.previewPrefix} {domain} {t.previewSuffix}</Preview>
+        <Preview>
+          {t.previewPrefix} {domain} {t.previewSuffix}
+        </Preview>
 
         <Body className="mx-auto my-auto bg-[#fff] font-sans">
           <Container
@@ -99,7 +101,9 @@ export const TrustDomainMisconfiguredEmail = ({
             </Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              {t.bodyDetected} <strong>{domain}</strong> {t.bodyConfigured} <strong>{organizationName}</strong>{t.bodySuffix}
+              {t.bodyDetected} <strong>{domain}</strong> {t.bodyConfigured}{' '}
+              <strong>{organizationName}</strong>
+              {t.bodySuffix}
             </Text>
 
             <Section

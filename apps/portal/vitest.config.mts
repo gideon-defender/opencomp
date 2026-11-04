@@ -1,12 +1,18 @@
 import { resolve } from 'path';
 import { defineConfig } from 'vitest/config';
 
-// No vite plugins on purpose: esbuild already transforms TSX with the automatic
-// JSX runtime, and plugin types (e.g. @vitejs/plugin-react, vite-tsconfig-paths)
-// can clash with vitest's bundled vite during Next's build-time typecheck on
-// Vercel. Aliases are mirrored by hand from tsconfig instead — see
-// apps/framework-editor/vitest.config.ts for the same approach.
+// No vite-tsconfig-paths on purpose: its types can clash with vitest's bundled
+// vite during Next's build-time typecheck on Vercel. Aliases are mirrored by
+// hand from tsconfig instead. Vite 8 / rolldown transforms JSX in .tsx source
+// natively via its oxc transform when jsx.runtime is configured, which lets
+// component tests import @gideon-defender/ui source without a UI package build.
 export default defineConfig({
+  oxc: {
+    jsx: {
+      runtime: 'automatic',
+      importSource: 'react',
+    },
+  },
   test: {
     // jsdom, not node: the include glob covers component tests (.jsx/.tsx) that
     // need DOM APIs (e.g. testing-library's render). Matches apps/app and
@@ -22,12 +28,12 @@ export default defineConfig({
     alias: {
       // Use source so component tests do not require a UI package build.
       '@gideon-defender/ui/button': resolve(
-        __dirname,
+        import.meta.dirname,
         '../../packages/ui/src/components/button.tsx',
       ),
-      '@db/server': resolve(__dirname, './prisma/server'),
-      '@db': resolve(__dirname, './prisma'),
-      '@': resolve(__dirname, './src'),
+      '@db/server': resolve(import.meta.dirname, './prisma/server'),
+      '@db': resolve(import.meta.dirname, './prisma'),
+      '@': resolve(import.meta.dirname, './src'),
     },
   },
 });

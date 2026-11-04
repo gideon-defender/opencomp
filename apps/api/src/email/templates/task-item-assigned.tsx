@@ -31,28 +31,27 @@ interface Props {
 
 const copy = {
   en: {
-    previewPrefix: "You were assigned to a task",
-    heading: "Task Assigned to You",
-    hello: "Hello",
-    bodyAssigned: "assigned you to the task",
-    bodyIn: "in",
-    viewTask: "View Task",
-    copyPaste: "or copy and paste this URL into your browser:",
-    unsubscribeQuestion:
-      "Don't want to receive task assignment notifications?",
-    managePrefs: "Manage your email preferences",
+    previewPrefix: 'You were assigned to a task',
+    heading: 'Task Assigned to You',
+    hello: 'Hello',
+    bodyAssigned: 'assigned you to the task',
+    bodyIn: 'in',
+    viewTask: 'View Task',
+    copyPaste: 'or copy and paste this URL into your browser:',
+    unsubscribeQuestion: "Don't want to receive task assignment notifications?",
+    managePrefs: 'Manage your email preferences',
   },
   es: {
-    previewPrefix: "Se te asignó una tarea",
-    heading: "Tarea asignada a ti",
-    hello: "Hola",
-    bodyAssigned: "te asignó la tarea",
-    bodyIn: "en",
-    viewTask: "Ver tarea",
-    copyPaste: "o copia y pega esta URL en tu navegador:",
+    previewPrefix: 'Se te asignó una tarea',
+    heading: 'Tarea asignada a ti',
+    hello: 'Hola',
+    bodyAssigned: 'te asignó la tarea',
+    bodyIn: 'en',
+    viewTask: 'Ver tarea',
+    copyPaste: 'o copia y pega esta URL en tu navegador:',
     unsubscribeQuestion:
-      "¿No quieres recibir notificaciones de asignación de tareas?",
-    managePrefs: "Gestionar tus preferencias de correo electrónico",
+      '¿No quieres recibir notificaciones de asignación de tareas?',
+    managePrefs: 'Gestionar tus preferencias de correo electrónico',
   },
 };
 
@@ -86,7 +85,9 @@ export const TaskItemAssignedEmail = ({
             fontStyle="normal"
           />
         </head>
-        <Preview>{t.previewPrefix}: {taskTitle}</Preview>
+        <Preview>
+          {t.previewPrefix}: {taskTitle}
+        </Preview>
 
         <Body className="mx-auto my-auto bg-[#fff] font-sans">
           <Container
@@ -103,7 +104,9 @@ export const TaskItemAssignedEmail = ({
             </Text>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
-              <strong>{assignedByName}</strong> {t.bodyAssigned} <strong>"{taskTitle}"</strong> {t.bodyIn} <strong>{organizationName}</strong>.
+              <strong>{assignedByName}</strong> {t.bodyAssigned}{' '}
+              <strong>"{taskTitle}"</strong> {t.bodyIn}{' '}
+              <strong>{organizationName}</strong>.
             </Text>
 
             <Section className="mt-[32px] mb-[32px] text-center">

@@ -23,7 +23,7 @@ existing provider tab does not guarantee that new setup is enabled there.
 
 ![Add Another Cloud screen with available cloud providers](images/cloud-add-provider.png)
 
-*Choose from the setup options offered by your deployment.*
+_Choose from the setup options offered by your deployment._
 
 ## Run checks
 
@@ -38,7 +38,7 @@ existing provider tab does not guarantee that new setup is enabled there.
 
 ![Cloud Security Tests showing provider tabs, account selector, scan controls, and result counts](images/cloud-tests.png)
 
-*Check Scan Results, History, Activity, Remediations, and Services for the selected account.*
+_Check Scan Results, History, Activity, Remediations, and Services for the selected account._
 
 ## Confirm a scan completed
 

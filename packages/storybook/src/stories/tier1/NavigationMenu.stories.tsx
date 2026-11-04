@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { NavigationMenu } from '@gideon-defender/ui/navigation-menu';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
   title: 'Tier 1 — NavigationMenu',

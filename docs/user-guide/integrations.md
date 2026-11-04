@@ -17,7 +17,7 @@ to configure and scan, `integration:delete` to remove.
 
 ![Integration catalog with category filters and provider cards](images/integrations.png)
 
-*Open a provider card to review its services and connection options.*
+_Open a provider card to review its services and connection options._
 
 If **OAuth not configured** appears, your system administrator must configure
 the provider before connection is possible. Repeatedly signing in will not

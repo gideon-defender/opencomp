@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { CardLiquidGlass } from '@gideon-defender/ui/card-liquid-glass';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
   title: 'Tier 1 — CardLiquidGlass',

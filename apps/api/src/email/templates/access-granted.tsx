@@ -29,37 +29,37 @@ interface Props {
 
 const copy = {
   en: {
-    preview: "Access Granted",
-    heading: "Access Granted ✓",
-    hello: "Hello",
-    activeBypassedPrefix: "Your access to",
+    preview: 'Access Granted',
+    heading: 'Access Granted ✓',
+    hello: 'Hello',
+    activeBypassedPrefix: 'Your access to',
     activeBypassedSuffix: "'s policy documentation is now active.",
-    activeNdaPrefix: "Your NDA has been signed and your access to",
+    activeNdaPrefix: 'Your NDA has been signed and your access to',
     activeNdaSuffix: "'s policy documentation is now active.",
-    expiresOn: "Your access will expire on:",
-    viewDocuments: "View Documents",
+    expiresOn: 'Your access will expire on:',
+    viewDocuments: 'View Documents',
     downloadNda:
-      "You can download your signed NDA for your records from the confirmation page or by accessing the portal above.",
-    lostLink: "Lost your access link?",
+      'You can download your signed NDA for your records from the confirmation page or by accessing the portal above.',
+    lostLink: 'Lost your access link?',
     lostLinkBody:
       'Visit the trust portal and click "Already have access?" to receive a new access link via email.',
   },
   es: {
-    preview: "Acceso concedido",
-    heading: "Acceso concedido ✓",
-    hello: "Hola",
-    activeBypassedPrefix: "Tu acceso a la documentación de políticas de",
-    activeBypassedSuffix: " ya está activo.",
+    preview: 'Acceso concedido',
+    heading: 'Acceso concedido ✓',
+    hello: 'Hola',
+    activeBypassedPrefix: 'Tu acceso a la documentación de políticas de',
+    activeBypassedSuffix: ' ya está activo.',
     activeNdaPrefix:
-      "Tu NDA ha sido firmado y tu acceso a la documentación de políticas de",
-    activeNdaSuffix: " ya está activo.",
-    expiresOn: "Tu acceso vencerá el:",
-    viewDocuments: "Ver documentos",
+      'Tu NDA ha sido firmado y tu acceso a la documentación de políticas de',
+    activeNdaSuffix: ' ya está activo.',
+    expiresOn: 'Tu acceso vencerá el:',
+    viewDocuments: 'Ver documentos',
     downloadNda:
-      "Puedes descargar tu NDA firmado para tus registros desde la página de confirmación o accediendo al portal anterior.",
-    lostLink: "¿Perdiste tu enlace de acceso?",
+      'Puedes descargar tu NDA firmado para tus registros desde la página de confirmación o accediendo al portal anterior.',
+    lostLink: '¿Perdiste tu enlace de acceso?',
     lostLinkBody:
-      "Visita el portal de confianza y haz clic en «¿Ya tienes acceso?» para recibir un nuevo enlace de acceso por correo electrónico.",
+      'Visita el portal de confianza y haz clic en «¿Ya tienes acceso?» para recibir un nuevo enlace de acceso por correo electrónico.',
   },
 };
 
@@ -90,7 +90,9 @@ export const AccessGrantedEmail = ({
             fontStyle="normal"
           />
         </head>
-        <Preview>{t.preview} - {organizationName}</Preview>
+        <Preview>
+          {t.preview} - {organizationName}
+        </Preview>
 
         <Body className="mx-auto my-auto bg-[#fff] font-sans">
           <Container
@@ -109,11 +111,13 @@ export const AccessGrantedEmail = ({
             <Text className="text-[14px] leading-[24px] text-[#121212]">
               {ndaBypassed ? (
                 <>
-                  {t.activeBypassedPrefix} <strong>{organizationName}</strong>{t.activeBypassedSuffix}
+                  {t.activeBypassedPrefix} <strong>{organizationName}</strong>
+                  {t.activeBypassedSuffix}
                 </>
               ) : (
                 <>
-                  {t.activeNdaPrefix} <strong>{organizationName}</strong>{t.activeNdaSuffix}
+                  {t.activeNdaPrefix} <strong>{organizationName}</strong>
+                  {t.activeNdaSuffix}
                 </>
               )}
             </Text>

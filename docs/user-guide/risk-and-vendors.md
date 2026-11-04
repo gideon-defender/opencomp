@@ -22,7 +22,7 @@ Editing risk details, treatment, and ratings requires `risk:update`.
 
 ![Create New Risk form with title, description, category, department, and assignee](images/risk-create.png)
 
-*Describe the risk and assign responsibility before assessing its treatment.*
+_Describe the risk and assign responsibility before assessing its treatment._
 
 ## Walkthrough: source code exposure through AI tools
 
@@ -154,7 +154,7 @@ through your organization's review process.
 
 ![Create Vendor form with category, status, and assignee](images/vendor-create.png)
 
-*Use Not Assessed until you have completed the review and recorded its outcome.*
+_Use Not Assessed until you have completed the review and recorded its outcome._
 
 ## Confirm your review
 

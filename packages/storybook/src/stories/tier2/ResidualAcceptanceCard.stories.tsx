@@ -16,7 +16,11 @@ export const Default: Story = {
     residualLikelihood: 'very_unlikely',
     residualImpact: 'insignificant',
     ownerId: 'demo_id',
-    acceptorOptions: [{ id: 'demo_id_1', name: 'Example name 1' }, { id: 'demo_id_2', name: 'Example name 2' }, { id: 'demo_id_3', name: 'Example name 3' }],
+    acceptorOptions: [
+      { id: 'demo_id_1', name: 'Example name 1' },
+      { id: 'demo_id_2', name: 'Example name 2' },
+      { id: 'demo_id_3', name: 'Example name 3' },
+    ],
     canUpdate: true,
   },
 };

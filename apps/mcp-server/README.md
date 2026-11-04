@@ -181,10 +181,10 @@ secret settings, never in URLs.
 
 To enable OAuth discovery and bearer admission, configure the hosted server with:
 
-| Environment variable | Value |
-| --- | --- |
-| `MCP_OIDC_CLIENT_ID` | Registered dedicated MCP public client ID |
-| `MCP_OIDC_ISSUER` | Gideon HTTPS issuer origin, without a path, query or fragment |
+| Environment variable       | Value                                                         |
+| -------------------------- | ------------------------------------------------------------- |
+| `MCP_OIDC_CLIENT_ID`       | Registered dedicated MCP public client ID                     |
+| `MCP_OIDC_ISSUER`          | Gideon HTTPS issuer origin, without a path, query or fragment |
 | `MCP_OIDC_SHARED_AUDIENCE` | Existing API JWT audience; must differ from the MCP client ID |
 
 Deploy the API's resolved `tenantId` response field before enabling bearer

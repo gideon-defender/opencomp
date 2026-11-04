@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import { AlertDialog } from '@gideon-defender/ui/alert-dialog';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const meta = {
   title: 'Tier 1 — AlertDialog',

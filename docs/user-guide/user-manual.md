@@ -1,6 +1,6 @@
 # OpenComp User Manual
 
-*Reference for the OpenComp compliance app, employee portal, Trust Center, security product, API/MCP, browser extension, and device agent. The illustrated walkthroughs below use the live development workspace viewed in Chrome on October 17, 2026. Availability depends on permissions, plans, deployment settings, and feature flags.*
+_Reference for the OpenComp compliance app, employee portal, Trust Center, security product, API/MCP, browser extension, and device agent. The illustrated walkthroughs below use the live development workspace viewed in Chrome on October 17, 2026. Availability depends on permissions, plans, deployment settings, and feature flags._
 
 ## How to use this manual
 
@@ -65,15 +65,15 @@ The live navigation did not expose Timeline, the ISMS workspace, Questionnaire/K
 
 OpenComp runs your compliance and security programs in one place. It has distinct surfaces:
 
-| Surface | What it holds | Who uses it |
-|---|---|---|
-| **Compliance app** (this app) | Frameworks, controls, policies, evidence, documents, ISMS, risks, vendors, people, settings | Admins, compliance leads, auditors |
-| **Security product** (within the app) | Penetration tests, cloud security tests, integrations | Security engineers |
-| **Trust Center** | Public transparency site + customer access requests/NDAs | Your customers, prospects, auditors |
-| **Employee portal** (separate app) | Policies, training, device agent, forms | Every employee/contractor |
-| **Auditor view** | Read-only audit workspace | External/internal auditors |
-| **Device agent** | Laptop/compliance telemetry | Installed on endpoints |
-| **MCP / API / browser extension** | Automation surfaces | Agents, scripts, questionnaire answerers |
+| Surface                               | What it holds                                                                               | Who uses it                              |
+| ------------------------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| **Compliance app** (this app)         | Frameworks, controls, policies, evidence, documents, ISMS, risks, vendors, people, settings | Admins, compliance leads, auditors       |
+| **Security product** (within the app) | Penetration tests, cloud security tests, integrations                                       | Security engineers                       |
+| **Trust Center**                      | Public transparency site + customer access requests/NDAs                                    | Your customers, prospects, auditors      |
+| **Employee portal** (separate app)    | Policies, training, device agent, forms                                                     | Every employee/contractor                |
+| **Auditor view**                      | Read-only audit workspace                                                                   | External/internal auditors               |
+| **Device agent**                      | Laptop/compliance telemetry                                                                 | Installed on endpoints                   |
+| **MCP / API / browser extension**     | Automation surfaces                                                                         | Agents, scripts, questionnaire answerers |
 
 ## Signing in
 
@@ -119,7 +119,7 @@ In **Gideon Cockpit → Security & Access → Applications**, find **OpenComp** 
 
 ![Gideon Applications lists OpenComp as an active OIDC application with a Details button.](images/manual/idp-gideon-applications.png)
 
-*Security & Access → Applications is the administrator's configuration view.*
+_Security & Access → Applications is the administrator's configuration view._
 
 The application's setup assistant links to OIDC configuration, access policy, diagnostics, setup export, and the smoke test. Work through these areas before handing the integration to users.
 
@@ -127,22 +127,22 @@ The application's setup assistant links to OIDC configuration, access policy, di
 
 Review **OIDC configuration** and select **Edit** when changes are needed. The captured integration uses these settings:
 
-| Setting | Example or selection | What to check |
-|---|---|---|
-| Client ID | Copy the ID generated for this application | OpenComp must use this application's ID; the display name `OpenComp` is not the client ID. |
-| Redirect URI | `https://opencomp.dev.gideondefender.com/v1/auth/oidc/callback` | Register the exact public URL routed to OpenComp's API callback, including scheme, hostname, and path. |
-| Scopes | `openid profile email` | Keep OpenID enabled and request profile and email. The captured client does not select Offline access. |
-| Grant types | Authorization code; Refresh token | The browser sign-in flow uses the authorization code grant with PKCE. |
-| Client secret | None for this public client | Gideon explicitly states that public clients do not use client secrets. |
-| Launch URL | `https://opencomp.dev.gideondefender.com/v1/auth/oidc/login` | Launch into OpenComp's login entry point so it creates the sign-in request and callback state. |
+| Setting       | Example or selection                                            | What to check                                                                                          |
+| ------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Client ID     | Copy the ID generated for this application                      | OpenComp must use this application's ID; the display name `OpenComp` is not the client ID.             |
+| Redirect URI  | `https://opencomp.dev.gideondefender.com/v1/auth/oidc/callback` | Register the exact public URL routed to OpenComp's API callback, including scheme, hostname, and path. |
+| Scopes        | `openid profile email`                                          | Keep OpenID enabled and request profile and email. The captured client does not select Offline access. |
+| Grant types   | Authorization code; Refresh token                               | The browser sign-in flow uses the authorization code grant with PKCE.                                  |
+| Client secret | None for this public client                                     | Gideon explicitly states that public clients do not use client secrets.                                |
+| Launch URL    | `https://opencomp.dev.gideondefender.com/v1/auth/oidc/login`    | Launch into OpenComp's login entry point so it creates the sign-in request and callback state.         |
 
 ![Gideon shows the OpenComp client ID, redirect URIs, scopes, grant types, and public-client secret guidance.](images/manual/idp-gideon-opencomp.png)
 
-*Review the registered client and its release-readiness checks together.*
+_Review the registered client and its release-readiness checks together._
 
 ![The OIDC editor exposes redirect URIs, scope selections, and grant types.](images/manual/idp-gideon-oidc-edit.png)
 
-*Use the OIDC editor to update the registration; save only after checking the target environment's values.*
+_Use the OIDC editor to update the registration; save only after checking the target environment's values._
 
 The captured integration registers only `/v1/auth/oidc/callback`. A callback URI belongs in the redirect list; the `/v1/auth/oidc/login` URL belongs in the launcher field.
 
@@ -152,16 +152,16 @@ For the captured **public** client, omit `OIDC_CLIENT_SECRET`. If your deploymen
 
 The **OIDC provider references** card supplies the issuer and discovery endpoints. The captured development values are:
 
-| Reference | Development example |
-|---|---|
-| Issuer | `https://gideon.dev.gideondefender.com` |
+| Reference          | Development example                                                      |
+| ------------------ | ------------------------------------------------------------------------ |
+| Issuer             | `https://gideon.dev.gideondefender.com`                                  |
 | Discovery document | `https://gideon.dev.gideondefender.com/.well-known/openid-configuration` |
-| JWKS URI | `https://gideon.dev.gideondefender.com/.well-known/jwks.json` |
-| UserInfo endpoint | `https://gideon.dev.gideondefender.com/v1/oidc/userinfo` |
+| JWKS URI           | `https://gideon.dev.gideondefender.com/.well-known/jwks.json`            |
+| UserInfo endpoint  | `https://gideon.dev.gideondefender.com/v1/oidc/userinfo`                 |
 
 ![Gideon displays diagnostics, OIDC provider references, and setup-package download actions.](images/manual/idp-gideon-diagnostics.png)
 
-*Copy provider references from the application. Diagnostics describe the configuration at the time shown.*
+_Copy provider references from the application. Diagnostics describe the configuration at the time shown._
 
 A deployment administrator can use this browser-login example in the OpenComp API's runtime configuration, replacing the client-ID placeholder:
 
@@ -181,7 +181,7 @@ Open **Access policy → Edit** and select the intended access scope and permitt
 
 ![Gideon's access-policy summary says that only selected users can access the application.](images/manual/idp-gideon-access-policy.png)
 
-*The access policy controls eligibility to use this Gideon application.*
+_The access policy controls eligibility to use this Gideon application._
 
 Application access and OpenComp roles are separate checks. A person who can launch the application still needs an OpenComp role entitlement for the correct organization. Use **Access trace** to investigate a particular user's eligibility when necessary; keep personal directory details out of shared setup material.
 
@@ -191,16 +191,16 @@ In **Application entitlements**, use **Edit roles** to review or define the appl
 
 ![The entitlement editor maps the OpenComp Admins group to the admin entitlement value.](images/manual/idp-gideon-entitlements.png)
 
-*The entitlement value must match the role name that OpenComp recognizes.*
+_The entitlement value must match the role name that OpenComp recognizes._
 
 Use exact, case-sensitive role names. OpenComp recognizes the built-in values `owner`, `admin`, `auditor`, `employee`, and `contractor`, plus custom role names defined in that organization. A friendly display name such as **OpenComp Admin** does not replace the entitlement value `admin`.
 
-| Group mapping example | Entitlement value | Intended access |
-|---|---|---|
-| OpenComp Admins (captured mapping) | `admin` | Administrative permissions in OpenComp |
-| OpenComp Owners (captured mapping) | `owner` | Full organization ownership; restrict this group carefully |
-| OpenComp Audit Team (illustrative) | `auditor` | Auditor permissions |
-| Portal Employees (illustrative) | `employee` | Employee portal access and applicable compliance obligations |
+| Group mapping example              | Entitlement value | Intended access                                              |
+| ---------------------------------- | ----------------- | ------------------------------------------------------------ |
+| OpenComp Admins (captured mapping) | `admin`           | Administrative permissions in OpenComp                       |
+| OpenComp Owners (captured mapping) | `owner`           | Full organization ownership; restrict this group carefully   |
+| OpenComp Audit Team (illustrative) | `auditor`         | Auditor permissions                                          |
+| Portal Employees (illustrative)    | `employee`        | Employee portal access and applicable compliance obligations |
 
 For a custom role, copy its exact OpenComp role name into **Entitlement value**. The optional **SCIM entitlement value** is a separate field; filling it does not replace the OIDC entitlement. Review **Included roles** as well: assigning a role can also grant included roles and their descendants.
 
@@ -232,23 +232,23 @@ OpenComp evaluates the **verified ID token's** `entitlements` array against that
 
 ![Gideon's Self Service Apps page includes an OpenComp launch tile.](images/manual/idp-gideon-app-launcher.png)
 
-*Self Service → Apps is the user's launch view. Seeing a tile is one check in the complete sign-in journey.*
+_Self Service → Apps is the user's launch view. Seeing a tile is one check in the complete sign-in journey._
 
-| Symptom | Check |
-|---|---|
-| Redirect URI mismatch | Compare `OIDC_REDIRECT_URI` with Gideon's registered URI character for character; check which public hostname routes to the API callback. |
-| OpenComp is unavailable in Apps | Check application status, access scope, and the user's access trace in Gideon. |
-| App launches but OpenComp reports no role | Check published entitlement values, group membership, the verified ID-token claim, organization mapping, and enforcement scope. |
-| A custom role has no effect | Check that its definition exists in the target OpenComp organization and that the entitlement value matches its exact name. |
-| Login fails after a client-type change | Check that a public PKCE client has no configured secret, or that the confidential client's server secret matches its registration. |
-| User reaches the wrong organization | Check the verified tenant claim and subject linkage with the administrator; editing an organization URL cannot repair identity mapping. |
-| Removed access remains active | Check publication and group changes, then the enabled reconciliation worker and its latest successful run. |
+| Symptom                                   | Check                                                                                                                                     |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Redirect URI mismatch                     | Compare `OIDC_REDIRECT_URI` with Gideon's registered URI character for character; check which public hostname routes to the API callback. |
+| OpenComp is unavailable in Apps           | Check application status, access scope, and the user's access trace in Gideon.                                                            |
+| App launches but OpenComp reports no role | Check published entitlement values, group membership, the verified ID-token claim, organization mapping, and enforcement scope.           |
+| A custom role has no effect               | Check that its definition exists in the target OpenComp organization and that the entitlement value matches its exact name.               |
+| Login fails after a client-type change    | Check that a public PKCE client has no configured secret, or that the confidential client's server secret matches its registration.       |
+| User reaches the wrong organization       | Check the verified tenant claim and subject linkage with the administrator; editing an organization URL cannot repair identity mapping.   |
+| Removed access remains active             | Check publication and group changes, then the enabled reconciliation worker and its latest successful run.                                |
 
 ## System roles (read-only)
 
 ![Settings → Roles separates fixed system roles from custom role definitions.](images/manual/roles.png)
 
-*Settings → Roles separates fixed system roles from custom role definitions.*
+_Settings → Roles separates fixed system roles from custom role definitions._
 
 Use **View** on a system role to inspect its permissions. The Custom Roles area explains that definitions live here and assignments live in Gideon. An empty Custom Roles table means no custom definitions exist; it does not mean the organization has no members.
 
@@ -278,7 +278,7 @@ A new custom role alone grants nobody access — assign the role name to people 
 
 ![Auditor role reference: App Access is on and Employee Compliance is off; the controls are disabled.](images/manual/auditor-role.png)
 
-*Auditor role reference: App Access is on and Employee Compliance is off; the controls are disabled.*
+_Auditor role reference: App Access is on and Employee Compliance is off; the controls are disabled._
 
 The disabled switches and permission matrix are reference values. They are not controls for assigning this role to a person. To give someone the role, change their assignment in Gideon, then verify their access after sign-in.
 
@@ -294,7 +294,7 @@ The Settings sidebar holds: General, Billing, Context, API Keys, Portal, Secrets
 
 ![General settings provide separate Save buttons for organization name and website, followed by logo and ownership guidance.](images/manual/settings-general.png)
 
-*General settings provide separate Save buttons for organization name and website, followed by logo and ownership guidance.*
+_General settings provide separate Save buttons for organization name and website, followed by logo and ownership guidance._
 
 Check the organization name in the header before editing. Save the section you changed, then reopen it to confirm the value. The ownership section directs you to Gideon; the organization deletion action below it is a separate, destructive operation.
 
@@ -317,7 +317,7 @@ Keep a current payment method: metered features (pentest scans, background check
 
 ![A Context search narrows the table to one question and its saved answer.](images/manual/context-search.png)
 
-*A Context search narrows the table to one question and its saved answer.*
+_A Context search narrows the table to one question and its saved answer._
 
 Use **Search context…** before **Add Entry** to avoid conflicting answers to the same question. Here the search finds the data-location answer. Clear the search to return to the full table. A question with no useful answer needs an update; a matching row alone does not prove the information is current.
 
@@ -362,7 +362,7 @@ Requires `organization:update`. A role × notification-type matrix: Policy Updat
 Requires `integration:read` to view. These are stored vendor logins used by evidence-collection browser automations (see §10).
 
 - **Connect a vendor** (`integration:create`) — sign-in flow with stored credentials; SSO providers use live-browser takeover.
-- **Make permanent** — for password logins where 2FA can be automated, store an authenticator **setup key** (enrollment secret — *not* the rotating 6-digit code) in the connection sheet; codes are generated per run. A banner nudges connections whose 2FA status is "no key."
+- **Make permanent** — for password logins where 2FA can be automated, store an authenticator **setup key** (enrollment secret — _not_ the rotating 6-digit code) in the connection sheet; codes are generated per run. A banner nudges connections whose 2FA status is "no key."
 - **Manage** (`integration:update`) per connection: reconnect, rename, change stored username/password, add/replace/turn-off TOTP setup key, view facts (method, connected-as, automation count, status, vault-backed secure storage).
 - **Remove** (`integration:delete`) — inline two-step confirm; warns when automations rely on the connection.
 - Password connections renew automatically when supported; SSO sessions can require manual reconnect. Renew before expiry or scheduled automations stall.
@@ -385,7 +385,7 @@ Requires `framework:read`. Tabs: **Overview**, **Findings**, **Timeline** (timel
 
 ![Overview shows four compliance progress areas, framework progress, and the Quick Actions tabs.](images/manual/overview.png)
 
-*Overview shows four compliance progress areas, framework progress, and the Quick Actions tabs.*
+_Overview shows four compliance progress areas, framework progress, and the Quick Actions tabs._
 
 Start with a **Continue** button beside an incomplete area. In this workspace, policies are still drafts and the four progress areas remain at zero. Use **Quick Actions → Tasks** to open outstanding evidence work. Confirm progress after the underlying policy, task, document, or employee requirement is complete.
 
@@ -405,7 +405,7 @@ The dashboard includes **Overview** and **Findings** tabs; counts update live. A
 
 ![The Findings tab shows an explicit “No findings yet” state and a Manage templates action.](images/manual/findings.png)
 
-*The Findings tab shows an explicit “No findings yet” state and a Manage templates action.*
+_The Findings tab shows an explicit “No findings yet” state and a Manage templates action._
 
 This is an empty findings register, not proof that an audit found no issues. In the captured owner/admin session, **Manage templates** is visible but **Add finding** is absent. Use the auditor role or a suitable custom role for the creation flow described below; do not create a task as a substitute for an audit finding.
 
@@ -449,7 +449,7 @@ Requires `framework:read`; add/create `framework:create`; edit/sync/delete `fram
 
 ![Frameworks lists the active standards with compliance percentage, control count, and status.](images/manual/frameworks.png)
 
-*Frameworks lists the active standards with compliance percentage, control count, and status.*
+_Frameworks lists the active standards with compliance percentage, control count, and status._
 
 Use **Search frameworks…** to locate an active standard and open its row. **Add Framework** selects a platform standard; **Add Custom Framework** starts an organization-specific definition. A **Not started** badge and zero percent indicate no recorded completion for that framework.
 
@@ -462,7 +462,7 @@ Searchable table of active frameworks with compliance %, control count, and a st
 
 ![ISO 27001 opens on Controls, with Requirements and History beside it and a completion summary above the table.](images/manual/framework-detail.png)
 
-*ISO 27001 opens on Controls, with Requirements and History beside it and a completion summary above the table.*
+_ISO 27001 opens on Controls, with Requirements and History beside it and a completion summary above the table._
 
 Check the framework name in the breadcrumb. Compare the **Policies**, **Tasks**, and **Documents** counts to locate missing evidence, then open a control name. This workspace has no Progress tab; the completion summary remains visible above Controls. Use **Requirements** when you need the clause-oriented view.
 
@@ -495,7 +495,7 @@ Open **Frameworks**, select a framework, and open a control name. Viewing contro
 
 ![A mapped control shows its policies and separate Tasks and Document tabs.](images/manual/control-mappings.png)
 
-*A mapped control shows its policies and separate Tasks and Document tabs.*
+_A mapped control shows its policies and separate Tasks and Document tabs._
 
 The breadcrumb preserves the framework and requirement context. Switch between **Policies**, **Tasks**, and **Document** to inspect each evidence type. A policy listed as **Draft** is linked but not published. **Link Policy** changes the mapping; opening a listed policy lets you review its content and publication state.
 
@@ -513,7 +513,7 @@ Requires `policy:read`; create `policy:create`; edit/publish/approve/regenerate 
 
 ![Policies combines the status chart, assignee summary, filters, and a table of policy records.](images/manual/policies.png)
 
-*Policies combines the status chart, assignee summary, filters, and a table of policy records.*
+_Policies combines the status chart, assignee summary, filters, and a table of policy records._
 
 Filter by status or department, or search for the policy title. The captured chart shows 37 drafts and no published policies; the empty assignee summary means no policies have assigned owners. Use these as separate work queues: assign responsibility, review content, then complete the publication workflow.
 
@@ -528,7 +528,7 @@ Charts by status (**Draft**, **Needs Review**, **Published**, **Archived**) plus
 
 ![A policy opens on Overview with Draft status, review frequency, department, assignee, and review date.](images/manual/policy-detail.png)
 
-*A policy opens on Overview with Draft status, review frequency, department, assignee, and review date.*
+_A policy opens on Overview with Draft status, review frequency, department, assignee, and review date._
 
 Use **Content** to read the policy rather than inferring readiness from its title. Use **Mappings** to confirm which controls it supports. Changes to the Overview properties use **Save**; that action does not publish the policy. Check the status and Versions separately before expecting employees to sign it.
 
@@ -571,14 +571,14 @@ Requires `evidence:read` or `task:read`. Page labels: the sidebar says **Evidenc
 
 ![Evidence shows progress totals, status and framework filters, and Categories/List views.](images/manual/evidence.png)
 
-*Evidence shows progress totals, status and framework filters, and Categories/List views.*
+_Evidence shows progress totals, status and framework filters, and Categories/List views._
 
 Use the filters to narrow work before opening a task. In this capture, 44 items are pending and eight are failed; none are complete. Read a failed task and its evidence before changing status. The Automation count is zero, so the presence of the Evidence page alone does not mean collection runs automatically.
 
 - **Analytics strip** — completion % (done + not_relevant count as handled), tiles for Done / Active / In Review / Pending, and the **Automation Intelligence Hub**: active automations, running-now indicator, success rate, and runs in the last 24 hours.
 - **Filters** — status, assignee, framework, automation type (Automated/Manual), free-text search across title+description; the active filter count is displayed. Stale framework filter values auto-reset.
 - **Two views** — **Categories** (tasks grouped and recursively drilled by their first mapped control, with per-category stats; the last group is "Uncategorized") and **List** (sections ordered in review → to-do → in progress → done → failed → not relevant). Your view choice is remembered per organization.
-- **Bulk actions** — enter selection mode per status section: change status, reassign, or delete as a batch (*status/assignee* need `task:update`; *delete* needs `task:delete`). Bulk status changes respect the evidence-approval workflow and can trigger submit-for-review.
+- **Bulk actions** — enter selection mode per status section: change status, reassign, or delete as a batch (_status/assignee_ need `task:update`; _delete_ needs `task:delete`). Bulk status changes respect the evidence-approval workflow and can trigger submit-for-review.
 - **Export All Evidence** — for auditor/admin/owner roles; options to include raw JSON; runs as a background job (with a live progress indicator) and downloads `{org}-export.zip`. An export contains confidential material; verify the reporting period and contents before sharing. A successful download proves delivery, not completeness.
 - **Org toggle: Evidence approval** — a second settings area on this page turns the approval workflow on or off for the organization.
 - **Create Evidence** (`task:create`) — title/description, assignee, control mappings.
@@ -587,7 +587,7 @@ Use the filters to narrow work before opening a task. In this capture, 44 items 
 
 ![Access Review Log shows the evidence instructions, task properties, comments, and an attachment area.](images/manual/task-detail.png)
 
-*Access Review Log shows the evidence instructions, task properties, comments, and an attachment area.*
+_Access Review Log shows the evidence instructions, task properties, comments, and an attachment area._
 
 Read the requested proof first. Check the assignee, status, and review frequency in **Evidence Settings**, then add the period-specific file and an explanatory comment. Inspect the attachment after upload and confirm the review/status outcome. A filename or a submitted comment alone is not proof that the requested access review occurred.
 
@@ -635,13 +635,13 @@ When an API can't provide the proof, schedule **live sign-ins to vendor consoles
 4. Inspect the screenshot: correct organization? correct setting? timestamp? Does it actually support the criterion?
 5. Save and review the frequency; run on demand when fresh proof is needed.
 
-| Symptom | Next step |
-|---|---|
-| Sign-in fails | Check the connection, account status, vendor login changes; reconnect. |
-| Human prompt appears | Take over in the live browser, finish the step. |
-| Wrong page captured | Make instructions more specific; test again. |
-| Evidence is stale | Check frequency/latest run; renew the connection (SSO often needs it). |
-| Evaluation fails | Verify the actual vendor setting; fix control or criterion. |
+| Symptom              | Next step                                                              |
+| -------------------- | ---------------------------------------------------------------------- |
+| Sign-in fails        | Check the connection, account status, vendor login changes; reconnect. |
+| Human prompt appears | Take over in the live browser, finish the step.                        |
+| Wrong page captured  | Make instructions more specific; test again.                           |
+| Evidence is stale    | Check frequency/latest run; renew the connection (SSO often needs it). |
+| Evaluation fails     | Verify the actual vendor setting; fix control or criterion.            |
 
 Fast automated runs don't mean the control passed — review evaluation and evidence together.
 
@@ -655,24 +655,24 @@ Requires `evidence:read`. The Documents hub has tabs **ISO 27001 (ISMS)** (when 
 
 ![Documents → Overview groups company forms and links to the Statement of Applicability.](images/manual/documents.png)
 
-*Documents → Overview groups company forms and links to the Statement of Applicability.*
+_Documents → Overview groups company forms and links to the Statement of Applicability._
 
 Choose the form that matches the record you need to retain. **Todo** marks outstanding required documentation; **Optional** is a different state. Open a card to inspect submissions and their dates. The Annex A card opens the SoA directly; it is not the same as an ISMS foundational document.
 
 Card grid grouped by **Governance / Security / People**. Each card shows: required-field count, status badge (**Todo / Complete / Optional / Not relevant**), and a red **"N Issues"** count of open findings against that form.
 
-| Form type | Notes |
-|---|---|
+| Form type                                                              | Notes                                                               |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------- |
 | Meeting Minutes — with Board / IT Leadership / Risk Committee subtypes | umbrella card; status "Todo" only when all three subtypes are stale |
-| Access Request | portal-accessible; has approve/reject review |
-| Whistleblower Report | portal-accessible; date auto-set to now |
-| Penetration Test | requires a PDF report upload (for third-party pentests) |
-| RBAC Matrix | matrix fields with optional spreadsheet upload |
-| Infrastructure Inventory | matrix fields |
-| Network Diagram | link or upload |
-| IR Tabletop Exercise | wizard with AI analysis |
-| Employee Performance Evaluation | — |
-| New Account Types Submission | optional, NIST-specific; reached from a control's Documents tab |
+| Access Request                                                         | portal-accessible; has approve/reject review                        |
+| Whistleblower Report                                                   | portal-accessible; date auto-set to now                             |
+| Penetration Test                                                       | requires a PDF report upload (for third-party pentests)             |
+| RBAC Matrix                                                            | matrix fields with optional spreadsheet upload                      |
+| Infrastructure Inventory                                               | matrix fields                                                       |
+| Network Diagram                                                        | link or upload                                                      |
+| IR Tabletop Exercise                                                   | wizard with AI analysis                                             |
+| Employee Performance Evaluation                                        | —                                                                   |
+| New Account Types Submission                                           | optional, NIST-specific; reached from a control's Documents tab     |
 
 **Staleness rule:** a form is "Todo" when never submitted or last submitted **more than 6 months ago**. Keeping them current is part of continuous readiness.
 
@@ -755,7 +755,7 @@ Special behaviors:
 
 ![The SoA displays version, answered progress, prepared-by, approval status, and control-by-control applicability.](images/manual/statement-of-applicability.png)
 
-*The SoA displays version, answered progress, prepared-by, approval status, and control-by-control applicability.*
+_The SoA displays version, answered progress, prepared-by, approval status, and control-by-control applicability._
 
 This capture has **Yes** applicability values but **0/93** progress and blank justifications. A default Yes is not a completed answer. Review each control using **Edit answer**, provide a supported justification, and check progress before **Submit for Approval**. Use **Show All** to inspect controls beyond the initial five rows.
 
@@ -779,7 +779,7 @@ Requires `risk:read`; edits `risk:update`. Assignees must not be portal-only (au
 
 ![The risk register separates inherent risk, current risk, severity, status, and owner.](images/manual/risks.png)
 
-*The risk register separates inherent risk, current risk, severity, status, and owner.*
+_The risk register separates inherent risk, current risk, severity, status, and owner._
 
 Search for a risk and open its row to review the underlying assessment. A **Pending** record still needs review even when its displayed severity is low. Compare the inherent and current scores, then inspect the treatment plan and linked work rather than treating a lower number as proof that controls are effective.
 
@@ -790,7 +790,7 @@ Search for a risk and open its row to review the underlying assessment. A **Pend
 
 ![Treatment Plan shows a projected score change, a risk matrix, task completion, strategy, plan text, and linked work.](images/manual/risk-treatment.png)
 
-*Treatment Plan shows a projected score change, a risk matrix, task completion, strategy, plan text, and linked work.*
+_Treatment Plan shows a projected score change, a risk matrix, task completion, strategy, plan text, and linked work._
 
 The example projects **5/10 → 3/10** while **Task completion** is **0%**. Read this as the plan’s expected effect, not achieved reduction. Follow linked tasks to inspect evidence. Keep the selected strategy, saved residual assessment, and formal risk-owner acceptance distinct; viewing the forecast records no acceptance.
 
@@ -812,7 +812,7 @@ Requires `vendor:read`; create `vendor:create`; edit/delete `vendor:update`/`ven
 
 ![Vendors displays assessment status, inherent and current risk, category, and owner.](images/manual/vendors.png)
 
-*Vendors displays assessment status, inherent and current risk, category, and owner.*
+_Vendors displays assessment status, inherent and current risk, category, and owner._
 
 Open the intended vendor row and verify its website and assessment scope before using its result. Similar names can represent different records, as the two Google rows illustrate. **Assessed** identifies the assessment state; it does not mean low risk or completed treatment. Review the supporting assessment and follow-up tasks.
 
@@ -834,7 +834,7 @@ Tabs: **Overview** (assignee, website, category…), **Treatment Plan**, **Risk 
 
 ![People shows the Gideon-managed-access banner and employee compliance columns.](images/manual/people.png)
 
-*People shows the Gideon-managed-access banner and employee compliance columns. Names, email addresses, and avatar initials are redacted.*
+_People shows the Gideon-managed-access banner and employee compliance columns. Names, email addresses, and avatar initials are redacted._
 
 Use **Search people…** and **Filters** to locate the right person. Roles are displayed for reference; the banner explains where access changes belong. **Missing** device or background evidence is a compliance gap, not the person’s account status. Open the person’s name to inspect their record before deciding what evidence is missing.
 
@@ -897,7 +897,7 @@ From the record's Background Check tab: **Order** (Checkr) or **Attach outside r
 
 ![People → Devices shows Device sync and an explicit message when no device data is available.](images/manual/devices.png)
 
-*People → Devices shows Device sync and an explicit message when no device data is available.*
+_People → Devices shows Device sync and an explicit message when no device data is available._
 
 Follow the employee portal installation flow for agent-based collection, or use **Connect an integration** for an inventory source. Return here after a successful check-in or sync. An empty page provides no evidence that devices pass encryption, antivirus, password, or screen-lock requirements.
 
@@ -935,7 +935,7 @@ Rail: **Security** → sidebar "Penetration Tests" (`pentest:read` required to r
 
 ![The Security page shows the View Plans entry point when the workspace has no active penetration-test plan.](images/manual/penetration-tests.png)
 
-*The Security page shows the View Plans entry point when the workspace has no active penetration-test plan.*
+_The Security page shows the View Plans entry point when the workspace has no active penetration-test plan._
 
 This is a plan-selection screen, not a completed assessment or a clean report. If your page looks like this, ask the billing owner to review the required plan. Where scans are available, select an existing run and verify its target, completion state, date, and report before relying on its findings.
 
@@ -965,7 +965,7 @@ This is a plan-selection screen, not a completed assessment or a clean report. I
 
 ![Cloud Security Tests shows provider and account selection, last-scan time, result counts, and service coverage.](images/manual/cloud-tests.png)
 
-*Cloud Security Tests shows provider and account selection, last-scan time, result counts, and service coverage.*
+_Cloud Security Tests shows provider and account selection, last-scan time, result counts, and service coverage._
 
 The captured account displays **0 total results** despite a “Looking good!” message. Zero checks provide no proof that the account is secure. Confirm the selected account, inspect **Services** and **History**, and resolve missing configuration or permissions before drawing a conclusion. Use the count and timestamp alongside the message.
 
@@ -985,7 +985,7 @@ Connect AWS, GCP, Azure (`integration:create`); run/change settings `integration
 
 ![The catalog groups integrations by category and shows task links, connection details, and connection errors.](images/manual/integrations.png)
 
-*The catalog groups integrations by category and shows task links, connection details, and connection errors.*
+_The catalog groups integrations by category and shows task links, connection details, and connection errors._
 
 Use category buttons or **Search integrations…** to find the provider. Task links explain which evidence the integration supports. **Reconnect** means an existing connection needs attention; **OAuth not configured** requires platform configuration. Repeated sign-in attempts do not fix missing OAuth application credentials.
 
@@ -1001,11 +1001,11 @@ Requires `integration:read`; connect `integration:create`; manage/run `integrati
 
 The catalog is available at `/{orgId}/integrations`. Confirm the organization in the header, then use **Search integrations…** or a category filter to find the provider. Open the card or **View details** to inspect its connection and evidence-task mappings.
 
-| State | What it means | What to do |
-|---|---|---|
-| Connected / Active | OpenComp has an active connection record. | Check the configured account, project scope, services, and latest collection result. Authentication alone does not prove evidence coverage. |
-| Error with **Reconnect** | An existing connection cannot authenticate or refresh its credentials. | Read the error, then reauthorize the intended account. Use the GCP walkthrough below for Google session-control errors. |
-| **OAuth not configured** | The deployment lacks the provider’s OAuth application configuration. | Ask the platform administrator to configure the application. Reauthentication cannot supply missing application credentials. |
+| State                    | What it means                                                          | What to do                                                                                                                                  |
+| ------------------------ | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Connected / Active       | OpenComp has an active connection record.                              | Check the configured account, project scope, services, and latest collection result. Authentication alone does not prove evidence coverage. |
+| Error with **Reconnect** | An existing connection cannot authenticate or refresh its credentials. | Read the error, then reauthorize the intended account. Use the GCP walkthrough below for Google session-control errors.                     |
+| **OAuth not configured** | The deployment lacks the provider’s OAuth application configuration.   | Ask the platform administrator to configure the application. Reauthentication cannot supply missing application credentials.                |
 
 The catalog’s OAuth reconnect action requires permission to create integration connections (`integration:create`). Viewing a connection needs `integration:read`; configuration and collection actions need the appropriate management permission. Ask an administrator if the required action is unavailable.
 
@@ -1017,7 +1017,7 @@ This walkthrough follows the real reconnect completed in the development workspa
 
 ![The GCP catalog card shows a Google session-control error and a Reconnect button.](images/manual/gcp-reconnect-catalog.png)
 
-*Before reconnect: the GCP card shows an error and offers Reconnect.*
+_Before reconnect: the GCP card shows an error and offers Reconnect._
 
 The full error in this session was: **“Google requires user reauthentication because of session-control policy (invalid_rapt). Please reconnect the integration.”** This means Google requires an interactive identity check before OpenComp can refresh access. It is different from **OAuth not configured**.
 
@@ -1027,7 +1027,7 @@ Choose **Reconnect** on the **Google Cloud Platform** card. Do not disconnect th
 
 ![Google’s account picker offers the signed-in accounts and Use another account.](images/manual/gcp-reconnect-account.png)
 
-*Google asks which account should authorize the integration. Names, email addresses, and avatars are blurred for privacy.*
+_Google asks which account should authorize the integration. Names, email addresses, and avatars are blurred for privacy._
 
 Choose the account your organization uses for this GCP connection. Check the full email address when personal and work accounts appear together. Use **Use another account** only when the intended identity is absent. The account must have the required access to the GCP organization and projects; signing into OpenComp as an owner does not grant Google Cloud permissions.
 
@@ -1035,7 +1035,7 @@ Choose the account your organization uses for this GCP connection. Check the ful
 
 ![Google displays Verify it’s you with an empty password field for the selected work account.](images/manual/gcp-reconnect-verify.png)
 
-*The session-control policy requires the account holder to verify their identity. The account email address and avatar initial are blurred for privacy.*
+_The session-control policy requires the account holder to verify their identity. The account email address and avatar initial are blurred for privacy._
 
 In this run, Google displayed **Verify it’s you** and requested the account password. Complete the requested sign-in or additional verification directly in Google. Do not put passwords or verification codes into OpenComp Context, task comments, support messages, or screenshots. The captured password field is empty.
 
@@ -1043,7 +1043,7 @@ In this run, Google displayed **Verify it’s you** and requested the account pa
 
 ![Google says You’re signing back in to gideondefender.com and offers Cancel or Continue.](images/manual/gcp-reconnect-sign-back-in.png)
 
-*Google identifies the application before the access review.*
+_Google identifies the application before the access review._
 
 Confirm the selected account and the application name, then choose **Continue** to review the permission request. This screen does not yet prove the GCP connection has recovered; the flow must return to OpenComp.
 
@@ -1051,7 +1051,7 @@ Confirm the selected account and the application name, then choose **Continue** 
 
 ![Google’s consent screen requests access to see, edit, configure, and delete Google Cloud data and see the account email.](images/manual/gcp-reconnect-permissions.png)
 
-*The consent screen states the permissions Google will grant to the integration.*
+_The consent screen states the permissions Google will grant to the integration._
 
 In this run, Google asked to let **gideondefender.com** **“See, edit, configure, and delete your Google Cloud data and see the email address for your Google Account.”** Review this scope with the person responsible for the cloud account. The catalog’s **Read-only monitoring** description does not describe the breadth of this Google permission request.
 
@@ -1061,13 +1061,13 @@ Choose **Allow** only when the application, account, and requested access are ap
 
 ![The GCP provider page shows Connected, its account identifier, evidence-task mappings, and the Cloud Tests link.](images/manual/gcp-reconnect-provider.png)
 
-*After Google consent, OpenComp returns to the GCP provider detail page with Connected status.*
+_After Google consent, OpenComp returns to the GCP provider detail page with Connected status._
 
 The browser returned to `/{orgId}/integrations/gcp`. Check the organization and selected account. Open **Settings** to inspect the connection status and configuration. In this run, **Account Settings** showed **Active** and retained the existing **Created** date of October 5, 2026.
 
 ![GCP Account Settings shows Active status, organization ID, projects, environment aliases, and Save configuration.](images/manual/gcp-reconnect-configuration.png)
 
-*Account Settings confirms the active connection and exposes its scan-scope configuration.*
+_Account Settings confirms the active connection and exposes its scan-scope configuration._
 
 **Disconnect** is a separate action at the bottom of the panel. It is not the next step in reconnecting.
 
@@ -1081,7 +1081,7 @@ The configuration panel contains:
 
 ![The GCP Projects picker shows Type a value and press Enter.](images/manual/gcp-reconnect-project-picker.png)
 
-*The captured project picker accepts project values; no projects were selected during this walkthrough.*
+_The captured project picker accepts project values; no projects were selected during this walkthrough._
 
 Open **GCP Projects**. In the captured deployment, its prompt says **Type a value and press Enter**. Enter an approved project ID and press Enter to add it; review the selected values before **Save configuration**. Save only the intended scope, then reopen Settings to confirm it persisted. Closing the panel without saving does not establish the missing project scope.
 
@@ -1091,13 +1091,13 @@ No project IDs or environment aliases were added or saved during this capture. R
 
 ![The integration catalog shows GCP after reconnection without the previous error or Reconnect button.](images/manual/gcp-reconnect-catalog-after.png)
 
-*After reconnect: the GCP error and Reconnect action are gone.*
+_After reconnect: the GCP error and Reconnect action are gone._
 
 Return to **Integrations** and verify that the previous error is absent. Then open GCP’s provider page and choose **Open Cloud Tests →**. Cloud Tests should select **GCP**; verify the intended connection there as well.
 
 ![GCP Cloud Tests shows No projects selected, zero total results, and a Select projects link.](images/manual/gcp-reconnect-cloud-tests.png)
 
-*Authentication has recovered, but the captured connection has no selected projects and no scan results.*
+_Authentication has recovered, but the captured connection has no selected projects and no scan results._
 
 In this run, Cloud Tests still displayed **“No projects selected — select projects to scope your scan.”** The **Select projects** link returns to the GCP provider page; use its **Settings** action for configuration. The provider’s **Select projects first** service message also means discovery has not been scoped.
 
@@ -1105,16 +1105,16 @@ After an approved project configuration is saved, check service discovery and ru
 
 ## GCP reconnect troubleshooting
 
-| Symptom | Next step |
-|---|---|
-| `invalid_rapt` returns after a period of time | Ask the Google administrator about the account’s session-control policy. Complete fresh verification when required; one reconnect does not change that policy. |
-| Google offers the wrong account | Switch to the identity approved for this connection before consent. |
-| Google blocks consent or requests unexpected permissions | Stop and ask the cloud or Google administrator to review the application and requested access. |
-| Google returns to OpenComp with an error | Retain the visible error and provider name for support. Do not share the full callback URL, OAuth codes, or tokens. |
-| GCP is Connected but says Select projects first | Open the provider’s Settings, configure approved project IDs, save, and reopen to verify. |
-| No projects selected appears in Cloud Tests | The connection is authenticated but lacks a scan scope. Follow Select projects back to GCP Settings. |
-| Project collection reports insufficient permissions | Confirm the selected account can access the chosen projects and has the required GCP permissions. Reauthentication alone does not grant missing IAM access. |
-| The old error remains after reconnect | Reopen the intended connection and check its status. Confirm the Google flow completed and returned to the correct organization. |
+| Symptom                                                  | Next step                                                                                                                                                      |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `invalid_rapt` returns after a period of time            | Ask the Google administrator about the account’s session-control policy. Complete fresh verification when required; one reconnect does not change that policy. |
+| Google offers the wrong account                          | Switch to the identity approved for this connection before consent.                                                                                            |
+| Google blocks consent or requests unexpected permissions | Stop and ask the cloud or Google administrator to review the application and requested access.                                                                 |
+| Google returns to OpenComp with an error                 | Retain the visible error and provider name for support. Do not share the full callback URL, OAuth codes, or tokens.                                            |
+| GCP is Connected but says Select projects first          | Open the provider’s Settings, configure approved project IDs, save, and reopen to verify.                                                                      |
+| No projects selected appears in Cloud Tests              | The connection is authenticated but lacks a scan scope. Follow Select projects back to GCP Settings.                                                           |
+| Project collection reports insufficient permissions      | Confirm the selected account can access the chosen projects and has the required GCP permissions. Reauthentication alone does not grant missing IAM access.    |
+| The old error remains after reconnect                    | Reopen the intended connection and check its status. Confirm the Google flow completed and returned to the correct organization.                               |
 
 ---
 
@@ -1164,7 +1164,7 @@ Rail: **Trust** → pages **Overview (Portal settings)**, **Access requests**, *
 
 ![Trust Portal → Frameworks shows independent publication switches and maturity statuses for each framework.](images/manual/trust-frameworks.png)
 
-*Trust Portal → Frameworks shows independent publication switches and maturity statuses for each framework.*
+_Trust Portal → Frameworks shows independent publication switches and maturity statuses for each framework._
 
 Review the status wording before making a framework visible. **Started** and **In Progress** describe work toward a standard; they are not certificates. Use **Visit Trust Portal** to check the public presentation after an approved change. The screenshot shows configuration controls, not proof of certification.
 
@@ -1184,7 +1184,7 @@ Review the status wording before making a framework visible. **Started** and **I
 
 ![An approved Trust access request still has NDA Status Pending, with Resend NDA and Preview actions.](images/manual/trust-access-requests.png)
 
-*An approved Trust access request still has NDA Status Pending, with Resend NDA and Preview actions.*
+_An approved Trust access request still has NDA Status Pending, with Resend NDA and Preview actions._
 
 Check both columns. **Approved** does not alone prove that a visitor has finished the NDA flow or obtained access. Use **Granted Access** to verify the resulting grant and expiry. **Resend NDA** sends an email; use it only when the recipient needs another signing link.
 
@@ -1250,7 +1250,7 @@ For agent-driven automation, use MCP/API (§33).
 
 ![Role Notification Settings shows role defaults across six email categories and a Save Changes button.](images/manual/notifications.png)
 
-*Role Notification Settings shows role defaults across six email categories and a Save Changes button.*
+_Role Notification Settings shows role defaults across six email categories and a Save Changes button._
 
 Read the row for the intended role before changing any checkbox. The captured matrix covers policy updates, task reminders, task assignments, mentions, weekly digest, and finding updates. This differs from the personal preferences list. **Save Changes** is disabled until the matrix changes; a checked box is a preference, not proof that an email was delivered.
 
@@ -1272,11 +1272,11 @@ Create in Settings → API Keys (`apiKey:read`/`create`/`delete`): see §3. Requ
 
 Clients connect to OpenComp's MCP layer:
 
-| Method | Use when | Setup |
-|---|---|---|
-| **Hosted HTTP** | Client supports Streamable HTTP | endpoint + `apikey` header with org key |
-| **Local stdio** | Client launches command servers | approved bundle, Node.js ≥22, API URL + `COMPAI_APIKEY` env; `--tool` allowlist restricts exposed operations; versions should be pinned to a verified published release |
-| OAuth connection | Client requires OAuth | separately configured OAuth credential (different setup from API-key modes; don't mix) |
+| Method           | Use when                        | Setup                                                                                                                                                                   |
+| ---------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Hosted HTTP**  | Client supports Streamable HTTP | endpoint + `apikey` header with org key                                                                                                                                 |
+| **Local stdio**  | Client launches command servers | approved bundle, Node.js ≥22, API URL + `COMPAI_APIKEY` env; `--tool` allowlist restricts exposed operations; versions should be pinned to a verified published release |
+| OAuth connection | Client requires OAuth           | separately configured OAuth credential (different setup from API-key modes; don't mix)                                                                                  |
 
 Dynamic servers expose discovery (`list_tools` → `describe_tool_input` → `execute_tool`); static local servers expose selected business tools directly. Verify with a read (e.g., list tasks) and compare against the UI in the same organization. See `mcp-setup.md` / `mcp-examples.md` for exact calls, headers, and troubleshooting tables (401/403/503 semantics, `isError` handling, mutations need review and approval process, never blind-retry a timed-out mutation).
 
@@ -1321,34 +1321,34 @@ Outstanding items follow the employee until done; the acceptance is timestamped 
 
 # 36. Troubleshooting
 
-| Symptom | Likely cause / path |
-|---|---|
-| Whole app "No access" | Role lacks `app:read` — portal-only user; use the portal. |
-| A button/section is missing | Check its permission (per section above), plan/feature flag, or subscription; destructive/delete buttons hide without the delete permission. |
-| Sign-in denies access | No Gideon entitlement for that org; assign in Gideon. |
+| Symptom                                               | Likely cause / path                                                                                                                                                                                       |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Whole app "No access"                                 | Role lacks `app:read` — portal-only user; use the portal.                                                                                                                                                 |
+| A button/section is missing                           | Check its permission (per section above), plan/feature flag, or subscription; destructive/delete buttons hide without the delete permission.                                                              |
+| Sign-in denies access                                 | No Gideon entitlement for that org; assign in Gideon.                                                                                                                                                     |
 | An old invite link shows an invitation-retired notice | OpenComp invitations no longer grant access. Ask an administrator to assign access in Gideon, then sign in normally. Previously accepted links can still redirect existing members to their organization. |
-| Sessions run after offboarding | Gideon revocation lands at next reconciliation (~5 min), not instantly. |
-| Policy won't publish | Awaiting approver; check pending version and approval banner. |
-| Employee can't see policy | Not published, or portal access/assignment missing. |
-| Coverage didn't move after publishing | Check Mappings, publication status, and the right framework; an upload alone doesn't map. |
-| Evidence export is empty/small | Filters, attachments exist?, exports scope; a download success ≠ completeness. |
-| Automation keeps failing | Read the run's evaluation reason; fix cause; don't re-run blind. |
-| Sign-in fails (browser automations) | Vendor changed login; reconnect; check TOTP setup key vs rotating code. |
-| GCP shows Reconnect / `invalid_rapt` | Follow the [GCP reconnect walkthrough](#reconnect-google-cloud-platform); verify project scope and collection after Google reauthentication. |
-| Cloud scan permission errors | Add missing named permissions to the role; re-run; persistent errors are findings. |
-| Cloud scan zero results, even with “Looking good!” | Confirm account, enabled services, configuration, permissions, and history; zero checks do not prove coverage. |
-| Pentest "No active plan" | Billing add-on; ask billing admin; grant + allowance. |
-| Pentest failed | Open failure detail; fix target/config; re-run. |
-| Questionnaire route 404s | Feature flag off in this deployment; ask an administrator. |
-| Questionnaire upload rejected | Word doc or >100 MB — convert / resize. |
-| KB upload "processing" too long | Check processing status; re-upload if failed; verify supported types. |
-| Trust domain verify fails | Apply exact DNS records; "Check DNS now"; then re-open portal. |
-| Visitor "No documents found" | Unpublished/expired grant/gap; re-approve after publishing. |
-| Auditor can't see sidebar item | Requires auditor role or explicit `audit:read` custom role in Gideon. |
-| MCP 401/403/503 | Deployment+key mismatch / scope missing / service unavailable; see `mcp-setup.md`. |
-| MCP "wrong org" | Active-org pinning/tenants; recheck org selection. |
-| Portal form error page | Required field/file missing (>100 MB); check `?error=` banner. |
-| Portal training not saving | Reload; if it persists, report step name + error; don't just re-click. |
+| Sessions run after offboarding                        | Gideon revocation lands at next reconciliation (~5 min), not instantly.                                                                                                                                   |
+| Policy won't publish                                  | Awaiting approver; check pending version and approval banner.                                                                                                                                             |
+| Employee can't see policy                             | Not published, or portal access/assignment missing.                                                                                                                                                       |
+| Coverage didn't move after publishing                 | Check Mappings, publication status, and the right framework; an upload alone doesn't map.                                                                                                                 |
+| Evidence export is empty/small                        | Filters, attachments exist?, exports scope; a download success ≠ completeness.                                                                                                                            |
+| Automation keeps failing                              | Read the run's evaluation reason; fix cause; don't re-run blind.                                                                                                                                          |
+| Sign-in fails (browser automations)                   | Vendor changed login; reconnect; check TOTP setup key vs rotating code.                                                                                                                                   |
+| GCP shows Reconnect / `invalid_rapt`                  | Follow the [GCP reconnect walkthrough](#reconnect-google-cloud-platform); verify project scope and collection after Google reauthentication.                                                              |
+| Cloud scan permission errors                          | Add missing named permissions to the role; re-run; persistent errors are findings.                                                                                                                        |
+| Cloud scan zero results, even with “Looking good!”    | Confirm account, enabled services, configuration, permissions, and history; zero checks do not prove coverage.                                                                                            |
+| Pentest "No active plan"                              | Billing add-on; ask billing admin; grant + allowance.                                                                                                                                                     |
+| Pentest failed                                        | Open failure detail; fix target/config; re-run.                                                                                                                                                           |
+| Questionnaire route 404s                              | Feature flag off in this deployment; ask an administrator.                                                                                                                                                |
+| Questionnaire upload rejected                         | Word doc or >100 MB — convert / resize.                                                                                                                                                                   |
+| KB upload "processing" too long                       | Check processing status; re-upload if failed; verify supported types.                                                                                                                                     |
+| Trust domain verify fails                             | Apply exact DNS records; "Check DNS now"; then re-open portal.                                                                                                                                            |
+| Visitor "No documents found"                          | Unpublished/expired grant/gap; re-approve after publishing.                                                                                                                                               |
+| Auditor can't see sidebar item                        | Requires auditor role or explicit `audit:read` custom role in Gideon.                                                                                                                                     |
+| MCP 401/403/503                                       | Deployment+key mismatch / scope missing / service unavailable; see `mcp-setup.md`.                                                                                                                        |
+| MCP "wrong org"                                       | Active-org pinning/tenants; recheck org selection.                                                                                                                                                        |
+| Portal form error page                                | Required field/file missing (>100 MB); check `?error=` banner.                                                                                                                                            |
+| Portal training not saving                            | Reload; if it persists, report step name + error; don't just re-click.                                                                                                                                    |
 
 ---
 
@@ -1356,40 +1356,40 @@ Outstanding items follow the employee until done; the acceptance is timestamped 
 
 ## Permission resources and typical actions
 
-| Resource | Read | Write (create/update/delete) |
-|---|---|---|
-| `app` | enter the app | — |
-| `framework` | list/detail | add, custom create, version apply, delete |
-| `control` | detail | delete (list is read-only) |
-| `policy` | content | create, publish/approve, version, archive/delete |
-| `evidence` / `task` | attachments/zips/uploads | create/assign/status/bulk, export |
-| `member` (`people`) | directory | outcomes, devices, background ops |
-| `risk`, `vendor` | registers | fields, plan, mining tasks |
-| `trust` | requests/grants | approve/deny/revoke, settings |
-| `integration` | catalog | connect/scan/configure/disconnect |
-| `finding` | list/detail | update = status transitions; create/delete are auditor-only; templates |
-| `questionnaire` | view files | upload/answer/export/delete |
-| `audit` | auditor & SoA reads | SoA ensure/approve (no delete action) |
-| `pentest` | scans | run/edit context |
-| `backgroundCheck` | candidates/reports | create (order screen); no update/delete |
-| `training` | — | update (completions) |
-| `portal` | employee self-service | update (submit/sign) |
-| `apiKey` | list | create/revoke (no update) |
-| `secret` | list (reveals plaintext) | create/edit/delete (owner/admin only) |
-| `ac` (roles) | roles pages | create/edit/delete roles |
-| `organization` | read | update = preferences/portal/billing; delete = owner only |
+| Resource            | Read                     | Write (create/update/delete)                                           |
+| ------------------- | ------------------------ | ---------------------------------------------------------------------- |
+| `app`               | enter the app            | —                                                                      |
+| `framework`         | list/detail              | add, custom create, version apply, delete                              |
+| `control`           | detail                   | delete (list is read-only)                                             |
+| `policy`            | content                  | create, publish/approve, version, archive/delete                       |
+| `evidence` / `task` | attachments/zips/uploads | create/assign/status/bulk, export                                      |
+| `member` (`people`) | directory                | outcomes, devices, background ops                                      |
+| `risk`, `vendor`    | registers                | fields, plan, mining tasks                                             |
+| `trust`             | requests/grants          | approve/deny/revoke, settings                                          |
+| `integration`       | catalog                  | connect/scan/configure/disconnect                                      |
+| `finding`           | list/detail              | update = status transitions; create/delete are auditor-only; templates |
+| `questionnaire`     | view files               | upload/answer/export/delete                                            |
+| `audit`             | auditor & SoA reads      | SoA ensure/approve (no delete action)                                  |
+| `pentest`           | scans                    | run/edit context                                                       |
+| `backgroundCheck`   | candidates/reports       | create (order screen); no update/delete                                |
+| `training`          | —                        | update (completions)                                                   |
+| `portal`            | employee self-service    | update (submit/sign)                                                   |
+| `apiKey`            | list                     | create/revoke (no update)                                              |
+| `secret`            | list (reveals plaintext) | create/edit/delete (owner/admin only)                                  |
+| `ac` (roles)        | roles pages              | create/edit/delete roles                                               |
+| `organization`      | read                     | update = preferences/portal/billing; delete = owner only               |
 
 ## Feature flags and gates
 
-| Gate | Effect |
-|---|---|
-| `is-timeline-enabled` | Overview Timeline tab; framework Progress tab |
-| `is-web-automations-enabled` | Browser automations; Browser connections settings |
-| `is-isms-enabled` | ISMS area (plus ISO 27001 active) |
-| `is-ai-policy-assistant-enabled` | AI policy editor |
-| `ai-vendor-questionnaire` | Questionnaire pages + Knowledge Base in compliance nav |
-| Enterprise automation license | AI automation builder |
-| Plans: pentest / background-checks add-ons | Security product run credits |
+| Gate                                       | Effect                                                 |
+| ------------------------------------------ | ------------------------------------------------------ |
+| `is-timeline-enabled`                      | Overview Timeline tab; framework Progress tab          |
+| `is-web-automations-enabled`               | Browser automations; Browser connections settings      |
+| `is-isms-enabled`                          | ISMS area (plus ISO 27001 active)                      |
+| `is-ai-policy-assistant-enabled`           | AI policy editor                                       |
+| `ai-vendor-questionnaire`                  | Questionnaire pages + Knowledge Base in compliance nav |
+| Enterprise automation license              | AI automation builder                                  |
+| Plans: pentest / background-checks add-ons | Security product run credits                           |
 
 ## Hard limits
 
@@ -1408,4 +1408,4 @@ See `glossary.md` for canonical terms (Access request, Approval, Control, Eviden
 
 ---
 
-*Companion topic pages (deep dives): getting-started, compliance-overview, policies, evidence-and-tasks, people, employee-portal, integrations, questionnaires, documents-isms, risk-and-vendors, trust-center, cloud-security, security-penetration-tests, background-checks, devices, browser-automations, browser-extension, roles-and-access, organization-settings, automation-and-api, mcp-setup, mcp-examples, faq, glossary.*
+_Companion topic pages (deep dives): getting-started, compliance-overview, policies, evidence-and-tasks, people, employee-portal, integrations, questionnaires, documents-isms, risk-and-vendors, trust-center, cloud-security, security-penetration-tests, background-checks, devices, browser-automations, browser-extension, roles-and-access, organization-settings, automation-and-api, mcp-setup, mcp-examples, faq, glossary._
