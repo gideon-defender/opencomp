@@ -43,9 +43,11 @@ datasource db {
 `,
   );
 
-  // Resolve prisma CLI via Node/Bun module resolution (handles hoisting)
-  const prismaPackagePath = fileURLToPath(import.meta.resolve('prisma/package.json'));
-  const prismaCli = path.join(path.dirname(prismaPackagePath), 'build', 'index.js');
+  // Resolve the prisma CLI. ESM `import.meta.resolve` ignores NODE_PATH, but
+  // the production image relies on NODE_PATH=/app/apps/api/node_modules (prisma
+  // is a dev-only dep there and lives outside packages/db). Try the import
+  // resolver first, then each NODE_PATH entry so both layouts work.
+  const prismaCli = resolvePrismaCli();
 
   execFileSync(process.execPath, [prismaCli, 'generate', `--schema=${tempDir}`], {
     stdio: 'inherit',
@@ -54,4 +56,25 @@ datasource db {
 } finally {
   fs.rmSync(tempDir, { recursive: true, force: true });
   if (hasConfig && fs.existsSync(configBackup)) fs.renameSync(configBackup, configPath);
+}
+
+function resolvePrismaCli() {
+  const candidates = [];
+
+  try {
+    candidates.push(path.dirname(fileURLToPath(import.meta.resolve('prisma/package.json'))));
+  } catch {
+    // Not resolvable via ESM (e.g. hoisted under NODE_PATH) — fall through.
+  }
+
+  for (const base of (process.env.NODE_PATH ?? '').split(path.delimiter)) {
+    if (base) candidates.push(path.join(base, 'prisma'));
+  }
+
+  for (const pkgDir of candidates) {
+    const cli = path.join(pkgDir, 'build', 'index.js');
+    if (fs.existsSync(cli)) return cli;
+  }
+
+  throw new Error('Unable to locate the prisma CLI. Checked: ' + candidates.join(', '));
 }
