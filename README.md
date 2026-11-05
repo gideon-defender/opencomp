@@ -380,9 +380,13 @@ full-access (`comp_service`) Redis role for BullMQ, falling back to
 
 OpenComp supports one shared OAuth app per provider and environment for GCP,
 Azure, GitHub App, GitHub OAuth App, Aikido Security, Google Workspace, Rippling,
-and Vercel. Customers authorize separately; their tokens and account selections
-remain isolated in organization-scoped connections. AWS uses IAM role assumption
-and does not require an OAuth app.
+Vercel, and Checkr. Customers authorize separately; their tokens and account
+selections remain isolated in organization-scoped connections. AWS uses IAM role
+assumption and does not require an OAuth app. Checkr is the exception to the
+self-serve pattern: it is a partner (account-level) OAuth flow with custom
+endpoints and a manual registration step (see
+[Checkr partner OAuth](#checkr-partner-oauth) for setup and current code-support
+status).
 
 #### 1. Callback URL
 
@@ -397,6 +401,11 @@ Register the API callback URL in each provider's app registration:
 ```text
 https://opencomp-api.dev.gideondefender.com/v1/integrations/oauth/callback
 ```
+
+Checkr is the exception to self-serve app registration: the redirect URI is
+registered with Checkr during partner application setup (see
+[Checkr partner OAuth](#checkr-partner-oauth)) and must be HTTPS. Register
+`{BASE_URL}/v1/integrations/oauth/callback` there.
 
 Locally, use `http://localhost:3333/v1/integrations/oauth/callback`. The
 organization-scoped `GET /v1/integrations/oauth-apps/setup/:providerSlug` endpoint
@@ -418,6 +427,7 @@ returns the configured callback URL, required scopes, and setup instructions.
 | Google Workspace (`google-workspace`) | Configure an **External** Google OAuth app, enable Admin SDK, and approve the manifest's directory read scopes. Each customer's Workspace admin authorizes it. This provider has its own credential row, separate from `gcp`.                                                                                                                                                  |
 | Rippling (`rippling`)                 | Register a partner OAuth app, enable worker read access, and set `customSettings.appName` to the app's URL name.                                                                                                                                                                                                                                                               |
 | Vercel (`vercel`)                     | Register a Vercel integration and set `customSettings.appSlug` to its integration slug. Each installation has its own account/team context.                                                                                                                                                                                                                                    |
+| Checkr (`checkr`)                     | Register a **partner application** with Checkr's partner team (`clients@checkr.com`), not self-serve. Account-level OAuth with custom endpoints — see [Checkr partner OAuth](#checkr-partner-oauth). No `customSettings` are required.                                                                                                                                    |
 
 ##### Azure organizational accounts
 
@@ -449,6 +459,99 @@ After changing the OAuth endpoints, rebuild and deploy the OpenComp API, then
 start a fresh Azure connection flow. The endpoint switch alone does not require
 new client credentials or a different callback URL.
 
+##### Checkr partner OAuth
+
+Checkr OAuth is a **partner, account-level** flow — not the per-user redirect
+flow the other providers use. One authorizing user connects their Checkr account
+and the access token works on behalf of the whole account. It is not registered
+in a self-serve console; Checkr issues the credentials.
+
+**Current integration status:** the Checkr background-checks module
+(`apps/api/src/background-checks`) authenticates with organization-owned API
+keys stored via `SecretsService` and is not wired into the shared OAuth
+machinery (`isSharedOAuthProvider` in
+`apps/api/src/integration-platform/services/shared-oauth.ts` does not list
+`checkr`, and there is no Checkr integration manifest). The setup below covers
+registering the shared partner OAuth app; connect-flow code support is separate
+work.
+
+**Partner application registration** (email `clients@checkr.com` — do not send
+credentials anywhere else). Provide:
+
+| Field         | Notes                                                                                        |
+| ------------- | -------------------------------------------------------------------------------------------- |
+| `name`        | Platform name, e.g. `OpenComp`.                                                             |
+| `description` | Short description of the platform.                                                           |
+| `url`         | Platform URL, e.g. `https://app.gideondefender.com`.                                        |
+| `redirect_uri`| HTTPS only. The callback above (`{BASE_URL}/v1/integrations/oauth/callback`) for the shared flow. |
+| `webhook_url` | Endpoint receiving Checkr webhooks (see **Credentialing and webhooks** below).               |
+| `logo_url`    | Public HTTPS URL for the platform logo.                                                      |
+
+Checkr returns a `client_id` and `client_secret`; test-mode credentials are
+issued on request to the same address. `client_secret` is a secret — store it in
+the encrypted credential row, never in `.env`.
+
+**End-user authorization** — link from a Connect button to either authorize URL
+(note the `client_id` is in the path, not a query parameter). Use `signin` for
+existing Checkr accounts and `signup` otherwise; both use `scope=read_write`,
+the only supported scope:
+
+```text
+https://partners.checkr.com/authorize/:client_id/signin?scope=read_write
+https://partners.checkr.com/authorize/:client_id/signup?scope=read_write
+```
+
+Pass a unique `state` for CSRF protection; Checkr returns it unchanged. On
+approve, Checkr redirects to `redirect_uri` with `scope` and a JWT `code`:
+
+```text
+{redirect_uri}?scope=read_write&code=AUTHORIZATION_CODE
+```
+
+**Token exchange** — form-encoded POST, not HTTP Basic; the `code` is a
+one-time-use JWT:
+
+```sh
+curl -X POST https://api.checkr.com/oauth/tokens \
+  -d client_id="$CHECKR_CLIENT_ID" \
+  -d client_secret="$CHECKR_CLIENT_SECRET" \
+  -d code="$AUTHORIZATION_CODE"
+```
+
+Response:
+
+```json
+{ "access_token": "…", "scope": "read_write", "checkr_account_id": "…" }
+```
+
+The access token is long-lived for the integrated account and there is no
+refresh token — re-authorization mints a new one. Use it as the API key
+(`-u "$ACCESS_TOKEN:"`) against `https://api.checkr.com/v1` (staging:
+`https://api.checkr-staging.com/v1`). Deauthorize with
+`POST https://api.checkr.com/oauth/deauthorize` (access token as the Basic-auth
+username).
+
+**Credentialing and webhooks** — an integrated account must be credentialed
+before it can run background checks. Already-credentialed accounts trigger the
+`account.credentialed` webhook as soon as the token is created; new or
+uncredentialed accounts go through Checkr's FCRA credentialing (up to 1 business
+day) before the same webhook fires. When the account admin disconnects in the
+Checkr Dashboard, Checkr sends `token.deauthorized`; clean up the stored token
+and stop scheduling screenings for that account. Webhook signature verification
+is `X-Checkr-Signature` (HMAC-SHA256); the background-checks webhook endpoint
+verifies it against `CHECKR_WEBHOOK_SECRET`. Note that Checkr's partner docs
+describe the OAuth webhook HMAC key as your partner `client_id` — confirm the
+signing key for the registered `webhook_url` with Checkr during onboarding
+before wiring it to production.
+
+**Provisioning** — when Checkr OAuth support is wired into the shared flow, add
+`checkr` to `isSharedOAuthProvider`, provision one `IntegrationPlatformCredential`
+row per environment as described in **Store and verify credentials**, and keep
+the partner `client_id`/`client_secret` to that platform pair. No
+`customSettings` are required for the base flow; Checkr embeds and package
+management (`checkr_packages_api`) are per-account and use the account's own
+access token, not the platform secret.
+
 #### 3. Store and verify credentials
 
 Provision one `IntegrationPlatformCredential` row per shared provider using
@@ -461,7 +564,9 @@ Credentials are read from the database. Adding a secret to `.env` alone does not
 configure a shared integration; it must be provisioned into the encrypted store.
 Missing, inactive, unreadable, or incomplete shared credentials are unavailable.
 Rippling requires `appName`; Vercel requires `appSlug`; GitHub App requires
-`githubAppSlug`.
+`githubAppSlug`. Checkr requires no `customSettings`; its token response carries
+`checkr_account_id` per integrated account (see
+[Checkr partner OAuth](#checkr-partner-oauth)).
 
 An explicit organization-owned configuration takes precedence within that
 organization. Disabled or unreadable overrides do not fall back to the shared app,
@@ -622,6 +727,115 @@ Services: `localstack` (S3/SES emulation), `postgres` (pgvector), `migrator` (Pr
 > 💡 **Note:** each service's container env overrides the matching `.env` file
 > entries for in-container hostnames (e.g. the portal gets
 > `DATABASE_URL=…@postgres:5432` while host-side tooling uses `localhost:5432`).
+
+## MCP Server
+
+OpenComp ships an MCP server (`apps/mcp-server`) that exposes the API as MCP
+tools, so agents can read and change compliance data with the same RBAC, tenant
+binding, and audit trail as the API. See [hosting and migration](apps/mcp-server/HOSTING.md)
+and the [package README](apps/mcp-server/README.md) for runtime details.
+
+### Endpoints
+
+Dev runs a hosted deployment on its own host — **not** the web app host:
+
+| Environment | MCP endpoint                                 | Notes                                 |
+| ----------- | -------------------------------------------- | ------------------------------------- |
+| dev         | `https://mcp.dev.gideondefender.com/mcp`     | Streamable HTTP, stateless, POST only |
+| dev         | `https://mcp.dev.gideondefender.com/healthz` | Unauthenticated readiness probe       |
+| Gram        | Retained in parallel                         | Existing OAuth connection, unchanged  |
+
+`https://opencomp.dev.gideondefender.com` is the app; every path there
+(`/`, `/mcp`, `/sse`) redirects to `/auth`. Point MCP clients at the `mcp.` host.
+
+For local development, `serve` listens on Streamable HTTP at
+`http://127.0.0.1:2718/mcp` (`--port` to change), and `start --transport sse`
+listens at `/sse`.
+
+### Authentication
+
+Two paths are supported: organization API keys (default) and an opt-in Gideon
+OIDC bearer.
+
+- **API key:** send the organization key in the `apikey` header on every
+  request. Keys are validated against the API's `/v1/auth/me` before discovery or
+  execution, so revocation takes effect on the next call. Put keys in client
+  secret settings, never in URLs.
+- **OAuth:** requires `MCP_OIDC_CLIENT_ID`, `MCP_OIDC_ISSUER`, and
+  `MCP_OIDC_SHARED_AUDIENCE`. The server then publishes
+  `/.well-known/oauth-protected-resource` and challenges unauthenticated requests
+  with `WWW-Authenticate: Bearer`. The full authorization-code, refresh, and
+  revocation flow still needs live MCP client acceptance.
+
+Prefer an organization-scoped, read-only key for agent use: an org-wide key can
+reach mutating tools through `execute_tool`.
+
+### Client configuration
+
+Hosted (API key):
+
+```json
+{
+  "mcpServers": {
+    "opencomp": {
+      "type": "remote",
+      "url": "https://mcp.dev.gideondefender.com/mcp",
+      "headers": { "apikey": "${OPENCOMP_APIKEY}" }
+    }
+  }
+}
+```
+
+Local `serve` (HTTP callers use the `apikey` header; `--disable-static-auth`
+rejects the static key entirely):
+
+```json
+{
+  "mcpServers": {
+    "opencomp": {
+      "type": "remote",
+      "url": "http://127.0.0.1:2718/mcp",
+      "headers": { "apikey": "${OPENCOMP_APIKEY}" }
+    }
+  }
+}
+```
+
+Local stdio, for clients without HTTP support:
+
+```json
+{
+  "mcpServers": {
+    "opencomp": {
+      "command": "pnpm",
+      "args": ["dlx", "@gideon-defender/mcp-server@<approved-version>", "start"],
+      "env": { "COMPAI_APIKEY": "<organization-read-only-key>" }
+    }
+  }
+}
+```
+
+Use `--mode dynamic` for progressive discovery (`list_tools`,
+`describe_tool_input`, `execute_tool`) or `--tool <name>` / `--tool-annotations
+readOnly` to expose subsets. The hosted dev deployment runs in dynamic mode, so
+clients see those three tools rather than one per operation.
+
+### Verifying a connection
+
+```sh
+curl -sS https://mcp.dev.gideondefender.com/healthz
+
+curl -sS -X POST https://mcp.dev.gideondefender.com/mcp \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -H "apikey: $OPENCOMP_APIKEY" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"probe","version":"0"}}}'
+```
+
+A healthy call returns `200` with `serverInfo`, for example
+`{"name":"OpenComp","version":"0.3.0"}`. `401` means the key, its organization
+scopes, or its tenant binding is wrong; `503` means the auth service is
+unavailable.
 
 ## Deployment
 
