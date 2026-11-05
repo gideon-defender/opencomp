@@ -89,7 +89,7 @@
     "ai": "6.0.264",
     "archiver": "^7.0.1",
     "axios": "^1.16.0",
-    "better-auth": "1.6.34",
+    "better-auth": "1.7.7",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "date-fns": "^4.4.0",
