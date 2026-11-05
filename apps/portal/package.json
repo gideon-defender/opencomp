@@ -19,7 +19,7 @@
     "@tanstack/react-query": "^5.90.7",
     "@tiptap/react": "^3.31.3",
     "@trycompai/design-system": "*",
-    "better-auth": "1.6.26",
+    "better-auth": "1.6.34",
     "framer-motion": "^12.23.9",
     "geist": "^1.3.1",
     "lucide-react": "^1.7.0",
